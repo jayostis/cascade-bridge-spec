@@ -4,9 +4,11 @@ What a conforming adapter package must pass, written as the list a lint
 implements. The list is ordered so that the cheapest check that can fail comes
 first and each later check can assume the earlier ones held.
 
-Two of these run today, in
-[`scripts/validate-adapter.py`](../scripts/validate-adapter.py): the RO-Crate
-validation and the SHACL conformance. The rest are specified and not yet built.
+Three of these run today, in
+[`scripts/validate-adapter.py`](../scripts/validate-adapter.py), which is what
+the published action
+([`.github/actions/validate-adapter`](../.github/actions/validate-adapter/action.yml))
+runs. The rest are specified and not yet built.
 
 ## The list
 
@@ -27,11 +29,29 @@ validation and the SHACL conformance. The rest are specified and not yet built.
    `bridge:adapter` and the adapter's `bridge:testManifest` point at each other,
    and every `bridge:envelope` a test action names is one the adapter lists.
 
+   They also carry the two constraints that make an IRI naming a file mean
+   something. Every file-valued property — `bridge:input`, `bridge:graph`,
+   `bridge:findings`, `bridge:sourceSchema`, `bridge:documentSchema` — is
+   `sh:class schema:MediaObject`, what the RO-Crate 1.2 context expands `File`
+   to, so a mistyped name fails instead of conforming; `sh:nodeKind sh:IRI`
+   alone let a typo through, because an IRI naming no entity at all is still an
+   IRI. And every declared `encodingFormat` is one of the media types below.
+
 3. **Every git-tracked file is accounted for.** Each file in the repository is
-   either a crate entity carrying a declared `encodingFormat` in an allowed set,
-   or is in a short allowlist: `README.md`, `LICENSE`, `CHANGELOG.md`,
-   `CLAUDE.md`, and dotfiles (`.gitattributes`, `.editorconfig`, `.vscode/`,
-   `.github/`).
+   either a crate entity carrying a declared `encodingFormat`, or is in a short
+   allowlist: `README.md`, `LICENSE`, `CHANGELOG.md`, `CLAUDE.md`,
+   `ro-crate-metadata.json`, and dotfiles (`.gitattributes`, `.editorconfig`,
+   `.vscode/`, `.github/`).
+
+   `ro-crate-metadata.json` is in the allowlist for a different reason from the
+   other four. It is not undescribed: it is the crate's own metadata descriptor,
+   the entity every RO-Crate must carry and the one entity RO-Crate 1.2 forbids
+   from being a data entity in `hasPart`. It therefore has no `encodingFormat`
+   and cannot be given one.
+
+   The inventory is taken with `git ls-files`, not a directory walk: a walk sees
+   build output, a virtual environment and whatever the last run left behind, and
+   an inventory that counts those is an inventory nobody can keep green.
 
    This is the check that makes "an adapter is data" a measured property rather
    than a claim. A file nobody described is a file nobody reviewed, and the
@@ -43,19 +63,50 @@ validation and the SHACL conformance. The rest are specified and not yet built.
    over the committed bytes. Where the publisher also publishes a digest, it is
    checked against the publisher's copy, and a mismatch is reported as a
    difference between the local copy and its source rather than as a corrupt
-   file.
+   file. **Not built.**
 
 5. **Every input validates against the declared schema.** Each committed input
    under the fixtures, against the `bridge:documentSchema` of the envelope its
    test names, or against `bridge:sourceSchema` where the envelope declares none.
+   **Not built.**
 
 6. **Every expected graph parses.** Each `bridge:graph` as Turtle. Parsing, not
    conforming: an expected graph is what a mapping must produce, and judging it
    against Cascade's shapes is the Bridge's validate stage, not the lint's job.
+   **Not built.**
 
 A package that passes all six is a conforming adapter package. Nothing in the
 list runs a mapping or compares a graph: that is the test manifest, and it needs
 a Bridge ([`test-manifest.md`](test-manifest.md)).
+
+## The media types an adapter package may declare
+
+The allowed set for check 3, enforced by the shapes as `<#DescribedFile>` so
+that it runs rather than only being written down.
+[`shapes/bridge.shapes.ttl`](../shapes/bridge.shapes.ttl) is the authority; this
+table restates it, and the two change in the same commit.
+
+| media type | what declares it |
+|---|---|
+| `application/gzip` | a referenced release published as an archive |
+| `application/json` | a findings sidecar, a lookup table's source |
+| `application/ld+json` | a crate, a context |
+| `application/sparql-query` | a mapping under a SPARQL profile |
+| `application/xml` | a source document, an XSD |
+| `application/xslt+xml` | a mapping under the `xslt-3` profile |
+| `application/yaml` | a manifest or table an adapter carries as YAML |
+| `text/csv` | a lookup table that arrives as one |
+| `text/markdown` | a document under `docs/` |
+| `text/plain` | a NOTICE, a checksum sidecar |
+| `text/turtle` | a test manifest, an expected graph, a SKOS table, an RML mapping |
+| `text/xml` | the other spelling of XML, which publishers do use |
+
+The set is deliberately short, and it is where "no code" is enforced. A format an
+adapter needs and this set lacks is a pull request here, argued once, rather than
+a media type invented in one adapter's crate. `encodingFormat` is a string rather
+than a PRONOM IRI: RO-Crate 1.2 allows either, every adapter written so far uses
+the media type, and a set of two spellings is a set that can disagree with
+itself.
 
 ## What the lint computes, and in what words
 
@@ -67,10 +118,11 @@ of the contract because a tier is a claim someone has to be able to re-verify:
 - **`limited: requires <profiles>`** — otherwise, naming the profiles.
 
 **Candidate, never universal.** RFC section 11: an adapter's tier is *measured*,
-by running its fixtures on every published Bridge, and recorded in the
-catalogue. A lint sees one package on one machine and can see only that nothing
-disqualifies it. The word the lint may say is the strongest one the evidence
-supports, and no adapter declares a tier of its own
+by running its fixtures on every published Bridge, and recorded in a catalogue —
+a repository downstream of every adapter and every Bridge, which does not exist
+yet ([`alignment.md`](alignment.md)). A lint sees one package on one machine and
+can see only that nothing disqualifies it. The word the lint may say is the
+strongest one the evidence supports, and no adapter declares a tier of its own
 ([`adapter-manifest.md`](adapter-manifest.md)).
 
 What is in Core is not yet settled — RFC section 9 proposes a SPARQL-only Core
@@ -83,29 +135,55 @@ and may be reclassified without changing a byte of the adapter when Core is
 fixed. The pilot adapter requires `xslt-3` and is therefore
 `limited: requires xslt-3`.
 
-## The lint is a reusable GitHub Action, and it is not built
+## The specification pin is checked against the ref the lint was called at
 
-The six checks above will be published from this repository as a **reusable
-GitHub Action**, so that an adapter repository's CI is one `uses:` line pinned
-at a tag rather than six scripts copied between adapters. It does not exist yet.
-What exists is `scripts/validate-adapter.py`, which runs checks 1 and 2 and is
-what this repository's own CI runs against each catalogued adapter at its pinned
-commit.
+An adapter states the revision of this specification it is written against
+twice: as `bridge:specPin` in its crate, for the reader, and as the ref its
+workflow calls the action at, for the machine. They are the same fact, so the
+lint holds them to it. The action resolves its own ref to a SHA and hands it to
+the script as `--spec-revision`; a crate pinning a different commit fails the
+run. Where the ref cannot be resolved — the action was called by a local path, or
+the network refused — the pin is reported and not compared, and the run says
+which of the two happened. A check that silently checks nothing is worse than no
+check.
 
-Building it is tracked as an issue in this repository. Two things it must keep
-from the script as it stands: the base IRIs, for the reason in check 2; and the
-naming of a missing `bridge:specPin` in its own words, because that is the one
-failure every adapter written before this repository existed will hit, and a
-generic "missing property" message would send its author looking in the wrong
-file.
+## The lint as a reusable action
+
+The checks are published from this repository as a **composite GitHub Action**,
+so that an adapter repository's CI is one `uses:` line pinned at a tag rather
+than the checks copied between adapters. Copied checks are the failure this
+repository exists to prevent: a second statement of a fact is one that can
+disagree.
+
+```yaml
+      - uses: actions/checkout@v4
+      - uses: jayostis/cascade-bridge-spec/.github/actions/validate-adapter@v0.2.0
+        with:
+          path: .          # the default; the directory holding ro-crate-metadata.json
+```
+
+Checks 1 to 3 run. Checks 4 to 6 are specified above and not built; the action
+prints the checks it ran, so a package is never reported as passing a check that
+did not happen.
+
+Three things the action keeps from the script, and must go on keeping:
+
+- **The base IRIs**, set explicitly, for the reason in check 2.
+- **The naming of a missing `bridge:specPin` in its own words.** That is the one
+  failure every adapter written before this repository existed will hit, and a
+  generic "missing property" message would send its author looking in the wrong
+  file. The wording is `the crate is valid and the manifest conforms except for
+  the missing bridge:specPin`.
+- **Knowing no adapter.** It takes a directory. It names no repository, no
+  format id and no package, and it clones nothing but the caller's own checkout.
 
 ## Running the checks that exist
 
 ```bash
 python3 -m pip install pyshacl rdflib roc-validator
-python3 scripts/validate-adapter.py ../cascade-bridge-adapter-clinvar
+python3 scripts/validate-adapter.py <path to an adapter checkout>
 ```
 
-Exit status is 0 when both checks pass and 1 when either fails. CI on this
+Exit status is 0 when every check passes and 1 when any fails. CI on this
 project's repositories is Linux and invokes `python3` directly; do not commit a
 machine-specific way of running it.

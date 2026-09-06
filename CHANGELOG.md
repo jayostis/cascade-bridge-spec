@@ -8,6 +8,121 @@ The specification is DRAFT and no compatibility is promised before a numbered
 v1. Every namespace is `v1-draft`; terms may be renamed and cardinalities may
 change between 0.x releases.
 
+## [0.2.0] - 2026-09-06
+
+The specification stops knowing which adapters exist, and starts publishing the
+lint an adapter's own CI calls. At 0.1.0 this repository carried a catalogue
+naming one adapter, its repository and a commit of it, and a CI job that cloned
+that repository at that commit; both point upward, and `docs/alignment.md` says
+in the same breath that dependencies point one way. The consequence was not
+theoretical: this repository's CI was red on a property missing from somebody
+else's repository, and with fifty adapters it would clone fifty repositories on
+every push.
+
+### Removed
+
+- `catalog/adapters.ttl` and the `catalog/` directory. A catalogue of adapters
+  and engines is still wanted — RFC section 9 asks for one — but it is a
+  repository of its own, downstream of every adapter and every Bridge, warranted
+  when more than one adapter exists and at least one Bridge is producing
+  results. Nothing about it belongs here. Tracked as issue #6.
+- The `adapters` job in `.github/workflows/validate.yml`, which read that
+  catalogue, cloned each named repository at its pinned commit and validated it.
+  The `spec` job is now the whole of this repository's CI, and it is green.
+- Every machine-readable reference to a particular adapter. What remains is
+  prose: `docs/` cites the ClinVar pilot as the worked example it is, and the
+  vocabulary and shapes record in their file headers which adapter they were
+  seeded from, which is a fact about their history rather than a dependency.
+
+### Added
+
+- `.github/actions/validate-adapter/action.yml`, the lint published as a
+  composite GitHub Action, so an adapter repository's CI is one `uses:` line
+  pinned at a tag of this repository rather than the checks copied between
+  adapters. It takes a path (default: the repository root), names no adapter and
+  no format, and clones nothing but the caller's own checkout. Publishing it
+  from here is not an inversion: the specification publishes an artefact and the
+  adapter consumes it, so the arrow runs from adapter to specification. Part of
+  issue #1, which stays open for checks 4 to 6.
+- Check 3 of `docs/validation.md`, the file inventory, in
+  `scripts/validate-adapter.py`: every git-tracked file is either a crate entity
+  carrying a declared `encodingFormat` or is in the allowlist. Taken with
+  `git ls-files`, because a directory walk counts build output nobody can keep
+  green. This is the check that makes "an adapter is data" measured rather than
+  claimed.
+- `<#DescribedFile>` in `shapes/bridge.shapes.ttl`: every declared
+  `encodingFormat` is one of twelve media types, listed in the shapes and
+  restated in `docs/validation.md`. The set is where "no code" is enforced — not
+  by scanning a file for a language, but by refusing one whose media type says
+  it executes.
+- The specification pin is checked rather than only declared. The action
+  resolves the ref it was called at to a SHA and passes it to the lint as
+  `--spec-revision`; a crate whose `bridge:specPin` names a different commit
+  fails. The `uses:` ref and the crate's pin are the same fact written twice,
+  and they move together. Where the ref cannot be resolved, the run says so
+  rather than quietly checking nothing.
+- The lint reports the tier line `docs/validation.md` specifies —
+  `universal candidate` or `limited: requires <profiles>` — and names checks 4
+  to 6 as not run, so a package is never reported as passing a check that did
+  not happen.
+
+### Changed
+
+- `shapes/bridge.shapes.ttl`: the five file-valued property shapes —
+  `bridge:input`, `bridge:graph`, `bridge:findings`, `bridge:sourceSchema`,
+  `bridge:documentSchema` — carry `sh:class schema:MediaObject`, what the
+  RO-Crate 1.2 context expands `File` to. `sh:nodeKind sh:IRI` alone let a typo
+  through, because an IRI naming no entity at all is still an IRI. Improved in
+  the pilot adapter during its own review and carried up here, because the
+  adapter's copy of the shapes is being deleted and the improvement would
+  otherwise be lost. Verified by mutation against a real adapter checkout: each
+  of the five pointed at a name no crate entity carries conformed before and
+  fails now.
+- `vocab/bridge.ttl`: `bridge:IsomorphicConversionTest` and `bridge:findings`
+  compare the produced findings against the expected sidecar as a **multiset** —
+  the same entries with the same multiplicity, in any order, JSON object
+  equality — where they required them equal entry for entry in a sort order.
+  Also improved in the pilot and carried up. The ordering requirement appeared
+  in no standard and no upstream: `cascade-cli`'s own test sorts only the actual
+  side. It made a correct mapping fail on any harness whose string comparison is
+  not JavaScript's, because the oracles were written with `localeCompare`, which
+  is ICU collation, in which `/` precedes `@` although U+002F is above U+0040;
+  78, 56, 6 and 1 adjacent pairs across the four committed sidecars are out of
+  code-point order. Multiplicity is compared, because entries repeat and the
+  repeats are identical. Sorting a sidecar by Unicode code point is file
+  hygiene, a SHOULD on the file, and never part of the comparison. The general
+  principle now stated in `docs/alignment.md` and `docs/test-manifest.md`: **a
+  comparison is insensitive to anything the format does not mean.**
+- `vocab/bridge.ttl`: `bridge:profileRequired` has its `rdfs:domain
+  bridge:Adapter` back. It was dropped at 0.1.0 so that a catalogue entry — a
+  `schema:SoftwareSourceCode` standing for an adapter at a commit — could
+  restate an adapter's profiles without being typed an adapter. With the
+  catalogue gone that reason lapses, and the domain is the honest statement
+  again: only an adapter requires a profile. A future catalogue in its own
+  repository will hold EARL reports and queries over them, not a restatement of
+  an adapter's own manifest, so it does not need the domain dropped again.
+- `docs/alignment.md` is rewritten around what knows about what, with the
+  removal, the action, the pin-agreement rule and the insensitive-comparison
+  principle stated. The pinning discipline quoted from
+  `conformance/scripts/SPEC_PIN` is unchanged and carried over in full.
+- `docs/validation.md` names the allowed media types, describes the action as
+  published rather than as not built, and says which checks are still specified
+  and not built.
+- `docs/test-manifest.md`, `docs/fixtures-and-provenance.md`,
+  `docs/adapter-manifest.md`, `README.md` and `CLAUDE.md` follow the two changes
+  above and stop describing a catalogue in this repository.
+
+### Known state
+
+- No Bridge exists, so no test manifest has been executed, no EARL report exists
+  and no adapter has a measured tier.
+- Checks 4 to 6 of `docs/validation.md` — the digests, the source-schema
+  validation, the expected graphs — are specified and not built. Issue #1 stays
+  open for them.
+- `.github/workflows/validate.yml` runs one job. It validates this repository's
+  own files and exercises the published lint against a package built to fail; it
+  validates no adapter, by design.
+
 ## [0.1.0] - 2026-09-06
 
 The specification seeded from phase 1 of the pilot adapter,
@@ -112,4 +227,5 @@ against files inside one adapter.
   one failure. It goes green when the adapter adds the pin and a pull request here
   moves the catalogue's SHA to it, and not by weakening the check.
 
+[0.2.0]: https://github.com/jayostis/cascade-bridge-spec/releases/tag/v0.2.0
 [0.1.0]: https://github.com/jayostis/cascade-bridge-spec/releases/tag/v0.1.0

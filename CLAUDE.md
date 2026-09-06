@@ -35,8 +35,10 @@ commit:
   `docs/alignment.md` — the prose contract.
 
 `docs/stages.md` and `docs/fixtures-and-provenance.md` are explanatory and name
-what is open. `catalog/adapters.ttl` and `scripts/validate-adapter.py` are
-machinery, not contract.
+what is open. `scripts/validate-adapter.py` and
+`.github/actions/validate-adapter/action.yml` are machinery, not contract — but
+they are the *published* machinery an adapter's CI calls, so a change to either
+is a change every adapter feels at its next tag.
 
 **The prose must agree with the Turtle exactly** — term names, cardinalities,
 what each shape checks. The Turtle is what runs; a document that disagrees with
@@ -54,11 +56,26 @@ same commit.
 - **No Cascade terms are minted here.** `bridge:` is a Bridge-spec namespace. A
   term in `cascade:`, `genomics:` or any other Cascade vocabulary goes through
   spec's RFC process.
+- **This repository must not know that any adapter exists.** The specification
+  knows about itself; an adapter and a Bridge know about the specification; a
+  catalogue knows about all of them and nothing knows about it. A catalogue of
+  adapters, and a CI job that cloned one, were removed at 0.2.0 for pointing
+  upward. Prose in `docs/` citing the ClinVar pilot as a worked example is fine;
+  a machine-readable reference to a particular adapter — in Turtle, JSON, YAML
+  or a workflow — is the bug. Publishing the lint from here is not an
+  inversion: the specification publishes an artefact, the adapter consumes it,
+  and the lint takes a directory and learns no adapter's name.
 - **A tier is measured, never declared.** RFC section 11. `bridge:tier`,
   `bridge:Universal` and `bridge:Limited` were removed from the vocabulary in
   the move from the pilot and do not come back. A lint may say
-  `universal candidate`; the catalogue records what Bridges actually measured,
-  as EARL reports.
+  `universal candidate`; a catalogue — a repository of its own, downstream of
+  everything, which does not exist yet — records what Bridges actually
+  measured, as EARL reports.
+- **A comparison is insensitive to everything the format does not mean.** An RDF
+  graph does not mean its blank node labels, so they are relabelled; a findings
+  array does not mean its element order, so it is compared as a multiset. A
+  stricter rule than the format's meaning does not catch more mapping errors, it
+  only fails harnesses that are right.
 - **Standards, not inventions.** RO-Crate 1.2 for the package, W3C's `mf:` for
   the test manifest, SHACL for the shapes, Enterprise Integration Patterns for
   the stage names, EARL for results, SKOS for a concept table. If something here
@@ -78,26 +95,29 @@ unrelated pull requests down with it. That reasoning is
 `conformance/scripts/SPEC_PIN`'s, and `docs/alignment.md` carries it in full
 along with the rest: dependencies point one way (spec ← adapter ← Bridge), pins
 move in the pull request that needs them, nothing pins what it does not consume,
-and a Bridge's verdict on an adapter flows to the catalogue as a report rather
+and a Bridge's verdict on an adapter flows to a catalogue as a report rather
 than as a pin.
 
-`catalog/adapters.ttl` pins each catalogued adapter by SHA, and CI validates each
-at that SHA. Moving one of those SHAs is a commit here, reviewable, with CI green
-at the new commit.
+This repository pins nothing, in either direction. An adapter's pin is checked
+where the adapter lives: its CI calls
+`jayostis/cascade-bridge-spec/.github/actions/validate-adapter@<tag>`, and the
+action compares the SHA behind that tag against the `bridge:specPin` in the
+adapter's crate. The `uses:` ref and the crate's pin are the same fact written
+twice and move together.
 
 ## Sibling checkouts this repository cites
 
 Expected beside this repository, as sister directories:
 
 - `../bridge-adapter-clinvar` — the pilot adapter
-  (`jayostis/cascade-bridge-adapter-clinvar`), catalogued at
-  `beeae97b841f1e0384cb7ba4e3d5d998249bfacf`. `vocab/bridge.ttl` and
+  (`jayostis/cascade-bridge-adapter-clinvar`). `vocab/bridge.ttl` and
   `shapes/bridge.shapes.ttl` here were seeded from its `schema/manifest/` at
-  `0b2d548`, and each file's header lists exactly what changed in the move. At
-  the catalogued commit it carries no `bridge:specPin` and does not name the
-  profile IRI in `conformsTo`; `scripts/validate-adapter.py` reports the first
-  by name and the second as a warning, and the adapter's next pull request adds
-  both.
+  `0b2d548`, and each file's header lists exactly what changed in the move; the
+  `sh:class schema:MediaObject` constraints and the multiset findings rule were
+  improved there during its own review and carried up here at 0.2.0. It is a
+  checkout to test the lint against, by hand, when a shape changes. It is not
+  named anywhere a machine reads, and adding it back to one is the bug this
+  repository was corrected for at 0.2.0.
 - `../spec` — the Cascade vocabularies and the RFC (spec#43; identity is
   spec#38). Nothing here pins it: this specification writes no Cascade term, so
   it consumes no vocabulary revision. An adapter pins it, with
@@ -116,7 +136,7 @@ There is no test suite. These are the checks, and a commit says which ran:
 python3 -m pip install pyshacl rdflib roc-validator
 
 # every Turtle file parses
-python3 -c "from rdflib import Graph; [Graph().parse(f) for f in ['vocab/bridge.ttl','shapes/bridge.shapes.ttl','catalog/adapters.ttl']]"
+python3 -c "from rdflib import Graph; [Graph().parse(f) for f in ['vocab/bridge.ttl','shapes/bridge.shapes.ttl']]"
 
 # the shapes are valid SHACL
 python3 -m pyshacl --metashacl --shacl shapes/bridge.shapes.ttl shapes/bridge.shapes.ttl
@@ -124,20 +144,23 @@ python3 -m pyshacl --metashacl --shacl shapes/bridge.shapes.ttl shapes/bridge.sh
 # the profile crate is a valid RO-Crate 1.2
 rocrate-validator validate profile/ --profile-identifier ro-crate-1.2
 
-# each catalogued adapter still validates at its pinned commit
+# the published lint still accepts a real adapter package
 python3 scripts/validate-adapter.py <path to an adapter checkout>
 ```
 
-The same four run in `.github/workflows/validate.yml`. Changing a shape without
-running the last one against the catalogued adapters is how this repository
-breaks a real adapter without noticing.
+The first three run in `.github/workflows/validate.yml`, together with a smoke
+test that the published lint refuses a directory that is not an adapter package.
 
-**The adapters job is red at 0.1.0, on one known failure, deliberately.** The
-only catalogued adapter carries no `bridge:specPin`, so the script reports it
-and exits 1. That is the correct verdict; it goes green when the adapter's next
-pull request adds the pin and a pull request here moves the catalogue's SHA to
-it. Do not make it green by weakening the check, dropping the entry or adding
-`continue-on-error`.
+**The fourth is run by hand and is not in CI, on purpose.** CI here validates
+this repository's own files and no one else's: a job that cloned an adapter
+would make this repository red because of a property missing from somebody
+else's, and would grow a job per adapter for as long as adapters keep being
+written (`docs/alignment.md`). But changing a shape without running the lint
+against a real adapter checkout is how this repository breaks a real adapter
+without noticing, so run it, against a sibling checkout, and say in the commit
+which adapter and at which commit. Verify a shape that is meant to reject
+something by mutation — red first, then green — without adding that adapter to
+this repository in any form.
 
 CI here is Linux and invokes `python3` directly. Do not commit any
 machine-specific way of running it.

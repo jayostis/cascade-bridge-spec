@@ -84,11 +84,16 @@ derived from without matching on file names.
 
 **As it stands today**, a findings sidecar is `cascade-cli`'s four-field JSON
 record — `sourceField`, `reason`, `severity`, `context` — one entry per thing the
-mapping could not carry across, sorted by `sourceField`, then `severity`, then
-`reason`. That sort order is the comparison order the test manifest's
-`bridge:IsomorphicConversionTest` asserts entry for entry. It is a private
-shape, and it is what the oracles are asserted against byte for byte, so it is
-what an adapter writes today.
+mapping could not carry across. It is a private shape, and it is what the oracles
+are asserted against, so it is what an adapter writes today.
+
+The order the entries happen to be in is **not** part of the comparison:
+`bridge:IsomorphicConversionTest` compares the array as a multiset
+([`test-manifest.md`](test-manifest.md)). A sidecar written from scratch SHOULD
+be sorted by Unicode code point on (`sourceField`, `severity`, `reason`), which
+keeps regeneration diffs readable, but that is file hygiene and never a
+judgement: the sidecars copied from `conformance` are in the ICU collation their
+authoring script left them in and are not re-sorted.
 
 **RFC section 8 already says it should not stay private**: "one canonical
 findings model inside the Bridge", into which source-side validation, the
