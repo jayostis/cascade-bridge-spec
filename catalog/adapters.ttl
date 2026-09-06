@@ -1,0 +1,53 @@
+# The catalogue of known Cascade Bridge Adapters.
+#
+# RFC section 9 (the-cascade-protocol/spec#43): "The tier is recorded where
+# adapters are published. That means a catalog, however minimal, because
+# 'universal' is a claim someone has to be able to look up and re-verify."
+# This file is that catalogue, in its minimal form: one entry per adapter,
+# each naming the repository, the commit this specification's CI validates it
+# at, and the Bridge profiles it requires beyond Core.
+#
+# What an entry is. A catalogue entry stands for an adapter *at a commit*, so
+# it is a schema:SoftwareSourceCode with schema:codeRepository and
+# schema:version (the full SHA) — the same shape bridge:specPin and
+# bridge:vocabularyPin use inside an adapter's own crate, and the same shape
+# conformance/scripts/SPEC_PIN carries as repo= and commit=. The entry is not
+# itself a bridge:Adapter: the adapter is the root entity of the crate in that
+# repository, and a copy of it here would be a second statement of a fact that
+# can disagree. Only the facts a Bridge needs in order to pick an adapter
+# without cloning it are restated, and bridge:profileRequired says they must
+# agree with the adapter's own.
+#
+# What is deliberately absent. No tier. RFC section 11: an adapter's tier is
+# measured, by running its fixtures on every published Bridge, never declared.
+# The measurement arrives as EARL reports (one earl:Assertion per manifest
+# entry, per Bridge), and a tier is a query over them; no Bridge is published,
+# so no adapter in this file carries a tier or can. docs/alignment.md says why
+# a Bridge's results flow here as reports rather than as a pin.
+#
+# Terms: schema.org where it has one, dcterms:conformsTo the way an RO-Crate
+# context expands it, and bridge:profileRequired from vocab/bridge.ttl, whose
+# rdfs:domain was removed in the move to this repository so that a catalogue
+# entry can restate an adapter's profiles without being typed an adapter.
+# Nothing is minted here.
+
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dct:    <http://purl.org/dc/terms/> .
+@prefix schema: <http://schema.org/> .
+@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+<> a schema:Collection ;
+  schema:name "Cascade Bridge Adapter catalogue" ;
+  schema:description "Every adapter this specification's CI validates, each at the commit named here. An adapter joins the catalogue by a pull request to cascade-bridge-spec that adds its entry; the pull request is green only if scripts/validate-adapter.py passes against the repository at that commit." ;
+  schema:dateModified "2026-09-06" ;
+  schema:hasPart <#clinvar> .
+
+<#clinvar> a schema:SoftwareSourceCode ;
+  schema:identifier "clinvar" ;
+  schema:name "Cascade Bridge Adapter for ClinVar VCV XML" ;
+  schema:description "The pilot adapter, proposed in section 16 of the Cascade Bridge RFC and the source every part of this specification was seeded from. Import-only: NCBI ClinVar variation records to Cascade RDF, split on VariationArchive, validated against NCBI's published XSD. Its test manifest holds four isomorphic conversion tests against the conformance repository's oracles, one input-only test on NCBI's official sample, and one dataset completion test over the monthly release." ;
+  schema:codeRepository <https://github.com/jayostis/cascade-bridge-adapter-clinvar> ;
+  schema:version "beeae97b841f1e0384cb7ba4e3d5d998249bfacf" ;
+  schema:license <https://spdx.org/licenses/Apache-2.0> ;
+  bridge:profileRequired bridge:xslt-3 ;
+  rdfs:comment "At this commit the adapter's crate names the RFC, https://github.com/the-cascade-protocol/spec/issues/43, in conformsTo and carries no bridge:specPin: it was written before this repository existed, and its own copies of the vocabulary and shapes under schema/manifest/ are what this repository's vocab/ and shapes/ were seeded from. scripts/validate-adapter.py reports the missing bridge:specPin by name, and the adapter's next pull request adds it, together with the profile IRI in conformsTo, at which point this entry's schema:version moves in the pull request that needs it (docs/alignment.md). The single required profile is xslt-3, because the phase 2 mapping is XSLT 3; whether XSLT 3 is Core, a profile, or an authoring front-end is what the adapter's phase 3 rewrite in SPARQL CONSTRUCT is designed to decide." .

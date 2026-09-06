@@ -1,0 +1,104 @@
+# Everything docs/validation.md and CLAUDE.md say can be checked without a
+# Bridge, run on every change. The second job is the one that matters most: a
+# change to the shapes that would break a real adapter fails here, in the pull
+# request that makes it, rather than in that adapter's repository weeks later.
+#
+# THE ADAPTERS JOB IS RED AT 0.1.0, ON ONE KNOWN FAILURE, DELIBERATELY. The only
+# catalogued adapter was written before this repository existed and carries no
+# bridge:specPin, so scripts/validate-adapter.py reports "the crate is valid and
+# the manifest conforms except for the missing bridge:specPin" and exits 1. That
+# is the correct verdict, and it goes green when the adapter's next pull request
+# adds the pin and a pull request here moves the catalogue's SHA to it
+# (docs/alignment.md). Do not make it green by weakening the check, by dropping
+# the entry, or with continue-on-error: a suppressed failure and a permanently
+# red job end in the same place, with nobody reading either.
+name: validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  spec:
+    name: the specification's own files
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: install
+        run: python3 -m pip install --upgrade pip pyshacl rdflib roc-validator
+
+      - name: every Turtle file parses
+        run: |
+          python3 - <<'PY'
+          from rdflib import Graph
+          for path in ("vocab/bridge.ttl", "shapes/bridge.shapes.ttl", "catalog/adapters.ttl"):
+              graph = Graph()
+              graph.parse(path, format="turtle")
+              print(f"{path}: {len(graph)} triples")
+          PY
+
+      - name: the shapes are valid SHACL
+        run: python3 -m pyshacl --metashacl --shacl shapes/bridge.shapes.ttl shapes/bridge.shapes.ttl
+
+      - name: the profile crate is a valid RO-Crate 1.2
+        run: rocrate-validator validate profile/ --profile-identifier ro-crate-1.2 --no-paging
+
+  adapters:
+    name: every catalogued adapter at its pinned commit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: install
+        run: python3 -m pip install --upgrade pip pyshacl rdflib roc-validator
+
+      # One line per catalogue entry: the repository URL and the full SHA it is
+      # validated at. A pin is a SHA, never a branch, and every pinned SHA is
+      # tagged in the repository it names (docs/alignment.md), so the fetch
+      # below is of an object that cannot be garbage-collected out from under
+      # it.
+      - name: read the catalogue
+        run: |
+          python3 - <<'PY' > adapters.tsv
+          from rdflib import Graph
+          from rdflib.namespace import Namespace
+
+          schema = Namespace("http://schema.org/")
+          graph = Graph().parse("catalog/adapters.ttl", format="turtle")
+          for entry in sorted(graph.subjects(schema.codeRepository, None)):
+              repository = graph.value(entry, schema.codeRepository)
+              commit = graph.value(entry, schema.version)
+              identifier = graph.value(entry, schema.identifier)
+              print(f"{identifier}\t{repository}\t{commit}")
+          PY
+          cat adapters.tsv
+
+      - name: clone each at its pin and validate
+        run: |
+          set -euo pipefail
+          status=0
+          while IFS=$'\t' read -r identifier repository commit; do
+            echo "::group::${identifier} at ${commit}"
+            rm -rf "adapter-${identifier}"
+            git init --quiet "adapter-${identifier}"
+            git -C "adapter-${identifier}" remote add origin "${repository}.git"
+            git -C "adapter-${identifier}" fetch --quiet --depth 1 origin "${commit}"
+            git -C "adapter-${identifier}" checkout --quiet FETCH_HEAD
+            python3 scripts/validate-adapter.py "adapter-${identifier}" || status=1
+            echo "::endgroup::"
+          done < adapters.tsv
+          exit "${status}"

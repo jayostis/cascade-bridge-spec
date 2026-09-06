@@ -1,0 +1,20 @@
+# Text files are stored and checked out with LF line endings on every platform,
+# so the bytes a Linux CI runner reads are the bytes a Windows editor wrote.
+* text=auto eol=lf
+*.md     text eol=lf
+*.ttl    text eol=lf
+*.json   text eol=lf
+*.jsonld text eol=lf
+*.yaml   text eol=lf
+*.yml    text eol=lf
+*.py     text eol=lf
+*.xml    text eol=lf
+*.xsd    text eol=lf
+*.csv    text eol=lf
+*.sparql text eol=lf
+*.rq     text eol=lf
+
+# Nothing here is a verbatim copy held to a recorded digest, so this file has no
+# section protecting one from normalisation. An adapter package does need such a
+# section: docs/fixtures-and-provenance.md says why, and the pilot adapter's
+# .gitattributes is the worked example.

@@ -1,0 +1,476 @@
+# SHACL shapes for an adapter's crate (ro-crate-metadata.json, parsed as
+# JSON-LD) and its test manifest (fixtures/manifest.ttl), validated as one
+# graph, each with its own file location as base so the manifest's <../> is
+# the crate's root entity and the manifest's <in/...> is the crate's
+# fixtures/in/... entity.
+#
+# These shapes are the Cascade Bridge Specification's constraint on an
+# adapter package; this repository, cascade-bridge-spec, is their home, and
+# the adapter profile (profile/ro-crate-metadata.json) names this file as its
+# constraints resource. They were seeded from the pilot adapter,
+# bridge-adapter-clinvar, at commit 0b2d548 (schema/manifest/bridge.shapes.ttl);
+# the move removed the bridge:tier property shape (an adapter does not
+# declare a tier, vocab/bridge.ttl says why), added a bridge:specPin property
+# shape (exactly one, IRI) and a warning when the root does not name the
+# adapter profile in conformsTo. Everything else is as it was.
+#
+# What they say:
+#
+# The adapter: the root entity, a bridge:Adapter, carries exactly one of each
+# single-valued fact, at least one envelope and one vocabulary, and zero or
+# more profiles (an adapter that needs Core only names none), with links
+# where the value is an entity (licence, specification, spec pin, vocabulary
+# pin, vocabularies, source schema, envelopes, tables, extension vocabulary,
+# test manifest) and literals where it is a string (identifier, version,
+# media type, unit, detect XPath). Every envelope is a bridge:Envelope with a
+# name, a root element and at most one document schema. Every table names
+# where its rows came from. Schema.org terms are the http://schema.org/ IRIs
+# the RO-Crate context expands to; conformsTo is Dublin Core's, which is what
+# that context expands it to.
+#
+# The manifest: required properties and cardinalities per test type;
+# bridge:outputDigest matches ^sha256:[0-9a-f]{64}$; bridge:records is a
+# non-negative integer; every mf:entries member has exactly one of the three
+# types; bridge:adapter is present exactly once on the manifest and is a
+# bridge:Adapter; bridge:envelope in an action is a bridge:Envelope;
+# bridge:dataset in an action is a crate Dataset with a contentUrl, one a
+# Bridge can fetch. The action and result nodes are closed: a property they
+# do not declare is a mistake, not an extension.
+#
+# The links between the two, as SPARQL-based constraints (sh:sparql): the
+# manifest's bridge:adapter names an adapter whose bridge:testManifest is the
+# manifest, and the other way round; every bridge:envelope in an entry's
+# action is one the manifest's adapter lists.
+#
+# Validate with a SHACL engine that supports SHACL-SPARQL (pySHACL, Jena),
+# the crate and the manifest as the data graph and this file as the shapes
+# graph; scripts/validate-adapter.py in this repository does exactly that.
+# Shape IRIs are fragments of this file, so nothing is minted beyond the
+# bridge: terms vocab/bridge.ttl declares.
+
+@prefix sh:     <http://www.w3.org/ns/shacl#> .
+@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix owl:    <http://www.w3.org/2002/07/owl#> .
+@prefix schema: <http://schema.org/> .
+@prefix mf:     <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .
+@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+# The prefixes the sh:sparql constraints below use, declared the way SHACL
+# requires (sh:prefixes points here).
+<> a owl:Ontology ;
+  sh:declare [ sh:prefix "rdf" ;    sh:namespace "http://www.w3.org/1999/02/22-rdf-syntax-ns#"^^xsd:anyURI ] ;
+  sh:declare [ sh:prefix "mf" ;     sh:namespace "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#"^^xsd:anyURI ] ;
+  sh:declare [ sh:prefix "bridge" ; sh:namespace "https://ns.cascadeprotocol.org/bridge/v1-draft#"^^xsd:anyURI ] .
+
+# ============================================================================
+# The adapter
+# ============================================================================
+
+<#Adapter> a sh:NodeShape ;
+  sh:targetClass bridge:Adapter ;
+  sh:nodeKind sh:IRI ;
+  rdfs:comment "The root entity of the adapter's crate: what a Bridge reads first." ;
+  sh:property [
+    sh:path schema:identifier ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:pattern "^[a-z][a-z0-9-]*$" ;
+    sh:message "The adapter carries exactly one identifier, the format id a Bridge routes on: lowercase letters, digits and hyphens, starting with a letter."
+  ] ;
+  sh:property [
+    sh:path schema:name ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "The adapter carries exactly one name, the human name of the source format."
+  ] ;
+  sh:property [
+    sh:path schema:version ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:pattern "^\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z.-]+)?$" ;
+    sh:message "The adapter carries exactly one version, semantic versioning."
+  ] ;
+  sh:property [
+    sh:path schema:license ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "The adapter carries exactly one license, by IRI (the SPDX licence entity)."
+  ] ;
+  sh:property [
+    sh:path <http://purl.org/dc/terms/conformsTo> ;
+    sh:minCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "The adapter carries at least one conformsTo, by IRI: the Bridge specification it is written against."
+  ] ;
+  sh:property [
+    sh:path <http://purl.org/dc/terms/conformsTo> ;
+    sh:hasValue <https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/> ;
+    sh:severity sh:Warning ;
+    sh:message "The adapter does not name the Cascade Bridge Adapter profile, https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/, in conformsTo; that IRI on the crate root is how an adapter declares conformance to this specification (docs/adapter-manifest.md)."
+  ] ;
+  sh:property [
+    sh:path bridge:profileRequired ;
+    sh:nodeKind sh:IRI ;
+    sh:class bridge:Profile ;
+    sh:message "Each bridge:profileRequired is a bridge:Profile by IRI. Zero or more: an adapter that needs Core only names none."
+  ] ;
+  sh:property [
+    sh:path bridge:specPin ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "The adapter carries exactly one bridge:specPin, the pinned cascade-bridge-spec commit by IRI: a SoftwareSourceCode entity in the crate with codeRepository and version (the full SHA), the same shape as bridge:vocabularyPin."
+  ] ;
+  sh:property [
+    sh:path bridge:vocabularyPin ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "The adapter carries exactly one bridge:vocabularyPin, the pinned spec commit by IRI."
+  ] ;
+  sh:property [
+    sh:path bridge:vocabulary ;
+    sh:minCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "The adapter carries at least one bridge:vocabulary, a namespace IRI."
+  ] ;
+  sh:property [
+    sh:path bridge:sourceMediaType ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "The adapter carries exactly one bridge:sourceMediaType, an IANA media type."
+  ] ;
+  sh:property [
+    sh:path bridge:sourceSchema ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "The adapter carries exactly one bridge:sourceSchema, the pinned source-side schema by IRI."
+  ] ;
+  sh:property [
+    sh:path bridge:unit ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "The adapter carries exactly one bridge:unit, the element a Bridge splits on."
+  ] ;
+  sh:property [
+    sh:path bridge:envelope ;
+    sh:minCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:class bridge:Envelope ;
+    sh:message "The adapter carries at least one bridge:envelope, a bridge:Envelope by IRI."
+  ] ;
+  sh:property [
+    sh:path bridge:detectXPath ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "The adapter carries exactly one bridge:detectXPath, the XPath 3.1 boolean expression its router evaluates."
+  ] ;
+  sh:property [
+    sh:path bridge:table ;
+    sh:nodeKind sh:IRI ;
+    sh:node <#Table> ;
+    sh:message "Each bridge:table is a crate File by IRI that names where its rows came from (schema:isBasedOn). Zero or more; phase 2."
+  ] ;
+  sh:property [
+    sh:path bridge:extensionVocabulary ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "The adapter carries at most one bridge:extensionVocabulary, its own namespace for values with no Cascade term, by IRI; phase 2."
+  ] ;
+  sh:property [
+    sh:path bridge:testManifest ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "The adapter carries exactly one bridge:testManifest, the test manifest by IRI."
+  ] ;
+  sh:sparql [
+    sh:prefixes <> ;
+    sh:message "The adapter's bridge:testManifest names a manifest whose bridge:adapter is this adapter." ;
+    sh:select """
+      SELECT $this ?value WHERE {
+        $this bridge:testManifest ?value .
+        FILTER NOT EXISTS { ?value bridge:adapter $this }
+      }
+    """
+  ] .
+
+<#Table> a sh:NodeShape ;
+  rdfs:comment "A lookup table the mapping reads. Where its rows came from is recorded on the table's crate entity, and, where it differs from the package's, its licence." ;
+  sh:property [
+    sh:path schema:isBasedOn ;
+    sh:minCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "A table names at least one schema:isBasedOn, by IRI: where its rows came from."
+  ] .
+
+<#Envelope> a sh:NodeShape ;
+  sh:targetClass bridge:Envelope ;
+  rdfs:comment "A document root the source format arrives in." ;
+  sh:property [
+    sh:path schema:name ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:pattern "^[a-z][a-z0-9-]*$" ;
+    sh:message "An envelope carries exactly one name, its short id: lowercase letters, digits and hyphens, starting with a letter."
+  ] ;
+  sh:property [
+    sh:path bridge:rootElement ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "An envelope carries exactly one bridge:rootElement, the local name of its document element."
+  ] ;
+  sh:property [
+    sh:path bridge:documentSchema ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "An envelope carries at most one bridge:documentSchema, by IRI."
+  ] .
+
+# ============================================================================
+# The test manifest
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# The manifest
+# ----------------------------------------------------------------------------
+
+<#Manifest> a sh:NodeShape ;
+  sh:targetClass mf:Manifest ;
+  rdfs:comment "One bridge:adapter that points back at this manifest, one mf:entries list, every member of the list a test of exactly one of the three types, every envelope those tests name one the adapter lists, and the stamp set the entries inherit." ;
+  sh:property [
+    sh:path bridge:adapter ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:class bridge:Adapter ;
+    sh:message "The manifest carries exactly one bridge:adapter, a bridge:Adapter by IRI: the root entity of the adapter's crate."
+  ] ;
+  sh:property [
+    sh:path bridge:ignorePredicate ;
+    sh:nodeKind sh:IRI ;
+    sh:message "bridge:ignorePredicate on the manifest names a stamp predicate by IRI, the set every entry inherits."
+  ] ;
+  sh:property [
+    sh:path mf:entries ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:BlankNodeOrIRI ;
+    sh:message "The manifest carries exactly one mf:entries list."
+  ] ;
+  sh:property [
+    sh:path ( mf:entries [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ;
+    sh:minCount 1 ;
+    sh:node <#Entry> ;
+    sh:message "mf:entries lists at least one test, and every member is a test of exactly one of the three types."
+  ] ;
+  sh:sparql [
+    sh:prefixes <> ;
+    sh:message "The manifest's bridge:adapter names an adapter whose bridge:testManifest is this manifest." ;
+    sh:select """
+      SELECT $this ?value WHERE {
+        $this bridge:adapter ?value .
+        FILTER NOT EXISTS { ?value bridge:testManifest $this }
+      }
+    """
+  ] ;
+  sh:sparql [
+    sh:prefixes <> ;
+    sh:message "Every bridge:envelope in an entry's action is one the manifest's adapter lists." ;
+    sh:select """
+      SELECT $this ?value WHERE {
+        $this bridge:adapter ?adapter ;
+              mf:entries/rdf:rest*/rdf:first/mf:action/bridge:envelope ?value .
+        FILTER NOT EXISTS { ?adapter bridge:envelope ?value }
+      }
+    """
+  ] .
+
+<#Entry> a sh:NodeShape ;
+  sh:nodeKind sh:IRI ;
+  sh:xone (
+    [ sh:class bridge:IsomorphicConversionTest ]
+    [ sh:class bridge:InputOnlyTest ]
+    [ sh:class bridge:DatasetCompletionTest ]
+  ) ;
+  sh:message "A manifest entry is an IRI typed with exactly one of bridge:IsomorphicConversionTest, bridge:InputOnlyTest, bridge:DatasetCompletionTest." .
+
+# ----------------------------------------------------------------------------
+# Every test: a name (the entry's id) and one action
+# ----------------------------------------------------------------------------
+
+<#Test> a sh:NodeShape ;
+  sh:targetClass bridge:IsomorphicConversionTest, bridge:InputOnlyTest, bridge:DatasetCompletionTest ;
+  sh:nodeKind sh:IRI ;
+  sh:property [
+    sh:path mf:name ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:pattern "^[A-Za-z0-9][A-Za-z0-9_.-]*$" ;
+    sh:message "A test carries exactly one mf:name, the id that is also its fragment IRI."
+  ] ;
+  sh:property [
+    sh:path mf:action ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:BlankNodeOrIRI ;
+    sh:message "A test carries exactly one mf:action."
+  ] .
+
+# ----------------------------------------------------------------------------
+# Per test type
+# ----------------------------------------------------------------------------
+
+<#IsomorphicConversionTest> a sh:NodeShape ;
+  sh:targetClass bridge:IsomorphicConversionTest ;
+  rdfs:comment "A committed input with a committed expected graph and findings sidecar, compared isomorphic with the stamp predicates removed." ;
+  sh:property [
+    sh:path mf:action ;
+    sh:node <#CommittedAction>
+  ] ;
+  sh:property [
+    sh:path mf:result ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:node <#ConversionResult> ;
+    sh:message "An isomorphic conversion test carries exactly one mf:result naming the expected graph and findings."
+  ] ;
+  sh:property [
+    sh:path bridge:ignorePredicate ;
+    sh:nodeKind sh:IRI ;
+    sh:message "bridge:ignorePredicate names a predicate by IRI."
+  ] .
+
+<#InputOnlyTest> a sh:NodeShape ;
+  sh:targetClass bridge:InputOnlyTest ;
+  rdfs:comment "A committed input with no expected output yet: parsed and validated, the produced graph and findings recorded, nothing judged." ;
+  sh:property [
+    sh:path mf:action ;
+    sh:node <#CommittedAction>
+  ] ;
+  sh:property [
+    sh:path mf:result ;
+    sh:maxCount 0 ;
+    sh:message "An input-only test has no mf:result: nothing is judged."
+  ] ;
+  sh:property [
+    sh:path bridge:ignorePredicate ;
+    sh:maxCount 0 ;
+    sh:message "An input-only test has no bridge:ignorePredicate: nothing is compared."
+  ] .
+
+<#DatasetCompletionTest> a sh:NodeShape ;
+  sh:targetClass bridge:DatasetCompletionTest ;
+  rdfs:comment "A remote dataset described in the crate, too large to commit. Its expected output fits in one line, a record count and an output digest, and is absent until the first run records it." ;
+  sh:property [
+    sh:path mf:action ;
+    sh:node <#DatasetAction>
+  ] ;
+  sh:property [
+    sh:path mf:result ;
+    sh:maxCount 1 ;
+    sh:node <#DatasetResult> ;
+    sh:message "A dataset completion test carries at most one mf:result, holding bridge:records and bridge:outputDigest once a run has recorded them."
+  ] .
+
+# ----------------------------------------------------------------------------
+# Action and result nodes, closed
+# ----------------------------------------------------------------------------
+
+<#CommittedAction> a sh:NodeShape ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property [
+    sh:path bridge:input ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "The action of a committed-input test names exactly one bridge:input, by IRI."
+  ] ;
+  sh:property [
+    sh:path bridge:envelope ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:class bridge:Envelope ;
+    sh:message "The action names exactly one bridge:envelope, a bridge:Envelope by IRI. That it is one the manifest's adapter lists is checked on the manifest (#Manifest)."
+  ] .
+
+<#DatasetAction> a sh:NodeShape ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property [
+    sh:path bridge:dataset ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:node <#RunnableDataset> ;
+    sh:message "The action of a dataset completion test names exactly one bridge:dataset, by the crate entity's IRI: a Dataset with a contentUrl, one a Bridge can fetch."
+  ] ;
+  sh:property [
+    sh:path bridge:envelope ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:class bridge:Envelope ;
+    sh:message "The action names exactly one bridge:envelope, a bridge:Envelope by IRI. That it is one the manifest's adapter lists is checked on the manifest (#Manifest)."
+  ] .
+
+<#RunnableDataset> a sh:NodeShape ;
+  rdfs:comment "A crate Dataset a Bridge can stream: it has a contentUrl. An entity standing for a release that currently resolves to another file has none, and is not something to run." ;
+  sh:class schema:Dataset ;
+  sh:property [
+    sh:path schema:contentUrl ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:message "A dataset a test runs carries exactly one schema:contentUrl."
+  ] .
+
+<#ConversionResult> a sh:NodeShape ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property [
+    sh:path bridge:graph ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "The result names exactly one bridge:graph, the expected Turtle, by IRI."
+  ] ;
+  sh:property [
+    sh:path bridge:findings ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "The result names exactly one bridge:findings, the expected sidecar, by IRI."
+  ] .
+
+<#DatasetResult> a sh:NodeShape ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property [
+    sh:path bridge:records ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:integer ;
+    sh:minInclusive 0 ;
+    sh:message "bridge:records is a non-negative xsd:integer, at most once; absent until the first run records it."
+  ] ;
+  sh:property [
+    sh:path bridge:outputDigest ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:pattern "^sha256:[0-9a-f]{64}$" ;
+    sh:message "bridge:outputDigest is the string sha256:<64 lowercase hex>, at most once; absent until the first run records it."
+  ] .

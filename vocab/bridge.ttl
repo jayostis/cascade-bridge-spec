@@ -1,0 +1,280 @@
+# The Cascade Bridge vocabulary, bridge:. Two groups of terms in one
+# namespace. This file is the vocabulary of the Cascade Bridge Specification
+# (the-cascade-protocol/spec#43), and this repository, cascade-bridge-spec, is
+# its home. It was seeded from the pilot adapter, bridge-adapter-clinvar, at
+# commit 0b2d548 (schema/manifest/bridge.ttl), where it lived until this
+# repository existed; the changes made in the move are listed at the end of
+# this header.
+#
+# Adapter terms: what an adapter says about itself in its RO-Crate
+# (ro-crate-metadata.json at the adapter's root). The crate's root entity is
+# a bridge:Adapter beside its schema:Dataset type; schema.org carries what it
+# can (identifier, name, version, license), Dublin Core carries conformsTo
+# (the RO-Crate context expands that key to dct:conformsTo, not a schema.org
+# term; a query written with schema:conformsTo matches nothing), and the
+# terms below carry what has no equivalent in either: the profiles required,
+# the specification pin, the vocabulary pin and vocabularies, the source
+# media type, schema, envelopes and unit, the detect rule, the tables and
+# extension vocabulary phase 2 adds, and the test manifest.
+#
+# An adapter does not declare a tier. RFC section 11: an adapter's tier is
+# measured, by running its fixtures on every published Bridge, and recorded
+# in the catalog; the catalog (catalog/adapters.ttl in this repository) is
+# where "universal" or "limited" is read from, computed from which Bridges
+# pass the adapter's test manifest, never from a claim in the adapter.
+#
+# Test terms: a small set on top of W3C's mf: test-manifest vocabulary (the
+# one every W3C RDF-family test suite is written in), the way the SHACL test
+# suite adds sht:. An adapter's fixtures/manifest.ttl is an mf:Manifest whose
+# entries are typed with the three test classes below; the type carries the
+# comparison rule.
+#
+# The shapes that constrain a crate and a manifest, loaded as one graph, are
+# shapes/bridge.shapes.ttl in this repository. It is a Bridge-spec namespace,
+# not a Cascade vocabulary: no cascade: or genomics: term is minted here.
+#
+# Changes from the adapter's copy at 0b2d548, made in the move:
+#   removed  bridge:Tier, bridge:Universal, bridge:Limited, bridge:tier
+#            (the tier is measured, above; an adapter states none);
+#   added    bridge:specPin, the commit of this specification an adapter is
+#            written against, the same shape as bridge:vocabularyPin;
+#   changed  bridge:profileRequired loses its rdfs:domain, so a catalog
+#            entry (a schema:SoftwareSourceCode standing for an adapter at a
+#            commit) can restate the adapter's profiles without being typed
+#            an adapter; the ontology header names this repository.
+# Every other term and comment is as it was.
+
+@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+@prefix mf:     <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .
+@prefix schema: <http://schema.org/> .
+@prefix owl:    <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct:    <http://purl.org/dc/terms/> .
+
+<https://ns.cascadeprotocol.org/bridge/v1-draft#> a owl:Ontology ;
+  dct:title "Cascade Bridge Vocabulary"@en ;
+  dct:description "Terms for an adapter's manifest and its test manifest. Adapter terms: the classes bridge:Adapter, bridge:Envelope and bridge:Profile, and the properties that carry what schema.org cannot about an adapter package described as an RO-Crate. Test terms: three test types that carry the comparison rule, and the properties that name a test's input, expected output and the stamp predicates ignored when comparing, used with W3C's mf: test-manifest vocabulary (mf:Manifest, mf:entries, mf:name, mf:action, mf:result)."@en ;
+  dct:created "2026-09-06"^^xsd:date ;
+  owl:versionInfo "v1-draft" ;
+  rdfs:comment "DRAFT. The vocabulary of the Cascade Bridge Specification (the-cascade-protocol/spec#43), whose home is the cascade-bridge-spec repository. Seeded from the pilot adapter, bridge-adapter-clinvar, at 0b2d548, where it was two namespaces in name only before that: the test terms were bt: (bridge-test) before the adapter terms joined them. No compatibility is promised before a numbered release."@en ;
+  rdfs:seeAlso <https://github.com/the-cascade-protocol/spec/issues/43> ,
+               <https://github.com/jayostis/cascade-bridge-spec> .
+
+# ============================================================================
+# Adapter terms
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# Classes
+# ----------------------------------------------------------------------------
+
+bridge:Adapter a owl:Class ;
+  rdfs:label "Adapter"@en ;
+  rdfs:comment "An adapter package: the data a Bridge runs to turn a source format into Cascade RDF, or back. The root entity of the adapter's RO-Crate, typed schema:Dataset and bridge:Adapter, whose identifier is the format id a Bridge routes on."@en ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:Envelope a owl:Class ;
+  rdfs:label "Envelope"@en ;
+  rdfs:comment "A document root the source format arrives in. A Bridge accepts any of the adapter's envelopes and splits each on the unit. Named by its schema:name (the short id a test action refers to), with a bridge:rootElement and, when the source schema alone does not declare that root, a bridge:documentSchema."@en ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:Profile a owl:Class ;
+  rdfs:label "Profile"@en ;
+  rdfs:comment "An optional Bridge profile (RFC section 9) beyond Core: a capability a Bridge may offer and an adapter may require, such as xslt-3, sparql-construct or streaming."@en ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+# ----------------------------------------------------------------------------
+# Individuals
+# ----------------------------------------------------------------------------
+
+bridge:xslt-3 a bridge:Profile ;
+  rdfs:label "xslt-3"@en ;
+  rdfs:comment "The XSLT 3.0 profile: a Bridge offering it runs an adapter's XSLT 3 mapping (XPath 3.1) inside an engine the Bridge ships."@en ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+# ----------------------------------------------------------------------------
+# On the adapter
+# ----------------------------------------------------------------------------
+
+bridge:profileRequired a owl:ObjectProperty ;
+  rdfs:label "profile required"@en ;
+  rdfs:comment "A Bridge profile the adapter needs beyond Core, by IRI; repeatable, zero or more. An adapter that needs Core only names none. An adapter does not declare a tier: whether it is universal or limited is measured by the catalog from which Bridges pass its test manifest (RFC section 11), and a lint may say \"universal candidate\" only when the package holds no code and every profile named here is in Core. Stated on the adapter, and restated on the adapter's catalog entry so a Bridge can pick adapters without cloning them; the two must agree."@en ;
+  rdfs:range bridge:Profile ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:specPin a owl:ObjectProperty ;
+  rdfs:label "specification pin"@en ;
+  rdfs:comment "The revision of the Cascade Bridge Specification the adapter is written against, by the commit's IRI: a schema:SoftwareSourceCode entity in the crate with schema:codeRepository (the cascade-bridge-spec repository) and schema:version (the full SHA), the same shape as bridge:vocabularyPin. Exactly one. Every commit an adapter pins is tagged in that repository."@en ;
+  rdfs:domain bridge:Adapter ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:vocabularyPin a owl:ObjectProperty ;
+  rdfs:label "vocabulary pin"@en ;
+  rdfs:comment "The spec revision the adapter's vocabularies are pinned to, by the commit's IRI: a schema:SoftwareSourceCode entity in the crate with schema:codeRepository and schema:version (the full SHA). Exactly one. The same pin the conformance suite carries in scripts/SPEC_PIN."@en ;
+  rdfs:domain bridge:Adapter ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:vocabulary a owl:ObjectProperty ;
+  rdfs:label "vocabulary"@en ;
+  rdfs:comment "A Cascade vocabulary the adapter writes, by its namespace IRI: a schema:DefinedTermSet entity in the crate whose schema:version is the vocabulary's version at the pin (a pre-stable draft is named by its draft label). Repeatable, at least one."@en ;
+  rdfs:domain bridge:Adapter ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:sourceMediaType a owl:DatatypeProperty ;
+  rdfs:label "source media type"@en ;
+  rdfs:comment "IANA media type of the source documents. Exactly one."@en ;
+  rdfs:domain bridge:Adapter ;
+  rdfs:range xsd:string ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:sourceSchema a owl:ObjectProperty ;
+  rdfs:label "source schema"@en ;
+  rdfs:comment "The pinned source-side schema (XSD, JSON Schema, Schematron) a Bridge validates every unit against, by IRI: a schema:File entity in the crate. Exactly one."@en ;
+  rdfs:domain bridge:Adapter ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:envelope a owl:ObjectProperty ;
+  rdfs:label "envelope"@en ;
+  rdfs:comment "A bridge:Envelope, by IRI. On the adapter: a document root the source format arrives in; repeatable, at least one. In the mf:action of every test: the envelope the input arrives in, exactly one, an envelope the adapter lists."@en ;
+  rdfs:range bridge:Envelope ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:unit a owl:DatatypeProperty ;
+  rdfs:label "unit"@en ;
+  rdfs:comment "The element a Bridge splits a document on and hands to the mapping one at a time (Enterprise Integration Patterns: Splitter). The unit's raw bytes are preserved. Exactly one."@en ;
+  rdfs:domain bridge:Adapter ;
+  rdfs:range xsd:string ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:detectXPath a owl:DatatypeProperty ;
+  rdfs:label "detect XPath"@en ;
+  rdfs:comment "The rule a Bridge's content-based router applies to decide this adapter handles an input: an XPath 3.1 expression evaluated with the document node as the context item, whose effective boolean value is true when the adapter handles the document. Exactly one."@en ;
+  rdfs:domain bridge:Adapter ;
+  rdfs:range xsd:string ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:table a owl:ObjectProperty ;
+  rdfs:label "table"@en ;
+  rdfs:comment "A lookup table the mapping reads, by IRI: a schema:File entity in the crate whose schema:isBasedOn names where its rows came from and whose schema:license is stated where it differs from the package's. Repeatable, zero or more; none until phase 2 adds the mapping."@en ;
+  rdfs:domain bridge:Adapter ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:extensionVocabulary a owl:ObjectProperty ;
+  rdfs:label "extension vocabulary"@en ;
+  rdfs:comment "The adapter's own namespace for values that have no Cascade term, by IRI: a schema:DefinedTermSet entity in the crate, its file a schema:File in hasPart. At most one; absent until phase 2 adds it. Terms in it are the adapter's, never cascade: or genomics: terms."@en ;
+  rdfs:domain bridge:Adapter ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:testManifest a owl:ObjectProperty ;
+  rdfs:label "test manifest"@en ;
+  rdfs:comment "The test manifest a Bridge's harness executes, by IRI: a schema:File entity in the crate that is an mf:Manifest whose entries are typed with the test terms below, and whose bridge:adapter is this adapter. Exactly one."@en ;
+  rdfs:domain bridge:Adapter ;
+  rdfs:range mf:Manifest ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+# ----------------------------------------------------------------------------
+# On an envelope
+# ----------------------------------------------------------------------------
+
+bridge:rootElement a owl:DatatypeProperty ;
+  rdfs:label "root element"@en ;
+  rdfs:comment "Local name of the document element of documents in this envelope. Exactly one."@en ;
+  rdfs:domain bridge:Envelope ;
+  rdfs:range xsd:string ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:documentSchema a owl:ObjectProperty ;
+  rdfs:label "document schema"@en ;
+  rdfs:comment "A schema that validates a whole document in this envelope, by IRI (a schema:File entity in the crate), when the source schema alone does not declare its root. At most one; absent when the source schema declares the root directly."@en ;
+  rdfs:domain bridge:Envelope ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+# ============================================================================
+# Test terms
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# Test types. Each is an mf:ManifestEntry; the type is the comparison rule.
+# ----------------------------------------------------------------------------
+
+bridge:IsomorphicConversionTest a owl:Class ;
+  rdfs:subClassOf mf:ManifestEntry ;
+  rdfs:label "Isomorphic conversion test"@en ;
+  rdfs:comment "Run the mapping on bridge:input; the produced graph must be isomorphic to bridge:graph (blank nodes relabelled, IRIs and literals exact) after every triple whose predicate is a bridge:ignorePredicate (the test's own if it carries any, else the manifest's) is removed from both sides; the produced findings must equal bridge:findings entry for entry in the conformance sort order (sourceField, severity, reason)."@en ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:InputOnlyTest a owl:Class ;
+  rdfs:subClassOf mf:ManifestEntry ;
+  rdfs:label "Input-only test"@en ;
+  rdfs:comment "Parse and validate bridge:input; record the produced graph and findings; judge nothing."@en ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:DatasetCompletionTest a owl:Class ;
+  rdfs:subClassOf mf:ManifestEntry ;
+  rdfs:label "Dataset completion test"@en ;
+  rdfs:comment "Stream bridge:dataset in its envelope; the run must complete without rejection; where bridge:records and bridge:outputDigest are present they must match, where absent the harness records them."@en ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+# ----------------------------------------------------------------------------
+# On the manifest
+# ----------------------------------------------------------------------------
+
+bridge:adapter a owl:ObjectProperty ;
+  rdfs:label "adapter"@en ;
+  rdfs:comment "The adapter the manifest tests, by IRI: the root entity of the adapter's crate, a bridge:Adapter whose bridge:testManifest is this manifest. Exactly one on the manifest."@en ;
+  rdfs:domain mf:Manifest ;
+  rdfs:range bridge:Adapter ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+# ----------------------------------------------------------------------------
+# In mf:action
+# ----------------------------------------------------------------------------
+
+bridge:input a owl:ObjectProperty ;
+  rdfs:label "input"@en ;
+  rdfs:comment "The committed source document, by IRI. In the mf:action of a bridge:IsomorphicConversionTest or bridge:InputOnlyTest."@en ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:dataset a owl:ObjectProperty ;
+  rdfs:label "dataset"@en ;
+  rdfs:comment "A Dataset entity in the crate (ro-crate-metadata.json), by its @id. In the mf:action of a bridge:DatasetCompletionTest."@en ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+# bridge:envelope, declared above with the adapter terms, is also in every
+# mf:action: the envelope the input arrives in, by IRI.
+
+# ----------------------------------------------------------------------------
+# In mf:result
+# ----------------------------------------------------------------------------
+
+bridge:graph a owl:ObjectProperty ;
+  rdfs:label "graph"@en ;
+  rdfs:comment "The expected Turtle, by IRI. In the mf:result of a bridge:IsomorphicConversionTest."@en ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:findings a owl:ObjectProperty ;
+  rdfs:label "findings"@en ;
+  rdfs:comment "The expected findings sidecar (the conformance repository's gaps.json shape), by IRI. In the mf:result of a bridge:IsomorphicConversionTest."@en ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:records a owl:DatatypeProperty ;
+  rdfs:label "records"@en ;
+  rdfs:comment "Number of units processed, a non-negative integer. In the mf:result of a bridge:DatasetCompletionTest; absent until the first run records it (RDF has no null)."@en ;
+  rdfs:range xsd:integer ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:outputDigest a owl:DatatypeProperty ;
+  rdfs:label "output digest"@en ;
+  rdfs:comment "Digest of the canonical N-Quads output, stamp triples removed, as the string sha256:<64 hex>. In the mf:result of a bridge:DatasetCompletionTest; absent until the first run records it (RDF has no null)."@en ;
+  rdfs:range xsd:string ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+# ----------------------------------------------------------------------------
+# On the manifest, inherited by every test; on a test, an override
+# ----------------------------------------------------------------------------
+
+bridge:ignorePredicate a owl:ObjectProperty ;
+  rdfs:label "ignore predicate"@en ;
+  rdfs:comment "A stamp predicate (a triple a Bridge adds after the mapping: RFC section 5, \"stamp\"; EIP Message History) removed from both sides before comparison. By IRI; repeatable. The stamp set is a property of the Bridge's stamp stage, not of any one fixture, so it is stated on the mf:Manifest and every entry inherits it; an entry that carries its own replaces the manifest's set for that entry alone."@en ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
