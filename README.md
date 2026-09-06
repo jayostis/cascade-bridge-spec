@@ -73,15 +73,15 @@ CLAUDE.md                      agent context: what is normative, the pinning rul
 vocab/bridge.ttl               the bridge: vocabulary: adapter terms, and test terms on top of W3C's mf:
 shapes/bridge.shapes.ttl       SHACL shapes for an adapter's crate and its test manifest, as one graph
 profile/ro-crate-metadata.json the RO-Crate 1.2 Profile Crate an adapter names in conformsTo
-catalog/adapters.ttl           the known adapters, each at the commit CI validates it at
-scripts/validate-adapter.py    RO-Crate validation and SHACL conformance for one adapter checkout
+scripts/validate-adapter.py    the adapter lint: RO-Crate validation, SHACL conformance, file inventory
+.github/actions/validate-adapter/  the lint published as an action, which an adapter's CI calls
 docs/adapter-manifest.md       the adapter manifest contract
 docs/test-manifest.md          the test manifest contract
 docs/fixtures-and-provenance.md  committed inputs, referenced datasets, the findings sidecar
 docs/stages.md                 the RFC's engine stages as Enterprise Integration Patterns
 docs/validation.md             what a conforming adapter package must pass
 docs/alignment.md              keeping spec, adapters and Bridges in step
-.github/workflows/validate.yml CI
+.github/workflows/validate.yml CI: this repository's own files, and nothing else's
 ```
 
 ## How an adapter declares conformance
@@ -116,26 +116,47 @@ python3 -m pip install pyshacl rdflib roc-validator
 python3 scripts/validate-adapter.py <path to an adapter checkout>
 ```
 
-That runs the two checks that exist: the package is a valid RO-Crate 1.2, and
-the crate plus the test manifest it names, loaded as one graph with each file's
-own location as base, conform to `shapes/bridge.shapes.ttl` under pySHACL with
-SHACL-SPARQL enabled. Exit status is 0 when both pass.
+That runs the three checks that exist: the package is a valid RO-Crate 1.2; the
+crate plus the test manifest it names, loaded as one graph with each file's own
+location as base, conform to `shapes/bridge.shapes.ttl` under pySHACL with
+SHACL-SPARQL enabled; and every git-tracked file is either described by the crate
+with a declared `encodingFormat` in the allowed set, or is one of the four
+repository documents or a dotfile. Exit status is 0 when all three pass.
+
+An adapter does not run that by hand. The same checks are published from this
+repository as a composite GitHub Action, so an adapter's whole CI is:
+
+```yaml
+      - uses: actions/checkout@v4
+      - uses: jayostis/cascade-bridge-spec/.github/actions/validate-adapter@v0.2.0
+```
+
+The tag in that line is the adapter's `bridge:specPin` in executable form: the
+two name the same commit of this repository, and the action checks that they do.
+The action takes a directory, names no adapter, and clones nothing but the
+caller's own checkout — the arrow runs from adapter to specification.
 
 [`docs/validation.md`](docs/validation.md) has the full six-item list a
-conforming package must pass, and says which four are specified and not yet
-built. The complete lint will be published from this repository as a reusable
-GitHub Action; it does not exist yet.
+conforming package must pass, says which three are specified and not yet built,
+and names the media types an adapter package may declare.
 
 ## Alignment, in brief
 
-Dependencies point one way — spec ← adapter ← Bridge. Every dependency is a
-commit SHA, and every pinned SHA is tagged in the repository it pins, because a
-branch tip is not a guarantee. Pins move in the pull request that needs them,
-with the measurement re-run in the same commit, never swept forward on a
-schedule and never synced to `main`. Nothing pins what it does not consume. This
-repository's CI validates every catalogued adapter at its pinned commit. And a
-Bridge's verdict on an adapter reaches the catalogue as an EARL report, never as
-a pin in either direction.
+The specification knows about itself. An adapter knows about the specification.
+A Bridge knows about the specification. A catalogue knows about all of them and
+nothing knows about it — and that catalogue is a repository of its own, which
+does not exist yet. **Nothing here names an adapter**, and this repository's CI
+validates this repository's own files and no one else's.
+
+Every dependency is a commit SHA, and every pinned SHA is tagged in the
+repository it pins, because a branch tip is not a guarantee. An adapter's
+`uses:` ref and its `bridge:specPin` name the same commit of this repository.
+Pins move in the pull request that needs them, with the measurement re-run in
+the same commit, never swept forward on a schedule and never synced to `main`.
+Nothing pins what it does not consume — which is why this repository pins
+nothing at all. A comparison is insensitive to everything the format does not
+mean. And a Bridge's verdict on an adapter reaches a catalogue as an EARL
+report, never as a pin in either direction.
 
 The reasoning, including the part inherited from
 `conformance/scripts/SPEC_PIN`, is in [`docs/alignment.md`](docs/alignment.md).
@@ -153,7 +174,9 @@ The reasoning, including the part inherited from
   the runtime whose format converters an adapter re-expresses as data, and whose
   ClinVar conformance test is the comparison a test manifest restates.
 - [jayostis/cascade-bridge-adapter-clinvar](https://github.com/jayostis/cascade-bridge-adapter-clinvar) —
-  the pilot adapter, and the only entry in the catalogue.
+  the pilot adapter every artefact here was seeded from, and the worked example
+  the documents cite. Nothing a machine reads in this repository names it: it
+  consumes this specification, not the other way round.
 - `cascade-bridge-java`, `cascade-bridge-js` — the Bridges that will execute a
   test manifest, the JVM one as the ceiling and the JavaScript one as the floor
   (RFC section 16). **Neither exists yet**, and until one does, nothing in this

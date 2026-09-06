@@ -1,0 +1,102 @@
+# The Cascade Bridge Specification's adapter lint, published so that an
+# adapter repository's CI is one `uses:` line pinned at a tag of this
+# repository rather than a copy of the checks.
+#
+# The direction is the point. This action takes a directory and validates it
+# against the contract in this repository; it never learns that any particular
+# adapter exists, names none, and clones nothing but the caller's own
+# checkout. The specification publishes an artefact and the adapter consumes
+# it, so the arrow runs from adapter to specification, which is the direction
+# docs/alignment.md requires.
+#
+# The ref a caller pins is the adapter's bridge:specPin in executable form:
+# `uses: ...@v0.2.0` and the SHA in the crate name the same commit of this
+# repository, and the two are checked against each other below whenever the
+# ref can be resolved to a SHA.
+#
+# Usage, in an adapter's .github/workflows/validate.yml:
+#
+#   - uses: actions/checkout@v4
+#   - uses: jayostis/cascade-bridge-spec/.github/actions/validate-adapter@v0.2.0
+#
+name: Validate a Cascade Bridge Adapter
+description: >-
+  Validate an adapter package against the Cascade Bridge Specification:
+  RO-Crate 1.2, the SHACL shapes over the crate and the test manifest as one
+  graph, and the file inventory.
+
+inputs:
+  path:
+    description: >-
+      Path to the adapter package, relative to the workspace. The package root
+      is the directory holding ro-crate-metadata.json.
+    required: false
+    default: '.'
+  python-version:
+    description: The Python the checks run on.
+    required: false
+    default: '3.12'
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: install the validators
+      shell: bash
+      run: python3 -m pip install --upgrade pip pyshacl rdflib roc-validator
+
+    # An action's own repository is checked out as a tarball, not a clone, so
+    # the SHA behind the ref the caller pinned is not on disk. It is resolved
+    # from the ref instead. When it cannot be -- the action was called by a
+    # local path, or the network refused -- the pin is reported and not
+    # compared, and the run says which of the two happened rather than
+    # quietly checking nothing.
+    - name: resolve the specification revision this action was pinned at
+      id: revision
+      shell: bash
+      env:
+        ACTION_REPOSITORY: ${{ github.action_repository }}
+        ACTION_REF: ${{ github.action_ref }}
+      run: |
+        set -uo pipefail
+        if [ -z "${ACTION_REPOSITORY}" ] || [ -z "${ACTION_REF}" ]; then
+          echo "called by local path, so there is no pinned ref to resolve"
+          echo "sha=" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+        if printf '%s' "${ACTION_REF}" | grep -Eq '^[0-9a-f]{40}$'; then
+          echo "pinned at a commit: ${ACTION_REF}"
+          echo "sha=${ACTION_REF}" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+        remote="https://github.com/${ACTION_REPOSITORY}.git"
+        # An annotated tag resolves to the tag object first and the commit
+        # under ^{}; the commit is the one a pin names.
+        sha="$(git ls-remote "${remote}" "refs/tags/${ACTION_REF}^{}" | cut -f1)"
+        if [ -z "${sha}" ]; then
+          sha="$(git ls-remote "${remote}" "refs/tags/${ACTION_REF}" "refs/heads/${ACTION_REF}" | head -n1 | cut -f1)"
+        fi
+        if [ -z "${sha}" ]; then
+          echo "could not resolve ${ACTION_REF} in ${ACTION_REPOSITORY}"
+        else
+          echo "${ACTION_REPOSITORY}@${ACTION_REF} is ${sha}"
+        fi
+        echo "sha=${sha}" >> "$GITHUB_OUTPUT"
+
+    - name: validate the adapter package
+      shell: bash
+      env:
+        ADAPTER_PATH: ${{ inputs.path }}
+        SPEC_SHA: ${{ steps.revision.outputs.sha }}
+      run: |
+        set -euo pipefail
+        spec_root="$(cd "${{ github.action_path }}/../../.." && pwd)"
+        if [ -n "${SPEC_SHA}" ]; then
+          python3 "${spec_root}/scripts/validate-adapter.py" \
+            "${ADAPTER_PATH}" --spec-revision "${SPEC_SHA}"
+        else
+          python3 "${spec_root}/scripts/validate-adapter.py" "${ADAPTER_PATH}"
+        fi

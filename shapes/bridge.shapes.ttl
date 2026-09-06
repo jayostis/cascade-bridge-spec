@@ -12,7 +12,9 @@
 # the move removed the bridge:tier property shape (an adapter does not
 # declare a tier, vocab/bridge.ttl says why), added a bridge:specPin property
 # shape (exactly one, IRI) and a warning when the root does not name the
-# adapter profile in conformsTo. Everything else is as it was.
+# adapter profile in conformsTo. At 0.2.0 the sh:class schema:MediaObject
+# constraints the pilot added during its own review were carried up here,
+# where they belong, and the allowed encodingFormat set was written down.
 #
 # What they say:
 #
@@ -34,8 +36,19 @@
 # types; bridge:adapter is present exactly once on the manifest and is a
 # bridge:Adapter; bridge:envelope in an action is a bridge:Envelope;
 # bridge:dataset in an action is a crate Dataset with a contentUrl, one a
-# Bridge can fetch. The action and result nodes are closed: a property they
-# do not declare is a mistake, not an extension.
+# Bridge can fetch. Every IRI that names a committed file - bridge:input,
+# bridge:graph, bridge:findings in the manifest, bridge:sourceSchema and each
+# bridge:documentSchema in the crate - is a crate File entity: sh:class
+# schema:MediaObject, which is what the RO-Crate 1.2 context expands File to.
+# Without that, sh:nodeKind sh:IRI alone let a typo through, because an IRI
+# naming no entity at all is still an IRI. The action and result nodes are
+# closed: a property they do not declare is a mistake, not an extension.
+#
+# The media types: every declared encodingFormat is one of the allowed set,
+# <#DescribedFile> below. That is where "no code" is enforced - not by
+# scanning a file for a language, but by refusing one whose media type says it
+# executes (docs/validation.md, check 3). This file is the authority for the
+# set and docs/validation.md restates it for the reader.
 #
 # The links between the two, as SPARQL-based constraints (sh:sparql): the
 # manifest's bridge:adapter names an adapter whose bridge:testManifest is the
@@ -152,7 +165,8 @@
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:nodeKind sh:IRI ;
-    sh:message "The adapter carries exactly one bridge:sourceSchema, the pinned source-side schema by IRI."
+    sh:class schema:MediaObject ;
+    sh:message "The adapter carries exactly one bridge:sourceSchema, the pinned source-side schema, and it is a crate File entity (schema:MediaObject), not a bare IRI naming nothing."
   ] ;
   sh:property [
     sh:path bridge:unit ;
@@ -236,7 +250,58 @@
     sh:path bridge:documentSchema ;
     sh:maxCount 1 ;
     sh:nodeKind sh:IRI ;
-    sh:message "An envelope carries at most one bridge:documentSchema, by IRI."
+    sh:class schema:MediaObject ;
+    sh:message "An envelope carries at most one bridge:documentSchema, and it is a crate File entity (schema:MediaObject), not a bare IRI naming nothing."
+  ] .
+
+# ----------------------------------------------------------------------------
+# The media types an adapter package may declare
+# ----------------------------------------------------------------------------
+#
+# This is where "no code" stops being a claim and becomes a measured property.
+# The lint's file inventory (docs/validation.md, check 3) asks of every
+# git-tracked file whether the crate describes it and whether it declares an
+# encodingFormat; this shape asks of every declared encodingFormat whether it
+# is a media type an adapter package may hold. Neither question is answered by
+# scanning a file for a language: a package is refused because it declares a
+# media type that executes, which is a statement its author wrote down.
+#
+# The set is the formats RFC section 6 leaves an adapter: the package's own
+# description (JSON-LD, Turtle, JSON, YAML, Markdown), the source-side schemas
+# and documents (XML, its two media types, JSON, YAML), the mapping languages a
+# Bridge profile may offer (XSLT 3, SPARQL, and RML, which is Turtle), the
+# lookup tables (Turtle for SKOS, CSV where a table arrives as one), the plain
+# text a NOTICE or a checksum sidecar is, and the archive a referenced release
+# is published as. It is deliberately short. A format an adapter needs and this
+# set lacks is a pull request here, argued once, not a media type invented in
+# one adapter's crate.
+#
+# encodingFormat is a string here rather than a PRONOM IRI: RO-Crate 1.2 allows
+# either, every adapter written so far uses the media type, and a set of two
+# spellings is a set that can disagree with itself. An adapter that needs
+# PRONOM is the pull request that adds it.
+
+<#DescribedFile> a sh:NodeShape ;
+  sh:targetSubjectsOf schema:encodingFormat ;
+  rdfs:comment "Any entity in an adapter's crate that declares a media type: a committed file, a referenced file, a referenced dataset." ;
+  sh:property [
+    sh:path schema:encodingFormat ;
+    sh:datatype xsd:string ;
+    sh:in (
+      "application/gzip"
+      "application/json"
+      "application/ld+json"
+      "application/sparql-query"
+      "application/xml"
+      "application/xslt+xml"
+      "application/yaml"
+      "text/csv"
+      "text/markdown"
+      "text/plain"
+      "text/turtle"
+      "text/xml"
+    ) ;
+    sh:message "encodingFormat is one of the media types an adapter package may declare: application/gzip, application/json, application/ld+json, application/sparql-query, application/xml, application/xslt+xml, application/yaml, text/csv, text/markdown, text/plain, text/turtle, text/xml. A media type outside that set is how a file that executes would enter a package that claims to be data (docs/validation.md)."
   ] .
 
 # ============================================================================
@@ -398,7 +463,8 @@
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:nodeKind sh:IRI ;
-    sh:message "The action of a committed-input test names exactly one bridge:input, by IRI."
+    sh:class schema:MediaObject ;
+    sh:message "The action of a committed-input test names exactly one bridge:input, and it is a crate File entity (schema:MediaObject, what the RO-Crate context expands File to), not a bare IRI naming nothing."
   ] ;
   sh:property [
     sh:path bridge:envelope ;
@@ -447,14 +513,16 @@
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:nodeKind sh:IRI ;
-    sh:message "The result names exactly one bridge:graph, the expected Turtle, by IRI."
+    sh:class schema:MediaObject ;
+    sh:message "The result names exactly one bridge:graph, the expected Turtle, and it is a crate File entity (schema:MediaObject), not a bare IRI naming nothing."
   ] ;
   sh:property [
     sh:path bridge:findings ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:nodeKind sh:IRI ;
-    sh:message "The result names exactly one bridge:findings, the expected sidecar, by IRI."
+    sh:class schema:MediaObject ;
+    sh:message "The result names exactly one bridge:findings, the expected sidecar, and it is a crate File entity (schema:MediaObject), not a bare IRI naming nothing."
   ] .
 
 <#DatasetResult> a sh:NodeShape ;

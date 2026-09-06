@@ -87,8 +87,13 @@ findings sidecar.
 must be **isomorphic** to `bridge:graph` — blank nodes relabelled, IRIs and
 literals exact — after every triple whose predicate is a `bridge:ignorePredicate`
 has been removed from **both sides**. The produced findings must **equal** the
-expected sidecar entry for entry, in the conformance repository's sort order
-(`sourceField`, `severity`, `reason`).
+expected sidecar as a **multiset**: the same entries with the same multiplicity,
+in any order, two entries being equal when they have the same member names and
+equal values (JSON object equality, not byte equality).
+
+Both halves of that are the same principle: **a comparison is insensitive to
+everything the format does not mean.** A stricter rule than the format's meaning
+does not catch more mapping errors; it only fails harnesses that are right.
 
 Isomorphism, not byte equality, because the Bridge's records are blank nodes and
 blank node labels are not stable. RFC section 11 names RDF Dataset
@@ -97,6 +102,28 @@ properly, and says so against the comparison the pilot's oracle uses today:
 `cascade-cli`'s `tests/clinvar-conformance.test.ts` compares
 `riot --output=nq | sort` byte for byte, which assumes the same thing without
 deciding it.
+
+A multiset, not an ordered array, because no entry in a findings sidecar refers
+to a position, so the order carries no meaning. This replaced an ordering rule —
+"entry for entry, in the sort order (`sourceField`, `severity`, `reason`)" — that
+was written in the pilot adapter and measured there before being carried up.
+`cascade-cli` wrote the oracles with `localeCompare`, which is ICU collation, in
+which `/` sorts before `@` although U+002F is above U+0040; across the four
+committed sidecars, 78, 56, 6 and 1 adjacent pairs are out of code-point order.
+A harness comparing with Java's `String.compareTo`, or with JavaScript's `<`,
+puts the same correctly mapped entries in a different order and reports a false
+failure. Requiring the committed order would make every Bridge carry ICU, and
+pin a CLDR version nothing states, to compare a bookkeeping array.
+
+Multiplicity **is** compared: entries do repeat, the repeats are identical whole
+objects, and a set comparison would silently lose them.
+
+Separately, and as file hygiene rather than judgement: a sidecar written from
+scratch SHOULD be sorted by Unicode code point on (`sourceField`, `severity`,
+`reason`), because every language reproduces code-point order identically and it
+keeps regeneration diffs readable. That is a property of the file and never of
+the comparison, so a sidecar copied verbatim from elsewhere is not re-sorted to
+satisfy it.
 
 ### `bridge:InputOnlyTest`
 
@@ -168,7 +195,8 @@ the form every W3C test suite's implementation reports take: one
 `earl:Assertion` per manifest entry, with `earl:test` the entry's IRI,
 `earl:subject` the Bridge, `earl:outcome` and `earl:mode automatic`. An
 adapter's tier is then a query over those reports rather than a claim in the
-adapter, and the catalogue is where the query's answer is recorded
+adapter, and a catalogue — downstream of every adapter and every Bridge, and no
+part of this repository — is where the query's answer is recorded
 ([`alignment.md`](alignment.md)).
 
 No Bridge exists, so no EARL report exists, and nothing in this repository has

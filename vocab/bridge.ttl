@@ -19,9 +19,11 @@
 #
 # An adapter does not declare a tier. RFC section 11: an adapter's tier is
 # measured, by running its fixtures on every published Bridge, and recorded
-# in the catalog; the catalog (catalog/adapters.ttl in this repository) is
-# where "universal" or "limited" is read from, computed from which Bridges
-# pass the adapter's test manifest, never from a claim in the adapter.
+# in a catalogue - a repository downstream of every adapter and every Bridge,
+# which does not exist yet and is no part of this one (docs/alignment.md).
+# "Universal" or "limited" is read from there, computed from which Bridges
+# pass the adapter's test manifest, never from a claim in the adapter and
+# never from anything in this repository.
 #
 # Test terms: a small set on top of W3C's mf: test-manifest vocabulary (the
 # one every W3C RDF-family test suite is written in), the way the SHACL test
@@ -38,11 +40,23 @@
 #            (the tier is measured, above; an adapter states none);
 #   added    bridge:specPin, the commit of this specification an adapter is
 #            written against, the same shape as bridge:vocabularyPin;
-#   changed  bridge:profileRequired loses its rdfs:domain, so a catalog
-#            entry (a schema:SoftwareSourceCode standing for an adapter at a
-#            commit) can restate the adapter's profiles without being typed
-#            an adapter; the ontology header names this repository.
-# Every other term and comment is as it was.
+#            the ontology header names this repository.
+# Every other term and comment was as it was.
+#
+# Changes at 0.2.0:
+#   restored bridge:profileRequired's rdfs:domain bridge:Adapter. It had been
+#            dropped so that an entry in this repository's catalogue of
+#            adapters could restate an adapter's profiles without being typed
+#            an adapter; that catalogue is gone, because a specification must
+#            not know which adapters exist, so the reason lapsed and the
+#            domain is the honest statement again: only an adapter requires a
+#            profile;
+#   changed  bridge:IsomorphicConversionTest and bridge:findings, which
+#            required the produced findings to equal the expected sidecar
+#            entry for entry in a sort order. They are compared as a multiset
+#            instead. The rule was written in the pilot adapter, measured
+#            there, and carried up here; the reasoning is on that adapter's
+#            issue #1 and in the terms' own comments.
 
 @prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 @prefix mf:     <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .
@@ -57,7 +71,7 @@
   dct:description "Terms for an adapter's manifest and its test manifest. Adapter terms: the classes bridge:Adapter, bridge:Envelope and bridge:Profile, and the properties that carry what schema.org cannot about an adapter package described as an RO-Crate. Test terms: three test types that carry the comparison rule, and the properties that name a test's input, expected output and the stamp predicates ignored when comparing, used with W3C's mf: test-manifest vocabulary (mf:Manifest, mf:entries, mf:name, mf:action, mf:result)."@en ;
   dct:created "2026-09-06"^^xsd:date ;
   owl:versionInfo "v1-draft" ;
-  rdfs:comment "DRAFT. The vocabulary of the Cascade Bridge Specification (the-cascade-protocol/spec#43), whose home is the cascade-bridge-spec repository. Seeded from the pilot adapter, bridge-adapter-clinvar, at 0b2d548, where it was two namespaces in name only before that: the test terms were bt: (bridge-test) before the adapter terms joined them. No compatibility is promised before a numbered release."@en ;
+  rdfs:comment "DRAFT. The vocabulary of the Cascade Bridge Specification (the-cascade-protocol/spec#43), whose home is the cascade-bridge-spec repository. Seeded from a pilot adapter, where it was two namespaces in name only before that: the test terms were bt: (bridge-test) before the adapter terms joined them. Which adapter, and at which commit, is in this file's header, because it is a fact about this vocabulary's history and not a dependency: nothing in this repository names an adapter it reads. No compatibility is promised before a numbered release."@en ;
   rdfs:seeAlso <https://github.com/the-cascade-protocol/spec/issues/43> ,
                <https://github.com/jayostis/cascade-bridge-spec> .
 
@@ -99,7 +113,8 @@ bridge:xslt-3 a bridge:Profile ;
 
 bridge:profileRequired a owl:ObjectProperty ;
   rdfs:label "profile required"@en ;
-  rdfs:comment "A Bridge profile the adapter needs beyond Core, by IRI; repeatable, zero or more. An adapter that needs Core only names none. An adapter does not declare a tier: whether it is universal or limited is measured by the catalog from which Bridges pass its test manifest (RFC section 11), and a lint may say \"universal candidate\" only when the package holds no code and every profile named here is in Core. Stated on the adapter, and restated on the adapter's catalog entry so a Bridge can pick adapters without cloning them; the two must agree."@en ;
+  rdfs:comment "A Bridge profile the adapter needs beyond Core, by IRI; repeatable, zero or more. An adapter that needs Core only names none. This is all an adapter declares about where it runs: its tier is not declared here but measured, by a catalogue that records which published Bridges pass its test manifest (RFC section 11), and a lint may say \"universal candidate\" only when the package holds no code and every profile named here is in Core."@en ;
+  rdfs:domain bridge:Adapter ;
   rdfs:range bridge:Profile ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
@@ -201,7 +216,7 @@ bridge:documentSchema a owl:ObjectProperty ;
 bridge:IsomorphicConversionTest a owl:Class ;
   rdfs:subClassOf mf:ManifestEntry ;
   rdfs:label "Isomorphic conversion test"@en ;
-  rdfs:comment "Run the mapping on bridge:input; the produced graph must be isomorphic to bridge:graph (blank nodes relabelled, IRIs and literals exact) after every triple whose predicate is a bridge:ignorePredicate (the test's own if it carries any, else the manifest's) is removed from both sides; the produced findings must equal bridge:findings entry for entry in the conformance sort order (sourceField, severity, reason)."@en ;
+  rdfs:comment "Run the mapping on bridge:input; the produced graph must be isomorphic to bridge:graph (blank nodes relabelled, IRIs and literals exact) after every triple whose predicate is a bridge:ignorePredicate (the test's own if it carries any, else the manifest's) is removed from both sides; the produced findings must equal bridge:findings as a multiset: the same entries with the same multiplicity, in any order, two entries being equal when they have the same member names and equal values (JSON object equality). Order is deliberately not compared. A comparison is insensitive to everything the format does not mean, and a findings array means neither its element order nor the collation the writer happened to sort in: the pilot adapter's sidecars are in ICU collation order, where '/' precedes '@' against their code points, so requiring the committed order would make every harness depend on ICU and on a CLDR version no adapter states, to compare an array in which no entry refers to a position. Multiplicity is compared, because entries repeat and the repeats are identical. A sidecar written from scratch SHOULD be sorted by Unicode code point on (sourceField, severity, reason), which every language reproduces identically and which keeps regeneration diffs readable, but that is a property of the file and never of this comparison."@en ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
 bridge:InputOnlyTest a owl:Class ;
@@ -255,7 +270,7 @@ bridge:graph a owl:ObjectProperty ;
 
 bridge:findings a owl:ObjectProperty ;
   rdfs:label "findings"@en ;
-  rdfs:comment "The expected findings sidecar (the conformance repository's gaps.json shape), by IRI. In the mf:result of a bridge:IsomorphicConversionTest."@en ;
+  rdfs:comment "The expected findings sidecar (the conformance repository's gaps.json shape), by IRI, a crate File entity. In the mf:result of a bridge:IsomorphicConversionTest, where it is compared as a multiset; the order the file happens to be written in is not part of the comparison."@en ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
 bridge:records a owl:DatatypeProperty ;
