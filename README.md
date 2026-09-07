@@ -73,7 +73,9 @@ CLAUDE.md                      agent context: what is normative, the pinning rul
 vocab/bridge.ttl               the bridge: vocabulary: adapter terms, and test terms on top of W3C's mf:
 shapes/bridge.shapes.ttl       SHACL shapes for an adapter's crate and its test manifest, as one graph
 profile/ro-crate-metadata.json the RO-Crate 1.2 Profile Crate an adapter names in conformsTo
-scripts/validate-adapter.py    the adapter lint: RO-Crate validation, SHACL conformance, file inventory
+scripts/validate-adapter.py    the adapter lint: all six checks of docs/validation.md
+scripts/selftest-lint.py       the mutation cases that show each check failing
+fixtures/synthetic-adapter/    a synthetic adapter package: the lint's own test subject
 .github/actions/validate-adapter/  the lint published as an action, which an adapter's CI calls
 docs/adapter-manifest.md       the adapter manifest contract
 docs/test-manifest.md          the test manifest contract
@@ -112,23 +114,30 @@ repository. The full field-by-field contract is
 ## How to validate an adapter
 
 ```bash
-python3 -m pip install pyshacl rdflib roc-validator
+python3 -m pip install pyshacl rdflib roc-validator lxml
 python3 scripts/validate-adapter.py <path to an adapter checkout>
 ```
 
-That runs the three checks that exist: the package is a valid RO-Crate 1.2; the
-crate plus the test manifest it names, loaded as one graph with each file's own
-location as base, conform to `shapes/bridge.shapes.ttl` under pySHACL with
-SHACL-SPARQL enabled; and every git-tracked file is either described by the crate
-with a declared `encodingFormat` in the allowed set, or is one of the four
-repository documents or a dotfile. Exit status is 0 when all three pass.
+That runs all six checks: the package is a valid RO-Crate 1.2; the crate plus
+the test manifest it names, loaded as one graph with each file's own location as
+base, conform to `shapes/bridge.shapes.ttl` under pySHACL with SHACL-SPARQL
+enabled; every git-tracked file is either described by the crate with a declared
+`encodingFormat` in the allowed set, or is one of the four repository documents
+or a dotfile; every digest in the crate is recomputed over the committed bytes;
+every committed input validates against the schema its envelope declares; and
+every expected graph parses as Turtle. Exit status is 0 when all six pass.
+
+**Every check says whether it ran.** `ok`, `nothing to check` and `not run` are
+three different sentences, and the run ends by giving each of the six the word
+it earned: a lint that silently checks nothing is worse than no lint. Nothing
+reaches the network, so the run works offline and needs no credentials.
 
 An adapter does not run that by hand. The same checks are published from this
 repository as a composite GitHub Action, so an adapter's whole CI is:
 
 ```yaml
       - uses: actions/checkout@v4
-      - uses: jayostis/cascade-bridge-spec/.github/actions/validate-adapter@v0.2.0
+      - uses: jayostis/cascade-bridge-spec/.github/actions/validate-adapter@v0.3.0
 ```
 
 The tag in that line is the adapter's `bridge:specPin` in executable form: the
@@ -137,8 +146,11 @@ The action takes a directory, names no adapter, and clones nothing but the
 caller's own checkout — the arrow runs from adapter to specification.
 
 [`docs/validation.md`](docs/validation.md) has the full six-item list a
-conforming package must pass, says which three are specified and not yet built,
-and names the media types an adapter package may declare.
+conforming package must pass, the words a check may be reported in, and the
+media types an adapter package may declare.
+[`fixtures/README.md`](fixtures/README.md) is the synthetic package the lint is
+run against here, and `scripts/selftest-lint.py` is where each check is seen
+failing.
 
 ## Alignment, in brief
 

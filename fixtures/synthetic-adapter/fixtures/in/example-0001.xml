@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  A synthetic input in the set envelope. Two records, invented; no such
+  accession exists anywhere. Validated against schema/example-set.xsd, the
+  envelope's bridge:documentSchema (docs/validation.md, check 5).
+-->
+<ExampleRecordSet>
+  <ExampleRecord Accession="EX000001" Version="3">
+    <Label>first synthetic record</Label>
+    <Note>a free-text note the mapping has no term for, which is what the findings sidecar beside this file records</Note>
+  </ExampleRecord>
+  <ExampleRecord Accession="EX000002" Version="1">
+    <Label>second synthetic record</Label>
+  </ExampleRecord>
+</ExampleRecordSet>

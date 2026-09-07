@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  The source-side schema of an invented format, for the sole purpose of giving
+  this repository's lint something of its own to validate. Nothing here
+  describes a real format, a real publisher or a real adapter.
+
+  This file stands in for the schema an adapter pins byte for byte from its
+  publisher: the crate records a sha256 computed over these bytes and an md5
+  standing for the one the publisher publishes beside the file at its source,
+  so that check 4 of docs/validation.md has both a local claim and a
+  publisher's claim to recompute. Its declared root element, ExampleRecord, is
+  the adapter's unit, and it is the schema an input whose envelope declares no
+  document schema falls back to (check 5).
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+  <xs:element name="ExampleRecord" type="ExampleRecordType"/>
+
+  <xs:complexType name="ExampleRecordType">
+    <xs:sequence>
+      <xs:element name="Label" type="xs:string"/>
+      <xs:element name="Note" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="Accession" type="xs:string" use="required"/>
+    <xs:attribute name="Version" type="xs:positiveInteger" use="required"/>
+  </xs:complexType>
+
+</xs:schema>

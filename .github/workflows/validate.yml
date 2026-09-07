@@ -1,14 +1,20 @@
 # This repository's own CI, and all of it. Everything docs/validation.md and
 # CLAUDE.md say can be checked without a Bridge, run on every change.
 #
-# It validates no adapter, and that is deliberate. A specification that clones
-# the adapters it knows about goes red because of a property missing from
-# somebody else's repository, and grows a job per adapter for as long as
+# It validates no real adapter, and that is deliberate. A specification that
+# clones the adapters it knows about goes red because of a property missing
+# from somebody else's repository, and grows a job per adapter for as long as
 # adapters keep being written. The check an adapter needs is published from
 # here instead, as .github/actions/validate-adapter, and each adapter's own CI
 # calls it at a tag of this repository: the arrow runs from adapter to
 # specification, and this repository never learns that any particular adapter
 # exists (docs/alignment.md).
+#
+# The lint still has to be exercised, or it is published untested. The second
+# job below runs it against fixtures/synthetic-adapter, a synthetic package
+# this repository wrote and owns, and then runs the mutation cases that show
+# each check failing. A subject this repository owns is the one way to test a
+# published lint without knowing an adapter.
 name: validate
 
 on:
@@ -50,12 +56,38 @@ jobs:
       - name: the profile crate is a valid RO-Crate 1.2
         run: rocrate-validator validate profile/ --profile-identifier ro-crate-1.2 --no-paging
 
-      # The lint this repository publishes has to run somewhere, or it is
-      # published untested. It runs here against a package built to fail: the
-      # fixture holds no adapter, so the lint must say so and exit non-zero.
-      # A fixture, not an adapter: it names no format, no repository and no
-      # real package.
-      - name: the published lint reports a package that is not an adapter
+  lint:
+    name: the published lint, on a package of its own
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The action, called by local path, so that what runs here is the file an
+      # adapter's CI calls at a tag rather than a copy of the command inside
+      # it. Called by path there is no ref to resolve to a SHA, so the fixture
+      # package's bridge:specPin is reported and not compared, and the run says
+      # which of the two happened.
+      - name: the action validates the fixture package
+        uses: ./.github/actions/validate-adapter
+        with:
+          path: fixtures/synthetic-adapter
+
+      # The step above installed python3, pyshacl, rdflib, roc-validator and
+      # lxml; the two below reuse them.
+      #
+      # A lint nobody has seen fail is a lint nobody should trust. Each case
+      # copies the fixture package into a temporary directory, breaks exactly
+      # one property, and asserts that the lint says so in the words
+      # docs/validation.md fixes -- and that a check which found nothing of its
+      # kind is never reported in the same word as one that ran and passed.
+      # Nothing tracked is mutated and no mutated copy is written inside the
+      # repository.
+      - name: the lint can be seen failing
+        run: python3 scripts/selftest-lint.py
+
+      # The cheapest negative of all: a directory that is not an adapter
+      # package at all. It names no format, no repository and no real package.
+      - name: the lint refuses a directory that is not an adapter package
         run: |
           set -euo pipefail
           mkdir -p not-an-adapter
