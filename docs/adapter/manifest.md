@@ -16,7 +16,7 @@ the RFC's own text.
 
 The cost is stated rather than hidden: JSON-LD is less pleasant to hand-edit
 than YAML and has no field completion. The RO-Crate validator and the SHACL
-shapes in [`shapes/bridge.shapes.ttl`](../shapes/bridge.shapes.ttl) are the
+shapes in [`shapes/bridge.shapes.ttl`](../../shapes/bridge.shapes.ttl) are the
 checks instead.
 
 ## The root entity is the adapter
@@ -28,7 +28,7 @@ query written with `schema:conformsTo` matches nothing), and the `bridge:`
 vocabulary carries what neither has.
 
 Every cardinality below is enforced by `<#Adapter>` in the shapes; every term is
-declared with an `rdfs:comment` in [`vocab/bridge.ttl`](../vocab/bridge.ttl).
+declared with an `rdfs:comment` in [`vocab/bridge.ttl`](../../vocab/bridge.ttl).
 
 | property | cardinality | value | what it is |
 |---|---|---|---|
@@ -53,7 +53,7 @@ declared with an `rdfs:comment` in [`vocab/bridge.ttl`](../vocab/bridge.ttl).
 An adapter **does not declare a tier**. RFC section 11: a tier is measured, by
 running the adapter's fixtures on every published Bridge, and recorded in a
 catalogue, which is a repository downstream of every adapter and every Bridge and
-is no part of this one ([`alignment.md`](alignment.md)).
+is no part of this one ([`alignment.md`](../pinning.md)).
 `bridge:tier`, `bridge:Universal` and `bridge:Limited` existed in the
 pilot's copy of the vocabulary and were removed in the move to this repository.
 What a lint may compute from the package alone is a *candidate*, never a claim;
@@ -75,7 +75,7 @@ Two properties together:
 `conformsTo` naming
 `https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/` says *which
 contract*; `bridge:specPin` says *which revision of it*. The profile IRI is
-described by [`profile/ro-crate-metadata.json`](../profile/ro-crate-metadata.json),
+described by [`profile/ro-crate-metadata.json`](../../profile/ro-crate-metadata.json),
 an RO-Crate Profile Crate whose constraints resource is the SHACL shapes. The
 IRI does not dereference yet; until it does, the specification is read from this
 repository, and the IRI is an identifier rather than a location.
@@ -86,7 +86,7 @@ The pin is an entity, not a string: a `SoftwareSourceCode` in the crate with
 `conformance/scripts/SPEC_PIN` carries as `repo=` and `commit=`. Every commit an
 adapter pins is tagged in the repository it pins, for the reason SPEC_PIN
 records: a branch tip is not a guarantee, and a pin to an untagged commit dies
-at `git checkout` the first time a branch is reset. [`alignment.md`](alignment.md)
+at `git checkout` the first time a branch is reset. [`alignment.md`](../pinning.md)
 is the whole of that discipline.
 
 ## Envelope entities

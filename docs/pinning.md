@@ -69,7 +69,7 @@ resolves the ref it was called at and hands the SHA to the lint, which fails the
 run when the crate's pin names a different one; where the ref cannot be resolved
 the run says so rather than quietly checking nothing.
 
-What the lint runs is [`validation.md`](validation.md).
+What the lint runs is [`validation.md`](adapter/validation.md).
 
 ## Every dependency is a commit SHA, and every pinned SHA is tagged
 
@@ -138,7 +138,7 @@ that asserts more than it means makes correct work fail, and the failure lands o
 whoever runs it next rather than on whoever wrote it.
 
 An RDF graph does not mean its blank node labels, so
-[`test-manifest.md`](test-manifest.md) relabels them before comparing. A JSON
+[`test-manifest.md`](adapter/test-manifest.md) relabels them before comparing. A JSON
 array of findings does not mean its element order, so it is compared as a
 multiset. That second rule replaced an ordering requirement at 0.2.0, and the
 measurement is worth keeping: the pilot adapter's committed sidecars were written
@@ -151,14 +151,7 @@ only fails harnesses that are right.
 
 ## A Bridge's results flow as reports, not as pins
 
-RFC section 11 measures an adapter's tier by running its fixtures on every
-published Bridge. That measurement must not become a pin in either direction: a
-Bridge pinning an adapter would be claiming ownership of it, and an adapter
-pinning a Bridge would stop being portable.
-
-It flows as **EARL** — one `earl:Assertion` per manifest entry, with `earl:test`
-the entry's IRI, `earl:subject` the Bridge and `earl:outcome` the result — which
-is how every W3C test suite records implementation results. A tier is a query
-over those assertions. Nobody declares it, no adapter computes it from its own
-files, and a lint may say only `universal candidate`
-([`validation.md`](validation.md)).
+A Bridge's verdict on an adapter reaches a catalogue as an EARL report, never as
+a pin in either direction: a Bridge pinning an adapter would be claiming
+ownership of it, and an adapter pinning a Bridge would stop being portable. The
+report's shape is [`engine/executing.md`](engine/executing.md).

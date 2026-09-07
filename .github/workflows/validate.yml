@@ -1,4 +1,4 @@
-# This repository's own CI, and all of it. Everything docs/validation.md and
+# This repository's own CI, and all of it. Everything docs/adapter/validation.md and
 # CLAUDE.md say can be checked without a Bridge, run on every change.
 #
 # It validates no real adapter, and that is deliberate. A specification that
@@ -8,7 +8,7 @@
 # here instead, as .github/actions/validate-adapter, and each adapter's own CI
 # calls it at a tag of this repository: the arrow runs from adapter to
 # specification, and this repository never learns that any particular adapter
-# exists (docs/alignment.md).
+# exists (docs/pinning.md).
 #
 # The lint still has to be exercised, or it is published untested. The second
 # job below runs it against fixtures/synthetic-adapter, a synthetic package
@@ -78,7 +78,7 @@ jobs:
       # A lint nobody has seen fail is a lint nobody should trust. Each case
       # copies the fixture package into a temporary directory, breaks exactly
       # one property, and asserts that the lint says so in the words
-      # docs/validation.md fixes -- and that a check which found nothing of its
+      # docs/adapter/validation.md fixes -- and that a check which found nothing of its
       # kind is never reported in the same word as one that ran and passed.
       # Nothing tracked is mutated and no mutated copy is written inside the
       # repository.

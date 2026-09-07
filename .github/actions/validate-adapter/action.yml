@@ -7,9 +7,9 @@
 # adapter exists, names none, and clones nothing but the caller's own
 # checkout. The specification publishes an artefact and the adapter consumes
 # it, so the arrow runs from adapter to specification, which is the direction
-# docs/alignment.md requires.
+# docs/pinning.md requires.
 #
-# All six checks of docs/validation.md run, and the run ends by giving each of
+# All six checks of docs/adapter/validation.md run, and the run ends by giving each of
 # them the word it earned: `ok`, `FAIL`, `nothing to check` or `not run`. A
 # check whose tool is absent, and a check that found nothing of its kind in the
 # package, are never reported in the same word as a check that ran and passed.
@@ -29,7 +29,7 @@
 name: Validate a Cascade Bridge Adapter
 description: >-
   Validate an adapter package against the Cascade Bridge Specification: all six
-  checks of docs/validation.md -- RO-Crate 1.2, the SHACL shapes over the crate
+  checks of docs/adapter/validation.md -- RO-Crate 1.2, the SHACL shapes over the crate
   and the test manifest as one graph, the file inventory, the digests, every
   input against the schema its envelope declares, and every expected graph as
   Turtle. Each check reports whether it ran.

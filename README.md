@@ -32,10 +32,10 @@ not a conforming adapter package:
 - the `bridge:` vocabulary, [`vocab/bridge.ttl`](vocab/bridge.ttl);
 - the SHACL shapes, [`shapes/bridge.shapes.ttl`](shapes/bridge.shapes.ttl);
 - the adapter profile, [`profile/ro-crate-metadata.json`](profile/ro-crate-metadata.json);
-- the adapter manifest contract, [`docs/adapter-manifest.md`](docs/adapter-manifest.md);
-- the test manifest contract, [`docs/test-manifest.md`](docs/test-manifest.md);
-- the validation list, [`docs/validation.md`](docs/validation.md);
-- the alignment rules, [`docs/alignment.md`](docs/alignment.md).
+- the adapter manifest contract, [`docs/adapter/manifest.md`](docs/adapter/manifest.md);
+- the test manifest contract, [`docs/adapter/test-manifest.md`](docs/adapter/test-manifest.md);
+- the validation list, [`docs/adapter/validation.md`](docs/adapter/validation.md);
+- the alignment rules, [`docs/pinning.md`](docs/pinning.md).
 
 Still open, and settled on spec#43 rather than here:
 
@@ -44,7 +44,7 @@ Still open, and settled on spec#43 rather than here:
   and marks it as question 1 for the spike. Until it is answered, only an adapter
   requiring no profile at all can be shown to need Core alone.
 - **The canonical findings model.** RFC section 8 requires one; the shape is not
-  chosen. [`docs/fixtures-and-provenance.md`](docs/fixtures-and-provenance.md)
+  chosen. [`docs/adapter/fixtures.md`](docs/adapter/fixtures.md)
   states the two published candidates and the constraint keeping the question
   open.
 - **Router precedence** when two adapters' detect rules both match a document.
@@ -52,25 +52,32 @@ Still open, and settled on spec#43 rather than here:
 
 Where a document here touches an open question, it says so and links spec#43.
 
+## Start here
+
+The specification exists so two things can be built. Pick one; you do not need
+the other.
+
+| you are building | start at | what it covers |
+|---|---|---|
+| **an adapter** — a data package for one source format | [`docs/adapter/`](docs/adapter/) | the crate, fixtures, the test manifest, and the six checks your package must pass |
+| **an engine** — a Bridge, the thing that runs adapters | [`docs/engine/`](docs/engine/) | the stages you run around a mapping, and how you execute an adapter's test manifest |
+
+[`docs/pinning.md`](docs/pinning.md) is short and both need it: how each side
+names the revision of this specification it was built against.
+
 ## Layout
 
 ```
-README.md                      this file
-LICENSE                        Apache-2.0
-CLAUDE.md                      agent context: what is normative, the pinning rule, what to run
 vocab/bridge.ttl               the bridge: vocabulary: adapter terms, and test terms on top of W3C's mf:
 shapes/bridge.shapes.ttl       SHACL shapes for an adapter's crate and its test manifest, as one graph
 profile/ro-crate-metadata.json the RO-Crate 1.2 Profile Crate an adapter names in conformsTo
-scripts/validate-adapter.py    the adapter lint: all six checks of docs/validation.md
+docs/adapter/                  building an adapter: manifest, fixtures, test manifest, validation
+docs/engine/                   building an engine: stages, executing a test manifest
+docs/pinning.md                how the three sides name the revisions they were built against
+scripts/validate-adapter.py    the adapter lint: the six checks of docs/adapter/validation.md
 scripts/selftest-lint.py       the mutation cases that show each check failing
 fixtures/synthetic-adapter/    a synthetic adapter package: the lint's own test subject
 .github/actions/validate-adapter/  the lint published as an action, which an adapter's CI calls
-docs/adapter-manifest.md       the adapter manifest contract
-docs/test-manifest.md          the test manifest contract
-docs/fixtures-and-provenance.md  committed inputs, referenced datasets, the findings sidecar
-docs/stages.md                 the RFC's engine stages as Enterprise Integration Patterns
-docs/validation.md             what a conforming adapter package must pass
-docs/alignment.md              keeping spec, adapters and Bridges in step
 .github/workflows/validate.yml CI: this repository's own files, and nothing else's
 ```
 
@@ -97,7 +104,7 @@ it*, as a `SoftwareSourceCode` entity in the crate carrying `codeRepository` and
 identifier, and the Profile Crate that describes it is
 [`profile/ro-crate-metadata.json`](profile/ro-crate-metadata.json) in this
 repository. The full field-by-field contract is
-[`docs/adapter-manifest.md`](docs/adapter-manifest.md).
+[`docs/adapter/manifest.md`](docs/adapter/manifest.md).
 
 ## How to validate an adapter
 
@@ -109,7 +116,7 @@ python3 scripts/validate-adapter.py <path to an adapter checkout>
 That runs the six checks a conforming adapter package must pass — the crate, the
 shapes, the file inventory, the digests, the inputs against their schemas and the
 expected graphs. What each one is, and what a failure means, is
-[`docs/validation.md`](docs/validation.md); it is the authority and this is not a
+[`docs/adapter/validation.md`](docs/adapter/validation.md); it is the authority and this is not a
 second copy of it. Exit status is 0 when all six pass, and nothing reaches the
 network, so the run works offline and needs no credentials.
 
@@ -130,7 +137,7 @@ two name the same commit of this repository, and the action checks that they do.
 The action takes a directory, names no adapter, and clones nothing but the
 caller's own checkout — the arrow runs from adapter to specification.
 
-[`docs/validation.md`](docs/validation.md) has the full six-item list a
+[`docs/adapter/validation.md`](docs/adapter/validation.md) has the full six-item list a
 conforming package must pass, the words a check may be reported in, and the
 media types an adapter package may declare.
 [`fixtures/README.md`](fixtures/README.md) is the synthetic package the lint is
@@ -156,7 +163,7 @@ mean. And a Bridge's verdict on an adapter reaches a catalogue as an EARL
 report, never as a pin in either direction.
 
 The reasoning, including the part inherited from
-`conformance/scripts/SPEC_PIN`, is in [`docs/alignment.md`](docs/alignment.md).
+`conformance/scripts/SPEC_PIN`, is in [`docs/pinning.md`](docs/pinning.md).
 
 ## Related repositories
 

@@ -2,7 +2,7 @@
 
 Every file an adapter ships and every dataset it references is described in the
 adapter's crate. The crate is the manifest and the provenance record in one
-graph ([`adapter-manifest.md`](adapter-manifest.md)); this document is the part
+graph ([`manifest.md`](manifest.md)); this document is the part
 of it that is about fixtures.
 
 ## Committed inputs are small, and carry a digest
@@ -121,5 +121,5 @@ written findings in two shapes, the choice has been made by accident.
 
 Until it is settled, this specification says only what is true: the sidecar is
 the mapping's contribution to the Bridge's findings channel (the Enterprise
-Integration Patterns Invalid Message Channel, [`stages.md`](stages.md)), it is
+Integration Patterns Invalid Message Channel, [`stages.md`](../engine/stages.md)), it is
 compared exactly, and its shape is not yet standard.

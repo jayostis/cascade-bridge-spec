@@ -17,8 +17,8 @@ a change to the "no code" guarantee, not housekeeping.
 - **A changed shape is run against a real adapter checkout by hand**, and the
   commit says which adapter and at which commit. Not in CI: a job that cloned an
   adapter would go red for somebody else's missing property, and would grow a job
-  per adapter forever (`../docs/alignment.md`).
+  per adapter forever (`../docs/pinning.md`).
 - **A shape meant to reject something is verified by mutation** — break the
   adapter's copy, see it go red, restore it, see it go green. A constraint nobody
   saw fail is a constraint nobody knows fires.
-- What each shape checks must match `../docs/validation.md` exactly.
+- What each shape checks must match `../docs/adapter/validation.md` exactly.

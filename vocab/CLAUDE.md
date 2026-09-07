@@ -17,7 +17,7 @@ the SHACL test suite adds `sht:`.
   `genomics:` or any other Cascade vocabulary goes through spec's RFC process.
 - **An adapter declares no tier.** RFC section 11; `bridge:tier` and its
   individuals were removed and do not come back.
-- Term names and cardinalities must match `../docs/adapter-manifest.md` and
-  `../docs/test-manifest.md` exactly. Change both in one commit.
+- Term names and cardinalities must match `../docs/adapter/manifest.md` and
+  `../docs/adapter/test-manifest.md` exactly. Change both in one commit.
 
 It parses with `python3 -c "from rdflib import Graph; Graph().parse('vocab/bridge.ttl')"`.

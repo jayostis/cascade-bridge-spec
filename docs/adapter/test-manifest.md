@@ -157,19 +157,6 @@ sixty. A fact about the Bridge belongs where it is true once.
 
 ## What a harness owes
 
-A harness executes the manifest; it does not interpret it. Concretely: it reads
-the entry types rather than the file names, applies the rule the type carries,
-removes the inherited or overridden stamp set from both sides before comparing,
-and reports one result per entry. RFC section 11 and the phase 2 notes on the
-pilot's issue put that report in **EARL** (W3C Evaluation and Report Language),
-the form every W3C test suite's implementation reports take: one
-`earl:Assertion` per manifest entry, with `earl:test` the entry's IRI,
-`earl:subject` the Bridge, `earl:outcome` and `earl:mode automatic`. An
-adapter's tier is then a query over those reports rather than a claim in the
-adapter, and a catalogue — downstream of every adapter and every Bridge, and no
-part of this repository — is where the query's answer is recorded
-([`alignment.md`](alignment.md)).
-
-No Bridge exists, so no EARL report exists, and nothing in this repository has
-yet executed a manifest. That is the honest state of the contract: written from
-one adapter, checked by SHACL, and unproven until `cascade-bridge-java` runs it.
+The other side of this document is [`../engine/executing.md`](../engine/executing.md):
+how a harness loads the two files as one graph, which rule it applies to each
+entry type, and the EARL report it produces.

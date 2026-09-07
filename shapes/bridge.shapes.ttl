@@ -5,8 +5,8 @@
 # entity. The adapter profile (profile/ro-crate-metadata.json) names this file
 # as its constraints resource.
 #
-# What the shapes require is below, and in prose in docs/adapter-manifest.md,
-# docs/test-manifest.md and docs/validation.md. What reading them does not
+# What the shapes require is below, and in prose in docs/adapter/manifest.md,
+# docs/adapter/test-manifest.md and docs/adapter/validation.md. What reading them does not
 # tell you:
 #
 #   Every IRI naming a committed file carries sh:class schema:MediaObject,
@@ -22,7 +22,7 @@
 #   The allowed encodingFormat set, <#DescribedFile> below, is where "no code"
 #   is enforced: not by scanning a file for a language, but by refusing one
 #   whose media type says it executes. This file is the authority for the set,
-#   and docs/validation.md restates it for the reader.
+#   and docs/adapter/validation.md restates it for the reader.
 #
 #   The links between crate and manifest are sh:sparql, so the engine must
 #   support SHACL-SPARQL (pySHACL, Jena).
@@ -91,7 +91,7 @@
     sh:path <http://purl.org/dc/terms/conformsTo> ;
     sh:hasValue <https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/> ;
     sh:severity sh:Warning ;
-    sh:message "The adapter does not name the Cascade Bridge Adapter profile, https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/, in conformsTo; that IRI on the crate root is how an adapter declares conformance to this specification (docs/adapter-manifest.md)."
+    sh:message "The adapter does not name the Cascade Bridge Adapter profile, https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/, in conformsTo; that IRI on the crate root is how an adapter declares conformance to this specification (docs/adapter/manifest.md)."
   ] ;
   sh:property [
     sh:path bridge:profileRequired ;
@@ -225,7 +225,7 @@
 # ----------------------------------------------------------------------------
 #
 # This is where "no code" stops being a claim and becomes a measured property.
-# The lint's file inventory (docs/validation.md, check 3) asks of every
+# The lint's file inventory (docs/adapter/validation.md, check 3) asks of every
 # git-tracked file whether the crate describes it and whether it declares an
 # encodingFormat; this shape asks of every declared encodingFormat whether it
 # is a media type an adapter package may hold. Neither question is answered by
@@ -267,7 +267,7 @@
       "text/turtle"
       "text/xml"
     ) ;
-    sh:message "encodingFormat is one of the media types an adapter package may declare: application/gzip, application/json, application/ld+json, application/sparql-query, application/xml, application/xslt+xml, application/yaml, text/csv, text/markdown, text/plain, text/turtle, text/xml. A media type outside that set is how a file that executes would enter a package that claims to be data (docs/validation.md)."
+    sh:message "encodingFormat is one of the media types an adapter package may declare: application/gzip, application/json, application/ld+json, application/sparql-query, application/xml, application/xslt+xml, application/yaml, text/csv, text/markdown, text/plain, text/turtle, text/xml. A media type outside that set is how a file that executes would enter a package that claims to be data (docs/adapter/validation.md)."
   ] .
 
 # ============================================================================
