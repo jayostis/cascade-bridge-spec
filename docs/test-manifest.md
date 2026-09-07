@@ -6,42 +6,13 @@ the pilot's is at `fixtures/manifest.ttl`. A Bridge's harness executes it.
 Nothing in an adapter package runs it, and nothing in an adapter package is a
 test runner.
 
-## Why this shape
+## One contract, not a menu
 
-A test manifest for RDF conversion is a solved problem. Every W3C RDF-family
-test suite — Turtle, SPARQL, JSON-LD, SHACL, RDF Dataset Canonicalization — is a
-manifest written in RDF with W3C's `mf:` test-manifest vocabulary
-(`http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#`), where each entry
-has a type, an `mf:action` (the input) and an `mf:result` (the expected output),
-and **the comparison rule is carried by the entry's type**. The RML test cases
-follow the same pattern. Against that, a YAML dialect would be the invented
-thing.
-
-Three consequences that matter more than the convention:
-
-1. **The cases and the provenance are one graph.** The crate is JSON-LD, the
-   manifest is Turtle, and each is loaded with its own file location as base, so
-   a dataset test names a release by the same IRI the crate describes it under,
-   an action names its envelope by the crate's entity, and walking from a test
-   to its input's digest and licence is a graph traversal rather than a string
-   match.
-2. **Validation is SHACL**, the project's own validation language and what the
-   conformance suite already runs.
-3. **Every RDF engine reads it identically.** Two Bridges parsing a YAML dialect
-   the same way is a hope; parsing Turtle the same way is a W3C guarantee, and
-   that guarantee is what the claim "one adapter, same graph, every runtime"
-   (RFC section 11) rests on.
-
-The cost is stated: Turtle gets syntax support and a SHACL check from ordinary
-editor tooling, not the per-field completion a JSON Schema would give a YAML
-file. Small, for a file that changes a few times a year.
-
-**One contract, not a menu.** An adapter does not choose among test conventions
-for the conformance claim, because every convention an adapter may choose is a
-harness every Bridge must implement, and two adapters proving "universal" by
-different rules prove different things. Profile-specific unit suites — XSpec
-over an `xslt-3` mapping's modules, say — are a separate, optional, declared
-matter, and are not part of the conformance claim.
+An adapter does not choose among test conventions. Every convention an adapter
+may choose is a harness every Bridge must implement, and two adapters proving
+"universal" by different rules prove different things. Profile-specific unit
+suites — XSpec over an `xslt-3` mapping's modules, say — are optional, declared,
+and no part of the conformance claim.
 
 ## The manifest
 

@@ -132,9 +132,10 @@ true for one document, and whether an adapter may declare a precedence. Nothing
 in this specification answers it, and no adapter should be written to depend on
 an answer.
 
-## What phase 2 adds
+## What an adapter with a mapping adds
 
-Three additions, none of which changes anything above.
+Three additions, none of which changes anything above. Import only; the export
+direction is not specified.
 
 - **The mapping, under Workflow RO-Crate.** When an adapter has a mapping, the
   crate takes the Workflow RO-Crate profile beside this one and names the entry
@@ -152,8 +153,3 @@ Three additions, none of which changes anything above.
   own namespace for values that have no Cascade term, at most one, its file a
   `File` in `hasPart`. Terms in it are the adapter's. No `cascade:` term is ever
   minted in an adapter; those go through spec's RFC process (RFC section 10).
-
-Nothing about the export direction is specified here. RFC section 6 puts an
-`out/` mapping in the package and the same seam crossed the other way, and the
-pilot is import-only, so this specification has nothing measured to say about it
-yet.

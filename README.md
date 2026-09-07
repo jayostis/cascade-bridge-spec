@@ -22,14 +22,7 @@ runs that data is a Bridge.
 `v1-draft`. Terms may be renamed, cardinalities may change, and the profile IRI
 does not dereference yet.
 
-This repository is **thin and pilot-driven**. Everything in it was seeded from
-phase 1 of one adapter,
-[cascade-bridge-adapter-clinvar](https://github.com/jayostis/cascade-bridge-adapter-clinvar),
-and nothing in it has yet been executed by a Bridge, because no Bridge exists.
-It was created now, rather than after the first engine, so that the phase 2
-engine is written against a contract with its own home instead of against files
-inside one adapter. A contract that lives inside the thing it constrains cannot
-be disagreed with.
+Nothing here has yet been executed by a Bridge, because no Bridge exists.
 
 ### What is normative here, and what is still discussed on spec#43
 
@@ -55,11 +48,7 @@ Still open, and settled on spec#43 rather than here:
   states the two published candidates and the constraint keeping the question
   open.
 - **Router precedence** when two adapters' detect rules both match a document.
-- **The export direction.** RFC section 6 puts an `out/` mapping in the package;
-  the pilot is import-only, so nothing measured can be said about it yet.
-- **Where the Bridge sits** relative to D-LAYERS-1's layers, and whether this
-  full-separation repository layout is the right one at all (RFC sections 3 and
-  15).
+- **The export direction.** Import only is specified; `out/` is not.
 
 Where a document here touches an open question, it says so and links spec#43.
 
@@ -172,23 +161,11 @@ The reasoning, including the part inherited from
 ## Related repositories
 
 - [the-cascade-protocol/spec](https://github.com/the-cascade-protocol/spec) —
-  the Cascade vocabularies and SHACL shapes an adapter writes to, the RFC this
-  specification is drawn from ([#43](https://github.com/the-cascade-protocol/spec/issues/43)),
-  and the identity RFC ([#38](https://github.com/the-cascade-protocol/spec/issues/38)).
-- [the-cascade-protocol/conformance](https://github.com/the-cascade-protocol/conformance) —
-  the fixture suite the pilot's oracles were copied from, and the source of the
-  pinning discipline in `docs/alignment.md`.
-- [the-cascade-protocol/cascade-cli](https://github.com/the-cascade-protocol/cascade-cli) —
-  the runtime whose format converters an adapter re-expresses as data, and whose
-  ClinVar conformance test is the comparison a test manifest restates.
+  the Cascade vocabularies and SHACL shapes an adapter writes to. An adapter
+  pins a revision of them with `bridge:vocabularyPin`.
 - [jayostis/cascade-bridge-adapter-clinvar](https://github.com/jayostis/cascade-bridge-adapter-clinvar) —
-  the pilot adapter every artefact here was seeded from, and the worked example
-  the documents cite. Nothing a machine reads in this repository names it: it
-  consumes this specification, not the other way round.
-- `cascade-bridge-java`, `cascade-bridge-js` — the Bridges that will execute a
-  test manifest, the JVM one as the ceiling and the JavaScript one as the floor
-  (RFC section 16). **Neither exists yet**, and until one does, nothing in this
-  specification has been run.
+  a worked adapter, useful as an example of a conforming package. Nothing a
+  machine reads here names it.
 
 ## Licence
 

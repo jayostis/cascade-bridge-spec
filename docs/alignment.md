@@ -35,31 +35,16 @@ more repositories to keep in step.
 
 ### The specification does not know which adapters exist
 
-At 0.1.0 this repository carried `catalog/adapters.ttl`, naming one adapter, its
-repository and a commit of it, and a CI job that cloned that repository at that
-commit and validated it. Both were removed at 0.2.0, because both point upward.
+A check belongs with the thing it checks. A specification that named adapters,
+or cloned one in CI, would go red for a property missing from somebody else's
+repository, would clone every adapter on every push, and would put diagnosis on
+whoever did not cause the failure. An adapter can live on any account in any
+organisation, and this specification must stay checkable without knowing that
+one exists. The check therefore runs in the adapter, against the head being
+proposed — the next section.
 
-The consequence was not theoretical. This repository's CI was red on a property
-missing from somebody else's repository. With fifty adapters it would clone fifty
-repositories on every push and go red whenever any of them broke, and the person
-who had to diagnose a failure would never be the person who caused it. An adapter
-can live on any account in any organisation, and the specification should not
-need to know one exists in order for the specification to be checkable.
-
-What replaced it is in the next section: the check moved to the adapter, where
-the thing being checked lives, and runs against the head being proposed rather
-than against a snapshot this repository remembered.
-
-### The catalogue is a repository of its own, and it does not exist
-
-RFC section 9 asks for one: "the tier is recorded where adapters are published.
-That means a catalog, however minimal, because 'universal' is a claim someone has
-to be able to look up and re-verify." That is still wanted. It is downstream of
-every adapter and every Bridge, it holds the EARL reports a Bridge produces, and
-a tier is a query over them. It is warranted when more than one adapter exists
-and at least one Bridge is producing results, and none of that is true yet.
-Nothing about it belongs here.
-
+A catalogue, which RFC section 9 asks for, is downstream of every adapter and
+every Bridge. It does not exist, and nothing about it belongs here.
 ## An adapter's CI calls this repository's lint
 
 The lint is published from here as a composite GitHub Action,
@@ -164,31 +149,16 @@ JavaScript's `<` would have reported a false failure on a correct mapping. A
 stricter rule than the format's meaning does not catch more mapping errors; it
 only fails harnesses that are right.
 
-## A Bridge's results flow to a catalogue as reports, not as a pin
+## A Bridge's results flow as reports, not as pins
 
 RFC section 11 measures an adapter's tier by running its fixtures on every
 published Bridge. That measurement must not become a pin in either direction: a
-Bridge that pinned an adapter would be claiming ownership of it, and an adapter
-that pinned a Bridge would stop being portable.
+Bridge pinning an adapter would be claiming ownership of it, and an adapter
+pinning a Bridge would stop being portable.
 
-It flows as **EARL** instead — one `earl:Assertion` per manifest entry, with
-`earl:test` the entry's IRI, `earl:subject` the Bridge and `earl:outcome` — which
-is how every W3C test suite records implementation results. A tier is then a
-query over the reports a catalogue holds: which Bridges passed which adapter's
-manifest, at which revisions of each. Nobody declares it, no adapter computes it
-from its own files, and a lint may say only `universal candidate`
+It flows as **EARL** — one `earl:Assertion` per manifest entry, with `earl:test`
+the entry's IRI, `earl:subject` the Bridge and `earl:outcome` the result — which
+is how every W3C test suite records implementation results. A tier is a query
+over those assertions. Nobody declares it, no adapter computes it from its own
+files, and a lint may say only `universal candidate`
 ([`validation.md`](validation.md)).
-
-No Bridge is published and no catalogue exists, so there are no reports and no
-adapter has a measured tier. That is the honest state.
-
-## In one paragraph
-
-The specification knows about itself; an adapter and a Bridge know about the
-specification; a catalogue knows about all of them and nothing knows about it.
-Every dependency is a SHA, every pinned SHA is tagged, and an adapter's `uses:`
-ref and its `bridge:specPin` name the same commit. Pins move in the pull request
-that needs them, with the measurement re-run in the same commit. Nothing pins
-what it does not consume. A comparison is insensitive to everything the format
-does not mean. And a Bridge's verdict on an adapter reaches a catalogue as a
-report, never as a pin.

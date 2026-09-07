@@ -245,31 +245,3 @@ Exit status is 0 when every check passes and 1 when any fails or could not be
 run. CI on this project's repositories is Linux and invokes `python3` directly;
 do not commit a machine-specific way of running it.
 
-## Seeing the checks fail
-
-A lint nobody has seen fail is a lint nobody should trust, and a check that
-quietly does nothing is invisible from a green run. The negative cases are
-therefore committed rather than claimed:
-[`scripts/selftest-lint.py`](../scripts/selftest-lint.py) copies
-[`fixtures/synthetic-adapter`](../fixtures/README.md) into a temporary
-directory, breaks exactly one property per case, and asserts both the exit
-status and the word the summary gives each of the six checks.
-
-```bash
-python3 scripts/selftest-lint.py
-```
-
-The subject is a synthetic package this repository wrote and owns. It is not a
-real adapter, and it must not become one: **this repository must not know that
-any adapter exists** ([`alignment.md`](alignment.md)), so the lint is exercised
-against a fixture rather than against somebody else's repository. The fixture
-covers the branches one real adapter would not cover at once — both sides of
-check 5's schema fallback, both kinds of digest claim, a referenced dataset, an
-input-only test with no expected graph, and an adapter requiring no profile,
-which is the only shape of adapter that can reach the `universal candidate`
-line while Core is unsettled.
-
-Both jobs run on every change in
-[`.github/workflows/validate.yml`](../.github/workflows/validate.yml): the
-action validates the fixture package, and the mutation cases show each check
-going red.
