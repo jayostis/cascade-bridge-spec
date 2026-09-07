@@ -8,6 +8,20 @@ The specification is DRAFT and no compatibility is promised before a numbered
 v1. Every namespace is `v1-draft`; terms may be renamed and cardinalities may
 change between 0.x releases.
 
+## [Unreleased]
+
+### Changed
+
+- Agent context split by directory. `CLAUDE.md` at the root, 175 lines to 79,
+  holds only what has to be known before choosing a directory to open; what is
+  specific to a directory moved to `vocab/CLAUDE.md`, `shapes/CLAUDE.md` and
+  `scripts/CLAUDE.md`, which load only when those directories are touched. The
+  pinning section went to a single rule: `docs/alignment.md` is the mechanism
+  and was already carrying it in full.
+- Three conventions added, the same three as in the pilot adapter: say it once,
+  no archaeology, and why never what. They are what the split is measured
+  against.
+
 ## [0.3.0] - 2026-09-06
 
 All six checks of `docs/validation.md` run, every one of them says whether it
