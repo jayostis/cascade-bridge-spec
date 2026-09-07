@@ -1,0 +1,8 @@
+[
+  {
+    "sourceField": "/ExampleRecordSet/ExampleRecord/Note",
+    "reason": "no term for a free-text note",
+    "severity": "info",
+    "context": "EX000001"
+  }
+]

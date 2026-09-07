@@ -1,0 +1,60 @@
+# The test manifest of a synthetic adapter package, in the shape
+# docs/test-manifest.md fixes: W3C's mf: test-manifest vocabulary, and on top
+# of it the test terms of the Cascade Bridge vocabulary, bridge:.
+#
+# Nothing here executes and nothing here is real. The three entries exist so
+# that the lint this repository publishes has one package of its own to run
+# against, covering the branches a single real adapter would not cover at once:
+# an isomorphic conversion test with an expected graph and a findings sidecar,
+# an input-only test whose envelope declares no document schema so the source
+# schema is what its input is validated against, and a dataset completion test
+# whose bytes are not committed and are therefore not validated here.
+#
+# Relative IRIs resolve against this file's location, so <in/example-0001.xml>
+# names the file the crate names as fixtures/in/example-0001.xml, <../> is the
+# crate's root entity and <> is this file. The crate and this file are loaded
+# as one graph, each with its own location as base; every walk the lint's
+# checks 4, 5 and 6 make crosses between the two.
+
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix mf:     <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .
+@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+<> a mf:Manifest ;
+  rdfs:label "synthetic adapter fixture cases" ;
+  bridge:adapter <../> ; # the crate's root entity, whose bridge:testManifest is <>
+  mf:entries (
+    <#example-0001>
+    <#example-0002>
+    <#example-release-2026-01>
+  ) .
+
+<#example-0001> a bridge:IsomorphicConversionTest ;
+  mf:name "example-0001" ;
+  rdfs:comment "Two invented records in the set envelope, with an expected graph and a findings sidecar beside them. The graph is parsed by the lint and judged by nobody: no Bridge exists to produce one to compare it against." ;
+  mf:action [
+    bridge:input <in/example-0001.xml> ;
+    bridge:envelope <../ro-crate-metadata.json#envelope-set>
+  ] ;
+  mf:result [
+    bridge:graph <expected/example-0001.ttl> ;
+    bridge:findings <findings/example-0001.gaps.json>
+  ] .
+
+<#example-0002> a bridge:InputOnlyTest ;
+  mf:name "example-0002" ;
+  rdfs:comment "One invented record in the record envelope, which declares no bridge:documentSchema; its input is validated against the adapter's bridge:sourceSchema instead. No expected output: an input-only test judges nothing." ;
+  mf:action [
+    bridge:input <in/example-0002.xml> ;
+    bridge:envelope <../ro-crate-metadata.json#envelope-record>
+  ] .
+
+<#example-release-2026-01> a bridge:DatasetCompletionTest ;
+  mf:name "example-release-2026-01" ;
+  rdfs:comment "A referenced release under example.org, IANA's reserved example domain. It does not resolve and is never fetched: the entry is here so that a lint reading this manifest meets a test whose bytes are not committed, and says so rather than counting it as validated." ;
+  mf:action [
+    bridge:dataset <https://example.org/synthetic-adapter/releases/example-release-2026-01.xml.gz> ;
+    bridge:envelope <../ro-crate-metadata.json#envelope-set>
+  ] .
+  # mf:result absent: no run has recorded bridge:records or bridge:outputDigest,
+  # and none will, because nothing streams a URL that does not resolve.

@@ -68,7 +68,7 @@ An adapter's whole CI is:
 
 ```yaml
       - uses: actions/checkout@v4
-      - uses: jayostis/cascade-bridge-spec/.github/actions/validate-adapter@v0.2.0
+      - uses: jayostis/cascade-bridge-spec/.github/actions/validate-adapter@v0.3.0
 ```
 
 **Publishing the lint from here is not an inversion.** The specification

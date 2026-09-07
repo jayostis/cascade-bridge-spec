@@ -4,11 +4,34 @@ What a conforming adapter package must pass, written as the list a lint
 implements. The list is ordered so that the cheapest check that can fail comes
 first and each later check can assume the earlier ones held.
 
-Three of these run today, in
-[`scripts/validate-adapter.py`](../scripts/validate-adapter.py), which is what
-the published action
+All six run, in [`scripts/validate-adapter.py`](../scripts/validate-adapter.py),
+which is what the published action
 ([`.github/actions/validate-adapter`](../.github/actions/validate-adapter/action.yml))
-runs. The rest are specified and not yet built.
+runs.
+
+**Every check says whether it ran**, and the words are part of the contract,
+because the failure this list is written against is a check that quietly did
+nothing and was read as a pass:
+
+| word | what it means | fails the run |
+|---|---|---|
+| `ok` | the check ran and everything it asked for held | no |
+| `FAIL` | the check ran and something did not hold | yes |
+| `nothing to check` | the check ran and found nothing of its kind in this package | no |
+| `not run` | the check did not happen | yes, unless the reason is that the package is outside what the lint reads rather than that a tool is missing |
+
+`ok` and `nothing to check` are different sentences and are printed as
+different sentences. An adapter with no expected graph has not *passed* check
+6; it has given check 6 nothing to disbelieve. A machine where `lxml` is not
+installed has not passed check 5 either: it never asked the question, and the
+run fails so that nobody reads the silence as an answer. The one case where a
+check that did not happen leaves the run green is a package the lint has
+nothing against and cannot read — a source schema that is a JSON Schema, check
+5 below — and even there the word printed is `not run`.
+
+**Nothing in the list reaches the network.** Digests are recomputed over the
+committed bytes and no publisher's file is fetched, so the lint runs offline
+and in a CI job with no credentials.
 
 ## The list
 
@@ -59,21 +82,56 @@ runs. The rest are specified and not yet built.
    enforced — not by scanning for a language, but by refusing to accept a file
    whose media type says it executes.
 
-4. **Every digest matches its file.** Each `sha256` in the crate is recomputed
-   over the committed bytes. Where the publisher also publishes a digest, it is
-   checked against the publisher's copy, and a mismatch is reported as a
-   difference between the local copy and its source rather than as a corrupt
-   file. **Not built.**
+4. **Every digest matches its file.** A crate records two kinds of claim about
+   a file's bytes, and they are not the same assertion
+   ([`fixtures-and-provenance.md`](fixtures-and-provenance.md)). Both are
+   recomputed over the committed bytes; **a mismatch in each is a different
+   finding and is reported in different words.**
 
-5. **Every input validates against the declared schema.** Each committed input
-   under the fixtures, against the `bridge:documentSchema` of the envelope its
-   test names, or against `bridge:sourceSchema` where the envelope declares none.
-   **Not built.**
+   - `sha256` — what the RO-Crate 1.2 context expands `sha256` to — is the
+     **local claim**: these bytes, here, now. A mismatch says *the crate's
+     record is wrong about the file beside it*: one of the two was changed and
+     the other was not.
+   - Every other digest property on the same entity — an `md5` copied out of
+     the `.md5` a publisher publishes beside its file, in whatever namespace
+     the crate writes it — is the **publisher's claim** about the file at its
+     source. Recomputing it over the committed bytes asks a different question,
+     and a mismatch says *this copy has drifted from the source it claims to be
+     a byte-for-byte copy of*. The realistic shape of it: the publisher
+     republished, someone copied the new digest and did not re-fetch the bytes.
+     Sending that author to check the crate would send them to the wrong file.
+
+   The publisher's file is **not fetched**, here or anywhere in this list. A
+   lint that needed the network is a lint that cannot run offline or in a CI
+   job without credentials, and the publisher's digest is already recorded in
+   the crate, which is the point of recording it. A digest on an entity whose
+   bytes are not committed — a referenced release, a pinned commit — is
+   recorded, counted and not compared, and the run says how many.
+
+5. **Every input validates against the declared schema.** For each test in the
+   test manifest, the committed `bridge:input` of its action against the
+   `bridge:documentSchema` of the envelope that test names, or against the
+   adapter's `bridge:sourceSchema` where that envelope declares none. An
+   envelope declares a document schema exactly when its document root is not
+   the one the source schema declares, so the fallback is the ordinary case
+   and not an error path.
+
+   XSD 1.0 is the engine, by `lxml`. Three outcomes are not failures of the
+   package and are reported as themselves rather than as passes: a test whose
+   action names a `bridge:dataset` has no committed bytes here, and the Bridge
+   that streams them validates them; a schema entity that is referenced rather
+   than committed cannot be read offline; and a **source schema that is a JSON
+   Schema** is a real adapter this lint does not read yet, reported `not run`.
+   A schema declared XML that does not compile as an XSD is a different matter
+   and fails.
 
 6. **Every expected graph parses.** Each `bridge:graph` as Turtle. Parsing, not
    conforming: an expected graph is what a mapping must produce, and judging it
-   against Cascade's shapes is the Bridge's validate stage, not the lint's job.
-   **Not built.**
+   against Cascade's shapes is the Bridge's validate stage, not the lint's job
+   — a lint that judged a fixture against them would report it as wrong for
+   recording something Cascade has no term for yet, which is exactly what the
+   findings sidecar beside it is for. The lint says so in its own output, so
+   that a pass here is never read as more than "this file is Turtle".
 
 A package that passes all six is a conforming adapter package. Nothing in the
 list runs a mapping or compares a graph: that is the test manifest, and it needs
@@ -157,14 +215,13 @@ disagree.
 
 ```yaml
       - uses: actions/checkout@v4
-      - uses: jayostis/cascade-bridge-spec/.github/actions/validate-adapter@v0.2.0
+      - uses: jayostis/cascade-bridge-spec/.github/actions/validate-adapter@v0.3.0
         with:
           path: .          # the default; the directory holding ro-crate-metadata.json
 ```
 
-Checks 1 to 3 run. Checks 4 to 6 are specified above and not built; the action
-prints the checks it ran, so a package is never reported as passing a check that
-did not happen.
+All six checks run. The action ends by printing each of them with the word it
+earned, so a package is never reported as passing a check that did not happen.
 
 Three things the action keeps from the script, and must go on keeping:
 
@@ -177,13 +234,42 @@ Three things the action keeps from the script, and must go on keeping:
 - **Knowing no adapter.** It takes a directory. It names no repository, no
   format id and no package, and it clones nothing but the caller's own checkout.
 
-## Running the checks that exist
+## Running the checks
 
 ```bash
-python3 -m pip install pyshacl rdflib roc-validator
+python3 -m pip install pyshacl rdflib roc-validator lxml
 python3 scripts/validate-adapter.py <path to an adapter checkout>
 ```
 
-Exit status is 0 when every check passes and 1 when any fails. CI on this
-project's repositories is Linux and invokes `python3` directly; do not commit a
-machine-specific way of running it.
+Exit status is 0 when every check passes and 1 when any fails or could not be
+run. CI on this project's repositories is Linux and invokes `python3` directly;
+do not commit a machine-specific way of running it.
+
+## Seeing the checks fail
+
+A lint nobody has seen fail is a lint nobody should trust, and a check that
+quietly does nothing is invisible from a green run. The negative cases are
+therefore committed rather than claimed:
+[`scripts/selftest-lint.py`](../scripts/selftest-lint.py) copies
+[`fixtures/synthetic-adapter`](../fixtures/README.md) into a temporary
+directory, breaks exactly one property per case, and asserts both the exit
+status and the word the summary gives each of the six checks.
+
+```bash
+python3 scripts/selftest-lint.py
+```
+
+The subject is a synthetic package this repository wrote and owns. It is not a
+real adapter, and it must not become one: **this repository must not know that
+any adapter exists** ([`alignment.md`](alignment.md)), so the lint is exercised
+against a fixture rather than against somebody else's repository. The fixture
+covers the branches one real adapter would not cover at once — both sides of
+check 5's schema fallback, both kinds of digest claim, a referenced dataset, an
+input-only test with no expected graph, and an adapter requiring no profile,
+which is the only shape of adapter that can reach the `universal candidate`
+line while Core is unsettled.
+
+Both jobs run on every change in
+[`.github/workflows/validate.yml`](../.github/workflows/validate.yml): the
+action validates the fixture package, and the mutation cases show each check
+going red.

@@ -14,7 +14,10 @@
 *.sparql text eol=lf
 *.rq     text eol=lf
 
-# Nothing here is a verbatim copy held to a recorded digest, so this file has no
-# section protecting one from normalisation. An adapter package does need such a
-# section: docs/fixtures-and-provenance.md says why, and the pilot adapter's
-# .gitattributes is the worked example.
+# The files under fixtures/synthetic-adapter/ are held to digests recorded in
+# that package's crate, and the rules above are what makes those digests
+# reproducible: LF on every platform means the bytes a Linux CI runner hashes are
+# the bytes a Windows editor wrote. An adapter package that carries a byte-for-
+# byte copy of a publisher's file needs a stricter section than this one, marking
+# those paths so nothing normalises them at all; docs/fixtures-and-provenance.md
+# says why, and the pilot adapter's .gitattributes is the worked example.

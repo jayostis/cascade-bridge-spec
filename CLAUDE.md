@@ -64,7 +64,12 @@ same commit.
   a machine-readable reference to a particular adapter — in Turtle, JSON, YAML
   or a workflow — is the bug. Publishing the lint from here is not an
   inversion: the specification publishes an artefact, the adapter consumes it,
-  and the lint takes a directory and learns no adapter's name.
+  and the lint takes a directory and learns no adapter's name. Neither is
+  `fixtures/synthetic-adapter`: it is a package this repository wrote for its
+  own lint to run against, entirely invented, with every URL that is not this
+  repository's own under `example.org`. It must stay that way. A real adapter
+  vendored in as a fixture — as a copy, a submodule or a pinned SHA — is the
+  0.2.0 bug wearing a fixture's clothes.
 - **A tier is measured, never declared.** RFC section 11. `bridge:tier`,
   `bridge:Universal` and `bridge:Limited` were removed from the vocabulary in
   the move from the pilot and do not come back. A lint may say
@@ -133,7 +138,7 @@ Expected beside this repository, as sister directories:
 There is no test suite. These are the checks, and a commit says which ran:
 
 ```bash
-python3 -m pip install pyshacl rdflib roc-validator
+python3 -m pip install pyshacl rdflib roc-validator lxml
 
 # every Turtle file parses
 python3 -c "from rdflib import Graph; [Graph().parse(f) for f in ['vocab/bridge.ttl','shapes/bridge.shapes.ttl']]"
@@ -144,14 +149,22 @@ python3 -m pyshacl --metashacl --shacl shapes/bridge.shapes.ttl shapes/bridge.sh
 # the profile crate is a valid RO-Crate 1.2
 rocrate-validator validate profile/ --profile-identifier ro-crate-1.2
 
+# the lint passes the synthetic package this repository owns
+python3 scripts/validate-adapter.py fixtures/synthetic-adapter
+
+# and can be seen failing: one broken property per case, on a temporary copy
+python3 scripts/selftest-lint.py
+
 # the published lint still accepts a real adapter package
 python3 scripts/validate-adapter.py <path to an adapter checkout>
 ```
 
-The first three run in `.github/workflows/validate.yml`, together with a smoke
-test that the published lint refuses a directory that is not an adapter package.
+The first five run in `.github/workflows/validate.yml`, in two jobs: this
+repository's own files, and the published lint against `fixtures/`, which is a
+synthetic package this repository wrote and owns. A fixture, never a real
+adapter — `fixtures/README.md` says why that distinction is the whole point.
 
-**The fourth is run by hand and is not in CI, on purpose.** CI here validates
+**The last is run by hand and is not in CI, on purpose.** CI here validates
 this repository's own files and no one else's: a job that cloned an adapter
 would make this repository red because of a property missing from somebody
 else's, and would grow a job per adapter for as long as adapters keep being

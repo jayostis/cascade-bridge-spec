@@ -1,0 +1,26 @@
+# The graph a mapping would have to produce from in/example-0001.xml, if this
+# package had a mapping. It does not: nothing here executes, and no Bridge has
+# run this fixture, because no Bridge exists.
+#
+# Check 6 of docs/validation.md parses this file and stops there. It is not
+# validated against Cascade's shapes -- that is a Bridge's validate stage, on
+# the graph a mapping actually produced -- and the terms below are deliberately
+# in an invented namespace under example.org, IANA's reserved example domain,
+# rather than in cascade: or genomics:. A fixture in this repository must not
+# read as an assertion about a Cascade vocabulary.
+
+@prefix ex:   <https://example.org/synthetic-adapter/v1#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+<https://example.org/synthetic-adapter/record/EX000001>
+  a ex:Record ;
+  ex:accession "EX000001" ;
+  ex:version "3"^^xsd:positiveInteger ;
+  rdfs:label "first synthetic record" .
+
+<https://example.org/synthetic-adapter/record/EX000002>
+  a ex:Record ;
+  ex:accession "EX000002" ;
+  ex:version "1"^^xsd:positiveInteger ;
+  rdfs:label "second synthetic record" .

@@ -8,6 +8,109 @@ The specification is DRAFT and no compatibility is promised before a numbered
 v1. Every namespace is `v1-draft`; terms may be renamed and cardinalities may
 change between 0.x releases.
 
+## [0.3.0] - 2026-09-06
+
+All six checks of `docs/validation.md` run, every one of them says whether it
+ran, and each of the three new ones has been seen failing. Since 0.1.0 the
+document has named checks it did not implement; a specification that lists six
+checks and runs three is a document whose reader cannot tell which of the six
+their green run actually answered.
+
+### Added
+
+- Check 4 of `docs/validation.md`, the digests, in
+  `scripts/validate-adapter.py`. Every digest in the crate is recomputed over
+  the committed bytes, and **the two claims a crate records are reported
+  differently, because they are different assertions**. `sha256` is the local
+  claim — these bytes, here, now — and a mismatch says the crate's record is
+  wrong about the file beside it. Any other digest property is the publisher's
+  claim about the file at its source, and a mismatch says this copy has drifted
+  from the source it claims to be a byte-for-byte copy of. Sending the second
+  author to check the crate would send them to the wrong file. Nothing is
+  fetched: a digest on bytes that are not committed is recorded, counted and
+  not compared, so the lint runs offline and in a CI job with no credentials.
+- Check 5, every input against the declared schema. For each test, its
+  committed `bridge:input` against the `bridge:documentSchema` of the envelope
+  it names, falling back to the adapter's `bridge:sourceSchema` where that
+  envelope declares none. XSD 1.0 by `lxml`, which the action now installs. A
+  source schema that is a JSON Schema is a real adapter this lint does not read
+  yet and is reported `not run` rather than crashing or passing; a schema
+  declared XML that will not compile as an XSD is the package being wrong, and
+  fails.
+- Check 6, every expected graph parses as Turtle. Parsing only. The run says so
+  in its own output, so that a pass is never read as conformance to Cascade's
+  shapes: that is a Bridge's validate stage, asked of a graph a mapping
+  produced, and a lint that judged a fixture against them would report it wrong
+  for recording something Cascade has no term for yet — which is what the
+  findings sidecar beside it is for.
+- **Every check reports whether it ran**, in four words that are now part of
+  the contract: `ok`, `FAIL`, `nothing to check` and `not run`. The run ends
+  with all six and the word each earned. A check whose tool is absent fails the
+  run rather than passing quietly; a check that found nothing of its kind in a
+  package says so, because an adapter with no expected graph has not passed
+  check 6, it has given check 6 nothing to disbelieve. The script's epilogue
+  naming checks 4 to 6 as unbuilt is gone, having become untrue.
+- `fixtures/synthetic-adapter/`, a synthetic adapter package, and
+  `fixtures/README.md`. The lint published from here had nowhere to run: CI
+  validates this repository's own files and no one else's, and vendoring a real
+  adapter back in as a fixture would be the 0.2.0 bug wearing a fixture's
+  clothes. A package this repository wrote itself is the way out — a subject it
+  owns, entirely invented, with every URL that is not this repository's own
+  under `example.org`, IANA's reserved example domain. It is minimal and every
+  part of it covers a branch one real adapter would not cover at once: both
+  sides of check 5's schema fallback, both kinds of digest claim, a referenced
+  dataset whose bytes are not here, an input-only test with no expected graph,
+  and no `bridge:profileRequired` — which makes it the only package that can
+  reach the `universal candidate` line while Core is unsettled.
+- `scripts/selftest-lint.py`, eight mutation cases, after the precedent of
+  `conformance/scripts/selftest_runner.py`. A lint nobody has seen fail is a
+  lint nobody should trust, and a check that quietly does nothing is invisible
+  from a green run, so the negative cases are committed rather than claimed.
+  Each copies the fixture package into a temporary directory, breaks exactly
+  one property, and asserts both the exit status and the word the summary gives
+  each of the six: the package unbroken passing, an undescribed file, a wrong
+  local `sha256`, a wrong publisher `md5`, an input that does not satisfy its
+  schema, a schema language the lint does not read, an expected graph that is
+  not Turtle, and a manifest that names no expected graph. The last two exit 0
+  on purpose and assert the word, which is the only way to test that
+  `not run` and `nothing to check` are not being printed as `ok`. Nothing
+  tracked is mutated and no mutated copy is written inside the repository.
+- A second CI job, `lint`: the action validates the fixture package by local
+  path — so what runs is the file an adapter's CI calls at a tag, not a copy of
+  the command inside it — and then the mutation cases run. The smoke test that
+  the lint refuses a directory which is not an adapter package moved here from
+  the `spec` job.
+
+### Changed
+
+- `.github/actions/validate-adapter/action.yml` installs `lxml` alongside
+  `pyshacl`, `rdflib` and `roc-validator`, and its description and usage
+  examples name all six checks and the v0.3.0 tag.
+- `docs/validation.md` stops saying any check is not built, states the four
+  words a check may be reported in and which of them fail a run, spells out the
+  two digest claims and why they are reported differently, and gains a section
+  on seeing the checks fail.
+- `README.md` and `CLAUDE.md` follow: all six checks, `lxml` in the install
+  line, the fixture package and the selftest in what to run, and the rule that
+  the fixture is a fixture — a real adapter vendored in as one is the bug this
+  repository was corrected for at 0.2.0.
+- `.gitattributes`: its closing note said nothing here is held to a recorded
+  digest. Files under `fixtures/synthetic-adapter/` now are, and the note says
+  what makes those digests reproducible — LF on every platform, so the bytes a
+  Linux runner hashes are the bytes a Windows editor wrote.
+
+### Known state
+
+- No Bridge exists, so no test manifest has been executed, no EARL report
+  exists and no adapter has a measured tier.
+- Nothing in the lint runs a mapping or compares a graph. That is the test
+  manifest, and it needs a Bridge.
+- The lint reads one schema language, XSD 1.0. An adapter whose source schema
+  is a JSON Schema gets `not run` for check 5 and a green run, which is honest
+  and is not the same as being checked.
+- `.github/workflows/validate.yml` runs two jobs and validates no real adapter,
+  by design.
+
 ## [0.2.0] - 2026-09-06
 
 The specification stops knowing which adapters exist, and starts publishing the
@@ -227,5 +330,6 @@ against files inside one adapter.
   one failure. It goes green when the adapter adds the pin and a pull request here
   moves the catalogue's SHA to it, and not by weakening the check.
 
+[0.3.0]: https://github.com/jayostis/cascade-bridge-spec/releases/tag/v0.3.0
 [0.2.0]: https://github.com/jayostis/cascade-bridge-spec/releases/tag/v0.2.0
 [0.1.0]: https://github.com/jayostis/cascade-bridge-spec/releases/tag/v0.1.0

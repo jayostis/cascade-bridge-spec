@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  The wrapper schema of the invented format's other envelope: the publisher's
+  own schema declares no set root, so the adapter adds one and names it as that
+  envelope's bridge:documentSchema. The arrangement is the one a real adapter
+  meets whenever a service returns a response element the format's schema does
+  not declare, and it is here so that check 5 of docs/validation.md exercises
+  both branches: an envelope with a document schema, and an envelope without
+  one, falling back to the adapter's bridge:sourceSchema.
+
+  The include is relative, so the schema resolves from wherever the package is
+  checked out. Written by this package; not a copy of anything, and the crate
+  records no publisher's digest for it.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+  <xs:include schemaLocation="example-record.xsd"/>
+
+  <xs:element name="ExampleRecordSet">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="ExampleRecord" maxOccurs="unbounded"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>

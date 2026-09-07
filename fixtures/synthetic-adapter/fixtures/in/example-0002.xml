@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  A synthetic input in the record envelope: one bare record, the document root
+  the publisher's own schema declares. Its envelope names no
+  bridge:documentSchema, so check 5 validates it against the adapter's
+  bridge:sourceSchema, schema/example-record.xsd.
+
+  This is also the file that stands in for a byte-for-byte copy from a
+  publisher: the crate records both a local sha256 and an md5 standing for the
+  publisher's, so a drift between this copy and its source and a wrong record
+  in the crate are two findings check 4 can tell apart.
+-->
+<ExampleRecord Accession="EX000003" Version="2">
+  <Label>third synthetic record</Label>
+</ExampleRecord>
