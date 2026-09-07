@@ -117,19 +117,16 @@ python3 -m pip install pyshacl rdflib roc-validator lxml
 python3 scripts/validate-adapter.py <path to an adapter checkout>
 ```
 
-That runs all six checks: the package is a valid RO-Crate 1.2; the crate plus
-the test manifest it names, loaded as one graph with each file's own location as
-base, conform to `shapes/bridge.shapes.ttl` under pySHACL with SHACL-SPARQL
-enabled; every git-tracked file is either described by the crate with a declared
-`encodingFormat` in the allowed set, or is one of the four repository documents
-or a dotfile; every digest in the crate is recomputed over the committed bytes;
-every committed input validates against the schema its envelope declares; and
-every expected graph parses as Turtle. Exit status is 0 when all six pass.
+That runs the six checks a conforming adapter package must pass — the crate, the
+shapes, the file inventory, the digests, the inputs against their schemas and the
+expected graphs. What each one is, and what a failure means, is
+[`docs/validation.md`](docs/validation.md); it is the authority and this is not a
+second copy of it. Exit status is 0 when all six pass, and nothing reaches the
+network, so the run works offline and needs no credentials.
 
 **Every check says whether it ran.** `ok`, `nothing to check` and `not run` are
-three different sentences, and the run ends by giving each of the six the word
-it earned: a lint that silently checks nothing is worse than no lint. Nothing
-reaches the network, so the run works offline and needs no credentials.
+three different sentences: a lint that silently checks nothing is worse than no
+lint.
 
 An adapter does not run that by hand. The same checks are published from this
 repository as a composite GitHub Action, so an adapter's whole CI is:
