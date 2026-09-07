@@ -1,37 +1,23 @@
-# The Cascade Bridge vocabulary, bridge:. Two groups of terms in one
-# namespace. This file is the vocabulary of the Cascade Bridge Specification
-# (the-cascade-protocol/spec#43), and this repository, cascade-bridge-spec, is
-# its home.
+# The Cascade Bridge vocabulary, bridge:, of the Cascade Bridge Specification
+# (the-cascade-protocol/spec#43). Two groups of terms in one namespace. It is
+# a Bridge-spec namespace, not a Cascade vocabulary: no cascade: or genomics:
+# term is minted here. The shapes that constrain a crate and a manifest as one
+# graph are shapes/bridge.shapes.ttl.
 #
-# Adapter terms: what an adapter says about itself in its RO-Crate
-# (ro-crate-metadata.json at the adapter's root). The crate's root entity is
-# a bridge:Adapter beside its schema:Dataset type; schema.org carries what it
-# can (identifier, name, version, license), Dublin Core carries conformsTo
-# (the RO-Crate context expands that key to dct:conformsTo, not a schema.org
-# term; a query written with schema:conformsTo matches nothing), and the
-# terms below carry what has no equivalent in either: the profiles required,
-# the specification pin, the vocabulary pin and vocabularies, the source
-# media type, schema, envelopes and unit, the detect rule, the tables and
-# extension vocabulary phase 2 adds, and the test manifest.
+# Adapter terms: what an adapter says about itself in its RO-Crate. The root
+# entity is a bridge:Adapter beside its schema:Dataset type, and the terms
+# below carry only what schema.org and Dublin Core cannot. One trap: the
+# RO-Crate context expands conformsTo to dct:conformsTo, not to a schema.org
+# term, so a query written with schema:conformsTo matches nothing.
 #
-# An adapter does not declare a tier. RFC section 11: an adapter's tier is
-# measured, by running its fixtures on every published Bridge, and recorded
-# in a catalogue - a repository downstream of every adapter and every Bridge,
-# which does not exist yet and is no part of this one (docs/alignment.md).
-# "Universal" or "limited" is read from there, computed from which Bridges
-# pass the adapter's test manifest, never from a claim in the adapter and
-# never from anything in this repository.
+# An adapter declares no tier (RFC section 11): a tier is measured by running
+# an adapter's fixtures on every published Bridge, and recorded in a catalogue
+# downstream of both, which does not exist yet (docs/alignment.md).
 #
-# Test terms: a small set on top of W3C's mf: test-manifest vocabulary (the
-# one every W3C RDF-family test suite is written in), the way the SHACL test
-# suite adds sht:. An adapter's fixtures/manifest.ttl is an mf:Manifest whose
-# entries are typed with the three test classes below; the type carries the
-# comparison rule.
-#
-# The shapes that constrain a crate and a manifest, loaded as one graph, are
-# shapes/bridge.shapes.ttl in this repository. It is a Bridge-spec namespace,
-# not a Cascade vocabulary: no cascade: or genomics: term is minted here.
-#
+# Test terms: a small set on top of W3C's mf: test-manifest vocabulary, the way
+# the SHACL test suite adds sht:. An adapter's fixtures/manifest.ttl is an
+# mf:Manifest whose entries are typed with the three test classes below, and
+# the type carries the comparison rule.
 
 @prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 @prefix mf:     <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .
