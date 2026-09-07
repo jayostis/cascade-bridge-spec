@@ -68,7 +68,6 @@ Where a document here touches an open question, it says so and links spec#43.
 ```
 README.md                      this file
 LICENSE                        Apache-2.0
-CHANGELOG.md
 CLAUDE.md                      agent context: what is normative, the pinning rule, what to run
 vocab/bridge.ttl               the bridge: vocabulary: adapter terms, and test terms on top of W3C's mf:
 shapes/bridge.shapes.ttl       SHACL shapes for an adapter's crate and its test manifest, as one graph

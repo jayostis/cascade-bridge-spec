@@ -7,14 +7,7 @@
 # These shapes are the Cascade Bridge Specification's constraint on an
 # adapter package; this repository, cascade-bridge-spec, is their home, and
 # the adapter profile (profile/ro-crate-metadata.json) names this file as its
-# constraints resource. They were seeded from the pilot adapter,
-# bridge-adapter-clinvar, at commit 0b2d548 (schema/manifest/bridge.shapes.ttl);
-# the move removed the bridge:tier property shape (an adapter does not
-# declare a tier, vocab/bridge.ttl says why), added a bridge:specPin property
-# shape (exactly one, IRI) and a warning when the root does not name the
-# adapter profile in conformsTo. At 0.2.0 the sh:class schema:MediaObject
-# constraints the pilot added during its own review were carried up here,
-# where they belong, and the allowed encodingFormat set was written down.
+# constraints resource.
 #
 # What they say:
 #

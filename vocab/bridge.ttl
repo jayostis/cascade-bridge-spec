@@ -1,10 +1,7 @@
 # The Cascade Bridge vocabulary, bridge:. Two groups of terms in one
 # namespace. This file is the vocabulary of the Cascade Bridge Specification
 # (the-cascade-protocol/spec#43), and this repository, cascade-bridge-spec, is
-# its home. It was seeded from the pilot adapter, bridge-adapter-clinvar, at
-# commit 0b2d548 (schema/manifest/bridge.ttl), where it lived until this
-# repository existed; the changes made in the move are listed at the end of
-# this header.
+# its home.
 #
 # Adapter terms: what an adapter says about itself in its RO-Crate
 # (ro-crate-metadata.json at the adapter's root). The crate's root entity is
@@ -35,28 +32,6 @@
 # shapes/bridge.shapes.ttl in this repository. It is a Bridge-spec namespace,
 # not a Cascade vocabulary: no cascade: or genomics: term is minted here.
 #
-# Changes from the adapter's copy at 0b2d548, made in the move:
-#   removed  bridge:Tier, bridge:Universal, bridge:Limited, bridge:tier
-#            (the tier is measured, above; an adapter states none);
-#   added    bridge:specPin, the commit of this specification an adapter is
-#            written against, the same shape as bridge:vocabularyPin;
-#            the ontology header names this repository.
-# Every other term and comment was as it was.
-#
-# Changes at 0.2.0:
-#   restored bridge:profileRequired's rdfs:domain bridge:Adapter. It had been
-#            dropped so that an entry in this repository's catalogue of
-#            adapters could restate an adapter's profiles without being typed
-#            an adapter; that catalogue is gone, because a specification must
-#            not know which adapters exist, so the reason lapsed and the
-#            domain is the honest statement again: only an adapter requires a
-#            profile;
-#   changed  bridge:IsomorphicConversionTest and bridge:findings, which
-#            required the produced findings to equal the expected sidecar
-#            entry for entry in a sort order. They are compared as a multiset
-#            instead. The rule was written in the pilot adapter, measured
-#            there, and carried up here; the reasoning is on that adapter's
-#            issue #1 and in the terms' own comments.
 
 @prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 @prefix mf:     <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .
