@@ -53,13 +53,6 @@ blocks you, ask — do not infer an answer from a discussion thread elsewhere:
 Where a document here touches one of these, it says so.
 
 
-> **The RFC is not this specification.** Cascade Bridge RFC (`spec#43`) is a
-> request for comment: a discussion thread, still being argued, written before
-> most of this existed. Nothing in it is normative, and nothing here follows from
-> it. This repository is the contract — these documents, and the Turtle they
-> point at. If something here is unclear, incomplete or looks wrong, **ask**.
-> Do not go and read the RFC and implement what you find there.
-
 ## Start here
 
 The specification exists so two things can be built. Pick one; you do not need

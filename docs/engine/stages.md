@@ -11,11 +11,11 @@ adapter contributes data to them.** The third column says what an adapter
 contributes to each, with the pilot adapter for ClinVar VCV XML as the worked
 example rather than as the subject.
 
-| RFC stage | Enterprise Integration Pattern | what an adapter contributes |
+| stage | Enterprise Integration Pattern | what an adapter contributes |
 |---|---|---|
 | read and chunk | **Splitter** | the unit to split on: `bridge:unit` on the crate's root entity. ClinVar: `VariationArchive` |
 | detect and route | **Content-Based Router** | the detect rule, as one XPath 3.1 boolean: `bridge:detectXPath`. ClinVar: `exists(/(ClinVarResult-Set\|ClinVarVariationRelease)/VariationArchive)` |
-| transform | **Message Translator** | the mapping, in a language the adapter's required profiles name. ClinVar: XSLT 3, one module per record class, and the same mapping again as SPARQL CONSTRUCT for the comparison the RFC's spike wants |
+| transform | **Message Translator** | the mapping, in a language the adapter's required profiles name. ClinVar: XSLT 3, one module per record class, and the same mapping again as SPARQL CONSTRUCT for comparison |
 | Cascade RDF as target | **Canonical Data Model** | the vocabularies it writes and the revision they are pinned at: `bridge:vocabulary`, `bridge:vocabularyPin` |
 | link within the batch | **Aggregator** | the links between records of one unit, emitted by the mapping and resolved by the Bridge within one import. ClinVar: interpretation (RCV) and submitter-assertion (SCV) records point at their Variant |
 | stamp | **Message History** | nothing; it *receives* the stamp. The adapter names the stamp predicates its test manifest ignores when comparing (`bridge:ignorePredicate`) |
@@ -66,8 +66,8 @@ the comparison removes both sides' before judging. An adapter that stamped
 provenance itself would be doing the Bridge's job and would fail its own
 fixtures on a second Bridge.
 
-**Message Validator and Invalid Message Channel.** D-OPENWORLD-1, restated by RFC
-section 8: validation reports; it never refuses and never destroys. A unit that
+**Message Validator and Invalid Message Channel.** D-OPENWORLD-1: validation
+reports; it never refuses and never destroys. A unit that
 fails its schema is a finding about the input, and the unit still goes through.
 An adapter can flag; it cannot reject. Findings from source validation, the
 mapping, the undeclared-predicate check and SHACL all land in the Bridge's one
@@ -80,7 +80,7 @@ input — which a declarative mapping guarantees by construction — and the nam
 rule that makes re-import a no-op belongs to the Bridge and to spec#38.
 
 **Normalizer.** Formats with several publishers need a normalising pass per
-vendor before the translator: C-CDA from Epic and Cerner is the RFC's example,
+vendor before the translator: C-CDA from Epic and Cerner, say,
 and the runtime already carries such quirks as code today. A quirk profile is
 data in the package like everything else, and there are no vendor adapters — a
 format has one adapter, with vendor quirks on the source side. A format with one

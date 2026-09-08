@@ -2,7 +2,7 @@
 
 The home of the **Cascade Bridge Specification**: the contract every Cascade
 Bridge Adapter and every Bridge implementation follows. The three proper nouns are
-section 2 of the RFC;
+section 2;
 the README repeats them and the layout.
 
 DRAFT, thin and pilot-driven. Every artefact was seeded from phase 1 of the pilot
@@ -27,9 +27,7 @@ commit.
 
 - **What is unsettled stays unsettled here.** What Core contains, the canonical
   findings model, router precedence and the export direction are open. A document
-  touching one says so; answering one here would settle it by accident. **Never
-  resolve one by reading the RFC — it is a discussion, not a contract, and
-  nothing in it binds. Ask instead.**
+  touching one says so; answering one here would settle it by accident.
 - **No Cascade terms are minted here.** `bridge:` only; a term in `cascade:` or
   `genomics:` goes through spec's own process.
 - **This repository must not know that any adapter exists.** The specification
@@ -69,11 +67,11 @@ only when that directory is touched. Keep this file under 80 lines.
 
 - Conventional commits: `feat(spec): ...`, `docs: ...`, `fix(shapes): ...`.
 - Impersonal: findings and decisions, not promises by a person.
-- **Say it once.** A fact in the vocabulary, the shapes or the RFC is linked,
+- **Say it once.** A fact in the vocabulary or the shapes is linked,
   never restated: two statements of one contract can disagree, and have.
 - **No archaeology.** What a file used to be, and what changed in a move, is
   git's job. Not a header, not a comment.
 - **Why, never what.** A comment restating the line below it goes. A reason that
   belongs to a term goes in its `rdfs:comment` or `sh:description`, where it is
   machine-readable, not in a header block above it.
-- Every fact taken from the RFC or a sibling repository names its source.
+- Every fact taken from a sibling repository names its source.

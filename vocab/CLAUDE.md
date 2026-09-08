@@ -14,7 +14,7 @@ the SHACL test suite adds `sht:`.
   and its siblings carry how they are judged. If an adapter's fixture manifest
   explains a comparison in a comment, the explanation is in the wrong repository.
 - **No Cascade terms are minted here.** `bridge:` only. A term in `cascade:`,
-  `genomics:` or any other Cascade vocabulary goes through spec's RFC process.
+  `genomics:` or any other Cascade vocabulary goes through spec's own process.
 - **An adapter declares no tier.** `bridge:tier` and its
   individuals were removed and do not come back.
 - Term names and cardinalities must match `../docs/adapter/manifest.md` and

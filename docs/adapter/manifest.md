@@ -147,4 +147,4 @@ direction is not specified.
 - **The extension vocabulary.** `bridge:extensionVocabulary` names the adapter's
   own namespace for values that have no Cascade term, at most one, its file a
   `File` in `hasPart`. Terms in it are the adapter's. No `cascade:` term is ever
-  minted in an adapter; those go through spec's RFC process.
+  minted in an adapter; those go through spec's own process.
