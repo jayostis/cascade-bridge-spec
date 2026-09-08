@@ -53,8 +53,9 @@ and in a CI job with no credentials.
    and every `bridge:envelope` a test action names is one the adapter lists.
 
    They also carry the two constraints that make an IRI naming a file mean
-   something. Every file-valued property — `bridge:input`, `bridge:graph`,
-   `bridge:findings`, `bridge:sourceSchema`, `bridge:documentSchema` — is
+   something. The file-valued properties of a test — `bridge:input`,
+   `bridge:graph`, `bridge:findings`, `bridge:sourceSchema`,
+   `bridge:documentSchema` — are
    `sh:class schema:MediaObject`, what the RO-Crate 1.2 context expands `File`
    to, so a mistyped name fails instead of conforming; `sh:nodeKind sh:IRI`
    alone let a typo through, because an IRI naming no entity at all is still an
@@ -212,10 +213,14 @@ disagree.
 
 ```yaml
       - uses: actions/checkout@v4
-      - uses: jayostis/cascade-bridge-spec/.github/actions/validate-adapter@v0.3.0
+      - uses: jayostis/cascade-bridge-spec/.github/actions/validate-adapter@<tag>
         with:
           path: .          # the default; the directory holding ro-crate-metadata.json
 ```
+
+`<tag>` is the tag on the commit your crate's `bridge:specPin` names, the way
+`<full SHA>` is in the crate itself. The action resolves the ref it was called
+at and fails the run when the two disagree.
 
 All six checks run. The action ends by printing each of them with the word it
 earned, so a package is never reported as passing a check that did not happen.

@@ -6,12 +6,6 @@ visible and testable in CI. This document is the mechanism.
 
 ## What knows about what
 
-```
-specification  <-  adapter  <-  Bridge
-        \             |            /
-         `------->  catalogue  <--'
-```
-
 - **The specification knows about itself.** It defines the contract and
   publishes the lint that enforces it. It names no adapter and no engine.
 - **An adapter knows about the specification.** It pins a revision of it, in its
@@ -43,14 +37,8 @@ and nothing about it belongs here.
 
 ## An adapter's CI calls this repository's lint
 
-The lint is published from here as a composite GitHub Action,
-[`.github/actions/validate-adapter`](../.github/actions/validate-adapter/action.yml).
-An adapter's whole CI is:
-
-```yaml
-      - uses: actions/checkout@v4
-      - uses: jayostis/cascade-bridge-spec/.github/actions/validate-adapter@v0.3.0
-```
+The lint is published from here as a composite GitHub Action, so an adapter's
+whole CI is two lines: [`validation.md`](adapter/validation.md) has them.
 
 **Publishing the lint from here is not an inversion.** The specification
 publishes an artefact and the adapter consumes it, so the arrow runs from adapter

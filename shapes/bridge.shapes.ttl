@@ -419,6 +419,10 @@
 
 # ----------------------------------------------------------------------------
 # Action and result nodes, closed
+#
+# sh:closed rejects rdf:type like any other predicate, so a typed node fails a
+# closed shape unless rdf:type is ignored. Every closed shape below carries
+# sh:ignoredProperties ( rdf:type ) for that reason and no other.
 # ----------------------------------------------------------------------------
 
 <#CommittedAction> a sh:NodeShape ;

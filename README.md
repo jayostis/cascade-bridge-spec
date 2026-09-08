@@ -37,7 +37,7 @@ not a conforming adapter package:
 - the pinning rules, [`docs/pinning.md`](docs/pinning.md).
 
 Not settled, and not answerable from anything in this repository. If one of these
-blocks you, ask — do not infer an answer from a discussion thread elsewhere:
+blocks you, ask:
 
 - **What Core contains.** The open proposal is SPARQL CONSTRUCT over a generic
   lift as Core, with XSLT 3, RML and FHIR Mapping Language as optional profiles.
@@ -125,17 +125,12 @@ three different sentences: a lint that silently checks nothing is worse than no
 lint.
 
 An adapter does not run that by hand. The same checks are published from this
-repository as a composite GitHub Action, so an adapter's whole CI is:
-
-```yaml
-      - uses: actions/checkout@v4
-      - uses: jayostis/cascade-bridge-spec/.github/actions/validate-adapter@v0.3.0
-```
-
-The tag in that line is the adapter's `bridge:specPin` in executable form: the
-two name the same commit of this repository, and the action checks that they do.
-The action takes a directory, names no adapter, and clones nothing but the
-caller's own checkout — the arrow runs from adapter to specification.
+repository as a composite GitHub Action, and an adapter's whole CI is the two
+lines in [`docs/adapter/validation.md`](docs/adapter/validation.md). The ref in
+the second is the adapter's `bridge:specPin` in executable form: the two name
+the same commit of this repository, and the action checks that they do. The
+action takes a directory, names no adapter, and clones nothing but the caller's
+own checkout — the arrow runs from adapter to specification.
 
 [`docs/adapter/validation.md`](docs/adapter/validation.md) has the full six-item list a
 conforming package must pass, the words a check may be reported in, and the
