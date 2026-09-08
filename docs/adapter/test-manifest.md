@@ -67,10 +67,8 @@ everything the format does not mean.** A stricter rule than the format's meaning
 does not catch more mapping errors; it only fails harnesses that are right.
 
 Isomorphism, not byte equality, because the Bridge's records are blank nodes and
-blank node labels are not stable. RDF Dataset
-Canonicalization (RDFC-1.0, W3C Recommendation 2024) as how to decide it
-properly, and says so against the comparison the pilot's oracle uses today:
-`cascade-cli`'s `tests/clinvar-conformance.test.ts` compares
+blank node labels are not stable. RDF Dataset Canonicalization (RDFC-1.0, W3C
+Recommendation 2024) is how to decide it properly. The pilot's oracle compares
 `riot --output=nq | sort` byte for byte, which assumes the same thing without
 deciding it.
 
@@ -78,7 +76,7 @@ A multiset, not an ordered array, because no entry in a findings sidecar refers
 to a position, so the order carries no meaning. This replaced an ordering rule —
 "entry for entry, in the sort order (`sourceField`, `severity`, `reason`)" — that
 was written in the pilot adapter and measured there before being carried up.
-`cascade-cli` wrote the oracles with `localeCompare`, which is ICU collation, in
+The oracles were written with `localeCompare`, which is ICU collation, in
 which `/` sorts before `@` although U+002F is above U+0040; across the four
 committed sidecars, 78, 56, 6 and 1 adjacent pairs are out of code-point order.
 A harness comparing with Java's `String.compareTo`, or with JavaScript's `<`,

@@ -27,9 +27,9 @@ declared with an `rdfs:comment` in [`vocab/bridge.ttl`](../../vocab/bridge.ttl).
 
 | property | cardinality | value | what it is |
 |---|---|---|---|
-| `identifier` | exactly 1 | string, `^[a-z][a-z0-9-]*$` | the format id a Bridge routes on. `clinvar` in the pilot, the same string `cascade-cli` accepts for `--from` |
+| `identifier` | exactly 1 | string, `^[a-z][a-z0-9-]*$` | the format id a Bridge routes on. `clinvar` in the pilot |
 | `name` | exactly 1 | string | the human name of the source format |
-| `version` | exactly 1 | string, semver | the adapter package's own version, the one its `CHANGELOG.md` carries |
+| `version` | exactly 1 | string, semver | the adapter package's own version |
 | `license` | exactly 1 | IRI | the SPDX licence entity for the package |
 | `conformsTo` | 1 or more | IRI | what the adapter is written against. The profile IRI below is how conformance to this specification is declared |
 | `bridge:profileRequired` | 0 or more | IRI, a `bridge:Profile` | a Bridge profile needed beyond Core. An adapter that needs Core only names none |

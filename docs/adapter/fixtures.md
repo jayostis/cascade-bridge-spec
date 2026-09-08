@@ -82,7 +82,7 @@ derived from without matching on file names.
 
 ## The findings sidecar, and the question it leaves open
 
-**As it stands today**, a findings sidecar is `cascade-cli`'s four-field JSON
+**As it stands today**, a findings sidecar is a four-field JSON
 record — `sourceField`, `reason`, `severity`, `context` — one entry per thing the
 mapping could not carry across. It is a private shape, and it is what the oracles
 are asserted against, so it is what an adapter writes today.

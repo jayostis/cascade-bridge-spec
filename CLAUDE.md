@@ -1,9 +1,7 @@
 # cascade-bridge-spec — Agent Context
 
 The home of the **Cascade Bridge Specification**: the contract every Cascade
-Bridge Adapter and every Bridge implementation follows. The three proper nouns are
-section 2;
-the README repeats them and the layout.
+Bridge Adapter and every Bridge implementation follows.
 
 DRAFT, thin and pilot-driven. Every artefact was seeded from phase 1 of the pilot
 adapter, and nothing has yet been executed by a Bridge, because no Bridge exists.
@@ -15,8 +13,8 @@ adapter, and nothing has yet been executed by a Bridge, because no Bridge exists
 and in `docs/`: `adapter/manifest.md`, `adapter/test-manifest.md`,
 `adapter/validation.md`, `pinning.md`. Changing any of them changes what every
 adapter and every Bridge must do, and needs its reasoning recorded in the same
-commit. The rest is
-explanatory, machinery, or the lint's own test subject: see each directory.
+commit. The rest is explanatory, machinery, or the lint's own test subject:
+see each directory.
 
 **The prose must agree with the Turtle exactly** — term names, cardinalities,
 what each shape checks. The Turtle is what runs, and a document disagreeing with
@@ -41,8 +39,8 @@ commit.
 - **Standards, not inventions.** RO-Crate 1.2, W3C's `mf:`, SHACL, Enterprise
   Integration Patterns for stage names, EARL for results, SKOS for a concept
   table. If something seems to need a new convention, find the published one.
-- **The pilot is evidence, not authority.** A fact taken from
-  `bridge-adapter-clinvar` is written here generalised. Do not modify it here.
+- **The pilot is evidence, not authority.** A fact taken from the pilot adapter
+  is written here generalised. Do not modify it here.
 - **Everything that pins this repository pins a tag**, verified with
   `git ls-remote` first: a pin to an untagged commit dies at `git checkout` the
   first time a branch is reset. This repository pins nothing, in either
