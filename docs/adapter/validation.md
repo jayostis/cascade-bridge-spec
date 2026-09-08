@@ -175,7 +175,7 @@ of the contract because a tier is a claim someone has to be able to re-verify:
   and every profile in `bridge:profileRequired` is in Core.
 - **`limited: requires <profiles>`** — otherwise, naming the profiles.
 
-**Candidate, never universal.** RFC section 11: an adapter's tier is *measured*,
+**Candidate, never universal.** an adapter's tier is *measured*,
 by running its fixtures on every published Bridge, and recorded in a catalogue —
 a repository downstream of every adapter and every Bridge, which does not exist
 yet ([`alignment.md`](../pinning.md)). A lint sees one package on one machine and
@@ -183,11 +183,8 @@ can see only that nothing disqualifies it. The word the lint may say is the
 strongest one the evidence supports, and no adapter declares a tier of its own
 ([`manifest.md`](manifest.md)).
 
-What is in Core is not yet settled — RFC section 9 proposes a SPARQL-only Core
-and marks it as question 1 for the spike, against a prior of XSLT 3 for XML and
-RML for JSON — so until that question is answered on
-[spec#43](https://github.com/the-cascade-protocol/spec/issues/43), "every profile
-is in Core" is decidable only for an adapter that requires no profiles at all.
+What is in Core is not yet settled, so "every profile is in Core" is decidable
+only for an adapter that requires no profiles at all.
 An adapter that requires any profile is `limited: requires <profiles>` today,
 and may be reclassified without changing a byte of the adapter when Core is
 fixed. The pilot adapter requires `xslt-3` and is therefore

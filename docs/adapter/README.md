@@ -1,5 +1,12 @@
 # Building an adapter
 
+> **The RFC is not this specification.** Cascade Bridge RFC (`spec#43`) is a
+> request for comment: a discussion thread, still being argued, written before
+> most of this existed. Nothing in it is normative, and nothing here follows from
+> it. This repository is the contract — these documents, and the Turtle they
+> point at. If something here is unclear, incomplete or looks wrong, **ask**.
+> Do not go and read the RFC and implement what you find there.
+
 An adapter is a package of **data** for one source format. It contains no code:
 the thing that runs it is a Bridge. If you are writing one, everything you need
 is in this directory, in this order.

@@ -252,7 +252,7 @@
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       },
-      "description": "The findings a mapping would have to produce beside that graph: one entry, for the free-text note the invented vocabulary has no term for. The four-field shape docs/adapter/fixtures.md records as what an adapter writes today, with the standard form still open on spec#43 section 8."
+      "description": "The findings a mapping would have to produce beside that graph: one entry, for the free-text note the invented vocabulary has no term for. The four-field shape docs/adapter/fixtures.md records as what an adapter writes today, with the standard form still open."
     },
     {
       "@id": "https://example.org/synthetic-adapter/releases/example-release-2026-01.xml.gz",

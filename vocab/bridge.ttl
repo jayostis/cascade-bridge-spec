@@ -1,5 +1,5 @@
 # The Cascade Bridge vocabulary, bridge:, of the Cascade Bridge Specification
-# (the-cascade-protocol/spec#43). Two groups of terms in one namespace. It is
+# Two groups of terms in one namespace. It is
 # a Bridge-spec namespace, not a Cascade vocabulary: no cascade: or genomics:
 # term is minted here. The shapes that constrain a crate and a manifest as one
 # graph are shapes/bridge.shapes.ttl.
@@ -10,7 +10,7 @@
 # RO-Crate context expands conformsTo to dct:conformsTo, not to a schema.org
 # term, so a query written with schema:conformsTo matches nothing.
 #
-# An adapter declares no tier (RFC section 11): a tier is measured by running
+# An adapter declares no tier: a tier is measured by running
 # an adapter's fixtures on every published Bridge, and recorded in a catalogue
 # downstream of both, which does not exist yet (docs/pinning.md).
 #
@@ -32,9 +32,8 @@
   dct:description "Terms for an adapter's manifest and its test manifest. Adapter terms: the classes bridge:Adapter, bridge:Envelope and bridge:Profile, and the properties that carry what schema.org cannot about an adapter package described as an RO-Crate. Test terms: three test types that carry the comparison rule, and the properties that name a test's input, expected output and the stamp predicates ignored when comparing, used with W3C's mf: test-manifest vocabulary (mf:Manifest, mf:entries, mf:name, mf:action, mf:result)."@en ;
   dct:created "2026-09-06"^^xsd:date ;
   owl:versionInfo "v1-draft" ;
-  rdfs:comment "DRAFT. The vocabulary of the Cascade Bridge Specification (the-cascade-protocol/spec#43), whose home is the cascade-bridge-spec repository. Seeded from a pilot adapter, where it was two namespaces in name only before that: the test terms were bt: (bridge-test) before the adapter terms joined them. Which adapter, and at which commit, is in this file's header, because it is a fact about this vocabulary's history and not a dependency: nothing in this repository names an adapter it reads. No compatibility is promised before a numbered release."@en ;
-  rdfs:seeAlso <https://github.com/the-cascade-protocol/spec/issues/43> ,
-               <https://github.com/jayostis/cascade-bridge-spec> .
+  rdfs:comment "DRAFT. The vocabulary of the Cascade Bridge Specification, whose home is the cascade-bridge-spec repository. Seeded from a pilot adapter, where it was two namespaces in name only before that: the test terms were bt: (bridge-test) before the adapter terms joined them. Which adapter, and at which commit, is in this file's header, because it is a fact about this vocabulary's history and not a dependency: nothing in this repository names an adapter it reads. No compatibility is promised before a numbered release."@en ;
+  rdfs:seeAlso <https://github.com/jayostis/cascade-bridge-spec> .
 
 # ============================================================================
 # Adapter terms
@@ -56,7 +55,7 @@ bridge:Envelope a owl:Class ;
 
 bridge:Profile a owl:Class ;
   rdfs:label "Profile"@en ;
-  rdfs:comment "An optional Bridge profile (RFC section 9) beyond Core: a capability a Bridge may offer and an adapter may require, such as xslt-3, sparql-construct or streaming."@en ;
+  rdfs:comment "An optional Bridge profile beyond Core: a capability a Bridge may offer and an adapter may require, such as xslt-3, sparql-construct or streaming."@en ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
 # ----------------------------------------------------------------------------
@@ -74,7 +73,7 @@ bridge:xslt-3 a bridge:Profile ;
 
 bridge:profileRequired a owl:ObjectProperty ;
   rdfs:label "profile required"@en ;
-  rdfs:comment "A Bridge profile the adapter needs beyond Core, by IRI; repeatable, zero or more. An adapter that needs Core only names none. This is all an adapter declares about where it runs: its tier is not declared here but measured, by a catalogue that records which published Bridges pass its test manifest (RFC section 11), and a lint may say \"universal candidate\" only when the package holds no code and every profile named here is in Core."@en ;
+  rdfs:comment "A Bridge profile the adapter needs beyond Core, by IRI; repeatable, zero or more. An adapter that needs Core only names none. This is all an adapter declares about where it runs: its tier is not declared here but measured, by a catalogue that records which published Bridges pass its test manifest, and a lint may say \"universal candidate\" only when the package holds no code and every profile named here is in Core."@en ;
   rdfs:domain bridge:Adapter ;
   rdfs:range bridge:Profile ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
@@ -252,5 +251,5 @@ bridge:outputDigest a owl:DatatypeProperty ;
 
 bridge:ignorePredicate a owl:ObjectProperty ;
   rdfs:label "ignore predicate"@en ;
-  rdfs:comment "A stamp predicate (a triple a Bridge adds after the mapping: RFC section 5, \"stamp\"; EIP Message History) removed from both sides before comparison. By IRI; repeatable. The stamp set is a property of the Bridge's stamp stage, not of any one fixture, so it is stated on the mf:Manifest and every entry inherits it; an entry that carries its own replaces the manifest's set for that entry alone."@en ;
+  rdfs:comment "A stamp predicate (a triple a Bridge adds after the mapping; the stamp stage, EIP Message History) removed from both sides before comparison. By IRI; repeatable. The stamp set is a property of the Bridge's stamp stage, not of any one fixture, so it is stated on the mf:Manifest and every entry inherits it; an entry that carries its own replaces the manifest's set for that entry alone."@en ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .

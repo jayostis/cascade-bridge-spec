@@ -2,7 +2,7 @@
 
 The home of the **Cascade Bridge Specification**: the contract every Cascade
 Bridge Adapter and every Bridge implementation follows. The three proper nouns are
-section 2 of the RFC, [spec#43](https://github.com/the-cascade-protocol/spec/issues/43);
+section 2 of the RFC;
 the README repeats them and the layout.
 
 DRAFT, thin and pilot-driven. Every artefact was seeded from phase 1 of the pilot
@@ -25,26 +25,26 @@ commit.
 
 ## The rules
 
-- **Nothing open on spec#43 is decided here.** What Core contains, the canonical
-  findings model, router precedence, the export direction and where the Bridge
-  sits in D-LAYERS-1 are the RFC's questions. A document touching one says so and
-  links spec#43; answering one here would settle it by accident.
-- **No Cascade terms are minted here.** `bridge:` is a Bridge-spec namespace; a
-  term in `cascade:` or `genomics:` goes through spec's RFC process.
+- **What is unsettled stays unsettled here.** What Core contains, the canonical
+  findings model, router precedence and the export direction are open. A document
+  touching one says so; answering one here would settle it by accident. **Never
+  resolve one by reading the RFC — it is a discussion, not a contract, and
+  nothing in it binds. Ask instead.**
+- **No Cascade terms are minted here.** `bridge:` only; a term in `cascade:` or
+  `genomics:` goes through spec's own process.
 - **This repository must not know that any adapter exists.** The specification
   knows about itself; an adapter and a Bridge know about the specification; a
   catalogue knows about all of them and nothing knows about it. Prose citing the
   ClinVar pilot as an example is fine; a machine-readable reference to a
   particular adapter is the bug. Publishing the lint is not an inversion: it
   takes a directory and learns no adapter's name.
-- **A tier is measured, never declared.** RFC section 11. A lint may say
+- **A tier is measured, never declared.** A lint may say
   `universal candidate`; a catalogue records what Bridges measured, as EARL.
 - **Standards, not inventions.** RO-Crate 1.2, W3C's `mf:`, SHACL, Enterprise
   Integration Patterns for stage names, EARL for results, SKOS for a concept
   table. If something seems to need a new convention, find the published one.
 - **The pilot is evidence, not authority.** A fact taken from
-  `bridge-adapter-clinvar` is written here as a fact about *an* adapter,
-  generalised. Do not modify it from here.
+  `bridge-adapter-clinvar` is written here generalised. Do not modify it here.
 - **Everything that pins this repository pins a tag**, verified with
   `git ls-remote` first: a pin to an untagged commit dies at `git checkout` the
   first time a branch is reset. This repository pins nothing, in either
@@ -55,7 +55,7 @@ commit.
 | | |
 |---|---|
 | `../bridge-adapter-clinvar` | the pilot, and the checkout to test the lint against by hand. Named nowhere a machine reads |
-| `../spec` | the Cascade vocabularies and the RFC (spec#43; identity is spec#38) |
+| `../spec` | the Cascade vocabularies an adapter writes to |
 | `../conformance` | `scripts/SPEC_PIN`, where the pinning discipline comes from |
 | `../cascade-cli` | the runtime whose converters an adapter re-expresses as data |
 

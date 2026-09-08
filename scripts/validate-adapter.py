@@ -870,7 +870,7 @@ def tier_line(graph, root, inventory_ok):
     """The one derived fact the lint reports, in the words docs/adapter/validation.md
     fixes. Candidate, never universal: a lint sees one package on one machine,
     and a tier is measured by running an adapter's fixtures on every published
-    Bridge (RFC section 11)."""
+    Bridge."""
     profiles = sorted(
         str(p).rsplit("#", 1)[-1] for p in graph.objects(root, BRIDGE.profileRequired)
     )

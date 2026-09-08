@@ -5,14 +5,9 @@ An adapter package's manifest is an **RO-Crate 1.2** at the package root,
 what the adapter says about itself and the provenance record for every file and
 remote dataset it names, in one JSON-LD graph.
 
-This departs from the sketch in section 6 of the Cascade Bridge RFC
-([spec#43](https://github.com/the-cascade-protocol/spec/issues/43)), which
-names an `adapter.yaml`. The departure was made in the pilot adapter and is
-carried here: everything an adapter says about itself belongs in one graph, so
-that a reference is a link SHACL can check rather than a string that could
-disagree with the thing it names. That the manifest should be an RO-Crate and
-not a YAML dialect is a finding for spec#43, which has not yet been folded into
-the RFC's own text.
+There is no `adapter.yaml`. Everything an adapter says about itself belongs in
+one graph, so that a reference is a link SHACL can check rather than a string
+that could disagree with the thing it names.
 
 The cost is stated rather than hidden: JSON-LD is less pleasant to hand-edit
 than YAML and has no field completion. The RO-Crate validator and the SHACL
@@ -37,7 +32,7 @@ declared with an `rdfs:comment` in [`vocab/bridge.ttl`](../../vocab/bridge.ttl).
 | `version` | exactly 1 | string, semver | the adapter package's own version, the one its `CHANGELOG.md` carries |
 | `license` | exactly 1 | IRI | the SPDX licence entity for the package |
 | `conformsTo` | 1 or more | IRI | what the adapter is written against. The profile IRI below is how conformance to this specification is declared |
-| `bridge:profileRequired` | 0 or more | IRI, a `bridge:Profile` | a Bridge profile needed beyond Core (RFC section 9). An adapter that needs Core only names none |
+| `bridge:profileRequired` | 0 or more | IRI, a `bridge:Profile` | a Bridge profile needed beyond Core. An adapter that needs Core only names none |
 | `bridge:specPin` | exactly 1 | IRI | the commit of the Cascade Bridge Specification the adapter is written against |
 | `bridge:vocabularyPin` | exactly 1 | IRI | the `spec` commit the adapter's Cascade vocabularies are pinned to |
 | `bridge:vocabulary` | 1 or more | IRI | a Cascade vocabulary the adapter writes, by namespace |
@@ -50,7 +45,7 @@ declared with an `rdfs:comment` in [`vocab/bridge.ttl`](../../vocab/bridge.ttl).
 | `bridge:extensionVocabulary` | at most 1 | IRI | the adapter's own namespace for values with no Cascade term. Phase 2 |
 | `bridge:testManifest` | exactly 1 | IRI, an `mf:Manifest` | the test manifest a Bridge's harness executes |
 
-An adapter **does not declare a tier**. RFC section 11: a tier is measured, by
+An adapter **does not declare a tier**. a tier is measured, by
 running the adapter's fixtures on every published Bridge, and recorded in a
 catalogue, which is a repository downstream of every adapter and every Bridge and
 is no part of this one ([`alignment.md`](../pinning.md)).
@@ -127,9 +122,9 @@ because a format's detect rule is a predicate over a document and XPath is the
 language for writing one; a two-field rule of the specification's own invention
 would be a third thing to implement in every Bridge.
 
-Open on spec#43: what a router does when two adapters' detect rules are both
-true for one document, and whether an adapter may declare a precedence. Nothing
-in this specification answers it, and no adapter should be written to depend on
+Not specified: what a router does when two adapters' detect rules are both true
+for one document, and whether an adapter may declare a precedence. Nothing here
+answers it, and no adapter should be written to depend on
 an answer.
 
 ## What an adapter with a mapping adds
@@ -145,11 +140,11 @@ direction is not specified.
 - **Tables.** `bridge:table` names each lookup table the mapping reads, as a
   crate `File` whose `schema:isBasedOn` says where its rows came from and whose
   `schema:license` is stated where it differs from the package's. A table is
-  data a mapping reads, never a function it calls (RFC section 5). Where a table
+  data a mapping reads, never a function it calls. Where a table
   is a mapping from source phrases to Cascade terms it is a concept map, and
   SKOS in Turtle is the form to write it in: it joins the same graph as the
   crate and the manifest, and no CSV convention has to be invented.
 - **The extension vocabulary.** `bridge:extensionVocabulary` names the adapter's
   own namespace for values that have no Cascade term, at most one, its file a
   `File` in `hasPart`. Terms in it are the adapter's. No `cascade:` term is ever
-  minted in an adapter; those go through spec's RFC process (RFC section 10).
+  minted in an adapter; those go through spec's RFC process.

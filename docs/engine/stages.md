@@ -1,8 +1,6 @@
 # Engine stages, in the vocabulary integration engines already use
 
-Section 5 of the Cascade Bridge RFC
-([spec#43](https://github.com/the-cascade-protocol/spec/issues/43)) lists the
-stages a Bridge runs *around* an adapter's mapping. Each is an established
+The stages a Bridge runs *around* an adapter's mapping. Each is an established
 Enterprise Integration Pattern (Hohpe and Woolf, 2003), so the design reads in
 the terms every integration engine, Apache Camel included, already documents.
 Nothing here is invented, and nothing here is a name a Bridge implementer has to
@@ -46,8 +44,9 @@ which roots were dropped and why.
 
 **Message Translator and Canonical Data Model.** The mapping is the only
 format-specific thing that runs, and it runs inside an engine the Bridge already
-ships. What that engine is, is exactly what profiles are for: RFC section 9
-proposes SPARQL CONSTRUCT over a generic lift as Core, with XSLT 3, RML and FHIR
+ships. What that engine is, is exactly what profiles are for. Which of them is
+Core is not settled; a proposal of SPARQL CONSTRUCT over a generic lift as Core,
+with XSLT 3, RML and FHIR
 Mapping Language as optional profiles, and marks the proposal as a question the
 spike answers rather than a decision already taken. The target is Cascade RDF in
 the pinned vocabularies, which is the canonical model every adapter writes to and

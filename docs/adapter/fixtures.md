@@ -95,8 +95,8 @@ keeps regeneration diffs readable, but that is file hygiene and never a
 judgement: the sidecars copied from `conformance` are in the ICU collation their
 authoring script left them in and are not re-sorted.
 
-**RFC section 8 already says it should not stay private**: "one canonical
-findings model inside the Bridge", into which source-side validation, the
+**It should not stay private.** One canonical findings model belongs inside the
+Bridge, into which source-side validation, the
 mapping, the undeclared-predicate check, SHACL and the honesty differential all
 land. Two published forms fit, split by what a finding is *about*:
 
@@ -114,9 +114,8 @@ land. Two published forms fit, split by what a finding is *about*:
 **The constraint that keeps the question open.** The sidecars are asserted byte
 for byte against the existing converter's output, so an adapter whose oracles
 are those files must keep writing `gaps.json` and let the Bridge map it. The
-standard form is therefore a question to settle **on
-[spec#43](https://github.com/the-cascade-protocol/spec/issues/43), section 8**,
-before any second adapter writes findings — because the moment two adapters have
+standard form is therefore a question to settle **before any second adapter
+writes findings** — because the moment two adapters have
 written findings in two shapes, the choice has been made by accident.
 
 Until it is settled, this specification says only what is true: the sidecar is

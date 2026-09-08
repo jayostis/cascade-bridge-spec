@@ -1,10 +1,8 @@
 # Keeping the specification, the adapters and the Bridges aligned
 
 Several repositories' worth of artefacts have to agree about which revision of
-which vocabulary and which contract they were built against. RFC section 11
-names the problem and stops short of a mechanism: "whatever repository layout is
-chosen has to keep the pins visible and testable in CI." This document is the
-mechanism.
+which vocabulary and which contract they were built against. The pins have to be
+visible and testable in CI. This document is the mechanism.
 
 ## What knows about what
 
@@ -28,10 +26,7 @@ an adapter that runs on one Bridge, which is the opposite of what "an adapter is
 data" is for; a specification that pinned an implementation would be a
 specification the implementation could change.
 
-This mirrors how `spec`, `conformance`, `sdk-typescript` and `cascade-cli`
-already relate, and it is the "full separation" option of RFC section 15 rather
-than either of the other two. The cost that option names is real and is accepted:
-more repositories to keep in step.
+The cost is real and accepted: more repositories to keep in step.
 
 ### The specification does not know which adapters exist
 
@@ -43,7 +38,7 @@ organisation, and this specification must stay checkable without knowing that
 one exists. The check therefore runs in the adapter, against the head being
 proposed — the next section.
 
-A catalogue, which RFC section 9 asks for, is downstream of every adapter and
+A catalogue is downstream of every adapter and
 every Bridge. It does not exist, and nothing about it belongs here.
 ## An adapter's CI calls this repository's lint
 

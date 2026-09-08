@@ -3,8 +3,7 @@
 The home of the **Cascade Bridge Specification**: the contract every Cascade
 Bridge Adapter and every Cascade Bridge implementation follows.
 
-Three proper nouns, from section 2 of the Cascade Bridge RFC
-([the-cascade-protocol/spec#43](https://github.com/the-cascade-protocol/spec/issues/43)):
+Three proper nouns:
 
 | term | what it is |
 |---|---|
@@ -24,7 +23,7 @@ does not dereference yet.
 
 Nothing here has yet been executed by a Bridge, because no Bridge exists.
 
-### What is normative here, and what is still discussed on spec#43
+### What is normative here, and what is not settled
 
 Normative — this repository is the authority, and an adapter that fails these is
 not a conforming adapter package:
@@ -37,20 +36,29 @@ not a conforming adapter package:
 - the validation list, [`docs/adapter/validation.md`](docs/adapter/validation.md);
 - the alignment rules, [`docs/pinning.md`](docs/pinning.md).
 
-Still open, and settled on spec#43 rather than here:
+Not settled, and not answerable from anything in this repository. If one of these
+blocks you, ask — do not infer an answer from a discussion thread elsewhere:
 
-- **What Core contains.** RFC section 9 proposes SPARQL CONSTRUCT over a generic
-  lift as Core, with XSLT 3, RML and FHIR Mapping Language as optional profiles,
-  and marks it as question 1 for the spike. Until it is answered, only an adapter
-  requiring no profile at all can be shown to need Core alone.
-- **The canonical findings model.** RFC section 8 requires one; the shape is not
+- **What Core contains.** The open proposal is SPARQL CONSTRUCT over a generic
+  lift as Core, with XSLT 3, RML and FHIR Mapping Language as optional profiles.
+  Until it is settled, only an adapter requiring no profile at all can be shown
+  to need Core alone.
+- **The canonical findings model.** One is wanted; the shape is not
   chosen. [`docs/adapter/fixtures.md`](docs/adapter/fixtures.md)
   states the two published candidates and the constraint keeping the question
   open.
 - **Router precedence** when two adapters' detect rules both match a document.
 - **The export direction.** Import only is specified; `out/` is not.
 
-Where a document here touches an open question, it says so and links spec#43.
+Where a document here touches one of these, it says so.
+
+
+> **The RFC is not this specification.** Cascade Bridge RFC (`spec#43`) is a
+> request for comment: a discussion thread, still being argued, written before
+> most of this existed. Nothing in it is normative, and nothing here follows from
+> it. This repository is the contract — these documents, and the Turtle they
+> point at. If something here is unclear, incomplete or looks wrong, **ask**.
+> Do not go and read the RFC and implement what you find there.
 
 ## Start here
 

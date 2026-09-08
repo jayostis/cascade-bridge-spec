@@ -67,7 +67,7 @@ everything the format does not mean.** A stricter rule than the format's meaning
 does not catch more mapping errors; it only fails harnesses that are right.
 
 Isomorphism, not byte equality, because the Bridge's records are blank nodes and
-blank node labels are not stable. RFC section 11 names RDF Dataset
+blank node labels are not stable. RDF Dataset
 Canonicalization (RDFC-1.0, W3C Recommendation 2024) as how to decide it
 properly, and says so against the comparison the pilot's oracle uses today:
 `cascade-cli`'s `tests/clinvar-conformance.test.ts` compares
@@ -140,7 +140,7 @@ crate entity exists.
 
 ## Ignore predicates: stated once, inherited by every entry
 
-A stamp is a triple a Bridge adds *after* the mapping (RFC section 5, "stamp";
+A stamp is a triple a Bridge adds *after* the mapping (EIP Message History;
 the Enterprise Integration Patterns Message History): `cascade:dataProvenance`,
 `cascade:schemaVersion`, source identity, import time. The stamp set is a
 property of the Bridge's stamp stage, not of any one fixture.

@@ -232,7 +232,7 @@
 # scanning a file for a language: a package is refused because it declares a
 # media type that executes, which is a statement its author wrote down.
 #
-# The set is the formats RFC section 6 leaves an adapter: the package's own
+# The set is the formats an adapter package may hold: the package's own
 # description (JSON-LD, Turtle, JSON, YAML, Markdown), the source-side schemas
 # and documents (XML, its two media types, JSON, YAML), the mapping languages a
 # Bridge profile may offer (XSLT 3, SPARQL, and RML, which is Turtle), the
