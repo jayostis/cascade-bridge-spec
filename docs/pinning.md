@@ -69,7 +69,7 @@ What the lint runs is [`validation.md`](adapter/validation.md).
 ## Every dependency is a commit SHA, and every pinned SHA is tagged
 
 A pin is a full 40-character SHA, never a branch name, never a tag alone, never
-"latest". `conformance/scripts/SPEC_PIN` is the existing statement of why:
+"latest". Why:
 
 > Without a pin the suite silently tracks whatever is on spec `main`, so a run
 > that passed yesterday can pass today for a different reason.
@@ -93,7 +93,7 @@ a branch is an action whose meaning changes without a commit anywhere.
 A pin is written as an entity, not a string: a `SoftwareSourceCode` with
 `codeRepository` and `version`, which is the shape `bridge:specPin` and
 `bridge:vocabularyPin` both use. The repository half is carried explicitly for
-the reason SPEC_PIN gives about the fork: a commit that exists only on a fork
+this reason: a commit that exists only on a fork
 must name the fork, or CI clones a repository that does not hold the object, and
 the pin moves back to the org in the same commit that re-pins to an org SHA.
 

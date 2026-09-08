@@ -53,10 +53,8 @@ the pinned vocabularies, which is the canonical model every adapter writes to an
 nothing else reads from an adapter.
 
 **Aggregator.** One unit yields several records that point at each other. How the
-pointer is expressed — a blank node the Bridge resolves, or a name minted by
-whatever rule
-[spec#38](https://github.com/the-cascade-protocol/spec/issues/38#issuecomment-5555482906)
-settles on — is an identity question, and the pattern is the same either way. An
+pointer is expressed — a blank node the Bridge resolves, or a minted name — is an
+identity question, not settled here, and the pattern is the same either way. An
 adapter's layout must not depend on the answer, and the pilot's does not.
 
 **Message History.** The stamp is the Bridge's, not the adapter's. This is why a
@@ -77,7 +75,7 @@ findings model, whose standard shape is still open
 **Idempotent Receiver.** Importing the same document twice must change nothing.
 The adapter's obligation is only that everything it emits is a function of the
 input — which a declarative mapping guarantees by construction — and the naming
-rule that makes re-import a no-op belongs to the Bridge and to spec#38.
+rule that makes re-import a no-op belongs to the Bridge.
 
 **Normalizer.** Formats with several publishers need a normalising pass per
 vendor before the translator: C-CDA from Epic and Cerner, say,

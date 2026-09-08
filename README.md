@@ -163,17 +163,7 @@ nothing at all. A comparison is insensitive to everything the format does not
 mean. And a Bridge's verdict on an adapter reaches a catalogue as an EARL
 report, never as a pin in either direction.
 
-The reasoning, including the part inherited from
-`conformance/scripts/SPEC_PIN`, is in [`docs/pinning.md`](docs/pinning.md).
-
-## Related repositories
-
-- [the-cascade-protocol/spec](https://github.com/the-cascade-protocol/spec) —
-  the Cascade vocabularies and SHACL shapes an adapter writes to. An adapter
-  pins a revision of them with `bridge:vocabularyPin`.
-- [jayostis/cascade-bridge-adapter-clinvar](https://github.com/jayostis/cascade-bridge-adapter-clinvar) —
-  a worked adapter, useful as an example of a conforming package. Nothing a
-  machine reads here names it.
+The reasoning is in [`docs/pinning.md`](docs/pinning.md).
 
 ## Licence
 

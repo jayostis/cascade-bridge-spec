@@ -77,10 +77,8 @@ repository, and the IRI is an identifier rather than a location.
 
 The pin is an entity, not a string: a `SoftwareSourceCode` in the crate with
 `codeRepository` and `version` (the full SHA), the same shape
-`bridge:vocabularyPin` uses and the same shape
-`conformance/scripts/SPEC_PIN` carries as `repo=` and `commit=`. Every commit an
-adapter pins is tagged in the repository it pins, for the reason SPEC_PIN
-records: a branch tip is not a guarantee, and a pin to an untagged commit dies
+`bridge:vocabularyPin` uses. Every commit an adapter pins is tagged in the
+repository it pins: a branch tip is not a guarantee, and a pin to an untagged commit dies
 at `git checkout` the first time a branch is reset. [`alignment.md`](../pinning.md)
 is the whole of that discipline.
 

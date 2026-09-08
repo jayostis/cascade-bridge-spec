@@ -48,15 +48,6 @@ commit.
   first time a branch is reset. This repository pins nothing, in either
   direction; `docs/pinning.md` is the mechanism in full.
 
-## Sibling checkouts
-
-| | |
-|---|---|
-| `../bridge-adapter-clinvar` | the pilot, and the checkout to test the lint against by hand. Named nowhere a machine reads |
-| `../spec` | the Cascade vocabularies an adapter writes to |
-| `../conformance` | `scripts/SPEC_PIN`, where the pinning discipline comes from |
-| `../cascade-cli` | the runtime whose converters an adapter re-expresses as data |
-
 ## Where a rule goes
 
 This file holds what has to be known *before* choosing a directory to open.
