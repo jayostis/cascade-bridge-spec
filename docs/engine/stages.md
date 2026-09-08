@@ -39,18 +39,17 @@ publishes today; a document in another shape is routed elsewhere or reported,
 never guessed at. The pilot's rule is narrower than the existing converter's
 detector, which matches five roots — three belonging to older or different
 ClinVar shapes, one being the bare unit — and misses the release envelope
-entirely; narrowing it is a decision, and the adapter's `docs/format.md` records
-which roots were dropped and why.
+entirely; narrowing it is a decision, and the adapter records which roots were
+dropped and why.
 
 **Message Translator and Canonical Data Model.** The mapping is the only
 format-specific thing that runs, and it runs inside an engine the Bridge already
 ships. What that engine is, is exactly what profiles are for. Which of them is
-Core is not settled; a proposal of SPARQL CONSTRUCT over a generic lift as Core,
-with XSLT 3, RML and FHIR
-Mapping Language as optional profiles, and marks the proposal as a question the
-spike answers rather than a decision already taken. The target is Cascade RDF in
-the pinned vocabularies, which is the canonical model every adapter writes to and
-nothing else reads from an adapter.
+Core is not settled: SPARQL CONSTRUCT over a generic lift is proposed as Core,
+with XSLT 3, RML and FHIR Mapping Language as optional profiles. That is a
+proposal, not a decision taken. The target is Cascade RDF in the pinned
+vocabularies, which is the canonical model every adapter writes to and nothing
+else reads from an adapter.
 
 **Aggregator.** One unit yields several records that point at each other. How the
 pointer is expressed — a blank node the Bridge resolves, or a minted name — is an
@@ -64,9 +63,9 @@ the comparison removes both sides' before judging. An adapter that stamped
 provenance itself would be doing the Bridge's job and would fail its own
 fixtures on a second Bridge.
 
-**Message Validator and Invalid Message Channel.** D-OPENWORLD-1: validation
-reports; it never refuses and never destroys. A unit that
-fails its schema is a finding about the input, and the unit still goes through.
+**Message Validator and Invalid Message Channel.** Validation reports; it never
+refuses and never destroys. A unit that fails its schema is a finding about the
+input, and the unit still goes through.
 An adapter can flag; it cannot reject. Findings from source validation, the
 mapping, the undeclared-predicate check and SHACL all land in the Bridge's one
 findings model, whose standard shape is still open

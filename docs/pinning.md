@@ -38,8 +38,9 @@ organisation, and this specification must stay checkable without knowing that
 one exists. The check therefore runs in the adapter, against the head being
 proposed — the next section.
 
-A catalogue is downstream of every adapter and
-every Bridge. It does not exist, and nothing about it belongs here.
+A catalogue is downstream of every adapter and every Bridge. It does not exist,
+and nothing about it belongs here.
+
 ## An adapter's CI calls this repository's lint
 
 The lint is published from here as a composite GitHub Action,
@@ -69,19 +70,14 @@ What the lint runs is [`validation.md`](adapter/validation.md).
 ## Every dependency is a commit SHA, and every pinned SHA is tagged
 
 A pin is a full 40-character SHA, never a branch name, never a tag alone, never
-"latest". Why:
+"latest". Without a pin, a consumer silently tracks whatever is on `main`, so a
+run that passed yesterday can pass today for a different reason.
 
-> Without a pin the suite silently tracks whatever is on spec `main`, so a run
-> that passed yesterday can pass today for a different reason.
-
-And, on the tagging half:
-
-> WHAT KEEPS THIS COMMIT REACHABLE, because a branch tip is not a guarantee: SIX
-> tags point at this exact SHA ... A tag holds the object even if the fork's
-> `main` is later reset or rebased onto upstream, which is the normal end of a
-> fork workflow and would otherwise leave every CI run — including runs of
-> unrelated PRs — dying at `git checkout` on an object that has been
-> garbage-collected. Do not re-pin to a fork SHA that no tag points at.
+A tag is what keeps the commit reachable, because a branch tip is not a
+guarantee. A tag holds the object even if the branch it sat on is later reset or
+rebased, which would otherwise leave every CI run — including runs of unrelated
+pull requests — dying at `git checkout` on an object that has been
+garbage-collected. Do not pin a SHA that no tag points at.
 
 So: **every commit of this repository that anything pins is tagged in this
 repository**, verified with `git ls-remote` before the pin lands, and the same
@@ -104,15 +100,14 @@ when a change needs what the new revision contains, in the pull request that
 makes the change, and that pull request re-measures whatever the pin's numbers
 are and records the before and after.
 
-Why not sync to `main`, stated the way conformance states it: a suite pinned to
-a moving target passes today for a different reason than it passed yesterday,
-and the difference is invisible. Worse, the failure surfaces in whichever
-unrelated pull request happens to run next, so the person who has to diagnose it
-is never the person who caused it. Conformance also shows the cost of the other
-extreme — its measured counts had gone two pins stale, and "a
-mandatory-verification section quoting numbers no run can reproduce teaches the
-reader to disbelieve the section." Both failures are avoided by the same rule:
-the pin and the measurement move together, in one deliberate commit.
+Why not sync to `main`: a suite pinned to a moving target passes today for a
+different reason than it passed yesterday, and the difference is invisible.
+Worse, the failure surfaces in whichever unrelated pull request happens to run
+next, so the person who has to diagnose it is never the person who caused it.
+The other extreme costs as much: measured counts that have gone stale against
+the pin. A mandatory-verification section quoting numbers no run can reproduce
+teaches the reader to disbelieve the section. Both failures are avoided by the
+same rule: the pin and the measurement move together, in one deliberate commit.
 
 ## Nothing pins what it does not consume
 

@@ -32,7 +32,7 @@
   dct:description "Terms for an adapter's manifest and its test manifest. Adapter terms: the classes bridge:Adapter, bridge:Envelope and bridge:Profile, and the properties that carry what schema.org cannot about an adapter package described as an RO-Crate. Test terms: three test types that carry the comparison rule, and the properties that name a test's input, expected output and the stamp predicates ignored when comparing, used with W3C's mf: test-manifest vocabulary (mf:Manifest, mf:entries, mf:name, mf:action, mf:result)."@en ;
   dct:created "2026-09-06"^^xsd:date ;
   owl:versionInfo "v1-draft" ;
-  rdfs:comment "DRAFT. The vocabulary of the Cascade Bridge Specification, whose home is the cascade-bridge-spec repository. Seeded from a pilot adapter, where it was two namespaces in name only before that: the test terms were bt: (bridge-test) before the adapter terms joined them. Which adapter, and at which commit, is in this file's header, because it is a fact about this vocabulary's history and not a dependency: nothing in this repository names an adapter it reads. No compatibility is promised before a numbered release."@en ;
+  rdfs:comment "DRAFT. The vocabulary of the Cascade Bridge Specification, whose home is the cascade-bridge-spec repository. No compatibility is promised before a numbered release."@en ;
   rdfs:seeAlso <https://github.com/jayostis/cascade-bridge-spec> .
 
 # ============================================================================
@@ -86,7 +86,7 @@ bridge:specPin a owl:ObjectProperty ;
 
 bridge:vocabularyPin a owl:ObjectProperty ;
   rdfs:label "vocabulary pin"@en ;
-  rdfs:comment "The spec revision the adapter's vocabularies are pinned to, by the commit's IRI: a schema:SoftwareSourceCode entity in the crate with schema:codeRepository and schema:version (the full SHA). Exactly one. The same pin the conformance suite carries in scripts/SPEC_PIN."@en ;
+  rdfs:comment "The spec revision the adapter's vocabularies are pinned to, by the commit's IRI: a schema:SoftwareSourceCode entity in the crate with schema:codeRepository and schema:version (the full SHA). Exactly one."@en ;
   rdfs:domain bridge:Adapter ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
@@ -230,7 +230,7 @@ bridge:graph a owl:ObjectProperty ;
 
 bridge:findings a owl:ObjectProperty ;
   rdfs:label "findings"@en ;
-  rdfs:comment "The expected findings sidecar (the conformance repository's gaps.json shape), by IRI, a crate File entity. In the mf:result of a bridge:IsomorphicConversionTest, where it is compared as a multiset; the order the file happens to be written in is not part of the comparison."@en ;
+  rdfs:comment "The expected findings sidecar, by IRI, a crate File entity. In the mf:result of a bridge:IsomorphicConversionTest, where it is compared as a multiset; the order the file happens to be written in is not part of the comparison."@en ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
 bridge:records a owl:DatatypeProperty ;

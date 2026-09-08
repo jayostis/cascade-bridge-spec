@@ -163,7 +163,7 @@
       "@type": "File",
       "name": "Example record XSD, pinned copy",
       "encodingFormat": "application/xml",
-      "contentSize": "1288",
+      "contentSize": "1296",
       "sha256": "b3748c551cd52b2c4c51ba70efefe2524a4bc6de32e30f897830139f73dc24db",
       "md5": "d8959dfbf9dcd2372ad6126020bc0ab4",
       "isBasedOn": {
@@ -179,7 +179,7 @@
       "@type": "File",
       "name": "Example set XSD, this package's wrapper",
       "encodingFormat": "application/xml",
-      "contentSize": "1132",
+      "contentSize": "1140",
       "sha256": "fa6e88ccb6250502d8fbf110112eb6956da8def36633039987b553a94560eaf2",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
@@ -201,7 +201,7 @@
       "@type": "File",
       "name": "Synthetic input, set envelope",
       "encodingFormat": "application/xml",
-      "contentSize": "648",
+      "contentSize": "656",
       "sha256": "8e1665cc84c4490cd82c403a4429f1ad050afb58ed0092bc26eb5f2e66a8ff1e",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
@@ -229,7 +229,7 @@
       "@type": "File",
       "name": "Expected graph for example-0001",
       "encodingFormat": "text/turtle",
-      "contentSize": "1178",
+      "contentSize": "1186",
       "sha256": "ee7eb83f54c82b658e3a57bb00158bfac8af3844032d327fcf8b48eee18e50ae",
       "isBasedOn": {
         "@id": "fixtures/in/example-0001.xml"

@@ -34,7 +34,7 @@ not a conforming adapter package:
 - the adapter manifest contract, [`docs/adapter/manifest.md`](docs/adapter/manifest.md);
 - the test manifest contract, [`docs/adapter/test-manifest.md`](docs/adapter/test-manifest.md);
 - the validation list, [`docs/adapter/validation.md`](docs/adapter/validation.md);
-- the alignment rules, [`docs/pinning.md`](docs/pinning.md).
+- the pinning rules, [`docs/pinning.md`](docs/pinning.md).
 
 Not settled, and not answerable from anything in this repository. If one of these
 blocks you, ask — do not infer an answer from a discussion thread elsewhere:
@@ -51,7 +51,6 @@ blocks you, ask — do not infer an answer from a discussion thread elsewhere:
 - **The export direction.** Import only is specified; `out/` is not.
 
 Where a document here touches one of these, it says so.
-
 
 ## Start here
 

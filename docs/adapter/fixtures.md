@@ -26,7 +26,7 @@ claim about the file at its source. The two are different assertions and are not
 merged.
 
 **What is not known is recorded as not known.** The pilot's four oracle inputs
-were copied from the conformance repository, and the date and method by which
+were copied from another repository, and the date and method by which
 they were originally fetched from NCBI were never recorded; each of their crate
 entries says exactly that. A provenance record whose gaps are invisible is worse
 than one with none, because a reader cannot tell a fact from a silence.
@@ -66,14 +66,14 @@ fixtures/findings/<name>.gaps.json  the findings it must produce
 ```
 
 The stem is the test's `mf:name` and its fragment IRI in the test manifest. The
-naming came from the conformance repository, where the same three files are
+naming came from the repository they were copied from, where the same files are
 `<name>.input.xml`, `<name>.expected.ttl` and `<name>.gaps.json`; the directory
 carries what the suffix used to.
 
 Names are kept from the source they were copied from even when they are wrong,
 so that a copy stays traceable to its origin. Two of the pilot's four oracle
 file names do not describe the record inside — a BRCA1 variant named BRCA2, a
-VMA21 variant named MLH1. Renaming them would break the trace to conformance;
+VMA21 variant named MLH1. Renaming them would break the trace to their origin;
 the crate entry and the test's `rdfs:comment` state the actual record instead.
 
 Each expected graph is linked to its input in the crate with `isBasedOn`, so a
@@ -92,7 +92,7 @@ The order the entries happen to be in is **not** part of the comparison:
 ([`test-manifest.md`](test-manifest.md)). A sidecar written from scratch SHOULD
 be sorted by Unicode code point on (`sourceField`, `severity`, `reason`), which
 keeps regeneration diffs readable, but that is file hygiene and never a
-judgement: the sidecars copied from `conformance` are in the ICU collation their
+judgement: the copied sidecars are in the ICU collation their
 authoring script left them in and are not re-sorted.
 
 **It should not stay private.** One canonical findings model belongs inside the

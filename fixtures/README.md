@@ -86,9 +86,10 @@ Eight cases: the package unbroken passing, and one red case each for an
 undescribed file, a wrong local `sha256`, a wrong publisher `md5`, an input that
 does not satisfy its schema, a schema language the lint does not read, an
 expected graph that is not Turtle, and a manifest that names no expected graph.
-The last two of those exit 0 on purpose: `not run` and `nothing to check` are
-not failures, and the case asserts that the lint says them in their own words
-rather than reporting a pass.
+The schema language the lint does not read, and the manifest that names no
+expected graph, exit 0 on purpose: `not run` and `nothing to check` are not
+failures, and the case asserts that the lint says them in their own words rather
+than reporting a pass.
 
 Nothing tracked is mutated, and no mutated copy is ever written inside the
 repository.
