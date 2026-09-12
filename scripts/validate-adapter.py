@@ -67,8 +67,10 @@ uses.
 
 import argparse
 import hashlib
+import json
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from urllib.parse import urlparse
 from urllib.request import url2pathname
@@ -215,28 +217,63 @@ def digest_of(path, algorithm):
 def validate_crate(adapter, check):
     """Check 1: the package is a valid RO-Crate 1.2."""
     print("1. RO-Crate 1.2")
-    try:
-        run = subprocess.run(
-            [
-                "rocrate-validator",
-                "validate",
-                str(adapter),
-                "--profile-identifier",
-                "ro-crate-1.2",
-                "--no-paging",
-            ],
-            capture_output=True,
-            text=True,
-        )
-    except FileNotFoundError:
-        report(False, "rocrate-validator is not installed (pip install roc-validator)")
-        return check.set(NOT_RUN, "rocrate-validator is not installed")
+    with tempfile.TemporaryDirectory() as scratch:
+        report_file = Path(scratch) / "report.json"
+        try:
+            # The validator draws with box characters. Decoded with the
+            # locale's code page, as text=True does on Windows, they fail in
+            # the reader thread and leave stdout None.
+            run = subprocess.run(
+                [
+                    "rocrate-validator",
+                    "validate",
+                    str(adapter),
+                    "--profile-identifier",
+                    "ro-crate-1.2",
+                    "--no-paging",
+                    "--output-format",
+                    "json",
+                    "--output-file",
+                    str(report_file),
+                ],
+                capture_output=True,
+                encoding="utf-8",
+                errors="replace",
+            )
+        except FileNotFoundError:
+            report(False, "rocrate-validator is not installed (pip install roc-validator)")
+            return check.set(NOT_RUN, "rocrate-validator is not installed")
+        failed = failed_requirements(report_file)
     ok = run.returncode == 0
     report(ok, f"{adapter}/ro-crate-metadata.json")
     if not ok:
-        print(run.stdout.strip() or run.stderr.strip())
+        # The validator's text report is a summary that names no requirement,
+        # so the ones that failed are read from its JSON report instead.
+        for line in failed:
+            print(f"        {line}")
+        if not failed:
+            print((run.stdout or "").strip() or (run.stderr or "").strip())
         return check.set(FAIL, "the crate is not a valid RO-Crate 1.2")
     return check.set(OK, "the crate is a valid RO-Crate 1.2")
+
+
+def failed_requirements(report_file):
+    """Each failed requirement in the validator's JSON report, one line each;
+    empty when there is no report to read."""
+    try:
+        issues = json.loads(report_file.read_text(encoding="utf-8"))["issues"]
+    except (OSError, ValueError, KeyError, TypeError):
+        return []
+    lines = []
+    for issue in issues:
+        found = issue.get("check") or {}
+        requirement = found.get("requirement") or {}
+        entity = issue.get("violatingEntity")
+        lines.append(
+            f"{found.get('identifier', '?')} {requirement.get('name', '')}: "
+            f"{issue.get('message', '')}" + (f" [{entity}]" if entity else "")
+        )
+    return lines
 
 
 # ============================================================================
