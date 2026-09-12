@@ -29,9 +29,10 @@ check that did not happen leaves the run green is a package the lint has
 nothing against and cannot read — a source schema that is a JSON Schema, check
 5 below — and even there the word printed is `not run`.
 
-**Nothing in the list reaches the network.** Digests are recomputed over the
-committed bytes and no publisher's file is fetched, so the lint runs offline
-and in a CI job with no credentials.
+**Nothing an adapter names is fetched.** Digests are recomputed over the
+committed bytes, and no publisher's file or referenced dataset is downloaded.
+The tools the lint runs do use the network, starting with the RO-Crate context
+the crate names.
 
 ## The list
 
@@ -100,9 +101,7 @@ and in a CI job with no credentials.
      republished, someone copied the new digest and did not re-fetch the bytes.
      Sending that author to check the crate would send them to the wrong file.
 
-   The publisher's file is **not fetched**, here or anywhere in this list. A
-   lint that needed the network is a lint that cannot run offline or in a CI
-   job without credentials, and the publisher's digest is already recorded in
+   The publisher's file is **not fetched**: its digest is already recorded in
    the crate, which is the point of recording it. A digest on an entity whose
    bytes are not committed — a referenced release, a pinned commit — is
    recorded, counted and not compared, and the run says how many.
@@ -119,7 +118,7 @@ and in a CI job with no credentials.
    package and are reported as themselves rather than as passes: a test whose
    action names a `bridge:dataset` has no committed bytes here, and the Bridge
    that streams them validates them; a schema entity that is referenced rather
-   than committed cannot be read offline; and a **source schema that is a JSON
+   than committed is not fetched; and a **source schema that is a JSON
    Schema** is a real adapter this lint does not read yet, reported `not run`.
    A schema declared XML that does not compile as an XSD is a different matter
    and fails.
@@ -132,9 +131,9 @@ and in a CI job with no credentials.
    findings sidecar beside it is for. The lint says so in its own output, so
    that a pass here is never read as more than "this file is Turtle".
 
-A package that passes all six is a conforming adapter package. Nothing in the
-list runs a mapping or compares a graph: that is the test manifest, and it needs
-a Bridge ([`fixtures/manifest.md`](fixtures/manifest.md)).
+A package whose run passes, by the table above, is a conforming adapter package.
+Nothing in the list runs a mapping or compares a graph: that is the test
+manifest, and it needs a Bridge ([`fixtures/manifest.md`](fixtures/manifest.md)).
 
 ## The media types an adapter package may declare
 
@@ -240,7 +239,7 @@ python3 -m pip install pyshacl rdflib roc-validator lxml
 python3 scripts/validate-adapter.py <path to an adapter checkout>
 ```
 
-Exit status is 0 when every check passes and 1 when any fails or could not be
-run. CI on this project's repositories is Linux and invokes `python3` directly;
+Exit status is 0 when the run passes, by the table at the top, and 1 when it
+fails. CI on this project's repositories is Linux and invokes `python3` directly;
 do not commit a machine-specific way of running it.
 

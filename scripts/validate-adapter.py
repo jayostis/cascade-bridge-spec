@@ -23,9 +23,9 @@ that found nothing of its kind in the package, are each reported in their own
 words and never as a pass: a lint that silently checks nothing is worse than no
 lint. The summary at the end lists all six with the word each earned.
 
-Nothing here runs a mapping, compares a graph or reaches the network. Check 4
-recomputes digests over the committed bytes and never fetches the publisher's
-file; the run is offline and needs no credentials.
+Nothing here runs a mapping or compares a graph, and nothing an adapter names
+is fetched: check 4 recomputes digests over the committed bytes. The tools it
+runs do use the network, starting with the RO-Crate context the crate names.
 
 This script is what .github/actions/validate-adapter runs, so an adapter's CI
 is one `uses:` line pinned at a tag of this repository rather than a copy of
@@ -56,8 +56,8 @@ revision of this specification the caller is actually running, which is how the
 `uses:` pin in an adapter's workflow and the pin in its crate are held to naming
 the same commit. Without it the pin is reported and not compared.
 
-Exit status is 0 when every check passes and 1 when any fails or could not be
-run.
+Exit status is 0 when the run passes and 1 when it fails; adapter/validation.md
+says which words fail it.
 
 Requires pyshacl, rdflib, roc-validator and lxml (pip install pyshacl rdflib
 roc-validator lxml); the RO-Crate validator is invoked as the
@@ -434,9 +434,8 @@ def validate_digests(adapter, graph, check):
         source it claims to be a byte-for-byte copy of.
 
     Both are recomputed the same way and reported in their own words. Nothing
-    is fetched: the publisher's file is not on this machine, and a lint that
-    needed the network would be a lint that cannot run offline or in a CI job
-    without credentials. A digest on an entity that is not committed here --
+    is fetched: the publisher's digest is already recorded in the crate, which
+    is the point of recording it. A digest on an entity that is not committed here --
     a referenced release, a pinned commit -- is recorded and not compared, and
     the run says how many.
     """

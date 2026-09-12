@@ -7,7 +7,7 @@ Three proper nouns:
 
 | term | what it is |
 |---|---|
-| **Cascade Bridge Specification** | the open standard: adapter package format, engine stages, profiles and tiers, the findings model, the fixture contract, the Bridge's obligations to the runtime. This repository |
+| **Cascade Bridge Specification** | the open standard: adapter package format, engine stages, profiles and tiers, the findings model, the fixture contract. This repository |
 | **Cascade Bridge for `<language>`** | an implementation, once per language, conforming or not |
 | **Cascade Bridge Adapter** | a data package for one format, authored by an integration engineer |
 
@@ -117,8 +117,7 @@ That runs the six checks a conforming adapter package must pass — the crate, t
 shapes, the file inventory, the digests, the inputs against their schemas and the
 expected graphs. What each one is, and what a failure means, is
 [`adapter/validation.md`](adapter/validation.md); it is the authority and this is not a
-second copy of it. Exit status is 0 when all six pass, and nothing reaches the
-network, so the run works offline and needs no credentials.
+second copy of it. Exit status is 0 when the run passes.
 
 **Every check says whether it ran.** `ok`, `nothing to check` and `not run` are
 three different sentences: a lint that silently checks nothing is worse than no

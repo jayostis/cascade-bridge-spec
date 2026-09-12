@@ -13,8 +13,7 @@
 # them the word it earned: `ok`, `FAIL`, `nothing to check` or `not run`. A
 # check whose tool is absent, and a check that found nothing of its kind in the
 # package, are never reported in the same word as a check that ran and passed.
-# Nothing is fetched, so the action needs no credentials and no network beyond
-# resolving its own ref.
+# Nothing an adapter names is fetched, and the action needs no credentials.
 #
 # The ref a caller pins is the adapter's bridge:specPin in executable form, and
 # the two are checked against each other below whenever the ref resolves to a
