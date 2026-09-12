@@ -6,14 +6,14 @@ thing it claims to check were wrong?* A lint nobody has seen fail is a lint
 nobody should trust, and the failure mode it is written against -- a check that
 quietly does nothing and reports a pass -- is invisible from a green run. So
 every case here breaks one property of a conforming package and asserts that
-the lint says so, in the words docs/validation.md fixes, and that it exits
+the lint says so, in the words docs/adapter/validation.md fixes, and that it exits
 non-zero; and the first case asserts that the same package, unbroken, passes.
 
 The subject is fixtures/synthetic-adapter, this repository's own synthetic
 adapter package. It is copied into a temporary directory and mutated there.
 **Nothing here mutates a tracked file**, no mutated copy is ever written inside
 the repository, and no real adapter is read, cloned or named: this repository
-must not know that any adapter exists (docs/alignment.md), and a fixture it
+must not know that any adapter exists (docs/pinning.md), and a fixture it
 wrote itself is a subject it owns.
 
 The copy is made into a fresh `git init`, because check 3 takes its inventory

@@ -16,13 +16,9 @@ lint nobody should trust, so it has to run somewhere on every change here — an
 the one thing it must not run against is a real adapter.
 
 **This repository must not know that any adapter exists**
-([`docs/alignment.md`](../docs/alignment.md), `CLAUDE.md`). A catalogue naming
-one adapter, and a CI job that cloned it, were removed at 0.2.0 for pointing
-upward: the specification went red because of a property missing from somebody
-else's repository, and with fifty adapters it would have cloned fifty
-repositories on every push. Putting a real adapter back — as a submodule, a
-clone, a pinned SHA or a name in a workflow — is that same bug wearing a
-fixture's clothes.
+([`docs/pinning.md`](../docs/pinning.md) says why). A real adapter here — as a
+submodule, a clone, a pinned SHA or a name in a workflow — is that bug wearing
+a fixture's clothes.
 
 A package this repository wrote itself is the way out. It is a subject this
 repository owns, it changes only when someone here changes it, and it names no
@@ -36,7 +32,7 @@ vocabulary are made up; every URL that is not this repository's own is under
 real format, publisher, dataset or adapter is named anywhere in it.
 
 It is minimal, and every part of it earns its place by covering a branch of the
-six checks in [`docs/validation.md`](../docs/validation.md) that a single real
+six checks in [`docs/adapter/validation.md`](../docs/adapter/validation.md) that a single real
 adapter would not cover at once:
 
 | what it holds | the branch it covers |
@@ -53,7 +49,7 @@ adapter would not cover at once:
 The last row is the honest reading of a package with no mapping: it requires no
 Bridge profile because it asks a Bridge to do nothing. It is also the only shape
 of adapter for which `universal candidate` is decidable at all while Core is
-unsettled (RFC section 9, question 1), which is why the fixture is the only
+unsettled, which is why the fixture is the only
 place that line is ever printed here. **Candidate, never universal**: a tier is
 measured by running an adapter's fixtures on every published Bridge, and no
 Bridge exists.
@@ -86,9 +82,10 @@ Eight cases: the package unbroken passing, and one red case each for an
 undescribed file, a wrong local `sha256`, a wrong publisher `md5`, an input that
 does not satisfy its schema, a schema language the lint does not read, an
 expected graph that is not Turtle, and a manifest that names no expected graph.
-The last two of those exit 0 on purpose: `not run` and `nothing to check` are
-not failures, and the case asserts that the lint says them in their own words
-rather than reporting a pass.
+The schema language the lint does not read, and the manifest that names no
+expected graph, exit 0 on purpose: `not run` and `nothing to check` are not
+failures, and the case asserts that the lint says them in their own words rather
+than reporting a pass.
 
 Nothing tracked is mutated, and no mutated copy is ever written inside the
 repository.
@@ -100,7 +97,7 @@ package must look like. Change it in the same commit, run the lint against it,
 run the selftest, and — because a fixture cannot tell you what it breaks in the
 wild — run the lint by hand against a real adapter checkout beside this one,
 saying in the commit which adapter and at which commit, without adding it to
-this repository in any form (`CLAUDE.md`).
+this repository in any form (`../shapes/CLAUDE.md`).
 
 The digests in the crate are recorded over the committed bytes. Editing a file
 here without restating its `sha256` and `contentSize` in the same commit fails

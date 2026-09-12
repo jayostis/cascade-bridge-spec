@@ -1,65 +1,30 @@
 # SHACL shapes for an adapter's crate (ro-crate-metadata.json, parsed as
 # JSON-LD) and its test manifest (fixtures/manifest.ttl), validated as one
-# graph, each with its own file location as base so the manifest's <../> is
-# the crate's root entity and the manifest's <in/...> is the crate's
-# fixtures/in/... entity.
+# graph, each with its own file location as base, so the manifest's <../> is
+# the crate's root entity and its <in/...> is the crate's fixtures/in/...
+# entity. The adapter profile (profile/ro-crate-metadata.json) names this file
+# as its constraints resource.
 #
-# These shapes are the Cascade Bridge Specification's constraint on an
-# adapter package; this repository, cascade-bridge-spec, is their home, and
-# the adapter profile (profile/ro-crate-metadata.json) names this file as its
-# constraints resource. They were seeded from the pilot adapter,
-# bridge-adapter-clinvar, at commit 0b2d548 (schema/manifest/bridge.shapes.ttl);
-# the move removed the bridge:tier property shape (an adapter does not
-# declare a tier, vocab/bridge.ttl says why), added a bridge:specPin property
-# shape (exactly one, IRI) and a warning when the root does not name the
-# adapter profile in conformsTo. At 0.2.0 the sh:class schema:MediaObject
-# constraints the pilot added during its own review were carried up here,
-# where they belong, and the allowed encodingFormat set was written down.
+# What the shapes require is below, and in prose in docs/adapter/. What
+# reading them does not tell you:
 #
-# What they say:
+#   bridge:input, graph, findings, sourceSchema and documentSchema carry
+#   sh:class schema:MediaObject, what the RO-Crate 1.2 context expands File
+#   to, because sh:nodeKind sh:IRI alone lets a typo through: an IRI naming no
+#   entity is still an IRI.
 #
-# The adapter: the root entity, a bridge:Adapter, carries exactly one of each
-# single-valued fact, at least one envelope and one vocabulary, and zero or
-# more profiles (an adapter that needs Core only names none), with links
-# where the value is an entity (licence, specification, spec pin, vocabulary
-# pin, vocabularies, source schema, envelopes, tables, extension vocabulary,
-# test manifest) and literals where it is a string (identifier, version,
-# media type, unit, detect XPath). Every envelope is a bridge:Envelope with a
-# name, a root element and at most one document schema. Every table names
-# where its rows came from. Schema.org terms are the http://schema.org/ IRIs
-# the RO-Crate context expands to; conformsTo is Dublin Core's, which is what
-# that context expands it to.
+#   Action and result nodes are closed. A property they do not declare is a
+#   mistake, not an extension.
 #
-# The manifest: required properties and cardinalities per test type;
-# bridge:outputDigest matches ^sha256:[0-9a-f]{64}$; bridge:records is a
-# non-negative integer; every mf:entries member has exactly one of the three
-# types; bridge:adapter is present exactly once on the manifest and is a
-# bridge:Adapter; bridge:envelope in an action is a bridge:Envelope;
-# bridge:dataset in an action is a crate Dataset with a contentUrl, one a
-# Bridge can fetch. Every IRI that names a committed file - bridge:input,
-# bridge:graph, bridge:findings in the manifest, bridge:sourceSchema and each
-# bridge:documentSchema in the crate - is a crate File entity: sh:class
-# schema:MediaObject, which is what the RO-Crate 1.2 context expands File to.
-# Without that, sh:nodeKind sh:IRI alone let a typo through, because an IRI
-# naming no entity at all is still an IRI. The action and result nodes are
-# closed: a property they do not declare is a mistake, not an extension.
+#   Zero profiles is legal. An adapter that needs Core only names none.
 #
-# The media types: every declared encodingFormat is one of the allowed set,
-# <#DescribedFile> below. That is where "no code" is enforced - not by
-# scanning a file for a language, but by refusing one whose media type says it
-# executes (docs/validation.md, check 3). This file is the authority for the
-# set and docs/validation.md restates it for the reader.
+#   The allowed encodingFormat set, <#DescribedFile> below, is where "no code"
+#   is enforced: not by scanning a file for a language, but by refusing one
+#   whose media type says it executes. This file is the authority for the set,
+#   and docs/adapter/validation.md restates it for the reader.
 #
-# The links between the two, as SPARQL-based constraints (sh:sparql): the
-# manifest's bridge:adapter names an adapter whose bridge:testManifest is the
-# manifest, and the other way round; every bridge:envelope in an entry's
-# action is one the manifest's adapter lists.
-#
-# Validate with a SHACL engine that supports SHACL-SPARQL (pySHACL, Jena),
-# the crate and the manifest as the data graph and this file as the shapes
-# graph; scripts/validate-adapter.py in this repository does exactly that.
-# Shape IRIs are fragments of this file, so nothing is minted beyond the
-# bridge: terms vocab/bridge.ttl declares.
+#   The links between crate and manifest are sh:sparql, so the engine must
+#   support SHACL-SPARQL (pySHACL, Jena).
 
 @prefix sh:     <http://www.w3.org/ns/shacl#> .
 @prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
@@ -125,7 +90,7 @@
     sh:path <http://purl.org/dc/terms/conformsTo> ;
     sh:hasValue <https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/> ;
     sh:severity sh:Warning ;
-    sh:message "The adapter does not name the Cascade Bridge Adapter profile, https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/, in conformsTo; that IRI on the crate root is how an adapter declares conformance to this specification (docs/adapter-manifest.md)."
+    sh:message "The adapter does not name the Cascade Bridge Adapter profile, https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/, in conformsTo; that IRI on the crate root is how an adapter declares conformance to this specification (docs/adapter/manifest.md)."
   ] ;
   sh:property [
     sh:path bridge:profileRequired ;
@@ -259,14 +224,14 @@
 # ----------------------------------------------------------------------------
 #
 # This is where "no code" stops being a claim and becomes a measured property.
-# The lint's file inventory (docs/validation.md, check 3) asks of every
+# The lint's file inventory (docs/adapter/validation.md, check 3) asks of every
 # git-tracked file whether the crate describes it and whether it declares an
 # encodingFormat; this shape asks of every declared encodingFormat whether it
 # is a media type an adapter package may hold. Neither question is answered by
 # scanning a file for a language: a package is refused because it declares a
 # media type that executes, which is a statement its author wrote down.
 #
-# The set is the formats RFC section 6 leaves an adapter: the package's own
+# The set is the formats an adapter package may hold: the package's own
 # description (JSON-LD, Turtle, JSON, YAML, Markdown), the source-side schemas
 # and documents (XML, its two media types, JSON, YAML), the mapping languages a
 # Bridge profile may offer (XSLT 3, SPARQL, and RML, which is Turtle), the
@@ -301,7 +266,7 @@
       "text/turtle"
       "text/xml"
     ) ;
-    sh:message "encodingFormat is one of the media types an adapter package may declare: application/gzip, application/json, application/ld+json, application/sparql-query, application/xml, application/xslt+xml, application/yaml, text/csv, text/markdown, text/plain, text/turtle, text/xml. A media type outside that set is how a file that executes would enter a package that claims to be data (docs/validation.md)."
+    sh:message "encodingFormat is one of the media types an adapter package may declare: application/gzip, application/json, application/ld+json, application/sparql-query, application/xml, application/xslt+xml, application/yaml, text/csv, text/markdown, text/plain, text/turtle, text/xml. A media type outside that set is how a file that executes would enter a package that claims to be data (docs/adapter/validation.md)."
   ] .
 
 # ============================================================================
@@ -453,6 +418,10 @@
 
 # ----------------------------------------------------------------------------
 # Action and result nodes, closed
+#
+# sh:closed rejects rdf:type like any other predicate, so a typed node fails a
+# closed shape unless rdf:type is ignored. Every closed shape below carries
+# sh:ignoredProperties ( rdf:type ) for that reason and no other.
 # ----------------------------------------------------------------------------
 
 <#CommittedAction> a sh:NodeShape ;

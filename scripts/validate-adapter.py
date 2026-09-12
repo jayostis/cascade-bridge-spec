@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Validate a Cascade Bridge Adapter package against this specification.
 
-The six checks docs/validation.md names, in the order it names them, so that
+The six checks docs/adapter/validation.md names, in the order it names them, so that
 the cheapest check that can fail comes first and each later check may assume
 the earlier ones held:
 
@@ -31,7 +31,7 @@ This script is what .github/actions/validate-adapter runs, so an adapter's CI
 is one `uses:` line pinned at a tag of this repository rather than a copy of
 this file. It takes a directory. It knows no adapter's name, no adapter's
 repository and no format id, and it must stay that way: a specification that
-knows which adapters exist is the bug docs/alignment.md is written against.
+knows which adapters exist is the bug docs/pinning.md is written against.
 
 Base IRIs are the point of the second check, so they are set explicitly rather
 than left to a default. The crate is parsed with ro-crate-metadata.json's own
@@ -94,7 +94,7 @@ SPEC_PIN_ONLY = (
 
 # The files a repository holding an adapter may carry without the crate
 # describing them: they describe the repository, not the package
-# (docs/validation.md, check 3). Everything else is either a described file or
+# (docs/adapter/validation.md, check 3). Everything else is either a described file or
 # a file nobody reviewed. Dotfiles and dot-directories are allowed wholesale,
 # which covers .gitattributes, .editorconfig, .vscode/ and .github/.
 #
@@ -118,7 +118,7 @@ ALLOWLIST = {
 # is written (RO-Crate's workflow-run terms give md5, sha1, sha256, sha512).
 # The two are different assertions, and a mismatch in each means something
 # different, so they are recomputed the same way and reported differently
-# (docs/fixtures-and-provenance.md; docs/validation.md, check 4).
+# (docs/adapter/fixtures.md; docs/adapter/validation.md, check 4).
 DIGEST_ALGORITHMS = {
     "md5": hashlib.md5,
     "sha1": hashlib.sha1,
@@ -323,7 +323,7 @@ def validate_shapes(graph, root, manifest_file, check):
             "        SoftwareSourceCode entity in the crate with codeRepository\n"
             "        and version (the full SHA), the same shape as\n"
             "        bridge:vocabularyPin. Nothing else about the crate or the\n"
-            "        test manifest is wrong. docs/adapter-manifest.md."
+            "        test manifest is wrong. docs/adapter/manifest.md."
         )
         check.set(FAIL, SPEC_PIN_ONLY)
     else:
@@ -421,7 +421,7 @@ def validate_digests(adapter, graph, check):
     """Check 4: every digest in the crate matches the file beside it.
 
     Two claims are recorded in a crate and they are not the same assertion
-    (docs/fixtures-and-provenance.md):
+    (docs/adapter/fixtures.md):
 
       * schema:sha256 is the *local* claim -- these bytes, here, now. It is
         computed over the committed bytes when the file is committed, so a
@@ -479,7 +479,7 @@ def validate_digests(adapter, graph, check):
                 "        beside it: the file was changed without the crate, or the\n"
                 "        crate without the file. Replace the file from its source\n"
                 "        or correct the digest, in the same commit\n"
-                "        (docs/fixtures-and-provenance.md)."
+                "        (docs/adapter/fixtures.md)."
             )
 
     for path, algorithm, declared in publisher:
@@ -753,7 +753,7 @@ def validate_expected_graphs(adapter, graph, manifest_iri, check):
     shapes is a question for a Bridge's validate stage, asked of the graph a
     mapping actually produced; asking it here would report a fixture as wrong
     for recording something Cascade has no term for yet, which is what the
-    findings sidecar beside it is for (docs/validation.md, check 6).
+    findings sidecar beside it is for (docs/adapter/validation.md, check 6).
     """
     print("6. Expected graphs")
     expected = []
@@ -823,7 +823,7 @@ def check_spec_pin(graph, root, spec_revision):
 
     The `uses:` pin in an adapter's workflow and the bridge:specPin in its
     crate are the same fact written twice, one for the machine and one for the
-    reader (docs/alignment.md). This is where they are held to it.
+    reader (docs/pinning.md). This is where they are held to it.
     """
     print("Specification pin")
     pins = list(graph.objects(root, BRIDGE.specPin))
@@ -861,16 +861,16 @@ def check_spec_pin(graph, root, spec_revision):
             "        The crate's pin and the revision of this specification the\n"
             "        adapter's workflow calls are the same fact written twice.\n"
             "        They move together, in the pull request that needs them\n"
-            "        (docs/alignment.md)."
+            "        (docs/pinning.md)."
         )
     return ok, ("agrees with the ref this lint was called at" if ok else "disagrees")
 
 
 def tier_line(graph, root, inventory_ok):
-    """The one derived fact the lint reports, in the words docs/validation.md
+    """The one derived fact the lint reports, in the words docs/adapter/validation.md
     fixes. Candidate, never universal: a lint sees one package on one machine,
     and a tier is measured by running an adapter's fixtures on every published
-    Bridge (RFC section 11)."""
+    Bridge."""
     profiles = sorted(
         str(p).rsplit("#", 1)[-1] for p in graph.objects(root, BRIDGE.profileRequired)
     )
@@ -891,7 +891,7 @@ def summarise(checks, pin_ok, pin_note):
     check that quietly did nothing. "ok" and "nothing to check" are different
     sentences and are printed as different sentences.
     """
-    print("The six checks of docs/validation.md, and how each ended:")
+    print("The six checks of docs/adapter/validation.md, and how each ended:")
     width = max(len(check.title) for check in checks)
     for check in checks:
         print(

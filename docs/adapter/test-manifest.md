@@ -6,42 +6,13 @@ the pilot's is at `fixtures/manifest.ttl`. A Bridge's harness executes it.
 Nothing in an adapter package runs it, and nothing in an adapter package is a
 test runner.
 
-## Why this shape
+## One contract, not a menu
 
-A test manifest for RDF conversion is a solved problem. Every W3C RDF-family
-test suite — Turtle, SPARQL, JSON-LD, SHACL, RDF Dataset Canonicalization — is a
-manifest written in RDF with W3C's `mf:` test-manifest vocabulary
-(`http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#`), where each entry
-has a type, an `mf:action` (the input) and an `mf:result` (the expected output),
-and **the comparison rule is carried by the entry's type**. The RML test cases
-follow the same pattern. Against that, a YAML dialect would be the invented
-thing.
-
-Three consequences that matter more than the convention:
-
-1. **The cases and the provenance are one graph.** The crate is JSON-LD, the
-   manifest is Turtle, and each is loaded with its own file location as base, so
-   a dataset test names a release by the same IRI the crate describes it under,
-   an action names its envelope by the crate's entity, and walking from a test
-   to its input's digest and licence is a graph traversal rather than a string
-   match.
-2. **Validation is SHACL**, the project's own validation language and what the
-   conformance suite already runs.
-3. **Every RDF engine reads it identically.** Two Bridges parsing a YAML dialect
-   the same way is a hope; parsing Turtle the same way is a W3C guarantee, and
-   that guarantee is what the claim "one adapter, same graph, every runtime"
-   (RFC section 11) rests on.
-
-The cost is stated: Turtle gets syntax support and a SHACL check from ordinary
-editor tooling, not the per-field completion a JSON Schema would give a YAML
-file. Small, for a file that changes a few times a year.
-
-**One contract, not a menu.** An adapter does not choose among test conventions
-for the conformance claim, because every convention an adapter may choose is a
-harness every Bridge must implement, and two adapters proving "universal" by
-different rules prove different things. Profile-specific unit suites — XSpec
-over an `xslt-3` mapping's modules, say — are a separate, optional, declared
-matter, and are not part of the conformance claim.
+An adapter does not choose among test conventions. Every convention an adapter
+may choose is a harness every Bridge must implement, and two adapters proving
+"universal" by different rules prove different things. Profile-specific unit
+suites — XSpec over an `xslt-3` mapping's modules, say — are optional, declared,
+and no part of the conformance claim.
 
 ## The manifest
 
@@ -96,20 +67,16 @@ everything the format does not mean.** A stricter rule than the format's meaning
 does not catch more mapping errors; it only fails harnesses that are right.
 
 Isomorphism, not byte equality, because the Bridge's records are blank nodes and
-blank node labels are not stable. RFC section 11 names RDF Dataset
-Canonicalization (RDFC-1.0, W3C Recommendation 2024) as how to decide it
-properly, and says so against the comparison the pilot's oracle uses today:
-`cascade-cli`'s `tests/clinvar-conformance.test.ts` compares
+blank node labels are not stable. RDF Dataset Canonicalization (RDFC-1.0, W3C
+Recommendation 2024) is how to decide it properly. The pilot's oracle compares
 `riot --output=nq | sort` byte for byte, which assumes the same thing without
 deciding it.
 
 A multiset, not an ordered array, because no entry in a findings sidecar refers
-to a position, so the order carries no meaning. This replaced an ordering rule —
-"entry for entry, in the sort order (`sourceField`, `severity`, `reason`)" — that
-was written in the pilot adapter and measured there before being carried up.
-`cascade-cli` wrote the oracles with `localeCompare`, which is ICU collation, in
-which `/` sorts before `@` although U+002F is above U+0040; across the four
-committed sidecars, 78, 56, 6 and 1 adjacent pairs are out of code-point order.
+to a position, so the order carries no meaning. The pilot's oracles were sorted
+with `localeCompare`, which is ICU collation, in which `/` sorts before `@`
+although U+002F is above U+0040; across its four committed sidecars, 78, 56, 6
+and 1 adjacent pairs are out of code-point order.
 A harness comparing with Java's `String.compareTo`, or with JavaScript's `<`,
 puts the same correctly mapped entries in a different order and reports a false
 failure. Requiring the committed order would make every Bridge carry ICU, and
@@ -169,36 +136,19 @@ crate entity exists.
 
 ## Ignore predicates: stated once, inherited by every entry
 
-A stamp is a triple a Bridge adds *after* the mapping (RFC section 5, "stamp";
-the Enterprise Integration Patterns Message History): `cascade:dataProvenance`,
+A stamp is a triple a Bridge adds *after* the mapping (the Enterprise
+Integration Patterns Message History): `cascade:dataProvenance`,
 `cascade:schemaVersion`, source identity, import time. The stamp set is a
 property of the Bridge's stamp stage, not of any one fixture.
 
 So `bridge:ignorePredicate` is stated **once, on the `mf:Manifest`**, and every
 entry inherits it. An entry that carries its own `bridge:ignorePredicate`
 **replaces** the manifest's set for that entry alone — an override, not an
-addition.
-
-Stating it per entry was the earlier shape and was wrong in a way worth
-recording: three identical triples repeated on every conversion test is three
-places for the set to drift, and an adapter with twenty fixtures would have
-sixty. A fact about the Bridge belongs where it is true once.
+addition. Stated per entry, the set would repeat on every test and drift; a
+fact about the Bridge belongs where it is true once.
 
 ## What a harness owes
 
-A harness executes the manifest; it does not interpret it. Concretely: it reads
-the entry types rather than the file names, applies the rule the type carries,
-removes the inherited or overridden stamp set from both sides before comparing,
-and reports one result per entry. RFC section 11 and the phase 2 notes on the
-pilot's issue put that report in **EARL** (W3C Evaluation and Report Language),
-the form every W3C test suite's implementation reports take: one
-`earl:Assertion` per manifest entry, with `earl:test` the entry's IRI,
-`earl:subject` the Bridge, `earl:outcome` and `earl:mode automatic`. An
-adapter's tier is then a query over those reports rather than a claim in the
-adapter, and a catalogue — downstream of every adapter and every Bridge, and no
-part of this repository — is where the query's answer is recorded
-([`alignment.md`](alignment.md)).
-
-No Bridge exists, so no EARL report exists, and nothing in this repository has
-yet executed a manifest. That is the honest state of the contract: written from
-one adapter, checked by SHACL, and unproven until `cascade-bridge-java` runs it.
+The other side of this document is [`../engine/executing.md`](../engine/executing.md):
+how a harness loads the two files as one graph, which rule it applies to each
+entry type, and the EARL report it produces.

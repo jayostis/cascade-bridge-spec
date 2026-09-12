@@ -19,5 +19,5 @@
 # reproducible: LF on every platform means the bytes a Linux CI runner hashes are
 # the bytes a Windows editor wrote. An adapter package that carries a byte-for-
 # byte copy of a publisher's file needs a stricter section than this one, marking
-# those paths so nothing normalises them at all; docs/fixtures-and-provenance.md
+# those paths so nothing normalises them at all; docs/adapter/fixtures.md
 # says why, and the pilot adapter's .gitattributes is the worked example.

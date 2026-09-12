@@ -4,9 +4,9 @@ What a conforming adapter package must pass, written as the list a lint
 implements. The list is ordered so that the cheapest check that can fail comes
 first and each later check can assume the earlier ones held.
 
-All six run, in [`scripts/validate-adapter.py`](../scripts/validate-adapter.py),
+All six run, in [`scripts/validate-adapter.py`](../../scripts/validate-adapter.py),
 which is what the published action
-([`.github/actions/validate-adapter`](../.github/actions/validate-adapter/action.yml))
+([`.github/actions/validate-adapter`](../../.github/actions/validate-adapter/action.yml))
 runs.
 
 **Every check says whether it ran**, and the words are part of the contract,
@@ -43,7 +43,7 @@ and in a CI job with no credentials.
 2. **The crate and the test manifest conform to the shapes.** The crate parsed
    as JSON-LD with `ro-crate-metadata.json`'s own location as base, the test
    manifest parsed as Turtle with its own, loaded as **one graph**, validated
-   against [`shapes/bridge.shapes.ttl`](../shapes/bridge.shapes.ttl) with a SHACL
+   against [`shapes/bridge.shapes.ttl`](../../shapes/bridge.shapes.ttl) with a SHACL
    engine that supports SHACL-SPARQL (pySHACL, Jena). Both bases matter: with the
    wrong one, every link between the two files becomes two unrelated nodes and
    the shapes report nothing rather than reporting a mistake.
@@ -53,12 +53,11 @@ and in a CI job with no credentials.
    and every `bridge:envelope` a test action names is one the adapter lists.
 
    They also carry the two constraints that make an IRI naming a file mean
-   something. Every file-valued property — `bridge:input`, `bridge:graph`,
-   `bridge:findings`, `bridge:sourceSchema`, `bridge:documentSchema` — is
-   `sh:class schema:MediaObject`, what the RO-Crate 1.2 context expands `File`
-   to, so a mistyped name fails instead of conforming; `sh:nodeKind sh:IRI`
-   alone let a typo through, because an IRI naming no entity at all is still an
-   IRI. And every declared `encodingFormat` is one of the media types below.
+   something. `bridge:input`, `bridge:graph` and `bridge:findings` in the
+   manifest, and `bridge:sourceSchema` and `bridge:documentSchema` in the crate,
+   are `sh:class schema:MediaObject`, what the RO-Crate 1.2 context expands
+   `File` to, so a mistyped name fails: an IRI naming no entity is still an IRI.
+   And every declared `encodingFormat` is one of the media types below.
 
 3. **Every git-tracked file is accounted for.** Each file in the repository is
    either a crate entity carrying a declared `encodingFormat`, or is in a short
@@ -84,7 +83,7 @@ and in a CI job with no credentials.
 
 4. **Every digest matches its file.** A crate records two kinds of claim about
    a file's bytes, and they are not the same assertion
-   ([`fixtures-and-provenance.md`](fixtures-and-provenance.md)). Both are
+   ([`fixtures.md`](fixtures.md)). Both are
    recomputed over the committed bytes; **a mismatch in each is a different
    finding and is reported in different words.**
 
@@ -141,7 +140,7 @@ a Bridge ([`test-manifest.md`](test-manifest.md)).
 
 The allowed set for check 3, enforced by the shapes as `<#DescribedFile>` so
 that it runs rather than only being written down.
-[`shapes/bridge.shapes.ttl`](../shapes/bridge.shapes.ttl) is the authority; this
+[`shapes/bridge.shapes.ttl`](../../shapes/bridge.shapes.ttl) is the authority; this
 table restates it, and the two change in the same commit.
 
 | media type | what declares it |
@@ -175,19 +174,16 @@ of the contract because a tier is a claim someone has to be able to re-verify:
   and every profile in `bridge:profileRequired` is in Core.
 - **`limited: requires <profiles>`** — otherwise, naming the profiles.
 
-**Candidate, never universal.** RFC section 11: an adapter's tier is *measured*,
+**Candidate, never universal.** An adapter's tier is *measured*,
 by running its fixtures on every published Bridge, and recorded in a catalogue —
 a repository downstream of every adapter and every Bridge, which does not exist
-yet ([`alignment.md`](alignment.md)). A lint sees one package on one machine and
+yet ([`pinning.md`](../pinning.md)). A lint sees one package on one machine and
 can see only that nothing disqualifies it. The word the lint may say is the
 strongest one the evidence supports, and no adapter declares a tier of its own
-([`adapter-manifest.md`](adapter-manifest.md)).
+([`manifest.md`](manifest.md)).
 
-What is in Core is not yet settled — RFC section 9 proposes a SPARQL-only Core
-and marks it as question 1 for the spike, against a prior of XSLT 3 for XML and
-RML for JSON — so until that question is answered on
-[spec#43](https://github.com/the-cascade-protocol/spec/issues/43), "every profile
-is in Core" is decidable only for an adapter that requires no profiles at all.
+What is in Core is not yet settled, so "every profile is in Core" is decidable
+only for an adapter that requires no profiles at all.
 An adapter that requires any profile is `limited: requires <profiles>` today,
 and may be reclassified without changing a byte of the adapter when Core is
 fixed. The pilot adapter requires `xslt-3` and is therefore
@@ -215,10 +211,13 @@ disagree.
 
 ```yaml
       - uses: actions/checkout@v4
-      - uses: jayostis/cascade-bridge-spec/.github/actions/validate-adapter@v0.3.0
+      - uses: jayostis/cascade-bridge-spec/.github/actions/validate-adapter@<tag>
         with:
           path: .          # the default; the directory holding ro-crate-metadata.json
 ```
+
+`<tag>` is a tag on the commit your crate's `bridge:specPin` names; the action
+resolves it and fails the run when the two disagree.
 
 All six checks run. The action ends by printing each of them with the word it
 earned, so a package is never reported as passing a check that did not happen.
@@ -245,31 +244,3 @@ Exit status is 0 when every check passes and 1 when any fails or could not be
 run. CI on this project's repositories is Linux and invokes `python3` directly;
 do not commit a machine-specific way of running it.
 
-## Seeing the checks fail
-
-A lint nobody has seen fail is a lint nobody should trust, and a check that
-quietly does nothing is invisible from a green run. The negative cases are
-therefore committed rather than claimed:
-[`scripts/selftest-lint.py`](../scripts/selftest-lint.py) copies
-[`fixtures/synthetic-adapter`](../fixtures/README.md) into a temporary
-directory, breaks exactly one property per case, and asserts both the exit
-status and the word the summary gives each of the six checks.
-
-```bash
-python3 scripts/selftest-lint.py
-```
-
-The subject is a synthetic package this repository wrote and owns. It is not a
-real adapter, and it must not become one: **this repository must not know that
-any adapter exists** ([`alignment.md`](alignment.md)), so the lint is exercised
-against a fixture rather than against somebody else's repository. The fixture
-covers the branches one real adapter would not cover at once — both sides of
-check 5's schema fallback, both kinds of digest claim, a referenced dataset, an
-input-only test with no expected graph, and an adapter requiring no profile,
-which is the only shape of adapter that can reach the `universal candidate`
-line while Core is unsettled.
-
-Both jobs run on every change in
-[`.github/workflows/validate.yml`](../.github/workflows/validate.yml): the
-action validates the fixture package, and the mutation cases show each check
-going red.

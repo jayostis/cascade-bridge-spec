@@ -3,8 +3,7 @@
 The home of the **Cascade Bridge Specification**: the contract every Cascade
 Bridge Adapter and every Cascade Bridge implementation follows.
 
-Three proper nouns, from section 2 of the Cascade Bridge RFC
-([the-cascade-protocol/spec#43](https://github.com/the-cascade-protocol/spec/issues/43)):
+Three proper nouns:
 
 | term | what it is |
 |---|---|
@@ -22,16 +21,9 @@ runs that data is a Bridge.
 `v1-draft`. Terms may be renamed, cardinalities may change, and the profile IRI
 does not dereference yet.
 
-This repository is **thin and pilot-driven**. Everything in it was seeded from
-phase 1 of one adapter,
-[cascade-bridge-adapter-clinvar](https://github.com/jayostis/cascade-bridge-adapter-clinvar),
-and nothing in it has yet been executed by a Bridge, because no Bridge exists.
-It was created now, rather than after the first engine, so that the phase 2
-engine is written against a contract with its own home instead of against files
-inside one adapter. A contract that lives inside the thing it constrains cannot
-be disagreed with.
+Nothing here has yet been executed by a Bridge, because no Bridge exists.
 
-### What is normative here, and what is still discussed on spec#43
+### What is normative here, and what is not settled
 
 Normative — this repository is the authority, and an adapter that fails these is
 not a conforming adapter package:
@@ -39,50 +31,53 @@ not a conforming adapter package:
 - the `bridge:` vocabulary, [`vocab/bridge.ttl`](vocab/bridge.ttl);
 - the SHACL shapes, [`shapes/bridge.shapes.ttl`](shapes/bridge.shapes.ttl);
 - the adapter profile, [`profile/ro-crate-metadata.json`](profile/ro-crate-metadata.json);
-- the adapter manifest contract, [`docs/adapter-manifest.md`](docs/adapter-manifest.md);
-- the test manifest contract, [`docs/test-manifest.md`](docs/test-manifest.md);
-- the validation list, [`docs/validation.md`](docs/validation.md);
-- the alignment rules, [`docs/alignment.md`](docs/alignment.md).
+- the adapter manifest contract, [`docs/adapter/manifest.md`](docs/adapter/manifest.md);
+- the test manifest contract, [`docs/adapter/test-manifest.md`](docs/adapter/test-manifest.md);
+- the validation list, [`docs/adapter/validation.md`](docs/adapter/validation.md);
+- the pinning rules, [`docs/pinning.md`](docs/pinning.md).
 
-Still open, and settled on spec#43 rather than here:
+Not settled, and not answerable from anything in this repository. If one of these
+blocks you, ask:
 
-- **What Core contains.** RFC section 9 proposes SPARQL CONSTRUCT over a generic
-  lift as Core, with XSLT 3, RML and FHIR Mapping Language as optional profiles,
-  and marks it as question 1 for the spike. Until it is answered, only an adapter
-  requiring no profile at all can be shown to need Core alone.
-- **The canonical findings model.** RFC section 8 requires one; the shape is not
-  chosen. [`docs/fixtures-and-provenance.md`](docs/fixtures-and-provenance.md)
+- **What Core contains.** The open proposal is SPARQL CONSTRUCT over a generic
+  lift as Core, with XSLT 3, RML and FHIR Mapping Language as optional profiles.
+  Until it is settled, only an adapter requiring no profile at all can be shown
+  to need Core alone.
+- **The canonical findings model.** One is wanted; the shape is not
+  chosen. [`docs/adapter/fixtures.md`](docs/adapter/fixtures.md)
   states the two published candidates and the constraint keeping the question
   open.
 - **Router precedence** when two adapters' detect rules both match a document.
-- **The export direction.** RFC section 6 puts an `out/` mapping in the package;
-  the pilot is import-only, so nothing measured can be said about it yet.
-- **Where the Bridge sits** relative to D-LAYERS-1's layers, and whether this
-  full-separation repository layout is the right one at all (RFC sections 3 and
-  15).
+- **The export direction.** Import only is specified; `out/` is not.
 
-Where a document here touches an open question, it says so and links spec#43.
+Where a document here touches one of these, it says so.
+
+## Start here
+
+The specification exists so two things can be built. Start at the one you are
+building; its entry point names what it needs from the other.
+
+| you are building | start at | what it covers |
+|---|---|---|
+| **an adapter** — a data package for one source format | [`docs/adapter/`](docs/adapter/) | the crate, fixtures, the test manifest, and the six checks your package must pass |
+| **an engine** — a Bridge, the thing that runs adapters | [`docs/engine/`](docs/engine/) | the stages you run around a mapping, and how you execute an adapter's test manifest |
+
+[`docs/pinning.md`](docs/pinning.md) is short and both need it: how each side
+names the revision of this specification it was built against.
 
 ## Layout
 
 ```
-README.md                      this file
-LICENSE                        Apache-2.0
-CHANGELOG.md
-CLAUDE.md                      agent context: what is normative, the pinning rule, what to run
 vocab/bridge.ttl               the bridge: vocabulary: adapter terms, and test terms on top of W3C's mf:
 shapes/bridge.shapes.ttl       SHACL shapes for an adapter's crate and its test manifest, as one graph
 profile/ro-crate-metadata.json the RO-Crate 1.2 Profile Crate an adapter names in conformsTo
-scripts/validate-adapter.py    the adapter lint: all six checks of docs/validation.md
+docs/adapter/                  building an adapter: manifest, fixtures, test manifest, validation
+docs/engine/                   building an engine: stages, executing a test manifest
+docs/pinning.md                how the three sides name the revisions they were built against
+scripts/validate-adapter.py    the adapter lint: the six checks of docs/adapter/validation.md
 scripts/selftest-lint.py       the mutation cases that show each check failing
 fixtures/synthetic-adapter/    a synthetic adapter package: the lint's own test subject
 .github/actions/validate-adapter/  the lint published as an action, which an adapter's CI calls
-docs/adapter-manifest.md       the adapter manifest contract
-docs/test-manifest.md          the test manifest contract
-docs/fixtures-and-provenance.md  committed inputs, referenced datasets, the findings sidecar
-docs/stages.md                 the RFC's engine stages as Enterprise Integration Patterns
-docs/validation.md             what a conforming adapter package must pass
-docs/alignment.md              keeping spec, adapters and Bridges in step
 .github/workflows/validate.yml CI: this repository's own files, and nothing else's
 ```
 
@@ -109,7 +104,7 @@ it*, as a `SoftwareSourceCode` entity in the crate carrying `codeRepository` and
 identifier, and the Profile Crate that describes it is
 [`profile/ro-crate-metadata.json`](profile/ro-crate-metadata.json) in this
 repository. The full field-by-field contract is
-[`docs/adapter-manifest.md`](docs/adapter-manifest.md).
+[`docs/adapter/manifest.md`](docs/adapter/manifest.md).
 
 ## How to validate an adapter
 
@@ -118,34 +113,26 @@ python3 -m pip install pyshacl rdflib roc-validator lxml
 python3 scripts/validate-adapter.py <path to an adapter checkout>
 ```
 
-That runs all six checks: the package is a valid RO-Crate 1.2; the crate plus
-the test manifest it names, loaded as one graph with each file's own location as
-base, conform to `shapes/bridge.shapes.ttl` under pySHACL with SHACL-SPARQL
-enabled; every git-tracked file is either described by the crate with a declared
-`encodingFormat` in the allowed set, or is one of the four repository documents
-or a dotfile; every digest in the crate is recomputed over the committed bytes;
-every committed input validates against the schema its envelope declares; and
-every expected graph parses as Turtle. Exit status is 0 when all six pass.
+That runs the six checks a conforming adapter package must pass — the crate, the
+shapes, the file inventory, the digests, the inputs against their schemas and the
+expected graphs. What each one is, and what a failure means, is
+[`docs/adapter/validation.md`](docs/adapter/validation.md); it is the authority and this is not a
+second copy of it. Exit status is 0 when all six pass, and nothing reaches the
+network, so the run works offline and needs no credentials.
 
 **Every check says whether it ran.** `ok`, `nothing to check` and `not run` are
-three different sentences, and the run ends by giving each of the six the word
-it earned: a lint that silently checks nothing is worse than no lint. Nothing
-reaches the network, so the run works offline and needs no credentials.
+three different sentences: a lint that silently checks nothing is worse than no
+lint.
 
 An adapter does not run that by hand. The same checks are published from this
-repository as a composite GitHub Action, so an adapter's whole CI is:
+repository as a composite GitHub Action, and an adapter's whole CI is the two
+lines in [`docs/adapter/validation.md`](docs/adapter/validation.md). The ref in
+the second is the adapter's `bridge:specPin` in executable form: the two name
+the same commit of this repository, and the action checks that they do. The
+action takes a directory, names no adapter, and clones nothing but the caller's
+own checkout — the arrow runs from adapter to specification.
 
-```yaml
-      - uses: actions/checkout@v4
-      - uses: jayostis/cascade-bridge-spec/.github/actions/validate-adapter@v0.3.0
-```
-
-The tag in that line is the adapter's `bridge:specPin` in executable form: the
-two name the same commit of this repository, and the action checks that they do.
-The action takes a directory, names no adapter, and clones nothing but the
-caller's own checkout — the arrow runs from adapter to specification.
-
-[`docs/validation.md`](docs/validation.md) has the full six-item list a
+[`docs/adapter/validation.md`](docs/adapter/validation.md) has the full six-item list a
 conforming package must pass, the words a check may be reported in, and the
 media types an adapter package may declare.
 [`fixtures/README.md`](fixtures/README.md) is the synthetic package the lint is
@@ -170,29 +157,7 @@ nothing at all. A comparison is insensitive to everything the format does not
 mean. And a Bridge's verdict on an adapter reaches a catalogue as an EARL
 report, never as a pin in either direction.
 
-The reasoning, including the part inherited from
-`conformance/scripts/SPEC_PIN`, is in [`docs/alignment.md`](docs/alignment.md).
-
-## Related repositories
-
-- [the-cascade-protocol/spec](https://github.com/the-cascade-protocol/spec) —
-  the Cascade vocabularies and SHACL shapes an adapter writes to, the RFC this
-  specification is drawn from ([#43](https://github.com/the-cascade-protocol/spec/issues/43)),
-  and the identity RFC ([#38](https://github.com/the-cascade-protocol/spec/issues/38)).
-- [the-cascade-protocol/conformance](https://github.com/the-cascade-protocol/conformance) —
-  the fixture suite the pilot's oracles were copied from, and the source of the
-  pinning discipline in `docs/alignment.md`.
-- [the-cascade-protocol/cascade-cli](https://github.com/the-cascade-protocol/cascade-cli) —
-  the runtime whose format converters an adapter re-expresses as data, and whose
-  ClinVar conformance test is the comparison a test manifest restates.
-- [jayostis/cascade-bridge-adapter-clinvar](https://github.com/jayostis/cascade-bridge-adapter-clinvar) —
-  the pilot adapter every artefact here was seeded from, and the worked example
-  the documents cite. Nothing a machine reads in this repository names it: it
-  consumes this specification, not the other way round.
-- `cascade-bridge-java`, `cascade-bridge-js` — the Bridges that will execute a
-  test manifest, the JVM one as the ceiling and the JavaScript one as the floor
-  (RFC section 16). **Neither exists yet**, and until one does, nothing in this
-  specification has been run.
+The reasoning is in [`docs/pinning.md`](docs/pinning.md).
 
 ## Licence
 
