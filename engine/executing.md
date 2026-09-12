@@ -36,8 +36,9 @@ Two obligations sit outside the individual rules:
 ## Report in EARL
 
 One `earl:Assertion` per manifest entry: `earl:test` the entry's IRI,
-`earl:subject` the Bridge, `earl:outcome` the result, `earl:mode automatic`.
-That is the form every W3C test suite's implementation reports take.
+`earl:subject` the Bridge, `earl:mode earl:automatic`, and `earl:result` an
+`earl:TestResult` whose `earl:outcome` is the result. That is the form every W3C
+test suite's implementation reports take.
 
 An adapter's tier is a query over those assertions, never a claim in the adapter
 and never something a Bridge writes back to one — a Bridge that pinned an adapter
