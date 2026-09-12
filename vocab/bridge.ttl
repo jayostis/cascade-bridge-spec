@@ -54,7 +54,7 @@ bridge:Envelope a owl:Class ;
 
 bridge:Profile a owl:Class ;
   rdfs:label "Profile"@en ;
-  rdfs:comment "An optional Bridge profile beyond Core: a capability a Bridge may offer and an adapter may require, such as xslt-3, sparql-construct or streaming."@en ;
+  rdfs:comment "An optional Bridge profile beyond Core: a capability a Bridge may offer and an adapter may require. v1-draft defines one, bridge:xslt-3."@en ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
 # ----------------------------------------------------------------------------
@@ -104,7 +104,7 @@ bridge:sourceMediaType a owl:DatatypeProperty ;
 
 bridge:sourceSchema a owl:ObjectProperty ;
   rdfs:label "source schema"@en ;
-  rdfs:comment "The pinned source-side schema (XSD, JSON Schema, Schematron) a Bridge validates every unit against, by IRI: a schema:File entity in the crate. Exactly one."@en ;
+  rdfs:comment "The pinned source-side schema, an XSD, a Bridge validates every unit against, by IRI: a schema:File entity in the crate. Exactly one."@en ;
   rdfs:domain bridge:Adapter ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 

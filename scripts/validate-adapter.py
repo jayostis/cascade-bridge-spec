@@ -131,9 +131,8 @@ DIGEST_ALGORITHMS = {
 LOCAL_DIGEST = SCHEMA.sha256
 
 # Check 5. The media types a source-side schema arrives in, and which engine
-# reads each. XSD 1.0 by lxml is the only engine wired up; a source schema that
-# is a JSON Schema is a real case, and it is reported as not run rather than
-# passed.
+# reads each. XSD 1.0 by lxml is the only engine: v1-draft specifies XML
+# sources. A source schema declared JSON is reported as not run, never passed.
 XSD_MEDIA_TYPES = {"application/xml", "text/xml"}
 JSON_SCHEMA_MEDIA_TYPES = {"application/json", "application/schema+json"}
 
@@ -609,11 +608,10 @@ def schema_for(graph, root, envelope):
 def validate_inputs(adapter, graph, root, manifest_iri, check):
     """Check 5: every committed input validates against the declared schema.
 
-    XSD 1.0 by lxml, which is what an XML source schema is written for. A
-    source schema that is a JSON Schema is a real case this lint does not read
-    yet: it is reported as not run, because reporting it as a pass would be a
-    claim nobody made, and crashing on it would make the lint unusable for an
-    adapter it has nothing against.
+    XSD 1.0 by lxml: v1-draft specifies XML sources. A source schema declared
+    JSON is outside that and is reported as not run, because reporting it as a
+    pass would be a claim nobody made, and crashing on it would make the lint
+    unusable for a package it has nothing against.
     """
     print("5. Inputs against the declared schema")
 
@@ -658,7 +656,7 @@ def validate_inputs(adapter, graph, root, manifest_iri, check):
 
         Returns (engine, reason, fatal). `fatal` separates the two ways a
         schema can yield no engine, which are not the same finding. A schema
-        this lint does not read -- a JSON Schema, a schema referenced rather
+        this lint does not read -- one declared JSON, one referenced rather
         than committed -- is a gap in the lint, and the package is not accused
         of anything. A schema that is declared an XSD and will not compile as
         one is the package being wrong, and fails.
@@ -677,8 +675,8 @@ def validate_inputs(adapter, graph, root, manifest_iri, check):
             )
         elif media_type in JSON_SCHEMA_MEDIA_TYPES:
             outcome = (
-                f"{path.name} is declared {media_type}: a JSON Schema source "
-                "schema is outside what this lint reads today",
+                f"{path.name} is declared {media_type}: a JSON source schema "
+                "is outside v1-draft, which specifies XML sources",
                 False,
             )
         elif media_type not in XSD_MEDIA_TYPES:

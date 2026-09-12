@@ -181,11 +181,11 @@ def mutate_input_against_schema(package):
 
 
 def mutate_schema_language(package):
-    """Check 5: the schemas are declared JSON, which this lint does not read.
+    """Check 5: the schemas are declared JSON, which v1-draft does not specify.
 
-    Not a broken package: an adapter whose source schema is a JSON Schema is a
-    real adapter this lint has nothing against. It must say it did not run
-    rather than crash, and must not report the inputs as validated.
+    The lint has nothing against the package and cannot read it. It must say
+    it did not run rather than crash, and must not report the inputs as
+    validated.
     """
     edit(
         package,
@@ -306,7 +306,7 @@ CASES = [
         "exit": 0,
         "statuses": {5: "not run"},
         "expect": [
-            "a JSON Schema source schema is outside what this lint reads today",
+            "a JSON source schema is outside v1-draft, which specifies XML sources",
             "A check reported `not run` did not happen",
         ],
         "forbid": ["input(s) validated"],

@@ -21,6 +21,10 @@ runs that data is a Bridge.
 `v1-draft`. Terms may be renamed, cardinalities may change, and the profile IRI
 does not dereference yet.
 
+v1-draft specifies XML source formats and one mapping language, XSLT 3, as the
+`xslt-3` profile. Other source formats and mapping languages are not specified
+yet.
+
 Nothing here has yet been executed by a Bridge, because no Bridge exists.
 
 ### What is normative here, and what is not settled
@@ -39,10 +43,9 @@ not a conforming adapter package:
 Not settled, and not answerable from anything in this repository. If one of these
 blocks you, ask:
 
-- **What Core contains.** The open proposal is SPARQL CONSTRUCT over a generic
-  lift as Core, with XSLT 3, RML and FHIR Mapping Language as optional profiles.
-  Until it is settled, only an adapter requiring no profile at all can be shown
-  to need Core alone.
+- **What Core contains**: what every Bridge must run, beneath the profiles an
+  adapter requires. Until it is settled, only an adapter requiring no profile at
+  all can be shown to need Core alone.
 - **The canonical findings model.** One is wanted; the shape is not
   chosen. [`adapter/fixtures/README.md`](adapter/fixtures/README.md)
   states the two published candidates and the constraint keeping the question

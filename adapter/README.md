@@ -1,8 +1,8 @@
 # Building an adapter
 
-An adapter is a package of **data** for one source format. It contains no code:
-the thing that runs it is a Bridge. If you are writing one, everything you need
-is in this directory, in this order.
+An adapter is a package of **data** for one XML source format. It contains no
+code: the thing that runs it is a Bridge. If you are writing one, everything you
+need is in this directory, in this order.
 
 1. [`ro-crate-metadata.md`](ro-crate-metadata.md) — `ro-crate-metadata.json`, the one file that is
    both what your adapter says about itself and the provenance of everything it

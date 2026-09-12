@@ -26,6 +26,8 @@ commit.
 - **What is unsettled stays unsettled here.** What Core contains, the canonical
   findings model, router precedence and the export direction are open. A document
   touching one says so; answering one here would settle it by accident.
+- **v1-draft is XML sources and the `xslt-3` profile.** Another source format or
+  mapping language arrives as its own specified addition, not a passing mention.
 - **No Cascade terms are minted here.** `bridge:` only; a term in `cascade:` or
   `genomics:` goes through spec's own process.
 - **This repository must not know that any adapter exists.** The specification

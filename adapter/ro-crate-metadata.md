@@ -146,7 +146,7 @@ direction is not specified.
 
 - **The mapping, under Workflow RO-Crate.** When an adapter has a mapping, the
   crate takes the Workflow RO-Crate profile beside this one and names the entry
-  transformation as its `mainEntity`, with `programmingLanguage` declared. That
+  XSLT 3 stylesheet as its `mainEntity`, with `programmingLanguage` declared. That
   is a published profile for exactly this — a package whose point is a
   transformation — so no `bridge:` term is minted for it.
 - **Tables.** `bridge:table` names each lookup table the mapping reads, as a

@@ -26,8 +26,8 @@ different sentences. An adapter with no expected graph has not *passed* check
 installed has not passed check 5 either: it never asked the question, and the
 run fails so that nobody reads the silence as an answer. The one case where a
 check that did not happen leaves the run green is a package the lint has
-nothing against and cannot read — a source schema that is a JSON Schema, check
-5 below — and even there the word printed is `not run`.
+nothing against and cannot read — a source schema declared JSON, check 5 below
+— and even there the word printed is `not run`.
 
 **Nothing an adapter names is fetched.** Digests are recomputed over the
 committed bytes, and no publisher's file or referenced dataset is downloaded.
@@ -118,8 +118,8 @@ the crate names.
    package and are reported as themselves rather than as passes: a test whose
    action names a `bridge:dataset` has no committed bytes here, and the Bridge
    that streams them validates them; a schema entity that is referenced rather
-   than committed is not fetched; and a **source schema that is a JSON
-   Schema** is a real adapter this lint does not read yet, reported `not run`.
+   than committed is not fetched; and a **source schema declared JSON** is
+   outside v1-draft, which specifies XML sources, and is reported `not run`.
    A schema declared XML that does not compile as an XSD is a different matter
    and fails.
 
@@ -147,14 +147,14 @@ table restates it, and the two change in the same commit.
 | `application/gzip` | a referenced release published as an archive |
 | `application/json` | a findings sidecar, a lookup table's source |
 | `application/ld+json` | a crate, a context |
-| `application/sparql-query` | a mapping under a SPARQL profile |
+| `application/sparql-query` | a mapping under a SPARQL profile, not yet specified |
 | `application/xml` | a source document, an XSD |
 | `application/xslt+xml` | a mapping under the `xslt-3` profile |
 | `application/yaml` | a manifest or table an adapter carries as YAML |
 | `text/csv` | a lookup table that arrives as one |
 | `text/markdown` | a document under `docs/` |
 | `text/plain` | a NOTICE, a checksum sidecar |
-| `text/turtle` | a test manifest, an expected graph, a SKOS table, an RML mapping |
+| `text/turtle` | a test manifest, an expected graph, a SKOS table |
 | `text/xml` | the other spelling of XML, which publishers do use |
 
 The set is deliberately short, and it is where "no code" is enforced. A format an

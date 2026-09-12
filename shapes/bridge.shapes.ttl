@@ -233,8 +233,8 @@
 #
 # The set is the formats an adapter package may hold: the package's own
 # description (JSON-LD, Turtle, JSON, YAML, Markdown), the source-side schemas
-# and documents (XML, its two media types, JSON, YAML), the mapping languages a
-# Bridge profile may offer (XSLT 3, SPARQL, and RML, which is Turtle), the
+# and documents (XML, under both its media types), the mapping languages a
+# Bridge profile may offer (XSLT 3, and SPARQL for a profile not yet specified), the
 # lookup tables (Turtle for SKOS, CSV where a table arrives as one), the plain
 # text a NOTICE or a checksum sidecar is, and the archive a referenced release
 # is published as. It is deliberately short. A format an adapter needs and this

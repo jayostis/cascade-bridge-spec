@@ -15,7 +15,7 @@ example rather than as the subject.
 |---|---|---|
 | read and chunk | **Splitter** | the unit to split on: `bridge:unit` on the crate's root entity. ClinVar: `VariationArchive` |
 | detect and route | **Content-Based Router** | the detect rule, as one XPath 3.1 boolean: `bridge:detectXPath`. ClinVar: `exists(/(ClinVarResult-Set\|ClinVarVariationRelease)/VariationArchive)` |
-| transform | **Message Translator** | the mapping, in a language the adapter's required profiles name. ClinVar: XSLT 3, one module per record class, and the same mapping again as SPARQL CONSTRUCT for comparison |
+| transform | **Message Translator** | the mapping, in a language the adapter's required profiles name. ClinVar: XSLT 3, one module per record class |
 | Cascade RDF as target | **Canonical Data Model** | the vocabularies it writes and the revision they are pinned at: `bridge:vocabulary`, `bridge:vocabularyPin` |
 | link within the batch | **Aggregator** | the links between records of one unit, emitted by the mapping and resolved by the Bridge within one import. ClinVar: interpretation (RCV) and submitter-assertion (SCV) records point at their Variant |
 | stamp | **Message History** | nothing; it *receives* the stamp. The adapter names the stamp predicates its test manifest ignores when comparing (`bridge:ignorePredicate`) |
@@ -44,12 +44,10 @@ dropped and why.
 
 **Message Translator and Canonical Data Model.** The mapping is the only
 format-specific thing that runs, and it runs inside an engine the Bridge already
-ships. What that engine is, is exactly what profiles are for. Which of them is
-Core is not settled: SPARQL CONSTRUCT over a generic lift is proposed as Core,
-with XSLT 3, RML and FHIR Mapping Language as optional profiles. That is a
-proposal, not a decision taken. The target is Cascade RDF in the pinned
-vocabularies, which is the canonical model every adapter writes to and nothing
-else reads from an adapter.
+ships. What that engine is, is exactly what profiles are for: v1-draft specifies
+one, `xslt-3`, and what Core contains is not settled. The target is Cascade RDF
+in the pinned vocabularies, which is the canonical model every adapter writes to
+and nothing else reads from an adapter.
 
 **Aggregator.** One unit yields several records that point at each other. How the
 pointer is expressed — a blank node the Bridge resolves, or a minted name — is an
