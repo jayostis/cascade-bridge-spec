@@ -16,7 +16,7 @@ lint nobody should trust, so it has to run somewhere on every change here — an
 the one thing it must not run against is a real adapter.
 
 **This repository must not know that any adapter exists**
-([`docs/pinning.md`](../docs/pinning.md) says why). A real adapter here — as a
+([`pinning.md`](../pinning.md) says why). A real adapter here — as a
 submodule, a clone, a pinned SHA or a name in a workflow — is that bug wearing
 a fixture's clothes.
 
@@ -32,7 +32,7 @@ vocabulary are made up; every URL that is not this repository's own is under
 real format, publisher, dataset or adapter is named anywhere in it.
 
 It is minimal, and every part of it earns its place by covering a branch of the
-six checks in [`docs/adapter/validation.md`](../docs/adapter/validation.md) that a single real
+six checks in [`adapter/validation.md`](../adapter/validation.md) that a single real
 adapter would not cover at once:
 
 | what it holds | the branch it covers |

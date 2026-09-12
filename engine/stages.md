@@ -31,7 +31,7 @@ opens the envelope, splits on the unit, and hands the mapping one unit at a time
 with its raw bytes preserved. Where the unit is a globally declared element in
 the source schema, a unit validates on its own, and the Bridge need not validate
 a multi-gigabyte release as a single document — which is what makes a dataset
-completion test ([`test-manifest.md`](../adapter/test-manifest.md)) runnable at all.
+completion test ([`../adapter/fixtures/manifest.md`](../adapter/fixtures/manifest.md)) runnable at all.
 
 **Content-Based Router.** One XPath 3.1 expression, evaluated with the document
 node as the context item. An adapter declares only the roots its publisher
@@ -69,7 +69,7 @@ input, and the unit still goes through.
 An adapter can flag; it cannot reject. Findings from source validation, the
 mapping, the undeclared-predicate check and SHACL all land in the Bridge's one
 findings model, whose standard shape is still open
-([`../adapter/fixtures.md`](../adapter/fixtures.md)).
+([`../adapter/fixtures/README.md`](../adapter/fixtures/README.md)).
 
 **Idempotent Receiver.** Importing the same document twice must change nothing.
 The adapter's obligation is only that everything it emits is a function of the

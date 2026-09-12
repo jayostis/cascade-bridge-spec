@@ -15,11 +15,11 @@ Also relevant, and short: [`../pinning.md`](../pinning.md), for how you name the
 revision of this specification you implement.
 
 You do not need most of [`../adapter/`](../adapter/) — that is how a package is
-authored. The exception is [`../adapter/test-manifest.md`](../adapter/test-manifest.md),
+authored. The exception is [`../adapter/fixtures/manifest.md`](../adapter/fixtures/manifest.md),
 which is the shape of the file you will be executing, and
-[`../adapter/manifest.md`](../adapter/manifest.md), which is the shape of the
+[`../adapter/ro-crate-metadata.md`](../adapter/ro-crate-metadata.md), which is the shape of the
 crate you will be reading.
 
-The normative term definitions are [`../../vocab/bridge.ttl`](../../vocab/bridge.ttl).
+The normative term definitions are [`../vocab/bridge.ttl`](../vocab/bridge.ttl).
 Each test type's `rdfs:comment` there carries the comparison rule you must
 implement — implement those, not a prose paraphrase of them.

@@ -9,9 +9,9 @@ adapter, and nothing has yet been executed by a Bridge, because no Bridge exists
 
 ## What is normative
 
-`vocab/bridge.ttl`, `shapes/bridge.shapes.ttl`, `profile/ro-crate-metadata.json`,
-and in `docs/`: `adapter/manifest.md`, `adapter/test-manifest.md`,
-`adapter/validation.md`, `pinning.md`. Changing any of them changes what every
+`vocab/bridge.ttl`, `shapes/bridge.shapes.ttl`, `pinning.md`, and in `adapter/`:
+`profile/ro-crate-metadata.json`, `ro-crate-metadata.md`, `fixtures/manifest.md`,
+`validation.md`. Changing any of them changes what every
 adapter and every Bridge must do, and needs its reasoning recorded in the same
 commit. The rest is explanatory, machinery, or the lint's own test subject:
 see each directory.
@@ -44,13 +44,20 @@ commit.
 - **Everything that pins this repository pins a tag**, verified with
   `git ls-remote` first: a pin to an untagged commit dies at `git checkout` the
   first time a branch is reset. This repository pins nothing, in either
-  direction; `docs/pinning.md` is the mechanism in full.
+  direction; `pinning.md` is the mechanism in full.
 
 ## Where a rule goes
 
 This file holds what has to be known *before* choosing a directory to open.
 Everything else belongs in a `CLAUDE.md` in the directory it governs, which loads
 only when that directory is touched. Keep this file under 80 lines.
+
+A `README.md` addresses whoever is building something that must conform; a
+`CLAUDE.md` addresses whoever is changing this repository, so rules for authoring
+an adapter never go in one. Conformance targets are top-level (`adapter/`,
+`engine/`), each holding its own contract; `vocab/` and `shapes/` are the spine
+they share; `scripts/` and `fixtures/` are machinery, never inside a target.
+`.github/` is where GitHub requires it.
 
 ## Conventions
 

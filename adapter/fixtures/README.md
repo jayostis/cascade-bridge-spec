@@ -2,7 +2,7 @@
 
 Every file an adapter ships and every dataset it references is described in the
 adapter's crate. The crate is the manifest and the provenance record in one
-graph ([`manifest.md`](manifest.md)); this document is the part
+graph ([`../ro-crate-metadata.md`](../ro-crate-metadata.md)); this document is the part
 of it that is about fixtures.
 
 ## Committed inputs are small, and carry a digest
@@ -48,7 +48,7 @@ release date, the publisher's digest, a size and a licence. A
 `bridge:DatasetCompletionTest` in the test manifest names that entity by its
 `@id`, and the shapes require the entity to carry a `schema:contentUrl`, because
 a Bridge has to be able to fetch what it is asked to stream
-([`test-manifest.md`](test-manifest.md)).
+([`manifest.md`](manifest.md)).
 
 The dividing line is not a byte count but whether the bytes can be held to a
 digest for the life of the pin. A published, dated release file can be. A
@@ -86,7 +86,7 @@ are asserted against, so it is what an adapter writes today.
 
 The order the entries happen to be in is **not** part of the comparison:
 `bridge:IsomorphicConversionTest` compares the array as a multiset
-([`test-manifest.md`](test-manifest.md)). A sidecar written from scratch SHOULD
+([`manifest.md`](manifest.md)). A sidecar written from scratch SHOULD
 be sorted by Unicode code point on (`sourceField`, `severity`, `reason`), which
 keeps regeneration diffs readable, but that is file hygiene and never a
 judgement: the copied sidecars are in the ICU collation their
@@ -117,5 +117,5 @@ written findings in two shapes, the choice has been made by accident.
 
 Until it is settled, this specification says only what is true: the sidecar is
 the mapping's contribution to the Bridge's findings channel (the Enterprise
-Integration Patterns Invalid Message Channel, [`stages.md`](../engine/stages.md)), it is
+Integration Patterns Invalid Message Channel, [`stages.md`](../../engine/stages.md)), it is
 compared exactly, and its shape is not yet standard.

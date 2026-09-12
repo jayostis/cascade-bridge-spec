@@ -16,7 +16,7 @@ the SHACL test suite adds `sht:`.
 - **No Cascade terms are minted here.** `bridge:` only. A term in `cascade:`,
   `genomics:` or any other Cascade vocabulary goes through spec's own process.
 - **An adapter declares no tier.** A tier is measured, so no term declares one.
-- Term names and cardinalities must match `../docs/adapter/manifest.md` and
-  `../docs/adapter/test-manifest.md` exactly. Change both in one commit.
+- Term names and cardinalities must match `../adapter/ro-crate-metadata.md` and
+  `../adapter/fixtures/manifest.md` exactly. Change both in one commit.
 
 It parses with `python3 -c "from rdflib import Graph; Graph().parse('vocab/bridge.ttl')"`.

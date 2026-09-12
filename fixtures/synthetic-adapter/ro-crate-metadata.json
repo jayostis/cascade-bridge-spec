@@ -34,7 +34,7 @@
       "identifier": "synthetic-example",
       "name": "Synthetic Example Records",
       "version": "0.1.0",
-      "description": "A synthetic Cascade Bridge Adapter package, and the only package this repository holds. It exists so that the lint published from here is exercised by the thing it is published for, against a subject this repository owns: no real adapter is cloned, named or pinned, which is the rule fixtures/README.md and docs/pinning.md state. Everything in it is invented. The format, its schemas, its records, its releases and its vocabulary are made up; every URL that is not this repository's own is under example.org, IANA's reserved example domain, and none of them resolves. It declares no bridge:profileRequired, because it carries no mapping and needs no Bridge profile, which is also the one shape of adapter for which the lint's tier line may say universal candidate rather than limited. Committed files carry a sha256 computed over the committed bytes; two of them additionally carry an md5 standing for the digest a publisher publishes beside the file at its source, so that check 4 of docs/adapter/validation.md has both kinds of claim to recompute and can be seen telling them apart.",
+      "description": "A synthetic Cascade Bridge Adapter package, and the only package this repository holds. It exists so that the lint published from here is exercised by the thing it is published for, against a subject this repository owns: no real adapter is cloned, named or pinned, which is the rule fixtures/README.md and pinning.md state. Everything in it is invented. The format, its schemas, its records, its releases and its vocabulary are made up; every URL that is not this repository's own is under example.org, IANA's reserved example domain, and none of them resolves. It declares no bridge:profileRequired, because it carries no mapping and needs no Bridge profile, which is also the one shape of adapter for which the lint's tier line may say universal candidate rather than limited. Committed files carry a sha256 computed over the committed bytes; two of them additionally carry an md5 standing for the digest a publisher publishes beside the file at its source, so that check 4 of adapter/validation.md has both kinds of claim to recompute and can be seen telling them apart.",
       "datePublished": "2026-09-06",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
@@ -113,7 +113,7 @@
       "bridge:documentSchema": {
         "@id": "schema/example-set.xsd"
       },
-      "description": "The envelope an invented service returns: many records under a set root the format's own schema does not declare, so this envelope names the wrapper schema this package adds. The arrangement that makes check 5 of docs/adapter/validation.md prefer an envelope's bridge:documentSchema to the adapter's bridge:sourceSchema."
+      "description": "The envelope an invented service returns: many records under a set root the format's own schema does not declare, so this envelope names the wrapper schema this package adds. The arrangement that makes check 5 of adapter/validation.md prefer an envelope's bridge:documentSchema to the adapter's bridge:sourceSchema."
     },
     {
       "@id": "#envelope-record",
@@ -126,7 +126,7 @@
       "@id": "https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/",
       "@type": ["CreativeWork", "Profile"],
       "name": "Cascade Bridge Adapter profile",
-      "description": "The RO-Crate 1.2 Profile Crate a conforming adapter package names in conformsTo. The IRI does not dereference; the Profile Crate describing it is profile/ro-crate-metadata.json in this repository, and bridge:specPin says at which commit."
+      "description": "The RO-Crate 1.2 Profile Crate a conforming adapter package names in conformsTo. The IRI does not dereference; the Profile Crate describing it is adapter/profile/ro-crate-metadata.json in this repository, and bridge:specPin says at which commit."
     },
     {
       "@id": "https://github.com/jayostis/cascade-bridge-spec/commit/0af0fc970f75360d4f84acc2203c26b5fd9d6d23",
@@ -163,9 +163,9 @@
       "@type": "File",
       "name": "Example record XSD, pinned copy",
       "encodingFormat": "application/xml",
-      "contentSize": "1296",
-      "sha256": "b3748c551cd52b2c4c51ba70efefe2524a4bc6de32e30f897830139f73dc24db",
-      "md5": "d8959dfbf9dcd2372ad6126020bc0ab4",
+      "contentSize": "1291",
+      "sha256": "8faaaa9d339402ecb11014d732abae34fac93a7fd96d1d3874d7947436954695",
+      "md5": "cd3eca4e773d23a7c1ff3b2903484a28",
       "isBasedOn": {
         "@id": "https://example.org/synthetic-adapter/schema/example-record.xsd"
       },
@@ -179,8 +179,8 @@
       "@type": "File",
       "name": "Example set XSD, this package's wrapper",
       "encodingFormat": "application/xml",
-      "contentSize": "1140",
-      "sha256": "fa6e88ccb6250502d8fbf110112eb6956da8def36633039987b553a94560eaf2",
+      "contentSize": "1135",
+      "sha256": "d709e695ae59ed63091ffc3756cadea62c10790559ac14ec8d5ecafce7c94665",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       },
@@ -201,8 +201,8 @@
       "@type": "File",
       "name": "Synthetic input, set envelope",
       "encodingFormat": "application/xml",
-      "contentSize": "656",
-      "sha256": "8e1665cc84c4490cd82c403a4429f1ad050afb58ed0092bc26eb5f2e66a8ff1e",
+      "contentSize": "651",
+      "sha256": "5d2b0d488302655b1ff53dc4449bc79dada5c37d776f69a9868f385a83d91edc",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       },
@@ -229,8 +229,8 @@
       "@type": "File",
       "name": "Expected graph for example-0001",
       "encodingFormat": "text/turtle",
-      "contentSize": "1186",
-      "sha256": "ee7eb83f54c82b658e3a57bb00158bfac8af3844032d327fcf8b48eee18e50ae",
+      "contentSize": "1181",
+      "sha256": "53efd0a735818adb3368d13cc72db9a49eb5136586a5559f8fb37f317e0be374",
       "isBasedOn": {
         "@id": "fixtures/in/example-0001.xml"
       },
@@ -252,7 +252,7 @@
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       },
-      "description": "The findings a mapping would have to produce beside that graph: one entry, for the free-text note the invented vocabulary has no term for. The four-field shape docs/adapter/fixtures.md records as what an adapter writes today, with the standard form still open."
+      "description": "The findings a mapping would have to produce beside that graph: one entry, for the free-text note the invented vocabulary has no term for. The four-field shape adapter/fixtures/README.md records as what an adapter writes today, with the standard form still open."
     },
     {
       "@id": "https://example.org/synthetic-adapter/releases/example-release-2026-01.xml.gz",

@@ -149,6 +149,6 @@ fact about the Bridge belongs where it is true once.
 
 ## What a harness owes
 
-The other side of this document is [`../engine/executing.md`](../engine/executing.md):
+The other side of this document is [`../../engine/executing.md`](../../engine/executing.md):
 how a harness loads the two files as one graph, which rule it applies to each
 entry type, and the EARL report it produces.

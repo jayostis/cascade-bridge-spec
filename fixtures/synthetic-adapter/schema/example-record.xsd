@@ -7,7 +7,7 @@
   This file stands in for the schema an adapter pins byte for byte from its
   publisher: the crate records a sha256 computed over these bytes and an md5
   standing for the one the publisher publishes beside the file at its source,
-  so that check 4 of docs/adapter/validation.md has both a local claim and a
+  so that check 4 of adapter/validation.md has both a local claim and a
   publisher's claim to recompute. Its declared root element, ExampleRecord, is
   the adapter's unit, and it is the schema an input whose envelope declares no
   document schema falls back to (check 5).

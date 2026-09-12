@@ -1,7 +1,7 @@
 # Executing a test manifest
 
 What a Bridge's harness must do with an adapter's `fixtures/manifest.ttl`. The
-manifest's shape is [`../adapter/test-manifest.md`](../adapter/test-manifest.md);
+manifest's shape is [`../adapter/fixtures/manifest.md`](../adapter/fixtures/manifest.md);
 this is the other side of it.
 
 ## Load the crate and the manifest as one graph
@@ -16,7 +16,7 @@ validates it, instead of matching on file names.
 ## Execute the entry, not the file name
 
 A harness reads the entry's **type** and applies the rule that type carries. The
-rules are normative in [`../../vocab/bridge.ttl`](../../vocab/bridge.ttl), as the
+rules are normative in [`../vocab/bridge.ttl`](../vocab/bridge.ttl), as the
 `rdfs:comment` on each of `bridge:IsomorphicConversionTest`,
 `bridge:InputOnlyTest` and `bridge:DatasetCompletionTest`. They are not restated
 here, and a harness that implements this document rather than those comments is

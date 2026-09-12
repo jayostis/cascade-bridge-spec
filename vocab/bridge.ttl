@@ -11,7 +11,7 @@
 #
 # An adapter declares no tier: a tier is measured by running
 # an adapter's fixtures on every published Bridge, and recorded in a catalogue
-# downstream of both, which does not exist yet (docs/pinning.md).
+# downstream of both, which does not exist yet (pinning.md).
 #
 # Test terms: a small set on top of W3C's mf: test-manifest vocabulary, the way
 # the SHACL test suite adds sht:. An adapter's fixtures/manifest.ttl is an

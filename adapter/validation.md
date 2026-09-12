@@ -4,9 +4,9 @@ What a conforming adapter package must pass, written as the list a lint
 implements. The list is ordered so that the cheapest check that can fail comes
 first and each later check can assume the earlier ones held.
 
-All six run, in [`scripts/validate-adapter.py`](../../scripts/validate-adapter.py),
+All six run, in [`scripts/validate-adapter.py`](../scripts/validate-adapter.py),
 which is what the published action
-([`.github/actions/validate-adapter`](../../.github/actions/validate-adapter/action.yml))
+([`.github/actions/validate-adapter`](../.github/actions/validate-adapter/action.yml))
 runs.
 
 **Every check says whether it ran**, and the words are part of the contract,
@@ -43,7 +43,7 @@ and in a CI job with no credentials.
 2. **The crate and the test manifest conform to the shapes.** The crate parsed
    as JSON-LD with `ro-crate-metadata.json`'s own location as base, the test
    manifest parsed as Turtle with its own, loaded as **one graph**, validated
-   against [`shapes/bridge.shapes.ttl`](../../shapes/bridge.shapes.ttl) with a SHACL
+   against [`shapes/bridge.shapes.ttl`](../shapes/bridge.shapes.ttl) with a SHACL
    engine that supports SHACL-SPARQL (pySHACL, Jena). Both bases matter: with the
    wrong one, every link between the two files becomes two unrelated nodes and
    the shapes report nothing rather than reporting a mistake.
@@ -83,7 +83,7 @@ and in a CI job with no credentials.
 
 4. **Every digest matches its file.** A crate records two kinds of claim about
    a file's bytes, and they are not the same assertion
-   ([`fixtures.md`](fixtures.md)). Both are
+   ([`fixtures/README.md`](fixtures/README.md)). Both are
    recomputed over the committed bytes; **a mismatch in each is a different
    finding and is reported in different words.**
 
@@ -134,13 +134,13 @@ and in a CI job with no credentials.
 
 A package that passes all six is a conforming adapter package. Nothing in the
 list runs a mapping or compares a graph: that is the test manifest, and it needs
-a Bridge ([`test-manifest.md`](test-manifest.md)).
+a Bridge ([`fixtures/manifest.md`](fixtures/manifest.md)).
 
 ## The media types an adapter package may declare
 
 The allowed set for check 3, enforced by the shapes as `<#DescribedFile>` so
 that it runs rather than only being written down.
-[`shapes/bridge.shapes.ttl`](../../shapes/bridge.shapes.ttl) is the authority; this
+[`shapes/bridge.shapes.ttl`](../shapes/bridge.shapes.ttl) is the authority; this
 table restates it, and the two change in the same commit.
 
 | media type | what declares it |
@@ -180,7 +180,7 @@ a repository downstream of every adapter and every Bridge, which does not exist
 yet ([`pinning.md`](../pinning.md)). A lint sees one package on one machine and
 can see only that nothing disqualifies it. The word the lint may say is the
 strongest one the evidence supports, and no adapter declares a tier of its own
-([`manifest.md`](manifest.md)).
+([`ro-crate-metadata.md`](ro-crate-metadata.md)).
 
 What is in Core is not yet settled, so "every profile is in Core" is decidable
 only for an adapter that requires no profiles at all.

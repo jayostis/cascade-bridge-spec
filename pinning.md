@@ -116,7 +116,7 @@ that asserts more than it means makes correct work fail, and the failure lands o
 whoever runs it next rather than on whoever wrote it.
 
 An RDF graph does not mean its blank node labels, and a findings array does not
-mean its element order, so [`test-manifest.md`](adapter/test-manifest.md)
+mean its element order, so [`adapter/fixtures/manifest.md`](adapter/fixtures/manifest.md)
 compares graphs up to relabelling and findings as a multiset. A stricter rule
 than the format's meaning does not catch more mapping errors; it only fails
 harnesses that are right.

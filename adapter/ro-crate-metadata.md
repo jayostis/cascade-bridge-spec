@@ -11,7 +11,7 @@ that could disagree with the thing it names.
 
 The cost is stated rather than hidden: JSON-LD is less pleasant to hand-edit
 than YAML and has no field completion. The RO-Crate validator and the SHACL
-shapes in [`shapes/bridge.shapes.ttl`](../../shapes/bridge.shapes.ttl) are the
+shapes in [`shapes/bridge.shapes.ttl`](../shapes/bridge.shapes.ttl) are the
 checks instead.
 
 ## The root entity is the adapter
@@ -23,7 +23,7 @@ query written with `schema:conformsTo` matches nothing), and the `bridge:`
 vocabulary carries what neither has.
 
 Every cardinality below is enforced by `<#Adapter>` in the shapes; every term is
-declared with an `rdfs:comment` in [`vocab/bridge.ttl`](../../vocab/bridge.ttl).
+declared with an `rdfs:comment` in [`vocab/bridge.ttl`](../vocab/bridge.ttl).
 
 | property | cardinality | value | what it is |
 |---|---|---|---|
@@ -67,7 +67,7 @@ Two properties together:
 `conformsTo` naming
 `https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/` says *which
 contract*; `bridge:specPin` says *which revision of it*. The profile IRI is
-described by [`profile/ro-crate-metadata.json`](../../profile/ro-crate-metadata.json),
+described by [`adapter/profile/ro-crate-metadata.json`](profile/ro-crate-metadata.json),
 an RO-Crate Profile Crate whose constraints resource is the SHACL shapes. The
 IRI does not dereference yet; until it does, the specification is read from this
 repository, and the IRI is an identifier rather than a location.
