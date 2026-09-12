@@ -62,8 +62,8 @@ building; its entry point names what it needs from the other.
 | **an adapter** — a data package for one source format | [`adapter/`](adapter/) | the crate, fixtures, the test manifest, and the six checks your package must pass |
 | **an engine** — a Bridge, the thing that runs adapters | [`engine/`](engine/) | the stages you run around a mapping, and how you execute an adapter's test manifest |
 
-[`pinning.md`](pinning.md) is short and both need it: how each side
-names the revision of this specification it was built against.
+Building an adapter, you also need [`pinning.md`](pinning.md): how an adapter
+names the revision of this specification it is built against.
 
 ## Layout
 

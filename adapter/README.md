@@ -16,7 +16,7 @@ is in this directory, in this order.
 
 Also relevant, and short: [`../pinning.md`](../pinning.md), for how your adapter
 names the revision of this specification it is written against, and why that
-revision must be a tag.
+revision must be a tagged commit.
 
 You do not need [`../engine/`](../engine/). That is how a Bridge executes what
 you declare; nothing there changes what you write.

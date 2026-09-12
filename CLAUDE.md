@@ -41,7 +41,7 @@ commit.
   table. If something seems to need a new convention, find the published one.
 - **The pilot is evidence, not authority.** A fact taken from the pilot adapter
   is written here generalised. Do not modify it here.
-- **Everything that pins this repository pins a tag**, verified with
+- **Everything that pins this repository pins a tagged commit**, verified with
   `git ls-remote` first: a pin to an untagged commit dies at `git checkout` the
   first time a branch is reset. This repository pins nothing, in either
   direction; `pinning.md` is the mechanism in full.

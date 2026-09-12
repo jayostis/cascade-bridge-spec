@@ -11,9 +11,6 @@ one, this directory is what you need.
    the crate and the manifest as one graph, applying each entry type's rule, and
    reporting in EARL.
 
-Also relevant, and short: [`../pinning.md`](../pinning.md), for how you name the
-revision of this specification you implement.
-
 You do not need most of [`../adapter/`](../adapter/) — that is how a package is
 authored. The exception is [`../adapter/fixtures/manifest.md`](../adapter/fixtures/manifest.md),
 which is the shape of the file you will be executing, and
