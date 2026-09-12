@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Validate a Cascade Bridge Adapter package against this specification.
 
-The six checks docs/adapter/validation.md names, in the order it names them, so that
+The six checks adapter/validation.md names, in the order it names them, so that
 the cheapest check that can fail comes first and each later check may assume
 the earlier ones held:
 
@@ -23,15 +23,15 @@ that found nothing of its kind in the package, are each reported in their own
 words and never as a pass: a lint that silently checks nothing is worse than no
 lint. The summary at the end lists all six with the word each earned.
 
-Nothing here runs a mapping, compares a graph or reaches the network. Check 4
-recomputes digests over the committed bytes and never fetches the publisher's
-file; the run is offline and needs no credentials.
+Nothing here runs a mapping or compares a graph, and nothing an adapter names
+is fetched: check 4 recomputes digests over the committed bytes. The tools it
+runs do use the network, starting with the RO-Crate context the crate names.
 
 This script is what .github/actions/validate-adapter runs, so an adapter's CI
 is one `uses:` line pinned at a tag of this repository rather than a copy of
 this file. It takes a directory. It knows no adapter's name, no adapter's
 repository and no format id, and it must stay that way: a specification that
-knows which adapters exist is the bug docs/pinning.md is written against.
+knows which adapters exist is the bug pinning.md is written against.
 
 Base IRIs are the point of the second check, so they are set explicitly rather
 than left to a default. The crate is parsed with ro-crate-metadata.json's own
@@ -56,8 +56,8 @@ revision of this specification the caller is actually running, which is how the
 `uses:` pin in an adapter's workflow and the pin in its crate are held to naming
 the same commit. Without it the pin is reported and not compared.
 
-Exit status is 0 when every check passes and 1 when any fails or could not be
-run.
+Exit status is 0 when the run passes and 1 when it fails; adapter/validation.md
+says which words fail it.
 
 Requires pyshacl, rdflib, roc-validator and lxml (pip install pyshacl rdflib
 roc-validator lxml); the RO-Crate validator is invoked as the
@@ -67,8 +67,10 @@ uses.
 
 import argparse
 import hashlib
+import json
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from urllib.parse import urlparse
 from urllib.request import url2pathname
@@ -94,7 +96,7 @@ SPEC_PIN_ONLY = (
 
 # The files a repository holding an adapter may carry without the crate
 # describing them: they describe the repository, not the package
-# (docs/adapter/validation.md, check 3). Everything else is either a described file or
+# (adapter/validation.md, check 3). Everything else is either a described file or
 # a file nobody reviewed. Dotfiles and dot-directories are allowed wholesale,
 # which covers .gitattributes, .editorconfig, .vscode/ and .github/.
 #
@@ -118,7 +120,7 @@ ALLOWLIST = {
 # is written (RO-Crate's workflow-run terms give md5, sha1, sha256, sha512).
 # The two are different assertions, and a mismatch in each means something
 # different, so they are recomputed the same way and reported differently
-# (docs/adapter/fixtures.md; docs/adapter/validation.md, check 4).
+# (adapter/fixtures/README.md; adapter/validation.md, check 4).
 DIGEST_ALGORITHMS = {
     "md5": hashlib.md5,
     "sha1": hashlib.sha1,
@@ -129,9 +131,8 @@ DIGEST_ALGORITHMS = {
 LOCAL_DIGEST = SCHEMA.sha256
 
 # Check 5. The media types a source-side schema arrives in, and which engine
-# reads each. XSD 1.0 by lxml is the only engine wired up; a source schema that
-# is a JSON Schema is a real case, and it is reported as not run rather than
-# passed.
+# reads each. XSD 1.0 by lxml is the only engine: v1-draft specifies XML
+# sources. A source schema declared JSON is reported as not run, never passed.
 XSD_MEDIA_TYPES = {"application/xml", "text/xml"}
 JSON_SCHEMA_MEDIA_TYPES = {"application/json", "application/schema+json"}
 
@@ -215,28 +216,63 @@ def digest_of(path, algorithm):
 def validate_crate(adapter, check):
     """Check 1: the package is a valid RO-Crate 1.2."""
     print("1. RO-Crate 1.2")
-    try:
-        run = subprocess.run(
-            [
-                "rocrate-validator",
-                "validate",
-                str(adapter),
-                "--profile-identifier",
-                "ro-crate-1.2",
-                "--no-paging",
-            ],
-            capture_output=True,
-            text=True,
-        )
-    except FileNotFoundError:
-        report(False, "rocrate-validator is not installed (pip install roc-validator)")
-        return check.set(NOT_RUN, "rocrate-validator is not installed")
+    with tempfile.TemporaryDirectory() as scratch:
+        report_file = Path(scratch) / "report.json"
+        try:
+            # The validator draws with box characters. Decoded with the
+            # locale's code page, as text=True does on Windows, they fail in
+            # the reader thread and leave stdout None.
+            run = subprocess.run(
+                [
+                    "rocrate-validator",
+                    "validate",
+                    str(adapter),
+                    "--profile-identifier",
+                    "ro-crate-1.2",
+                    "--no-paging",
+                    "--output-format",
+                    "json",
+                    "--output-file",
+                    str(report_file),
+                ],
+                capture_output=True,
+                encoding="utf-8",
+                errors="replace",
+            )
+        except FileNotFoundError:
+            report(False, "rocrate-validator is not installed (pip install roc-validator)")
+            return check.set(NOT_RUN, "rocrate-validator is not installed")
+        failed = failed_requirements(report_file)
     ok = run.returncode == 0
     report(ok, f"{adapter}/ro-crate-metadata.json")
     if not ok:
-        print(run.stdout.strip() or run.stderr.strip())
+        # The validator's text report is a summary that names no requirement,
+        # so the ones that failed are read from its JSON report instead.
+        for line in failed:
+            print(f"        {line}")
+        if not failed:
+            print((run.stdout or "").strip() or (run.stderr or "").strip())
         return check.set(FAIL, "the crate is not a valid RO-Crate 1.2")
     return check.set(OK, "the crate is a valid RO-Crate 1.2")
+
+
+def failed_requirements(report_file):
+    """Each failed requirement in the validator's JSON report, one line each;
+    empty when there is no report to read."""
+    try:
+        issues = json.loads(report_file.read_text(encoding="utf-8"))["issues"]
+    except (OSError, ValueError, KeyError, TypeError):
+        return []
+    lines = []
+    for issue in issues:
+        found = issue.get("check") or {}
+        requirement = found.get("requirement") or {}
+        entity = issue.get("violatingEntity")
+        lines.append(
+            f"{found.get('identifier', '?')} {requirement.get('name', '')}: "
+            f"{issue.get('message', '')}" + (f" [{entity}]" if entity else "")
+        )
+    return lines
 
 
 # ============================================================================
@@ -323,7 +359,7 @@ def validate_shapes(graph, root, manifest_file, check):
             "        SoftwareSourceCode entity in the crate with codeRepository\n"
             "        and version (the full SHA), the same shape as\n"
             "        bridge:vocabularyPin. Nothing else about the crate or the\n"
-            "        test manifest is wrong. docs/adapter/manifest.md."
+            "        test manifest is wrong. adapter/ro-crate-metadata.md."
         )
         check.set(FAIL, SPEC_PIN_ONLY)
     else:
@@ -421,7 +457,7 @@ def validate_digests(adapter, graph, check):
     """Check 4: every digest in the crate matches the file beside it.
 
     Two claims are recorded in a crate and they are not the same assertion
-    (docs/adapter/fixtures.md):
+    (adapter/fixtures/README.md):
 
       * schema:sha256 is the *local* claim -- these bytes, here, now. It is
         computed over the committed bytes when the file is committed, so a
@@ -434,9 +470,8 @@ def validate_digests(adapter, graph, check):
         source it claims to be a byte-for-byte copy of.
 
     Both are recomputed the same way and reported in their own words. Nothing
-    is fetched: the publisher's file is not on this machine, and a lint that
-    needed the network would be a lint that cannot run offline or in a CI job
-    without credentials. A digest on an entity that is not committed here --
+    is fetched: the publisher's digest is already recorded in the crate, which
+    is the point of recording it. A digest on an entity that is not committed here --
     a referenced release, a pinned commit -- is recorded and not compared, and
     the run says how many.
     """
@@ -479,7 +514,7 @@ def validate_digests(adapter, graph, check):
                 "        beside it: the file was changed without the crate, or the\n"
                 "        crate without the file. Replace the file from its source\n"
                 "        or correct the digest, in the same commit\n"
-                "        (docs/adapter/fixtures.md)."
+                "        (adapter/fixtures/README.md)."
             )
 
     for path, algorithm, declared in publisher:
@@ -573,11 +608,10 @@ def schema_for(graph, root, envelope):
 def validate_inputs(adapter, graph, root, manifest_iri, check):
     """Check 5: every committed input validates against the declared schema.
 
-    XSD 1.0 by lxml, which is what an XML source schema is written for. A
-    source schema that is a JSON Schema is a real case this lint does not read
-    yet: it is reported as not run, because reporting it as a pass would be a
-    claim nobody made, and crashing on it would make the lint unusable for an
-    adapter it has nothing against.
+    XSD 1.0 by lxml: v1-draft specifies XML sources. A source schema declared
+    JSON is outside that and is reported as not run, because reporting it as a
+    pass would be a claim nobody made, and crashing on it would make the lint
+    unusable for a package it has nothing against.
     """
     print("5. Inputs against the declared schema")
 
@@ -622,7 +656,7 @@ def validate_inputs(adapter, graph, root, manifest_iri, check):
 
         Returns (engine, reason, fatal). `fatal` separates the two ways a
         schema can yield no engine, which are not the same finding. A schema
-        this lint does not read -- a JSON Schema, a schema referenced rather
+        this lint does not read -- one declared JSON, one referenced rather
         than committed -- is a gap in the lint, and the package is not accused
         of anything. A schema that is declared an XSD and will not compile as
         one is the package being wrong, and fails.
@@ -641,8 +675,8 @@ def validate_inputs(adapter, graph, root, manifest_iri, check):
             )
         elif media_type in JSON_SCHEMA_MEDIA_TYPES:
             outcome = (
-                f"{path.name} is declared {media_type}: a JSON Schema source "
-                "schema is outside what this lint reads today",
+                f"{path.name} is declared {media_type}: a JSON source schema "
+                "is outside v1-draft, which specifies XML sources",
                 False,
             )
         elif media_type not in XSD_MEDIA_TYPES:
@@ -753,7 +787,7 @@ def validate_expected_graphs(adapter, graph, manifest_iri, check):
     shapes is a question for a Bridge's validate stage, asked of the graph a
     mapping actually produced; asking it here would report a fixture as wrong
     for recording something Cascade has no term for yet, which is what the
-    findings sidecar beside it is for (docs/adapter/validation.md, check 6).
+    findings sidecar beside it is for (adapter/validation.md, check 6).
     """
     print("6. Expected graphs")
     expected = []
@@ -814,7 +848,7 @@ def validate_expected_graphs(adapter, graph, manifest_iri, check):
 
 
 # ============================================================================
-# The specification pin, and the tier line
+# The specification pin
 # ============================================================================
 
 
@@ -823,7 +857,7 @@ def check_spec_pin(graph, root, spec_revision):
 
     The `uses:` pin in an adapter's workflow and the bridge:specPin in its
     crate are the same fact written twice, one for the machine and one for the
-    reader (docs/pinning.md). This is where they are held to it.
+    reader (pinning.md). This is where they are held to it.
     """
     print("Specification pin")
     pins = list(graph.objects(root, BRIDGE.specPin))
@@ -861,24 +895,9 @@ def check_spec_pin(graph, root, spec_revision):
             "        The crate's pin and the revision of this specification the\n"
             "        adapter's workflow calls are the same fact written twice.\n"
             "        They move together, in the pull request that needs them\n"
-            "        (docs/pinning.md)."
+            "        (pinning.md)."
         )
     return ok, ("agrees with the ref this lint was called at" if ok else "disagrees")
-
-
-def tier_line(graph, root, inventory_ok):
-    """The one derived fact the lint reports, in the words docs/adapter/validation.md
-    fixes. Candidate, never universal: a lint sees one package on one machine,
-    and a tier is measured by running an adapter's fixtures on every published
-    Bridge."""
-    profiles = sorted(
-        str(p).rsplit("#", 1)[-1] for p in graph.objects(root, BRIDGE.profileRequired)
-    )
-    if not inventory_ok:
-        return "tier: not computed, because the file inventory did not pass"
-    if profiles:
-        return "limited: requires " + ", ".join(profiles)
-    return "universal candidate"
 
 
 # ============================================================================
@@ -891,7 +910,7 @@ def summarise(checks, pin_ok, pin_note):
     check that quietly did nothing. "ok" and "nothing to check" are different
     sentences and are printed as different sentences.
     """
-    print("The six checks of docs/adapter/validation.md, and how each ended:")
+    print("The six checks of adapter/validation.md, and how each ended:")
     width = max(len(check.title) for check in checks)
     for check in checks:
         print(
@@ -959,8 +978,6 @@ def main():
 
     print()
     summarise(checks, pin_ok, pin_note)
-    print()
-    print(tier_line(graph, root, three.status == OK))
     print()
     ok = pin_ok and not any(check.fails for check in checks)
     print("PASS" if ok else "FAIL")

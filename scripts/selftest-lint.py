@@ -6,14 +6,14 @@ thing it claims to check were wrong?* A lint nobody has seen fail is a lint
 nobody should trust, and the failure mode it is written against -- a check that
 quietly does nothing and reports a pass -- is invisible from a green run. So
 every case here breaks one property of a conforming package and asserts that
-the lint says so, in the words docs/adapter/validation.md fixes, and that it exits
+the lint says so, in the words adapter/validation.md fixes, and that it exits
 non-zero; and the first case asserts that the same package, unbroken, passes.
 
 The subject is fixtures/synthetic-adapter, this repository's own synthetic
 adapter package. It is copied into a temporary directory and mutated there.
 **Nothing here mutates a tracked file**, no mutated copy is ever written inside
 the repository, and no real adapter is read, cloned or named: this repository
-must not know that any adapter exists (docs/pinning.md), and a fixture it
+must not know that any adapter exists (pinning.md), and a fixture it
 wrote itself is a subject it owns.
 
 The copy is made into a fresh `git init`, because check 3 takes its inventory
@@ -181,11 +181,11 @@ def mutate_input_against_schema(package):
 
 
 def mutate_schema_language(package):
-    """Check 5: the schemas are declared JSON, which this lint does not read.
+    """Check 5: the schemas are declared JSON, which v1-draft does not specify.
 
-    Not a broken package: an adapter whose source schema is a JSON Schema is a
-    real adapter this lint has nothing against. It must say it did not run
-    rather than crash, and must not report the inputs as validated.
+    The lint has nothing against the package and cannot read it. It must say
+    it did not run rather than crash, and must not report the inputs as
+    validated.
     """
     edit(
         package,
@@ -241,6 +241,21 @@ def mutate_undescribed_file(package):
     )
 
 
+def mutate_away_mapping(package):
+    """Check 2: the crate names no mapping.
+
+    The stylesheet stays described and in hasPart, so check 3 still holds; only
+    the root's mainEntity goes. A package that names no mapping converts
+    nothing, and the shapes refuse it.
+    """
+    edit(
+        package,
+        CRATE,
+        '      "mainEntity": {\n        "@id": "in/example-record.xsl"\n      },\n',
+        "",
+    )
+
+
 # ---------------------------------------------------------------------------
 # The cases
 # ---------------------------------------------------------------------------
@@ -252,11 +267,19 @@ CASES = [
         "exit": 0,
         "statuses": {1: "ok", 2: "ok", 3: "ok", 4: "ok", 5: "ok", 6: "ok"},
         "expect": [
-            "6 local sha256 and 2 publisher digest(s) recomputed",
+            "7 local sha256 and 2 publisher digest(s) recomputed",
             "2 committed input(s) against the schema each test's envelope declares",
             "1 expected graph(s) parse as Turtle",
-            "universal candidate",
             "PASS",
+        ],
+    },
+    {
+        "name": "check 2: a crate that names no mapping",
+        "mutate": mutate_away_mapping,
+        "exit": 1,
+        "statuses": {1: "ok", 2: "FAIL", 3: "ok"},
+        "expect": [
+            "The adapter names exactly one mainEntity, its mapping",
         ],
     },
     {
@@ -306,7 +329,7 @@ CASES = [
         "exit": 0,
         "statuses": {5: "not run"},
         "expect": [
-            "a JSON Schema source schema is outside what this lint reads today",
+            "a JSON source schema is outside v1-draft, which specifies XML sources",
             "A check reported `not run` did not happen",
         ],
         "forbid": ["input(s) validated"],

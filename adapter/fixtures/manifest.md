@@ -10,7 +10,7 @@ test runner.
 
 An adapter does not choose among test conventions. Every convention an adapter
 may choose is a harness every Bridge must implement, and two adapters proving
-"universal" by different rules prove different things. Profile-specific unit
+conformance by different rules prove different things. Profile-specific unit
 suites — XSpec over an `xslt-3` mapping's modules, say — are optional, declared,
 and no part of the conformance claim.
 
@@ -149,6 +149,6 @@ fact about the Bridge belongs where it is true once.
 
 ## What a harness owes
 
-The other side of this document is [`../engine/executing.md`](../engine/executing.md):
+The other side of this document is [`../../engine/executing.md`](../../engine/executing.md):
 how a harness loads the two files as one graph, which rule it applies to each
 entry type, and the EARL report it produces.

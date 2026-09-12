@@ -4,9 +4,9 @@ What a conforming adapter package must pass, written as the list a lint
 implements. The list is ordered so that the cheapest check that can fail comes
 first and each later check can assume the earlier ones held.
 
-All six run, in [`scripts/validate-adapter.py`](../../scripts/validate-adapter.py),
+All six run, in [`scripts/validate-adapter.py`](../scripts/validate-adapter.py),
 which is what the published action
-([`.github/actions/validate-adapter`](../../.github/actions/validate-adapter/action.yml))
+([`.github/actions/validate-adapter`](../.github/actions/validate-adapter/action.yml))
 runs.
 
 **Every check says whether it ran**, and the words are part of the contract,
@@ -26,12 +26,13 @@ different sentences. An adapter with no expected graph has not *passed* check
 installed has not passed check 5 either: it never asked the question, and the
 run fails so that nobody reads the silence as an answer. The one case where a
 check that did not happen leaves the run green is a package the lint has
-nothing against and cannot read — a source schema that is a JSON Schema, check
-5 below — and even there the word printed is `not run`.
+nothing against and cannot read — a source schema declared JSON, check 5 below
+— and even there the word printed is `not run`.
 
-**Nothing in the list reaches the network.** Digests are recomputed over the
-committed bytes and no publisher's file is fetched, so the lint runs offline
-and in a CI job with no credentials.
+**Nothing an adapter names is fetched.** Digests are recomputed over the
+committed bytes, and no publisher's file or referenced dataset is downloaded.
+The tools the lint runs do use the network, starting with the RO-Crate context
+the crate names.
 
 ## The list
 
@@ -43,7 +44,7 @@ and in a CI job with no credentials.
 2. **The crate and the test manifest conform to the shapes.** The crate parsed
    as JSON-LD with `ro-crate-metadata.json`'s own location as base, the test
    manifest parsed as Turtle with its own, loaded as **one graph**, validated
-   against [`shapes/bridge.shapes.ttl`](../../shapes/bridge.shapes.ttl) with a SHACL
+   against [`shapes/bridge.shapes.ttl`](../shapes/bridge.shapes.ttl) with a SHACL
    engine that supports SHACL-SPARQL (pySHACL, Jena). Both bases matter: with the
    wrong one, every link between the two files becomes two unrelated nodes and
    the shapes report nothing rather than reporting a mistake.
@@ -54,10 +55,15 @@ and in a CI job with no credentials.
 
    They also carry the two constraints that make an IRI naming a file mean
    something. `bridge:input`, `bridge:graph` and `bridge:findings` in the
-   manifest, and `bridge:sourceSchema` and `bridge:documentSchema` in the crate,
-   are `sh:class schema:MediaObject`, what the RO-Crate 1.2 context expands
-   `File` to, so a mistyped name fails: an IRI naming no entity is still an IRI.
-   And every declared `encodingFormat` is one of the media types below.
+   manifest, and `mainEntity`, `bridge:sourceSchema` and `bridge:documentSchema`
+   in the crate, are `sh:class schema:MediaObject`, what the RO-Crate 1.2
+   context expands `File` to, so a mistyped name fails: an IRI naming no entity
+   is still an IRI. And every declared `encodingFormat` is one of the media
+   types below.
+
+   And they carry what the lint can assert about a mapping it does not run: the
+   adapter names exactly one `mainEntity`, declared `application/xslt+xml`, and
+   requires `bridge:xslt-3`.
 
 3. **Every git-tracked file is accounted for.** Each file in the repository is
    either a crate entity carrying a declared `encodingFormat`, or is in a short
@@ -83,7 +89,7 @@ and in a CI job with no credentials.
 
 4. **Every digest matches its file.** A crate records two kinds of claim about
    a file's bytes, and they are not the same assertion
-   ([`fixtures.md`](fixtures.md)). Both are
+   ([`fixtures/README.md`](fixtures/README.md)). Both are
    recomputed over the committed bytes; **a mismatch in each is a different
    finding and is reported in different words.**
 
@@ -100,9 +106,7 @@ and in a CI job with no credentials.
      republished, someone copied the new digest and did not re-fetch the bytes.
      Sending that author to check the crate would send them to the wrong file.
 
-   The publisher's file is **not fetched**, here or anywhere in this list. A
-   lint that needed the network is a lint that cannot run offline or in a CI
-   job without credentials, and the publisher's digest is already recorded in
+   The publisher's file is **not fetched**: its digest is already recorded in
    the crate, which is the point of recording it. A digest on an entity whose
    bytes are not committed — a referenced release, a pinned commit — is
    recorded, counted and not compared, and the run says how many.
@@ -119,8 +123,8 @@ and in a CI job with no credentials.
    package and are reported as themselves rather than as passes: a test whose
    action names a `bridge:dataset` has no committed bytes here, and the Bridge
    that streams them validates them; a schema entity that is referenced rather
-   than committed cannot be read offline; and a **source schema that is a JSON
-   Schema** is a real adapter this lint does not read yet, reported `not run`.
+   than committed is not fetched; and a **source schema declared JSON** is
+   outside v1-draft, which specifies XML sources, and is reported `not run`.
    A schema declared XML that does not compile as an XSD is a different matter
    and fails.
 
@@ -132,15 +136,15 @@ and in a CI job with no credentials.
    findings sidecar beside it is for. The lint says so in its own output, so
    that a pass here is never read as more than "this file is Turtle".
 
-A package that passes all six is a conforming adapter package. Nothing in the
-list runs a mapping or compares a graph: that is the test manifest, and it needs
-a Bridge ([`test-manifest.md`](test-manifest.md)).
+A package whose run passes, by the table above, is a conforming adapter package.
+Nothing in the list runs a mapping or compares a graph: that is the test
+manifest, and it needs a Bridge ([`fixtures/manifest.md`](fixtures/manifest.md)).
 
 ## The media types an adapter package may declare
 
 The allowed set for check 3, enforced by the shapes as `<#DescribedFile>` so
 that it runs rather than only being written down.
-[`shapes/bridge.shapes.ttl`](../../shapes/bridge.shapes.ttl) is the authority; this
+[`shapes/bridge.shapes.ttl`](../shapes/bridge.shapes.ttl) is the authority; this
 table restates it, and the two change in the same commit.
 
 | media type | what declares it |
@@ -148,14 +152,14 @@ table restates it, and the two change in the same commit.
 | `application/gzip` | a referenced release published as an archive |
 | `application/json` | a findings sidecar, a lookup table's source |
 | `application/ld+json` | a crate, a context |
-| `application/sparql-query` | a mapping under a SPARQL profile |
+| `application/sparql-query` | a mapping under a SPARQL profile, not yet specified |
 | `application/xml` | a source document, an XSD |
 | `application/xslt+xml` | a mapping under the `xslt-3` profile |
 | `application/yaml` | a manifest or table an adapter carries as YAML |
 | `text/csv` | a lookup table that arrives as one |
 | `text/markdown` | a document under `docs/` |
 | `text/plain` | a NOTICE, a checksum sidecar |
-| `text/turtle` | a test manifest, an expected graph, a SKOS table, an RML mapping |
+| `text/turtle` | a test manifest, an expected graph, a SKOS table |
 | `text/xml` | the other spelling of XML, which publishers do use |
 
 The set is deliberately short, and it is where "no code" is enforced. A format an
@@ -164,30 +168,6 @@ a media type invented in one adapter's crate. `encodingFormat` is a string rathe
 than a PRONOM IRI: RO-Crate 1.2 allows either, every adapter written so far uses
 the media type, and a set of two spellings is a set that can disagree with
 itself.
-
-## What the lint computes, and in what words
-
-Beyond pass or fail, the lint reports one derived fact, and the wording is part
-of the contract because a tier is a claim someone has to be able to re-verify:
-
-- **`universal candidate`** — when the file inventory of check 3 found no code,
-  and every profile in `bridge:profileRequired` is in Core.
-- **`limited: requires <profiles>`** — otherwise, naming the profiles.
-
-**Candidate, never universal.** An adapter's tier is *measured*,
-by running its fixtures on every published Bridge, and recorded in a catalogue —
-a repository downstream of every adapter and every Bridge, which does not exist
-yet ([`pinning.md`](../pinning.md)). A lint sees one package on one machine and
-can see only that nothing disqualifies it. The word the lint may say is the
-strongest one the evidence supports, and no adapter declares a tier of its own
-([`manifest.md`](manifest.md)).
-
-What is in Core is not yet settled, so "every profile is in Core" is decidable
-only for an adapter that requires no profiles at all.
-An adapter that requires any profile is `limited: requires <profiles>` today,
-and may be reclassified without changing a byte of the adapter when Core is
-fixed. The pilot adapter requires `xslt-3` and is therefore
-`limited: requires xslt-3`.
 
 ## The specification pin is checked against the ref the lint was called at
 
@@ -240,7 +220,7 @@ python3 -m pip install pyshacl rdflib roc-validator lxml
 python3 scripts/validate-adapter.py <path to an adapter checkout>
 ```
 
-Exit status is 0 when every check passes and 1 when any fails or could not be
-run. CI on this project's repositories is Linux and invokes `python3` directly;
+Exit status is 0 when the run passes, by the table at the top, and 1 when it
+fails. CI on this project's repositories is Linux and invokes `python3` directly;
 do not commit a machine-specific way of running it.
 

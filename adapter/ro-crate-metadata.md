@@ -11,7 +11,7 @@ that could disagree with the thing it names.
 
 The cost is stated rather than hidden: JSON-LD is less pleasant to hand-edit
 than YAML and has no field completion. The RO-Crate validator and the SHACL
-shapes in [`shapes/bridge.shapes.ttl`](../../shapes/bridge.shapes.ttl) are the
+shapes in [`shapes/bridge.shapes.ttl`](../shapes/bridge.shapes.ttl) are the
 checks instead.
 
 ## The root entity is the adapter
@@ -23,7 +23,7 @@ query written with `schema:conformsTo` matches nothing), and the `bridge:`
 vocabulary carries what neither has.
 
 Every cardinality below is enforced by `<#Adapter>` in the shapes; every term is
-declared with an `rdfs:comment` in [`vocab/bridge.ttl`](../../vocab/bridge.ttl).
+declared with an `rdfs:comment` in [`vocab/bridge.ttl`](../vocab/bridge.ttl).
 
 | property | cardinality | value | what it is |
 |---|---|---|---|
@@ -32,24 +32,19 @@ declared with an `rdfs:comment` in [`vocab/bridge.ttl`](../../vocab/bridge.ttl).
 | `version` | exactly 1 | string, semver | the adapter package's own version |
 | `license` | exactly 1 | IRI | the SPDX licence entity for the package |
 | `conformsTo` | 1 or more | IRI | what the adapter is written against. The profile IRI below is how conformance to this specification is declared |
-| `bridge:profileRequired` | 0 or more | IRI, a `bridge:Profile` | a Bridge profile needed beyond Core. An adapter that needs Core only names none |
+| `mainEntity` | exactly 1 | IRI, a crate `File` declared `application/xslt+xml` | the mapping: the XSLT 3 stylesheet a Bridge runs |
+| `bridge:profileRequired` | 1 or more, `bridge:xslt-3` among them | IRI, a `bridge:Profile` | a Bridge profile needed beyond Core. Every adapter requires `xslt-3`, the one v1-draft specifies |
 | `bridge:specPin` | exactly 1 | IRI | the commit of the Cascade Bridge Specification the adapter is written against |
 | `bridge:vocabularyPin` | exactly 1 | IRI | the `spec` commit the adapter's Cascade vocabularies are pinned to |
-| `bridge:vocabulary` | 1 or more | IRI | a Cascade vocabulary the adapter writes, by namespace |
+| `bridge:vocabulary` | 1 or more | IRI, a `DefinedTermSet` carrying `version` | a Cascade vocabulary the adapter writes, by namespace; `version` is its version at the pin |
 | `bridge:sourceMediaType` | exactly 1 | string | IANA media type of the source documents |
 | `bridge:sourceSchema` | exactly 1 | IRI, a crate `File` | the pinned source-side schema every unit is validated against |
 | `bridge:envelope` | 1 or more | IRI, a `bridge:Envelope` | a document root the format arrives in |
 | `bridge:unit` | exactly 1 | string | the element a Bridge splits a document on |
 | `bridge:detectXPath` | exactly 1 | string | the content-based router's rule |
-| `bridge:table` | 0 or more | IRI, a crate `File` | a lookup table the mapping reads. Phase 2 |
-| `bridge:extensionVocabulary` | at most 1 | IRI | the adapter's own namespace for values with no Cascade term. Phase 2 |
+| `bridge:table` | 0 or more | IRI, a crate `File` | a lookup table the mapping reads |
+| `bridge:extensionVocabulary` | at most 1 | IRI | the adapter's own namespace for values with no Cascade term |
 | `bridge:testManifest` | exactly 1 | IRI, an `mf:Manifest` | the test manifest a Bridge's harness executes |
-
-An adapter **does not declare a tier**. A tier is measured, by running the
-adapter's fixtures on every published Bridge, and recorded in a catalogue
-downstream of every adapter and every Bridge ([`pinning.md`](../pinning.md)).
-What a lint may compute from the package alone is a *candidate*, never a claim;
-[`validation.md`](validation.md) says what it computes and in what words.
 
 ### Declaring conformance
 
@@ -67,7 +62,7 @@ Two properties together:
 `conformsTo` naming
 `https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/` says *which
 contract*; `bridge:specPin` says *which revision of it*. The profile IRI is
-described by [`profile/ro-crate-metadata.json`](../../profile/ro-crate-metadata.json),
+described by [`adapter/profile/ro-crate-metadata.json`](profile/ro-crate-metadata.json),
 an RO-Crate Profile Crate whose constraints resource is the SHACL shapes. The
 IRI does not dereference yet; until it does, the specification is read from this
 repository, and the IRI is an identifier rather than a location.
@@ -76,6 +71,25 @@ The pin is an entity, not a string: a `SoftwareSourceCode` in the crate with
 `codeRepository` and `version` (the full SHA), the same shape
 `bridge:vocabularyPin` uses. The commit it names is tagged;
 [`pinning.md`](../pinning.md) says why.
+
+### What RO-Crate 1.2 requires beyond the table
+
+Four things the table does not show, each of which fails check 1 or check 2
+when missing. The lint's own test subject,
+[`fixtures/synthetic-adapter`](../fixtures/synthetic-adapter/ro-crate-metadata.json),
+is a crate that has them all.
+
+- **Every `bridge:` key is declared in `@context`**, each as itself
+  (`"bridge:specPin": "bridge:specPin"`), beside the `bridge` prefix. The prefix
+  alone does not declare a key.
+- **The profile IRI is an entity** typed `Profile`: RO-Crate requires what
+  `conformsTo` names to be described in the crate.
+- **Each pin is typed `["SoftwareSourceCode", "File"]` and listed in the root's
+  `hasPart`.** RO-Crate reads a `SoftwareSourceCode` as a script, and a script
+  must be a data entity.
+- **Each profile in `bridge:profileRequired` is an entity typed
+  `bridge:Profile`** in the crate: the shapes check the type in the crate's own
+  graph, not in the vocabulary.
 
 ## Envelope entities
 
@@ -120,16 +134,18 @@ for one document, and whether an adapter may declare a precedence. Nothing here
 answers it, and no adapter should be written to depend on
 an answer.
 
-## What an adapter with a mapping adds
+## The mapping
 
-Three additions, none of which changes anything above. Import only; the export
-direction is not specified.
+The mapping is an XSLT 3 stylesheet: the crate `File` the root's `mainEntity`
+names, declared `application/xslt+xml`, run under `bridge:xslt-3`, which every
+adapter therefore requires. `mainEntity` is how Workflow RO-Crate names a
+crate's entry point, so no `bridge:` term is minted for it; the Workflow RO-Crate
+profile itself is not required. The lint checks that the mapping is declared and
+never runs it. How a Bridge invokes it is not yet specified. Import only; the
+export direction is not specified.
 
-- **The mapping, under Workflow RO-Crate.** When an adapter has a mapping, the
-  crate takes the Workflow RO-Crate profile beside this one and names the entry
-  transformation as its `mainEntity`, with `programmingLanguage` declared. That
-  is a published profile for exactly this — a package whose point is a
-  transformation — so no `bridge:` term is minted for it.
+Two properties are optional:
+
 - **Tables.** `bridge:table` names each lookup table the mapping reads, as a
   crate `File` whose `schema:isBasedOn` says where its rows came from and whose
   `schema:license` is stated where it differs from the package's. A table is
