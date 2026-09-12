@@ -51,6 +51,9 @@ blocks you, ask:
   open.
 - **Router precedence** when two adapters' detect rules both match a document.
 - **The export direction.** Import only is specified; `out/` is not.
+- **Cascade's vocabularies.** Their namespaces, the `spec` repository a
+  `bridge:vocabularyPin` names, and the stamp predicates a test manifest ignores
+  are not in this repository.
 
 Where a document here touches one of these, it says so.
 
