@@ -130,13 +130,13 @@ bridge:detectXPath a owl:DatatypeProperty ;
 
 bridge:table a owl:ObjectProperty ;
   rdfs:label "table"@en ;
-  rdfs:comment "A lookup table the mapping reads, by IRI: a schema:File entity in the crate whose schema:isBasedOn names where its rows came from and whose schema:license is stated where it differs from the package's. Repeatable, zero or more; none until phase 2 adds the mapping."@en ;
+  rdfs:comment "A lookup table the mapping reads, by IRI: a schema:File entity in the crate whose schema:isBasedOn names where its rows came from and whose schema:license is stated where it differs from the package's. Repeatable, zero or more."@en ;
   rdfs:domain bridge:Adapter ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
 bridge:extensionVocabulary a owl:ObjectProperty ;
   rdfs:label "extension vocabulary"@en ;
-  rdfs:comment "The adapter's own namespace for values that have no Cascade term, by IRI: a schema:DefinedTermSet entity in the crate, its file a schema:File in hasPart. At most one; absent until phase 2 adds it. Terms in it are the adapter's, never cascade: or genomics: terms."@en ;
+  rdfs:comment "The adapter's own namespace for values that have no Cascade term, by IRI: a schema:DefinedTermSet entity in the crate, its file a schema:File in hasPart. At most one. Terms in it are the adapter's, never cascade: or genomics: terms."@en ;
   rdfs:domain bridge:Adapter ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 

@@ -35,14 +35,14 @@ declared with an `rdfs:comment` in [`vocab/bridge.ttl`](../vocab/bridge.ttl).
 | `bridge:profileRequired` | 0 or more | IRI, a `bridge:Profile` | a Bridge profile needed beyond Core. An adapter that needs Core only names none |
 | `bridge:specPin` | exactly 1 | IRI | the commit of the Cascade Bridge Specification the adapter is written against |
 | `bridge:vocabularyPin` | exactly 1 | IRI | the `spec` commit the adapter's Cascade vocabularies are pinned to |
-| `bridge:vocabulary` | 1 or more | IRI | a Cascade vocabulary the adapter writes, by namespace |
+| `bridge:vocabulary` | 1 or more | IRI, a `DefinedTermSet` carrying `version` | a Cascade vocabulary the adapter writes, by namespace; `version` is its version at the pin |
 | `bridge:sourceMediaType` | exactly 1 | string | IANA media type of the source documents |
 | `bridge:sourceSchema` | exactly 1 | IRI, a crate `File` | the pinned source-side schema every unit is validated against |
 | `bridge:envelope` | 1 or more | IRI, a `bridge:Envelope` | a document root the format arrives in |
 | `bridge:unit` | exactly 1 | string | the element a Bridge splits a document on |
 | `bridge:detectXPath` | exactly 1 | string | the content-based router's rule |
-| `bridge:table` | 0 or more | IRI, a crate `File` | a lookup table the mapping reads. Phase 2 |
-| `bridge:extensionVocabulary` | at most 1 | IRI | the adapter's own namespace for values with no Cascade term. Phase 2 |
+| `bridge:table` | 0 or more | IRI, a crate `File` | a lookup table the mapping reads |
+| `bridge:extensionVocabulary` | at most 1 | IRI | the adapter's own namespace for values with no Cascade term |
 | `bridge:testManifest` | exactly 1 | IRI, an `mf:Manifest` | the test manifest a Bridge's harness executes |
 
 An adapter **does not declare a tier**. A tier is measured, by running the
@@ -76,6 +76,25 @@ The pin is an entity, not a string: a `SoftwareSourceCode` in the crate with
 `codeRepository` and `version` (the full SHA), the same shape
 `bridge:vocabularyPin` uses. The commit it names is tagged;
 [`pinning.md`](../pinning.md) says why.
+
+### What RO-Crate 1.2 requires beyond the table
+
+Four things the table does not show, each of which fails check 1 or check 2
+when missing. The lint's own test subject,
+[`fixtures/synthetic-adapter`](../fixtures/synthetic-adapter/ro-crate-metadata.json),
+is a crate that has them all.
+
+- **Every `bridge:` key is declared in `@context`**, each as itself
+  (`"bridge:specPin": "bridge:specPin"`), beside the `bridge` prefix. The prefix
+  alone does not declare a key.
+- **The profile IRI is an entity** typed `Profile`: RO-Crate requires what
+  `conformsTo` names to be described in the crate.
+- **Each pin is typed `["SoftwareSourceCode", "File"]` and listed in the root's
+  `hasPart`.** RO-Crate reads a `SoftwareSourceCode` as a script, and a script
+  must be a data entity.
+- **Each profile in `bridge:profileRequired` is an entity typed
+  `bridge:Profile`** in the crate: the shapes check the type in the crate's own
+  graph, not in the vocabulary.
 
 ## Envelope entities
 

@@ -158,13 +158,13 @@
     sh:path bridge:table ;
     sh:nodeKind sh:IRI ;
     sh:node <#Table> ;
-    sh:message "Each bridge:table is a crate File by IRI that names where its rows came from (schema:isBasedOn). Zero or more; phase 2."
+    sh:message "Each bridge:table is a crate File by IRI that names where its rows came from (schema:isBasedOn). Zero or more."
   ] ;
   sh:property [
     sh:path bridge:extensionVocabulary ;
     sh:maxCount 1 ;
     sh:nodeKind sh:IRI ;
-    sh:message "The adapter carries at most one bridge:extensionVocabulary, its own namespace for values with no Cascade term, by IRI; phase 2."
+    sh:message "The adapter carries at most one bridge:extensionVocabulary, its own namespace for values with no Cascade term, by IRI."
   ] ;
   sh:property [
     sh:path bridge:testManifest ;
