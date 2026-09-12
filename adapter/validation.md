@@ -55,10 +55,15 @@ the crate names.
 
    They also carry the two constraints that make an IRI naming a file mean
    something. `bridge:input`, `bridge:graph` and `bridge:findings` in the
-   manifest, and `bridge:sourceSchema` and `bridge:documentSchema` in the crate,
-   are `sh:class schema:MediaObject`, what the RO-Crate 1.2 context expands
-   `File` to, so a mistyped name fails: an IRI naming no entity is still an IRI.
-   And every declared `encodingFormat` is one of the media types below.
+   manifest, and `mainEntity`, `bridge:sourceSchema` and `bridge:documentSchema`
+   in the crate, are `sh:class schema:MediaObject`, what the RO-Crate 1.2
+   context expands `File` to, so a mistyped name fails: an IRI naming no entity
+   is still an IRI. And every declared `encodingFormat` is one of the media
+   types below.
+
+   And they carry what the lint can assert about a mapping it does not run: the
+   adapter names exactly one `mainEntity`, declared `application/xslt+xml`, and
+   requires `bridge:xslt-3`.
 
 3. **Every git-tracked file is accounted for.** Each file in the repository is
    either a crate entity carrying a declared `encodingFormat`, or is in a short

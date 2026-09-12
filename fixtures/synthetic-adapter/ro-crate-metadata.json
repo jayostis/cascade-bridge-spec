@@ -4,6 +4,7 @@
     {
       "md5": "https://w3id.org/ro/terms/workflow-run#md5",
       "bridge": "https://ns.cascadeprotocol.org/bridge/v1-draft#",
+      "bridge:profileRequired": "bridge:profileRequired",
       "bridge:specPin": "bridge:specPin",
       "bridge:vocabularyPin": "bridge:vocabularyPin",
       "bridge:vocabulary": "bridge:vocabulary",
@@ -34,7 +35,7 @@
       "identifier": "synthetic-example",
       "name": "Synthetic Example Records",
       "version": "0.1.0",
-      "description": "A synthetic Cascade Bridge Adapter package, and the only package this repository holds. It exists so that the lint published from here is exercised by the thing it is published for, against a subject this repository owns: no real adapter is cloned, named or pinned, which is the rule fixtures/README.md and pinning.md state. Everything in it is invented. The format, its schemas, its records, its releases and its vocabulary are made up; every URL that is not this repository's own is under example.org, IANA's reserved example domain, and none of them resolves. Committed files carry a sha256 computed over the committed bytes; two of them additionally carry an md5 standing for the digest a publisher publishes beside the file at its source, so that check 4 of adapter/validation.md has both kinds of claim to recompute and can be seen telling them apart.",
+      "description": "A synthetic Cascade Bridge Adapter package, and the only package this repository holds. It exists so that the lint published from here is exercised by the thing it is published for, against a subject this repository owns: no real adapter is cloned, named or pinned, which is the rule fixtures/README.md and pinning.md state. Everything in it is invented. The format, its schemas, its records, its releases and its vocabulary are made up; every URL that is not this repository's own is under example.org, IANA's reserved example domain, and none of them resolves. Its mapping is a stub stylesheet that nothing runs. Committed files carry a sha256 computed over the committed bytes; two of them additionally carry an md5 standing for the digest a publisher publishes beside the file at its source, so that check 4 of adapter/validation.md has both kinds of claim to recompute and can be seen telling them apart.",
       "datePublished": "2026-09-06",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
@@ -42,6 +43,11 @@
       "conformsTo": [
         {
           "@id": "https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/"
+        }
+      ],
+      "bridge:profileRequired": [
+        {
+          "@id": "https://ns.cascadeprotocol.org/bridge/v1-draft#xslt-3"
         }
       ],
       "bridge:specPin": {
@@ -72,7 +78,13 @@
       "bridge:testManifest": {
         "@id": "fixtures/manifest.ttl"
       },
+      "mainEntity": {
+        "@id": "in/example-record.xsl"
+      },
       "hasPart": [
+        {
+          "@id": "in/example-record.xsl"
+        },
         {
           "@id": "schema/example-record.xsd"
         },
@@ -129,6 +141,12 @@
       "description": "The RO-Crate 1.2 Profile Crate a conforming adapter package names in conformsTo. The IRI does not dereference; the Profile Crate describing it is adapter/profile/ro-crate-metadata.json in this repository, and bridge:specPin says at which commit."
     },
     {
+      "@id": "https://ns.cascadeprotocol.org/bridge/v1-draft#xslt-3",
+      "@type": "bridge:Profile",
+      "name": "xslt-3",
+      "description": "The Bridge profile an XSLT 3 mapping runs under, which every adapter requires."
+    },
+    {
       "@id": "https://github.com/jayostis/cascade-bridge-spec/commit/0af0fc970f75360d4f84acc2203c26b5fd9d6d23",
       "@type": ["SoftwareSourceCode", "File"],
       "name": "cascade-bridge-spec at 0af0fc9",
@@ -157,6 +175,18 @@
       "name": "Synthetic example vocabulary",
       "version": "v1",
       "description": "The invented namespace the expected graph is written in. Deliberately not cascade: or genomics:: a fixture in this repository must not read as an assertion about a Cascade vocabulary, and no Cascade term is minted here."
+    },
+    {
+      "@id": "in/example-record.xsl",
+      "@type": "File",
+      "name": "Mapping, an XSLT 3 stub",
+      "encodingFormat": "application/xslt+xml",
+      "contentSize": "423",
+      "sha256": "678f36775c6a883f65b9871e39dd1af800e9ac373cd2bd72fdb0bdb55fb52864",
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      },
+      "description": "The adapter's mainEntity: an XSLT 3 stylesheet that produces nothing. Nothing runs it; it is here because every adapter names its mapping, and the shapes check that one is declared."
     },
     {
       "@id": "schema/example-record.xsd",
@@ -229,15 +259,15 @@
       "@type": "File",
       "name": "Expected graph for example-0001",
       "encodingFormat": "text/turtle",
-      "contentSize": "1181",
-      "sha256": "53efd0a735818adb3368d13cc72db9a49eb5136586a5559f8fb37f317e0be374",
+      "contentSize": "1171",
+      "sha256": "a32776eeff87e7154656913bb31ac466191736967e54d236f02bc038d8328437",
       "isBasedOn": {
         "@id": "fixtures/in/example-0001.xml"
       },
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       },
-      "description": "The graph a mapping would have to produce from example-0001.xml, if this package had a mapping. Written by hand and produced by nothing: no Bridge exists to run one. Check 6 parses it and stops there."
+      "description": "The graph a mapping would have to produce from example-0001.xml. Written by hand and produced by nothing: the package's mapping is a stub, and no Bridge exists to run one. Check 6 parses it and stops there."
     },
     {
       "@id": "fixtures/findings/example-0001.gaps.json",

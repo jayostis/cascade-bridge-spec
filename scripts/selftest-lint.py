@@ -241,6 +241,21 @@ def mutate_undescribed_file(package):
     )
 
 
+def mutate_away_mapping(package):
+    """Check 2: the crate names no mapping.
+
+    The stylesheet stays described and in hasPart, so check 3 still holds; only
+    the root's mainEntity goes. A package that names no mapping converts
+    nothing, and the shapes refuse it.
+    """
+    edit(
+        package,
+        CRATE,
+        '      "mainEntity": {\n        "@id": "in/example-record.xsl"\n      },\n',
+        "",
+    )
+
+
 # ---------------------------------------------------------------------------
 # The cases
 # ---------------------------------------------------------------------------
@@ -252,10 +267,19 @@ CASES = [
         "exit": 0,
         "statuses": {1: "ok", 2: "ok", 3: "ok", 4: "ok", 5: "ok", 6: "ok"},
         "expect": [
-            "6 local sha256 and 2 publisher digest(s) recomputed",
+            "7 local sha256 and 2 publisher digest(s) recomputed",
             "2 committed input(s) against the schema each test's envelope declares",
             "1 expected graph(s) parse as Turtle",
             "PASS",
+        ],
+    },
+    {
+        "name": "check 2: a crate that names no mapping",
+        "mutate": mutate_away_mapping,
+        "exit": 1,
+        "statuses": {1: "ok", 2: "FAIL", 3: "ok"},
+        "expect": [
+            "The adapter names exactly one mainEntity, its mapping",
         ],
     },
     {

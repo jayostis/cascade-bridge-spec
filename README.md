@@ -44,8 +44,7 @@ Not settled, and not answerable from anything in this repository. If one of thes
 blocks you, ask:
 
 - **What Core contains**: what every Bridge must run, beneath the profiles an
-  adapter requires. Until it is settled, only an adapter requiring no profile at
-  all can be shown to need Core alone.
+  adapter requires.
 - **The canonical findings model.** One is wanted; the shape is not
   chosen. [`adapter/fixtures/README.md`](adapter/fixtures/README.md)
   states the two published candidates and the constraint keeping the question

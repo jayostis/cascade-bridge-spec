@@ -44,6 +44,7 @@ adapter would not cover at once:
 | an isomorphic conversion test | check 6 has an expected graph to parse |
 | an input-only test | a test with no `mf:result`, which judges nothing |
 | a dataset completion test | check 5 meets a test whose bytes are not here, and says so instead of counting it validated |
+| a stub XSLT 3 stylesheet as `mainEntity`, requiring `xslt-3` | the mapping check 2 requires of every adapter; nothing runs it |
 
 ## The specification pin
 
@@ -69,8 +70,8 @@ python3 -m pip install pyshacl rdflib roc-validator lxml
 python3 scripts/selftest-lint.py
 ```
 
-Eight cases: the package unbroken passing, and one red case each for an
-undescribed file, a wrong local `sha256`, a wrong publisher `md5`, an input that
+Nine cases: the package unbroken passing, and one red case each for a crate
+that names no mapping, an undescribed file, a wrong local `sha256`, a wrong publisher `md5`, an input that
 does not satisfy its schema, a schema language the lint does not read, an
 expected graph that is not Turtle, and a manifest that names no expected graph.
 The schema language the lint does not read, and the manifest that names no

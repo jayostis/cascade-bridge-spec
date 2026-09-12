@@ -32,7 +32,8 @@ declared with an `rdfs:comment` in [`vocab/bridge.ttl`](../vocab/bridge.ttl).
 | `version` | exactly 1 | string, semver | the adapter package's own version |
 | `license` | exactly 1 | IRI | the SPDX licence entity for the package |
 | `conformsTo` | 1 or more | IRI | what the adapter is written against. The profile IRI below is how conformance to this specification is declared |
-| `bridge:profileRequired` | 0 or more | IRI, a `bridge:Profile` | a Bridge profile needed beyond Core. An adapter that needs Core only names none |
+| `mainEntity` | exactly 1 | IRI, a crate `File` declared `application/xslt+xml` | the mapping: the XSLT 3 stylesheet a Bridge runs |
+| `bridge:profileRequired` | 1 or more, `bridge:xslt-3` among them | IRI, a `bridge:Profile` | a Bridge profile needed beyond Core. Every adapter requires `xslt-3`, the one v1-draft specifies |
 | `bridge:specPin` | exactly 1 | IRI | the commit of the Cascade Bridge Specification the adapter is written against |
 | `bridge:vocabularyPin` | exactly 1 | IRI | the `spec` commit the adapter's Cascade vocabularies are pinned to |
 | `bridge:vocabulary` | 1 or more | IRI, a `DefinedTermSet` carrying `version` | a Cascade vocabulary the adapter writes, by namespace; `version` is its version at the pin |
@@ -133,16 +134,18 @@ for one document, and whether an adapter may declare a precedence. Nothing here
 answers it, and no adapter should be written to depend on
 an answer.
 
-## What an adapter with a mapping adds
+## The mapping
 
-Three additions, none of which changes anything above. Import only; the export
-direction is not specified.
+The mapping is an XSLT 3 stylesheet: the crate `File` the root's `mainEntity`
+names, declared `application/xslt+xml`, run under `bridge:xslt-3`, which every
+adapter therefore requires. `mainEntity` is how Workflow RO-Crate names a
+crate's entry point, so no `bridge:` term is minted for it; the Workflow RO-Crate
+profile itself is not required. The lint checks that the mapping is declared and
+never runs it. How a Bridge invokes it is not yet specified. Import only; the
+export direction is not specified.
 
-- **The mapping, under Workflow RO-Crate.** When an adapter has a mapping, the
-  crate takes the Workflow RO-Crate profile beside this one and names the entry
-  XSLT 3 stylesheet as its `mainEntity`, with `programmingLanguage` declared. That
-  is a published profile for exactly this — a package whose point is a
-  transformation — so no `bridge:` term is minted for it.
+Two properties are optional:
+
 - **Tables.** `bridge:table` names each lookup table the mapping reads, as a
   crate `File` whose `schema:isBasedOn` says where its rows came from and whose
   `schema:license` is stated where it differs from the package's. A table is

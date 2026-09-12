@@ -1,6 +1,6 @@
-# The graph a mapping would have to produce from in/example-0001.xml, if this
-# package had a mapping. It does not: nothing here executes, and no Bridge has
-# run this fixture, because no Bridge exists.
+# The graph a mapping would have to produce from in/example-0001.xml. This
+# package's mapping is a stub: nothing here executes, and no Bridge has run
+# this fixture, because no Bridge exists.
 #
 # Check 6 of adapter/validation.md parses this file and stops there. It is not
 # validated against Cascade's shapes -- that is a Bridge's validate stage, on

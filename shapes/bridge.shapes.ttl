@@ -8,15 +8,16 @@
 # What the shapes require is below, and in prose in adapter/. What
 # reading them does not tell you:
 #
-#   bridge:input, graph, findings, sourceSchema and documentSchema carry
-#   sh:class schema:MediaObject, what the RO-Crate 1.2 context expands File
-#   to, because sh:nodeKind sh:IRI alone lets a typo through: an IRI naming no
-#   entity is still an IRI.
+#   mainEntity and bridge:input, graph, findings, sourceSchema and
+#   documentSchema carry sh:class schema:MediaObject, what the RO-Crate 1.2
+#   context expands File to, because sh:nodeKind sh:IRI alone lets a typo
+#   through: an IRI naming no entity is still an IRI.
 #
 #   Action and result nodes are closed. A property they do not declare is a
 #   mistake, not an extension.
 #
-#   Zero profiles is legal. An adapter that needs Core only names none.
+#   The mapping is asserted, not run: that an adapter names one, declared
+#   XSLT 3, and requires bridge:xslt-3 is what a lint can check without a Bridge.
 #
 #   The allowed encodingFormat set, <#DescribedFile> below, is where "no code"
 #   is enforced: not by scanning a file for a language, but by refusing one
@@ -96,7 +97,25 @@
     sh:path bridge:profileRequired ;
     sh:nodeKind sh:IRI ;
     sh:class bridge:Profile ;
-    sh:message "Each bridge:profileRequired is a bridge:Profile by IRI. Zero or more: an adapter that needs Core only names none."
+    sh:message "Each bridge:profileRequired is a bridge:Profile by IRI."
+  ] ;
+  sh:property [
+    sh:path bridge:profileRequired ;
+    sh:hasValue bridge:xslt-3 ;
+    sh:message "The adapter requires bridge:xslt-3, the profile its mapping runs under; v1-draft specifies no other."
+  ] ;
+  sh:property [
+    sh:path schema:mainEntity ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:class schema:MediaObject ;
+    sh:message "The adapter names exactly one mainEntity, its mapping: a crate File entity (schema:MediaObject), the XSLT 3 stylesheet a Bridge runs."
+  ] ;
+  sh:property [
+    sh:path ( schema:mainEntity schema:encodingFormat ) ;
+    sh:hasValue "application/xslt+xml" ;
+    sh:message "The adapter's mainEntity is declared application/xslt+xml: v1-draft specifies one mapping language, XSLT 3."
   ] ;
   sh:property [
     sh:path bridge:specPin ;

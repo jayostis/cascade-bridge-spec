@@ -70,7 +70,7 @@ bridge:xslt-3 a bridge:Profile ;
 
 bridge:profileRequired a owl:ObjectProperty ;
   rdfs:label "profile required"@en ;
-  rdfs:comment "A Bridge profile the adapter needs beyond Core, by IRI; repeatable, zero or more. An adapter that needs Core only names none."@en ;
+  rdfs:comment "A Bridge profile the adapter needs beyond Core, by IRI; repeatable. Every adapter requires bridge:xslt-3, the profile its mapping (the crate's schema:mainEntity) runs under; v1-draft specifies no other."@en ;
   rdfs:domain bridge:Adapter ;
   rdfs:range bridge:Profile ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
