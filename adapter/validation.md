@@ -164,30 +164,6 @@ than a PRONOM IRI: RO-Crate 1.2 allows either, every adapter written so far uses
 the media type, and a set of two spellings is a set that can disagree with
 itself.
 
-## What the lint computes, and in what words
-
-Beyond pass or fail, the lint reports one derived fact, and the wording is part
-of the contract because a tier is a claim someone has to be able to re-verify:
-
-- **`universal candidate`** — when the file inventory of check 3 found no code,
-  and every profile in `bridge:profileRequired` is in Core.
-- **`limited: requires <profiles>`** — otherwise, naming the profiles.
-
-**Candidate, never universal.** An adapter's tier is *measured*,
-by running its fixtures on every published Bridge, and recorded in a catalogue —
-a repository downstream of every adapter and every Bridge, which does not exist
-yet ([`pinning.md`](../pinning.md)). A lint sees one package on one machine and
-can see only that nothing disqualifies it. The word the lint may say is the
-strongest one the evidence supports, and no adapter declares a tier of its own
-([`ro-crate-metadata.md`](ro-crate-metadata.md)).
-
-What is in Core is not yet settled, so "every profile is in Core" is decidable
-only for an adapter that requires no profiles at all.
-An adapter that requires any profile is `limited: requires <profiles>` today,
-and may be reclassified without changing a byte of the adapter when Core is
-fixed. The pilot adapter requires `xslt-3` and is therefore
-`limited: requires xslt-3`.
-
 ## The specification pin is checked against the ref the lint was called at
 
 An adapter states the revision of this specification it is written against

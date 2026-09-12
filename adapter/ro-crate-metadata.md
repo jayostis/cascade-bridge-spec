@@ -45,12 +45,6 @@ declared with an `rdfs:comment` in [`vocab/bridge.ttl`](../vocab/bridge.ttl).
 | `bridge:extensionVocabulary` | at most 1 | IRI | the adapter's own namespace for values with no Cascade term |
 | `bridge:testManifest` | exactly 1 | IRI, an `mf:Manifest` | the test manifest a Bridge's harness executes |
 
-An adapter **does not declare a tier**. A tier is measured, by running the
-adapter's fixtures on every published Bridge, and recorded in a catalogue
-downstream of every adapter and every Bridge ([`pinning.md`](../pinning.md)).
-What a lint may compute from the package alone is a *candidate*, never a claim;
-[`validation.md`](validation.md) says what it computes and in what words.
-
 ### Declaring conformance
 
 Two properties together:

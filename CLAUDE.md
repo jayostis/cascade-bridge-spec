@@ -36,8 +36,8 @@ commit.
   ClinVar pilot as an example is fine; a machine-readable reference to a
   particular adapter is the bug. Publishing the lint is not an inversion: it
   takes a directory and learns no adapter's name.
-- **A tier is measured, never declared.** A lint may say
-  `universal candidate`; a catalogue records what Bridges measured, as EARL.
+- **Tiers are not specified in v1-draft.** When they are, they are measured,
+  never declared: an adapter declares no tier.
 - **Standards, not inventions.** RO-Crate 1.2, W3C's `mf:`, SHACL, Enterprise
   Integration Patterns for stage names, EARL for results, SKOS for a concept
   table. If something seems to need a new convention, find the published one.

@@ -44,15 +44,6 @@ adapter would not cover at once:
 | an isomorphic conversion test | check 6 has an expected graph to parse |
 | an input-only test | a test with no `mf:result`, which judges nothing |
 | a dataset completion test | check 5 meets a test whose bytes are not here, and says so instead of counting it validated |
-| no `bridge:profileRequired` | the lint's `universal candidate` line, which no adapter requiring a profile can reach |
-
-The last row is the honest reading of a package with no mapping: it requires no
-Bridge profile because it asks a Bridge to do nothing. It is also the only shape
-of adapter for which `universal candidate` is decidable at all while Core is
-unsettled, which is why the fixture is the only
-place that line is ever printed here. **Candidate, never universal**: a tier is
-measured by running an adapter's fixtures on every published Bridge, and no
-Bridge exists.
 
 ## The specification pin
 

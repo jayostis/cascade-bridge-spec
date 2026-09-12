@@ -15,7 +15,7 @@ the SHACL test suite adds `sht:`.
   explains a comparison in a comment, the explanation is in the wrong repository.
 - **No Cascade terms are minted here.** `bridge:` only. A term in `cascade:`,
   `genomics:` or any other Cascade vocabulary goes through spec's own process.
-- **An adapter declares no tier.** A tier is measured, so no term declares one.
+- **An adapter declares no tier**, so no term names one.
 - Term names and cardinalities must match `../adapter/ro-crate-metadata.md` and
   `../adapter/fixtures/manifest.md` exactly. Change both in one commit.
 

@@ -7,7 +7,7 @@ Three proper nouns:
 
 | term | what it is |
 |---|---|
-| **Cascade Bridge Specification** | the open standard: adapter package format, engine stages, profiles and tiers, the findings model, the fixture contract. This repository |
+| **Cascade Bridge Specification** | the open standard: adapter package format, engine stages, profiles, the findings model, the fixture contract. This repository |
 | **Cascade Bridge for `<language>`** | an implementation, once per language, conforming or not |
 | **Cascade Bridge Adapter** | a data package for one format, authored by an integration engineer |
 

@@ -255,7 +255,6 @@ CASES = [
             "6 local sha256 and 2 publisher digest(s) recomputed",
             "2 committed input(s) against the schema each test's envelope declares",
             "1 expected graph(s) parse as Turtle",
-            "universal candidate",
             "PASS",
         ],
     },

@@ -848,7 +848,7 @@ def validate_expected_graphs(adapter, graph, manifest_iri, check):
 
 
 # ============================================================================
-# The specification pin, and the tier line
+# The specification pin
 # ============================================================================
 
 
@@ -898,21 +898,6 @@ def check_spec_pin(graph, root, spec_revision):
             "        (pinning.md)."
         )
     return ok, ("agrees with the ref this lint was called at" if ok else "disagrees")
-
-
-def tier_line(graph, root, inventory_ok):
-    """The one derived fact the lint reports, in the words adapter/validation.md
-    fixes. Candidate, never universal: a lint sees one package on one machine,
-    and a tier is measured by running an adapter's fixtures on every published
-    Bridge."""
-    profiles = sorted(
-        str(p).rsplit("#", 1)[-1] for p in graph.objects(root, BRIDGE.profileRequired)
-    )
-    if not inventory_ok:
-        return "tier: not computed, because the file inventory did not pass"
-    if profiles:
-        return "limited: requires " + ", ".join(profiles)
-    return "universal candidate"
 
 
 # ============================================================================
@@ -993,8 +978,6 @@ def main():
 
     print()
     summarise(checks, pin_ok, pin_note)
-    print()
-    print(tier_line(graph, root, three.status == OK))
     print()
     ok = pin_ok and not any(check.fails for check in checks)
     print("PASS" if ok else "FAIL")

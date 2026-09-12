@@ -9,9 +9,7 @@
 # RO-Crate context expands conformsTo to dct:conformsTo, not to a schema.org
 # term, so a query written with schema:conformsTo matches nothing.
 #
-# An adapter declares no tier: a tier is measured by running
-# an adapter's fixtures on every published Bridge, and recorded in a catalogue
-# downstream of both, which does not exist yet (pinning.md).
+# An adapter declares no tier, and v1-draft specifies none.
 #
 # Test terms: a small set on top of W3C's mf: test-manifest vocabulary, the way
 # the SHACL test suite adds sht:. An adapter's fixtures/manifest.ttl is an
@@ -72,7 +70,7 @@ bridge:xslt-3 a bridge:Profile ;
 
 bridge:profileRequired a owl:ObjectProperty ;
   rdfs:label "profile required"@en ;
-  rdfs:comment "A Bridge profile the adapter needs beyond Core, by IRI; repeatable, zero or more. An adapter that needs Core only names none. This is all an adapter declares about where it runs: its tier is not declared here but measured, by a catalogue that records which published Bridges pass its test manifest, and a lint may say \"universal candidate\" only when the package holds no code and every profile named here is in Core."@en ;
+  rdfs:comment "A Bridge profile the adapter needs beyond Core, by IRI; repeatable, zero or more. An adapter that needs Core only names none."@en ;
   rdfs:domain bridge:Adapter ;
   rdfs:range bridge:Profile ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .

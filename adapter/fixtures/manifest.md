@@ -10,7 +10,7 @@ test runner.
 
 An adapter does not choose among test conventions. Every convention an adapter
 may choose is a harness every Bridge must implement, and two adapters proving
-"universal" by different rules prove different things. Profile-specific unit
+conformance by different rules prove different things. Profile-specific unit
 suites — XSpec over an `xslt-3` mapping's modules, say — are optional, declared,
 and no part of the conformance claim.
 

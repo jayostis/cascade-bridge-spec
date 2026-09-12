@@ -40,10 +40,9 @@ One `earl:Assertion` per manifest entry: `earl:test` the entry's IRI,
 `earl:TestResult` whose `earl:outcome` is the result. That is the form every W3C
 test suite's implementation reports take.
 
-An adapter's tier is a query over those assertions, never a claim in the adapter
-and never something a Bridge writes back to one — a Bridge that pinned an adapter
-would be claiming ownership of it, and an adapter that pinned a Bridge would stop
-being portable ([`../pinning.md`](../pinning.md)).
+A report is never written back to the adapter it is about: a Bridge that pinned
+an adapter would be claiming ownership of it, and an adapter that pinned a Bridge
+would stop being portable ([`../pinning.md`](../pinning.md)).
 
 No Bridge exists, so no EARL report exists and nothing here has executed a
 manifest. The contract is written from one adapter and checked by SHACL; it is
