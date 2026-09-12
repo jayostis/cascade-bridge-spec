@@ -16,13 +16,9 @@ lint nobody should trust, so it has to run somewhere on every change here — an
 the one thing it must not run against is a real adapter.
 
 **This repository must not know that any adapter exists**
-([`docs/pinning.md`](../docs/pinning.md), `CLAUDE.md`). A catalogue naming
-one adapter, and a CI job that cloned it, were removed at 0.2.0 for pointing
-upward: the specification went red because of a property missing from somebody
-else's repository, and with fifty adapters it would have cloned fifty
-repositories on every push. Putting a real adapter back — as a submodule, a
-clone, a pinned SHA or a name in a workflow — is that same bug wearing a
-fixture's clothes.
+([`docs/pinning.md`](../docs/pinning.md) says why). A real adapter here — as a
+submodule, a clone, a pinned SHA or a name in a workflow — is that bug wearing
+a fixture's clothes.
 
 A package this repository wrote itself is the way out. It is a subject this
 repository owns, it changes only when someone here changes it, and it names no
@@ -101,7 +97,7 @@ package must look like. Change it in the same commit, run the lint against it,
 run the selftest, and — because a fixture cannot tell you what it breaks in the
 wild — run the lint by hand against a real adapter checkout beside this one,
 saying in the commit which adapter and at which commit, without adding it to
-this repository in any form (`CLAUDE.md`).
+this repository in any form (`../shapes/CLAUDE.md`).
 
 The digests in the crate are recorded over the committed bytes. Editing a file
 here without restating its `sha256` and `contentSize` in the same commit fails

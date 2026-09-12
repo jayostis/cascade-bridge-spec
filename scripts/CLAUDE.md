@@ -12,10 +12,8 @@ in a temporary directory and asserts the lint says so, in the words
 `../docs/adapter/validation.md` fixes. A check that quietly does nothing and reports a
 pass is invisible from a green run.
 
-- **Nothing here may learn an adapter's name.** The lint takes a directory. A
-  path, repository name or fixture id specific to one adapter is the bug this
-  repository was corrected for at 0.2.0. `../fixtures/README.md` says why the
-  test subject is synthetic.
+- **Nothing here may learn an adapter's name.** The lint takes a directory;
+  `../fixtures/README.md` says why its test subject is synthetic.
 - **Nothing mutates a tracked file.** Mutation happens on a copy, outside the
   repository.
 - **A check that is specified but not built says so in the output.** A package
@@ -24,9 +22,9 @@ pass is invisible from a green run.
   the same commit.
 
 ```bash
-python3 -m pip install pyshacl rdflib roc-validator
+python3 -m pip install pyshacl rdflib roc-validator lxml
 python3 scripts/validate-adapter.py <path to an adapter checkout>
 python3 scripts/selftest-lint.py
 ```
 
-The adapter run stays out of CI on purpose; `../CLAUDE.md` says why.
+The adapter run stays out of CI on purpose; `../docs/pinning.md` says why.

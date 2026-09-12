@@ -73,12 +73,10 @@ Recommendation 2024) is how to decide it properly. The pilot's oracle compares
 deciding it.
 
 A multiset, not an ordered array, because no entry in a findings sidecar refers
-to a position, so the order carries no meaning. This replaced an ordering rule —
-"entry for entry, in the sort order (`sourceField`, `severity`, `reason`)" — that
-was written in the pilot adapter and measured there before being carried up.
-The oracles were written with `localeCompare`, which is ICU collation, in
-which `/` sorts before `@` although U+002F is above U+0040; across the four
-committed sidecars, 78, 56, 6 and 1 adjacent pairs are out of code-point order.
+to a position, so the order carries no meaning. The pilot's oracles were sorted
+with `localeCompare`, which is ICU collation, in which `/` sorts before `@`
+although U+002F is above U+0040; across its four committed sidecars, 78, 56, 6
+and 1 adjacent pairs are out of code-point order.
 A harness comparing with Java's `String.compareTo`, or with JavaScript's `<`,
 puts the same correctly mapped entries in a different order and reports a false
 failure. Requiring the committed order would make every Bridge carry ICU, and
@@ -138,20 +136,16 @@ crate entity exists.
 
 ## Ignore predicates: stated once, inherited by every entry
 
-A stamp is a triple a Bridge adds *after* the mapping (EIP Message History;
-the Enterprise Integration Patterns Message History): `cascade:dataProvenance`,
+A stamp is a triple a Bridge adds *after* the mapping (the Enterprise
+Integration Patterns Message History): `cascade:dataProvenance`,
 `cascade:schemaVersion`, source identity, import time. The stamp set is a
 property of the Bridge's stamp stage, not of any one fixture.
 
 So `bridge:ignorePredicate` is stated **once, on the `mf:Manifest`**, and every
 entry inherits it. An entry that carries its own `bridge:ignorePredicate`
 **replaces** the manifest's set for that entry alone — an override, not an
-addition.
-
-Stating it per entry was the earlier shape and was wrong in a way worth
-recording: three identical triples repeated on every conversion test is three
-places for the set to drift, and an adapter with twenty fixtures would have
-sixty. A fact about the Bridge belongs where it is true once.
+addition. Stated per entry, the set would repeat on every test and drift; a
+fact about the Bridge belongs where it is true once.
 
 ## What a harness owes
 

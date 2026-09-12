@@ -1,8 +1,7 @@
-# The Cascade Bridge vocabulary, bridge:, of the Cascade Bridge Specification
-# Two groups of terms in one namespace. It is
-# a Bridge-spec namespace, not a Cascade vocabulary: no cascade: or genomics:
-# term is minted here. The shapes that constrain a crate and a manifest as one
-# graph are shapes/bridge.shapes.ttl.
+# The Cascade Bridge vocabulary, bridge:, of the Cascade Bridge Specification.
+# Two groups of terms in one namespace, and not a Cascade vocabulary: no
+# cascade: or genomics: term is minted here. The shapes that constrain a crate
+# and a manifest as one graph are shapes/bridge.shapes.ttl.
 #
 # Adapter terms: what an adapter says about itself in its RO-Crate. The root
 # entity is a bridge:Adapter beside its schema:Dataset type, and the terms

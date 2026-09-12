@@ -54,8 +54,8 @@ Where a document here touches one of these, it says so.
 
 ## Start here
 
-The specification exists so two things can be built. Pick one; you do not need
-the other.
+The specification exists so two things can be built. Start at the one you are
+building; its entry point names what it needs from the other.
 
 | you are building | start at | what it covers |
 |---|---|---|

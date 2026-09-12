@@ -45,12 +45,9 @@ declared with an `rdfs:comment` in [`vocab/bridge.ttl`](../../vocab/bridge.ttl).
 | `bridge:extensionVocabulary` | at most 1 | IRI | the adapter's own namespace for values with no Cascade term. Phase 2 |
 | `bridge:testManifest` | exactly 1 | IRI, an `mf:Manifest` | the test manifest a Bridge's harness executes |
 
-An adapter **does not declare a tier**. A tier is measured, by
-running the adapter's fixtures on every published Bridge, and recorded in a
-catalogue, which is a repository downstream of every adapter and every Bridge and
-is no part of this one ([`pinning.md`](../pinning.md)).
-`bridge:tier`, `bridge:Universal` and `bridge:Limited` existed in the
-pilot's copy of the vocabulary and were removed in the move to this repository.
+An adapter **does not declare a tier**. A tier is measured, by running the
+adapter's fixtures on every published Bridge, and recorded in a catalogue
+downstream of every adapter and every Bridge ([`pinning.md`](../pinning.md)).
 What a lint may compute from the package alone is a *candidate*, never a claim;
 [`validation.md`](validation.md) says what it computes and in what words.
 
@@ -77,10 +74,8 @@ repository, and the IRI is an identifier rather than a location.
 
 The pin is an entity, not a string: a `SoftwareSourceCode` in the crate with
 `codeRepository` and `version` (the full SHA), the same shape
-`bridge:vocabularyPin` uses. Every commit an adapter pins is tagged in the
-repository it pins: a branch tip is not a guarantee, and a pin to an untagged commit dies
-at `git checkout` the first time a branch is reset. [`pinning.md`](../pinning.md)
-is the whole of that discipline.
+`bridge:vocabularyPin` uses. The commit it names is tagged;
+[`pinning.md`](../pinning.md) says why.
 
 ## Envelope entities
 

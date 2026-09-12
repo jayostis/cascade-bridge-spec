@@ -115,17 +115,11 @@ Not a pinning rule, but the same failure wearing different clothes: a contract
 that asserts more than it means makes correct work fail, and the failure lands on
 whoever runs it next rather than on whoever wrote it.
 
-An RDF graph does not mean its blank node labels, so
-[`test-manifest.md`](adapter/test-manifest.md) relabels them before comparing. A JSON
-array of findings does not mean its element order, so it is compared as a
-multiset. That second rule replaced an ordering requirement at 0.2.0, and the
-measurement is worth keeping: the pilot adapter's committed sidecars were written
-by a script sorting with ICU collation, in which `/` precedes `@` although U+002F
-is above U+0040, and 78, 56, 6 and 1 adjacent pairs across the four files are out
-of code-point order. A harness comparing with Java's `String.compareTo` or with
-JavaScript's `<` would have reported a false failure on a correct mapping. A
-stricter rule than the format's meaning does not catch more mapping errors; it
-only fails harnesses that are right.
+An RDF graph does not mean its blank node labels, and a findings array does not
+mean its element order, so [`test-manifest.md`](adapter/test-manifest.md)
+compares graphs up to relabelling and findings as a multiset. A stricter rule
+than the format's meaning does not catch more mapping errors; it only fails
+harnesses that are right.
 
 ## A Bridge's results flow as reports, not as pins
 

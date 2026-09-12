@@ -53,13 +53,11 @@ and in a CI job with no credentials.
    and every `bridge:envelope` a test action names is one the adapter lists.
 
    They also carry the two constraints that make an IRI naming a file mean
-   something. The file-valued properties of a test — `bridge:input`,
-   `bridge:graph`, `bridge:findings`, `bridge:sourceSchema`,
-   `bridge:documentSchema` — are
-   `sh:class schema:MediaObject`, what the RO-Crate 1.2 context expands `File`
-   to, so a mistyped name fails instead of conforming; `sh:nodeKind sh:IRI`
-   alone let a typo through, because an IRI naming no entity at all is still an
-   IRI. And every declared `encodingFormat` is one of the media types below.
+   something. `bridge:input`, `bridge:graph` and `bridge:findings` in the
+   manifest, and `bridge:sourceSchema` and `bridge:documentSchema` in the crate,
+   are `sh:class schema:MediaObject`, what the RO-Crate 1.2 context expands
+   `File` to, so a mistyped name fails: an IRI naming no entity is still an IRI.
+   And every declared `encodingFormat` is one of the media types below.
 
 3. **Every git-tracked file is accounted for.** Each file in the repository is
    either a crate entity carrying a declared `encodingFormat`, or is in a short
@@ -218,9 +216,8 @@ disagree.
           path: .          # the default; the directory holding ro-crate-metadata.json
 ```
 
-`<tag>` is the tag on the commit your crate's `bridge:specPin` names, the way
-`<full SHA>` is in the crate itself. The action resolves the ref it was called
-at and fails the run when the two disagree.
+`<tag>` is a tag on the commit your crate's `bridge:specPin` names; the action
+resolves it and fails the run when the two disagree.
 
 All six checks run. The action ends by printing each of them with the word it
 earned, so a package is never reported as passing a check that did not happen.

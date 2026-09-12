@@ -65,10 +65,7 @@ fixtures/expected/<name>.ttl        the graph it must produce
 fixtures/findings/<name>.gaps.json  the findings it must produce
 ```
 
-The stem is the test's `mf:name` and its fragment IRI in the test manifest. The
-naming came from the repository they were copied from, where the same files are
-`<name>.input.xml`, `<name>.expected.ttl` and `<name>.gaps.json`; the directory
-carries what the suffix used to.
+The stem is the test's `mf:name` and its fragment IRI in the test manifest.
 
 Names are kept from the source they were copied from even when they are wrong,
 so that a copy stays traceable to its origin. Two of the pilot's four oracle

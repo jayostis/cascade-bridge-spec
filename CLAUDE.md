@@ -63,4 +63,3 @@ only when that directory is touched. Keep this file under 80 lines.
 - **Why, never what.** A comment restating the line below it goes. A reason that
   belongs to a term goes in its `rdfs:comment` or `sh:description`, where it is
   machine-readable, not in a header block above it.
-- Every fact taken from a sibling repository names its source.

@@ -4,9 +4,8 @@
 as JSON-LD) and its test manifest are validated against **as one graph**, each
 with its own file location as base, so the manifest's `<../>` is the crate's root
 entity. The cross-file constraints — that a test's envelope is one the adapter
-lists, that the manifest and adapter point at each other, that an IRI naming a
-committed file is a crate `File` — are `sh:sparql`, so pySHACL must run with
-`advanced=True`.
+lists, and that the manifest and adapter point at each other — are
+`sh:sparql`, so pySHACL must run with `advanced=True`.
 
 The allowed `encodingFormat` set lives here. It is what keeps a file that
 executes out of a package that claims to be data, so adding a media type to it is

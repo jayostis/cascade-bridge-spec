@@ -5,14 +5,13 @@
 # entity. The adapter profile (profile/ro-crate-metadata.json) names this file
 # as its constraints resource.
 #
-# What the shapes require is below, and in prose in docs/adapter/manifest.md,
-# docs/adapter/test-manifest.md and docs/adapter/validation.md. What reading them does not
-# tell you:
+# What the shapes require is below, and in prose in docs/adapter/. What
+# reading them does not tell you:
 #
-#   Every IRI naming a committed file carries sh:class schema:MediaObject,
-#   which is what the RO-Crate 1.2 context expands File to. Without it
-#   sh:nodeKind sh:IRI lets a typo through: an IRI naming no entity is still
-#   an IRI.
+#   bridge:input, graph, findings, sourceSchema and documentSchema carry
+#   sh:class schema:MediaObject, what the RO-Crate 1.2 context expands File
+#   to, because sh:nodeKind sh:IRI alone lets a typo through: an IRI naming no
+#   entity is still an IRI.
 #
 #   Action and result nodes are closed. A property they do not declare is a
 #   mistake, not an extension.
