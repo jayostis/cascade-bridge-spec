@@ -21,9 +21,9 @@ runs that data is a Bridge.
 `v1-draft`. Terms may be renamed, cardinalities may change, and the profile IRI
 does not dereference yet.
 
-v1-draft specifies XML source formats and one mapping language, XSLT 3, as the
-`xslt-3` profile. Other source formats and mapping languages are not specified
-yet.
+v1-draft specifies XML source formats and one mapping language, SPARQL 1.1
+over a specified lift of the XML, as the `sparql-1.1` profile. Other source
+formats and mapping languages are not specified yet.
 
 Nothing here has yet been executed by a Bridge, because no Bridge exists.
 
@@ -64,7 +64,7 @@ building; its entry point names what it needs from the other.
 
 | you are building | start at | what it covers |
 |---|---|---|
-| **an adapter** — a data package for one source format | [`adapter/`](adapter/) | the crate, fixtures, the test manifest, and the six checks your package must pass |
+| **an adapter** — a data package for one source format | [`adapter/`](adapter/) | the crate, fixtures, the test manifest, and the seven checks your package must pass |
 | **an engine** — a Bridge, the thing that runs adapters | [`engine/`](engine/) | the stages you run around a mapping, and how you execute an adapter's test manifest |
 
 Building an adapter, you also need [`pinning.md`](pinning.md): how an adapter
@@ -75,13 +75,14 @@ names the revision of this specification it is built against.
 ```
 adapter/                       building an adapter: its crate, fixtures, test manifest, validation
 adapter/profile/               the RO-Crate 1.2 Profile Crate an adapter names in conformsTo
-engine/                        building an engine: stages, executing a test manifest
+engine/                        building an engine: stages, the sparql-1.1 profile, test manifests
 pinning.md                     how the three sides name the revisions they were built against
 vocab/bridge.ttl               the bridge: vocabulary: adapter terms, and test terms on top of W3C's mf:
 shapes/bridge.shapes.ttl       SHACL shapes for an adapter's crate and its test manifest, as one graph
-scripts/validate-adapter.py    the adapter lint: the six checks of adapter/validation.md
+scripts/validate-adapter.py    the adapter lint: the seven checks of adapter/validation.md
 scripts/selftest-lint.py       the mutation cases that show each check failing
 fixtures/synthetic-adapter/    a synthetic adapter package: the lint's own test subject
+fixtures/lift/                 the lift vectors a sparql-1.1 Bridge must reproduce
 .github/actions/validate-adapter/  the lint published as an action, which an adapter's CI calls
 .github/workflows/validate.yml CI: this repository's own files, and nothing else's
 ```
@@ -118,11 +119,11 @@ python3 -m pip install pyshacl rdflib roc-validator lxml
 python3 scripts/validate-adapter.py <path to an adapter checkout>
 ```
 
-That runs the six checks a conforming adapter package must pass — the crate, the
-shapes, the file inventory, the digests, the inputs against their schemas and the
-expected graphs. What each one is, and what a failure means, is
-[`adapter/validation.md`](adapter/validation.md); it is the authority and this is not a
-second copy of it. Exit status is 0 when the run passes.
+That runs the seven checks a conforming adapter package must pass — the crate,
+the shapes, the file inventory, the digests, the inputs against their schemas,
+the expected graphs and the queries. What each one is, and what a failure
+means, is [`adapter/validation.md`](adapter/validation.md); it is the authority
+and this is not a second copy of it. Exit status is 0 when the run passes.
 
 **Every check says whether it ran.** `ok`, `nothing to check` and `not run` are
 three different sentences: a lint that silently checks nothing is worse than no
@@ -136,7 +137,7 @@ the same commit of this repository, and the action checks that they do. The
 action takes a directory, names no adapter, and clones nothing but the caller's
 own checkout — the arrow runs from adapter to specification.
 
-[`adapter/validation.md`](adapter/validation.md) has the full six-item list a
+[`adapter/validation.md`](adapter/validation.md) has the full seven-item list a
 conforming package must pass, the words a check may be reported in, and the
 media types an adapter package may declare.
 [`fixtures/README.md`](fixtures/README.md) is the synthetic package the lint is

@@ -9,12 +9,12 @@ adapter, and nothing has yet been executed by a Bridge, because no Bridge exists
 
 ## What is normative
 
-`vocab/bridge.ttl`, `shapes/bridge.shapes.ttl`, `pinning.md`, and in `adapter/`:
-`profile/ro-crate-metadata.json`, `ro-crate-metadata.md`, `fixtures/manifest.md`,
-`validation.md`. Changing any of them changes what every
-adapter and every Bridge must do, and needs its reasoning recorded in the same
-commit. The rest is explanatory, machinery, or the lint's own test subject:
-see each directory.
+`vocab/bridge.ttl`, `shapes/bridge.shapes.ttl`, `pinning.md`,
+`engine/sparql.md`, and in `adapter/`: `profile/ro-crate-metadata.json`,
+`ro-crate-metadata.md`, `fixtures/manifest.md`, `validation.md`. Changing any
+of them changes what every adapter and every Bridge must do, and needs its
+reasoning recorded in the same commit. The rest is explanatory, machinery, or
+the lint's own test subject: see each directory.
 
 **The prose must agree with the Turtle exactly** — term names, cardinalities,
 what each shape checks. The Turtle is what runs, and a document disagreeing with
@@ -26,8 +26,9 @@ commit.
 - **What is unsettled stays unsettled here.** What Core contains, the canonical
   findings model, router precedence and the export direction are open. A document
   touching one says so; answering one here would settle it by accident.
-- **v1-draft is XML sources and the `xslt-3` profile.** Another source format or
-  mapping language arrives as its own specified addition, not a passing mention.
+- **v1-draft is XML sources and the `sparql-1.1` profile.** Another source
+  format or mapping language arrives as its own specified addition, not a
+  passing mention.
 - **No Cascade terms are minted here.** `bridge:` only; a term in `cascade:` or
   `genomics:` goes through spec's own process.
 - **This repository must not know that any adapter exists.** The specification

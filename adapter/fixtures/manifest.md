@@ -11,7 +11,7 @@ test runner.
 An adapter does not choose among test conventions. Every convention an adapter
 may choose is a harness every Bridge must implement, and two adapters proving
 conformance by different rules prove different things. Profile-specific unit
-suites — XSpec over an `xslt-3` mapping's modules, say — are optional, declared,
+suites — tests of a mapping's individual queries, say — are optional, declared,
 and no part of the conformance claim.
 
 ## The manifest

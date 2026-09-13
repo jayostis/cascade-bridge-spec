@@ -7,7 +7,9 @@ one, this directory is what you need.
 1. [`stages.md`](stages.md) — the stages you run around an adapter's mapping,
    each named with the Enterprise Integration Pattern it already is, and what an
    adapter contributes to each.
-2. [`executing.md`](executing.md) — running an adapter's test manifest: loading
+2. [`sparql.md`](sparql.md) — the `sparql-1.1` profile, and normative: the lift
+   of XML to RDF, and how an adapter's queries are run over it.
+3. [`executing.md`](executing.md) — running an adapter's test manifest: loading
    the crate and the manifest as one graph, applying each entry type's rule, and
    reporting in EARL.
 

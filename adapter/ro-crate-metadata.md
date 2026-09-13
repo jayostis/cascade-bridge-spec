@@ -32,8 +32,9 @@ declared with an `rdfs:comment` in [`vocab/bridge.ttl`](../vocab/bridge.ttl).
 | `version` | exactly 1 | string, semver | the adapter package's own version |
 | `license` | exactly 1 | IRI | the SPDX licence entity for the package |
 | `conformsTo` | 1 or more | IRI | what the adapter is written against. The profile IRI below is how conformance to this specification is declared |
-| `mainEntity` | exactly 1 | IRI, a crate `File` declared `application/xslt+xml` | the mapping: the XSLT 3 stylesheet a Bridge runs |
-| `bridge:profileRequired` | 1 or more, `bridge:xslt-3` among them | IRI, a `bridge:Profile` | a Bridge profile needed beyond Core. Every adapter requires `xslt-3`, the one v1-draft specifies |
+| `bridge:mapping` | 1 or more | IRI, a crate `File` declared `application/sparql-query` | a SPARQL 1.1 CONSTRUCT a Bridge runs on each unit; the unit's graph is the union of every mapping's result |
+| `bridge:findingsQuery` | 0 or more | IRI, a crate `File` declared `application/sparql-query` | a SPARQL 1.1 SELECT whose rows are the unit's findings |
+| `bridge:profileRequired` | 1 or more, `bridge:sparql-1.1` among them | IRI, a `bridge:Profile` | a Bridge profile needed beyond Core. Every adapter requires `sparql-1.1`, the one v1-draft specifies |
 | `bridge:specPin` | exactly 1 | IRI | the commit of the Cascade Bridge Specification the adapter is written against |
 | `bridge:vocabularyPin` | exactly 1 | IRI | the `spec` commit the adapter's Cascade vocabularies are pinned to |
 | `bridge:vocabulary` | 1 or more | IRI, a `DefinedTermSet` carrying `version` | a Cascade vocabulary the adapter writes, by namespace; `version` is its version at the pin |
@@ -41,7 +42,7 @@ declared with an `rdfs:comment` in [`vocab/bridge.ttl`](../vocab/bridge.ttl).
 | `bridge:sourceSchema` | exactly 1 | IRI, a crate `File` | the pinned source-side schema every unit is validated against |
 | `bridge:envelope` | 1 or more | IRI, a `bridge:Envelope` | a document root the format arrives in |
 | `bridge:unit` | exactly 1 | string | the element a Bridge splits a document on |
-| `bridge:detectXPath` | exactly 1 | string | the content-based router's rule |
+| `bridge:detectQuery` | exactly 1 | IRI, a crate `File` declared `application/sparql-query` | the content-based router's rule, a SPARQL 1.1 ASK |
 | `bridge:table` | 0 or more | IRI, a crate `File` | a lookup table the mapping reads |
 | `bridge:extensionVocabulary` | at most 1 | IRI | the adapter's own namespace for values with no Cascade term |
 | `bridge:testManifest` | exactly 1 | IRI, an `mf:Manifest` | the test manifest a Bridge's harness executes |
@@ -112,22 +113,30 @@ Envelopes are entities so that the test manifest can refer to one by IRI and the
 shapes can check the reference resolves to a `bridge:Envelope` the adapter
 lists. That check is the reason envelopes are not strings.
 
-## The detect XPath
+## The detect query
 
-`bridge:detectXPath` is the rule a Bridge's content-based router applies to
-decide that this adapter handles an input: **one XPath 3.1 expression**,
-evaluated with the document node as the context item, whose effective boolean
-value is true when the adapter handles the document. The pilot's is
+`bridge:detectQuery` is the rule a Bridge's content-based router applies to
+decide that this adapter handles an input: **one SPARQL 1.1 ASK**, evaluated
+over the document's envelope skeleton
+([`../engine/sparql.md`](../engine/sparql.md)), true when the adapter handles
+the document. For the pilot, that the document element is one of its two
+envelope roots and holds the unit:
 
+```sparql
+PREFIX fx:  <http://sparql.xyz/facade-x/ns/>
+PREFIX xyz: <http://sparql.xyz/facade-x/data/>
+ASK {
+  ?root a fx:root ; ?slot ?unit .
+  ?unit a xyz:VariationArchive .
+  { ?root a xyz:ClinVarResult-Set }
+  UNION { ?root a xyz:ClinVarVariationRelease }
+}
 ```
-exists(/(ClinVarResult-Set|ClinVarVariationRelease)/VariationArchive)
-```
 
-— the document element is one of the two envelope roots and it contains the
-unit. One expression rather than a root-element field and a contains field,
-because a format's detect rule is a predicate over a document and XPath is the
-language for writing one; a two-field rule of the specification's own invention
-would be a third thing to implement in every Bridge.
+One query rather than a root-element field and a contains field, because a
+detect rule is a predicate over a document and SPARQL is the language the
+profile already runs; a two-field rule of the specification's own invention
+would be a second thing to implement in every Bridge.
 
 Not specified: what a router does when two adapters' detect rules are both true
 for one document, and whether an adapter may declare a precedence. Nothing here
@@ -136,23 +145,27 @@ an answer.
 
 ## The mapping
 
-The mapping is an XSLT 3 stylesheet: the crate `File` the root's `mainEntity`
-names, declared `application/xslt+xml`, run under `bridge:xslt-3`, which every
-adapter therefore requires. `mainEntity` is how Workflow RO-Crate names a
-crate's entry point, so no `bridge:` term is minted for it; the Workflow RO-Crate
-profile itself is not required. The lint checks that the mapping is declared and
-never runs it. How a Bridge invokes it is not yet specified. Import only; the
-export direction is not specified.
+The mapping is one or more SPARQL 1.1 CONSTRUCTs: the crate `File`s the root's
+`bridge:mapping` names, each declared `application/sparql-query`, run under
+`bridge:sparql-1.1`, which every adapter therefore requires. A Bridge runs every
+one over each unit's lift, and the unit's graph is the union of their results;
+the SELECTs `bridge:findingsQuery` names produce the unit's findings. The lift
+and the invocation are [`../engine/sparql.md`](../engine/sparql.md). The term is
+`bridge:mapping` rather than Workflow RO-Crate's `mainEntity`, which names one
+entry point, because SPARQL has no module system: a mapping in several queries
+is several files. The lint checks that the queries are declared and parse, and
+never runs them. Import only; the export direction is not specified.
 
 Two properties are optional:
 
 - **Tables.** `bridge:table` names each lookup table the mapping reads, as a
   crate `File` whose `schema:isBasedOn` says where its rows came from and whose
   `schema:license` is stated where it differs from the package's. A table is
-  data a mapping reads, never a function it calls. Where a table
-  is a mapping from source phrases to Cascade terms it is a concept map, and
-  SKOS in Turtle is the form to write it in: it joins the same graph as the
-  crate and the manifest, and no CSV convention has to be invented.
+  data a mapping reads, never a function it calls: one declared `text/turtle`
+  is loaded beside each unit's lift, and no other table format is specified.
+  Where a table is a mapping from source phrases to Cascade terms it is a
+  concept map, and SKOS in Turtle is the form to write it in: it joins the
+  unit's graph, and no CSV convention has to be invented.
 - **The extension vocabulary.** `bridge:extensionVocabulary` names the adapter's
   own namespace for values that have no Cascade term, at most one, its file a
   `File` in `hasPart`. Terms in it are the adapter's. No `cascade:` term is ever

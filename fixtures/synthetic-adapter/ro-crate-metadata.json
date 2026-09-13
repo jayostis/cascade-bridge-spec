@@ -12,7 +12,9 @@
       "bridge:sourceSchema": "bridge:sourceSchema",
       "bridge:envelope": "bridge:envelope",
       "bridge:unit": "bridge:unit",
-      "bridge:detectXPath": "bridge:detectXPath",
+      "bridge:mapping": "bridge:mapping",
+      "bridge:findingsQuery": "bridge:findingsQuery",
+      "bridge:detectQuery": "bridge:detectQuery",
       "bridge:testManifest": "bridge:testManifest",
       "bridge:rootElement": "bridge:rootElement",
       "bridge:documentSchema": "bridge:documentSchema"
@@ -35,7 +37,7 @@
       "identifier": "synthetic-example",
       "name": "Synthetic Example Records",
       "version": "0.1.0",
-      "description": "A synthetic Cascade Bridge Adapter package, and the only package this repository holds. It exists so that the lint published from here is exercised by the thing it is published for, against a subject this repository owns: no real adapter is cloned, named or pinned, which is the rule fixtures/README.md and pinning.md state. Everything in it is invented. The format, its schemas, its records, its releases and its vocabulary are made up; every URL that is not this repository's own is under example.org, IANA's reserved example domain, and none of them resolves. Its mapping is a stub stylesheet that nothing runs. Committed files carry a sha256 computed over the committed bytes; two of them additionally carry an md5 standing for the digest a publisher publishes beside the file at its source, so that check 4 of adapter/validation.md has both kinds of claim to recompute and can be seen telling them apart.",
+      "description": "A synthetic Cascade Bridge Adapter package, and the only package this repository holds. It exists so that the lint published from here is exercised by the thing it is published for, against a subject this repository owns: no real adapter is cloned, named or pinned, which is the rule fixtures/README.md and pinning.md state. Everything in it is invented. The format, its schemas, its records, its releases and its vocabulary are made up; every URL that is not this repository's own is under example.org, IANA's reserved example domain, and none of them resolves. Its queries are real SPARQL 1.1: a mapping and a findings query that produce the expected graph and findings from its input, and a detect query. Committed files carry a sha256 computed over the committed bytes; two of them additionally carry an md5 standing for the digest a publisher publishes beside the file at its source, so that check 4 of adapter/validation.md has both kinds of claim to recompute and can be seen telling them apart.",
       "datePublished": "2026-09-06",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
@@ -47,7 +49,7 @@
       ],
       "bridge:profileRequired": [
         {
-          "@id": "https://ns.cascadeprotocol.org/bridge/v1-draft#xslt-3"
+          "@id": "https://ns.cascadeprotocol.org/bridge/v1-draft#sparql-1.1"
         }
       ],
       "bridge:specPin": {
@@ -74,16 +76,31 @@
         }
       ],
       "bridge:unit": "ExampleRecord",
-      "bridge:detectXPath": "exists(/ExampleRecordSet/ExampleRecord) or exists(/ExampleRecord)",
+      "bridge:mapping": [
+        {
+          "@id": "in/example-record.rq"
+        }
+      ],
+      "bridge:findingsQuery": [
+        {
+          "@id": "in/example-findings.rq"
+        }
+      ],
+      "bridge:detectQuery": {
+        "@id": "in/example-detect.rq"
+      },
       "bridge:testManifest": {
         "@id": "fixtures/manifest.ttl"
       },
-      "mainEntity": {
-        "@id": "in/example-record.xsl"
-      },
       "hasPart": [
         {
-          "@id": "in/example-record.xsl"
+          "@id": "in/example-record.rq"
+        },
+        {
+          "@id": "in/example-findings.rq"
+        },
+        {
+          "@id": "in/example-detect.rq"
         },
         {
           "@id": "schema/example-record.xsd"
@@ -141,10 +158,10 @@
       "description": "The RO-Crate 1.2 Profile Crate a conforming adapter package names in conformsTo. The IRI does not dereference; the Profile Crate describing it is adapter/profile/ro-crate-metadata.json in this repository, and bridge:specPin says at which commit."
     },
     {
-      "@id": "https://ns.cascadeprotocol.org/bridge/v1-draft#xslt-3",
+      "@id": "https://ns.cascadeprotocol.org/bridge/v1-draft#sparql-1.1",
       "@type": "bridge:Profile",
-      "name": "xslt-3",
-      "description": "The Bridge profile an XSLT 3 mapping runs under, which every adapter requires."
+      "name": "sparql-1.1",
+      "description": "The Bridge profile the adapter's SPARQL 1.1 queries run under, which every adapter requires."
     },
     {
       "@id": "https://github.com/jayostis/cascade-bridge-spec/commit/0af0fc970f75360d4f84acc2203c26b5fd9d6d23",
@@ -157,7 +174,7 @@
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       },
-      "description": "The one entity here that names something real: the revision of the Cascade Bridge Specification this package is written against, v0.2.0, the release at which the shapes and the media-type set it conforms to were last changed. A real adapter's workflow calls the lint at the matching ref and the lint fails a disagreement; this package is validated from inside the repository the pin names, by local path, so there is no ref to resolve and the pin is reported and not compared. fixtures/README.md says when it moves. A web-based data entity, referenced and not committed: the RO-Crate 1.2 validator reads every SoftwareSourceCode as a script that must be a File in hasPart."
+      "description": "The one entity here that names something real: a tagged revision of the Cascade Bridge Specification, v0.2.0. A package inside the repository it pins cannot pin a release that contains it, so this pin trails the shapes the package conforms to (fixtures/README.md). A real adapter's workflow calls the lint at the matching ref and the lint fails a disagreement; this package is validated from inside the repository the pin names, by local path, so there is no ref to resolve and the pin is reported and not compared. A web-based data entity, referenced and not committed: the RO-Crate 1.2 validator reads every SoftwareSourceCode as a script that must be a File in hasPart."
     },
     {
       "@id": "https://example.org/synthetic-adapter/vocabulary/commit/0000000000000000000000000000000000000000",
@@ -177,16 +194,40 @@
       "description": "The invented namespace the expected graph is written in. Deliberately not cascade: or genomics:: a fixture in this repository must not read as an assertion about a Cascade vocabulary, and no Cascade term is minted here."
     },
     {
-      "@id": "in/example-record.xsl",
+      "@id": "in/example-record.rq",
       "@type": "File",
-      "name": "Mapping, an XSLT 3 stub",
-      "encodingFormat": "application/xslt+xml",
-      "contentSize": "423",
-      "sha256": "678f36775c6a883f65b9871e39dd1af800e9ac373cd2bd72fdb0bdb55fb52864",
+      "name": "Mapping",
+      "encodingFormat": "application/sparql-query",
+      "contentSize": "838",
+      "sha256": "03b60de21f65e6f0eb0093826e7bf2a1289a8927f29778ab02e2778f7a0a4da2",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       },
-      "description": "The adapter's mainEntity: an XSLT 3 stylesheet that produces nothing. Nothing runs it; it is here because every adapter names its mapping, and the shapes check that one is declared."
+      "description": "The adapter's bridge:mapping: a SPARQL 1.1 CONSTRUCT turning one ExampleRecord unit into one ex:Record."
+    },
+    {
+      "@id": "in/example-findings.rq",
+      "@type": "File",
+      "name": "Findings query",
+      "encodingFormat": "application/sparql-query",
+      "contentSize": "452",
+      "sha256": "fd11272c7aaa10383e0dafd26c84e714f6b0a0333c7fb24aa5c0df8104fcc061",
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      },
+      "description": "The adapter's bridge:findingsQuery: a SPARQL 1.1 SELECT whose rows, one per Note, are the unit's findings."
+    },
+    {
+      "@id": "in/example-detect.rq",
+      "@type": "File",
+      "name": "Detect query",
+      "encodingFormat": "application/sparql-query",
+      "contentSize": "296",
+      "sha256": "dc2ceb5e041919910597bee2800b35425354167618230d7e19148beb25832008",
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      },
+      "description": "The adapter's bridge:detectQuery: a SPARQL 1.1 ASK, true for a bare record or a set holding at least one."
     },
     {
       "@id": "schema/example-record.xsd",
@@ -259,30 +300,30 @@
       "@type": "File",
       "name": "Expected graph for example-0001",
       "encodingFormat": "text/turtle",
-      "contentSize": "1171",
-      "sha256": "a32776eeff87e7154656913bb31ac466191736967e54d236f02bc038d8328437",
+      "contentSize": "1090",
+      "sha256": "e493a7be8407fea13ede2d83fe7090f3a53acee9922f1cc4ac75b7e7dd489746",
       "isBasedOn": {
         "@id": "fixtures/in/example-0001.xml"
       },
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       },
-      "description": "The graph a mapping would have to produce from example-0001.xml. Written by hand and produced by nothing: the package's mapping is a stub, and no Bridge exists to run one. Check 6 parses it and stops there."
+      "description": "The graph the package's mapping produces from example-0001.xml, one ExampleRecord unit at a time. Written by hand. Check 6 parses it and stops there: comparing it with what the mapping produces is a Bridge's job."
     },
     {
       "@id": "fixtures/findings/example-0001.gaps.json",
       "@type": "File",
       "name": "Expected findings for example-0001",
       "encodingFormat": "application/json",
-      "contentSize": "167",
-      "sha256": "9b76338cfdba4fe975b3daa4dbeafd9f77bc060cbaf04671e2bce9b4b747c683",
+      "contentSize": "149",
+      "sha256": "218bc13e106d59528d830311f4dfd6f402f21dda2157189190a83b45c1b2a571",
       "isBasedOn": {
         "@id": "fixtures/in/example-0001.xml"
       },
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       },
-      "description": "The findings a mapping would have to produce beside that graph: one entry, for the free-text note the invented vocabulary has no term for. The four-field shape adapter/fixtures/README.md records as what an adapter writes today, with the standard form still open."
+      "description": "The findings the package's findings query produces beside that graph: one entry, for the free-text note the invented vocabulary has no term for, its sourceField a path from the unit. The four-field shape adapter/fixtures/README.md records as what an adapter writes today, with the standard form still open."
     },
     {
       "@id": "https://example.org/synthetic-adapter/releases/example-release-2026-01.xml.gz",

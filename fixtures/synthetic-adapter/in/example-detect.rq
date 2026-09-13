@@ -1,0 +1,11 @@
+# A bare record, or a set holding at least one record.
+
+PREFIX fx:  <http://sparql.xyz/facade-x/ns/>
+PREFIX xyz: <http://sparql.xyz/facade-x/data/>
+
+ASK {
+  { ?root a fx:root, xyz:ExampleRecord }
+  UNION
+  { ?root a fx:root, xyz:ExampleRecordSet ; ?slot ?unit .
+    ?unit a xyz:ExampleRecord }
+}

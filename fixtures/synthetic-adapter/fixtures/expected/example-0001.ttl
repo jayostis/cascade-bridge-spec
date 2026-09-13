@@ -1,6 +1,5 @@
-# The graph a mapping would have to produce from in/example-0001.xml. This
-# package's mapping is a stub: nothing here executes, and no Bridge has run
-# this fixture, because no Bridge exists.
+# The graph the package's mapping, in/example-record.rq, produces from
+# in/example-0001.xml, one ExampleRecord unit at a time.
 #
 # Check 6 of adapter/validation.md parses this file and stops there. It is not
 # validated against Cascade's shapes -- that is a Bridge's validate stage, on
@@ -16,11 +15,11 @@
 <https://example.org/synthetic-adapter/record/EX000001>
   a ex:Record ;
   ex:accession "EX000001" ;
-  ex:version "3"^^xsd:positiveInteger ;
+  ex:version "3"^^xsd:integer ;
   rdfs:label "first synthetic record" .
 
 <https://example.org/synthetic-adapter/record/EX000002>
   a ex:Record ;
   ex:accession "EX000002" ;
-  ex:version "1"^^xsd:positiveInteger ;
+  ex:version "1"^^xsd:integer ;
   rdfs:label "second synthetic record" .

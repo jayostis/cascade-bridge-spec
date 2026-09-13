@@ -14,13 +14,13 @@ example rather than as the subject.
 | stage | Enterprise Integration Pattern | what an adapter contributes |
 |---|---|---|
 | read and chunk | **Splitter** | the unit to split on: `bridge:unit` on the crate's root entity. ClinVar: `VariationArchive` |
-| detect and route | **Content-Based Router** | the detect rule, as one XPath 3.1 boolean: `bridge:detectXPath`. ClinVar: `exists(/(ClinVarResult-Set\|ClinVarVariationRelease)/VariationArchive)` |
-| transform | **Message Translator** | the mapping, in a language the adapter's required profiles name. ClinVar: XSLT 3, one module per record class |
+| detect and route | **Content-Based Router** | the detect rule, one SPARQL 1.1 ASK over the envelope skeleton: `bridge:detectQuery`. ClinVar: the document element is one of its two envelope roots and holds a `VariationArchive` |
+| transform | **Message Translator** | the mapping, SPARQL 1.1 CONSTRUCTs over each unit's lift: `bridge:mapping`. ClinVar: one query per record class |
 | Cascade RDF as target | **Canonical Data Model** | the vocabularies it writes and the revision they are pinned at: `bridge:vocabulary`, `bridge:vocabularyPin` |
 | link within the batch | **Aggregator** | the links between records of one unit, emitted by the mapping and resolved by the Bridge within one import. ClinVar: interpretation (RCV) and submitter-assertion (SCV) records point at their Variant |
 | stamp | **Message History** | nothing; it *receives* the stamp. The adapter names the stamp predicates its test manifest ignores when comparing (`bridge:ignorePredicate`) |
 | check, validate | **Message Validator**, findings to an **Invalid Message Channel** | the source-side schema every unit is validated against: `bridge:sourceSchema`, and a `bridge:documentSchema` per envelope where the source schema does not declare that root |
-| findings | **Dead Letter Channel** / **Invalid Message Channel** | the expected contents of that channel, as the findings sidecar beside each expected graph |
+| findings | **Dead Letter Channel** / **Invalid Message Channel** | its findings queries, `bridge:findingsQuery`, and the expected contents of that channel, as the findings sidecar beside each expected graph |
 | re-import as no-op | **Idempotent Receiver** | nothing beyond a guarantee: everything the adapter emits is a function of the input |
 | vendor quirks | **Normalizer** | a normalisation pass per vendor, where the format has vendors. ClinVar has one publisher and no vendor dialects, so the pilot has none and declares none |
 
@@ -33,8 +33,9 @@ the source schema, a unit validates on its own, and the Bridge need not validate
 a multi-gigabyte release as a single document — which is what makes a dataset
 completion test ([`../adapter/fixtures/manifest.md`](../adapter/fixtures/manifest.md)) runnable at all.
 
-**Content-Based Router.** One XPath 3.1 expression, evaluated with the document
-node as the context item. An adapter declares only the roots its publisher
+**Content-Based Router.** One SPARQL ASK over the envelope skeleton
+([`sparql.md`](sparql.md)), which empties every unit so that routing a release
+does not mean lifting it. An adapter declares only the roots its publisher
 publishes today; a document in another shape is routed elsewhere or reported,
 never guessed at. The pilot's rule is narrower than the existing converter's
 detector, which matches five roots — three belonging to older or different
@@ -45,9 +46,9 @@ dropped and why.
 **Message Translator and Canonical Data Model.** The mapping is the only
 format-specific thing that runs, and it runs inside an engine the Bridge already
 ships. What that engine is, is exactly what profiles are for: v1-draft specifies
-one, `xslt-3`, and what Core contains is not settled. The target is Cascade RDF
-in the pinned vocabularies, which is the canonical model every adapter writes to
-and nothing else reads from an adapter.
+one, `sparql-1.1` ([`sparql.md`](sparql.md)), and what Core contains is not
+settled. The target is Cascade RDF in the pinned vocabularies, which is the
+canonical model every adapter writes to and nothing else reads from an adapter.
 
 **Aggregator.** One unit yields several records that point at each other. How the
 pointer is expressed — a blank node the Bridge resolves, or a minted name — is an

@@ -43,8 +43,11 @@ jobs:
       - name: every Turtle file parses
         run: |
           python3 - <<'PY'
+          from glob import glob
           from rdflib import Graph
-          for path in ("vocab/bridge.ttl", "shapes/bridge.shapes.ttl"):
+          lift = sorted(glob("fixtures/lift/*.ttl"))
+          lift += sorted(glob("fixtures/lift/*.nt"))
+          for path in ["vocab/bridge.ttl", "shapes/bridge.shapes.ttl", *lift]:
               graph = Graph()
               graph.parse(path, format="turtle")
               print(f"{path}: {len(graph)} triples")
