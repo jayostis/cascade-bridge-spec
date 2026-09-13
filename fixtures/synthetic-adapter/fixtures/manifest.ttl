@@ -1,5 +1,5 @@
 # The test manifest of a synthetic adapter package, in the shape
-# docs/adapter/test-manifest.md fixes: W3C's mf: test-manifest vocabulary, and on top
+# adapter/fixtures/manifest.md fixes: W3C's mf: test-manifest vocabulary, and on top
 # of it the test terms of the Cascade Bridge vocabulary, bridge:.
 #
 # Nothing here executes and nothing here is real. The three entries exist so

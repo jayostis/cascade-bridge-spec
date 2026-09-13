@@ -4,7 +4,7 @@
   own schema declares no set root, so the adapter adds one and names it as that
   envelope's bridge:documentSchema. The arrangement is the one a real adapter
   meets whenever a service returns a response element the format's schema does
-  not declare, and it is here so that check 5 of docs/adapter/validation.md exercises
+  not declare, and it is here so that check 5 of adapter/validation.md exercises
   both branches: an envelope with a document schema, and an envelope without
   one, falling back to the adapter's bridge:sourceSchema.
 

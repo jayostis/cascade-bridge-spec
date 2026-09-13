@@ -2,26 +2,27 @@
 # JSON-LD) and its test manifest (fixtures/manifest.ttl), validated as one
 # graph, each with its own file location as base, so the manifest's <../> is
 # the crate's root entity and its <in/...> is the crate's fixtures/in/...
-# entity. The adapter profile (profile/ro-crate-metadata.json) names this file
+# entity. The adapter profile (adapter/profile/ro-crate-metadata.json) names this file
 # as its constraints resource.
 #
-# What the shapes require is below, and in prose in docs/adapter/. What
+# What the shapes require is below, and in prose in adapter/. What
 # reading them does not tell you:
 #
-#   bridge:input, graph, findings, sourceSchema and documentSchema carry
-#   sh:class schema:MediaObject, what the RO-Crate 1.2 context expands File
-#   to, because sh:nodeKind sh:IRI alone lets a typo through: an IRI naming no
-#   entity is still an IRI.
+#   mainEntity and bridge:input, graph, findings, sourceSchema and
+#   documentSchema carry sh:class schema:MediaObject, what the RO-Crate 1.2
+#   context expands File to, because sh:nodeKind sh:IRI alone lets a typo
+#   through: an IRI naming no entity is still an IRI.
 #
 #   Action and result nodes are closed. A property they do not declare is a
 #   mistake, not an extension.
 #
-#   Zero profiles is legal. An adapter that needs Core only names none.
+#   The mapping is asserted, not run: that an adapter names one, declared
+#   XSLT 3, and requires bridge:xslt-3 is what a lint can check without a Bridge.
 #
 #   The allowed encodingFormat set, <#DescribedFile> below, is where "no code"
 #   is enforced: not by scanning a file for a language, but by refusing one
 #   whose media type says it executes. This file is the authority for the set,
-#   and docs/adapter/validation.md restates it for the reader.
+#   and adapter/validation.md restates it for the reader.
 #
 #   The links between crate and manifest are sh:sparql, so the engine must
 #   support SHACL-SPARQL (pySHACL, Jena).
@@ -90,13 +91,31 @@
     sh:path <http://purl.org/dc/terms/conformsTo> ;
     sh:hasValue <https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/> ;
     sh:severity sh:Warning ;
-    sh:message "The adapter does not name the Cascade Bridge Adapter profile, https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/, in conformsTo; that IRI on the crate root is how an adapter declares conformance to this specification (docs/adapter/manifest.md)."
+    sh:message "The adapter does not name the Cascade Bridge Adapter profile, https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/, in conformsTo; that IRI on the crate root is how an adapter declares conformance to this specification (adapter/ro-crate-metadata.md)."
   ] ;
   sh:property [
     sh:path bridge:profileRequired ;
     sh:nodeKind sh:IRI ;
     sh:class bridge:Profile ;
-    sh:message "Each bridge:profileRequired is a bridge:Profile by IRI. Zero or more: an adapter that needs Core only names none."
+    sh:message "Each bridge:profileRequired is a bridge:Profile by IRI."
+  ] ;
+  sh:property [
+    sh:path bridge:profileRequired ;
+    sh:hasValue bridge:xslt-3 ;
+    sh:message "The adapter requires bridge:xslt-3, the profile its mapping runs under; v1-draft specifies no other."
+  ] ;
+  sh:property [
+    sh:path schema:mainEntity ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:class schema:MediaObject ;
+    sh:message "The adapter names exactly one mainEntity, its mapping: a crate File entity (schema:MediaObject), the XSLT 3 stylesheet a Bridge runs."
+  ] ;
+  sh:property [
+    sh:path ( schema:mainEntity schema:encodingFormat ) ;
+    sh:hasValue "application/xslt+xml" ;
+    sh:message "The adapter's mainEntity is declared application/xslt+xml: v1-draft specifies one mapping language, XSLT 3."
   ] ;
   sh:property [
     sh:path bridge:specPin ;
@@ -158,13 +177,13 @@
     sh:path bridge:table ;
     sh:nodeKind sh:IRI ;
     sh:node <#Table> ;
-    sh:message "Each bridge:table is a crate File by IRI that names where its rows came from (schema:isBasedOn). Zero or more; phase 2."
+    sh:message "Each bridge:table is a crate File by IRI that names where its rows came from (schema:isBasedOn). Zero or more."
   ] ;
   sh:property [
     sh:path bridge:extensionVocabulary ;
     sh:maxCount 1 ;
     sh:nodeKind sh:IRI ;
-    sh:message "The adapter carries at most one bridge:extensionVocabulary, its own namespace for values with no Cascade term, by IRI; phase 2."
+    sh:message "The adapter carries at most one bridge:extensionVocabulary, its own namespace for values with no Cascade term, by IRI."
   ] ;
   sh:property [
     sh:path bridge:testManifest ;
@@ -224,7 +243,7 @@
 # ----------------------------------------------------------------------------
 #
 # This is where "no code" stops being a claim and becomes a measured property.
-# The lint's file inventory (docs/adapter/validation.md, check 3) asks of every
+# The lint's file inventory (adapter/validation.md, check 3) asks of every
 # git-tracked file whether the crate describes it and whether it declares an
 # encodingFormat; this shape asks of every declared encodingFormat whether it
 # is a media type an adapter package may hold. Neither question is answered by
@@ -233,8 +252,8 @@
 #
 # The set is the formats an adapter package may hold: the package's own
 # description (JSON-LD, Turtle, JSON, YAML, Markdown), the source-side schemas
-# and documents (XML, its two media types, JSON, YAML), the mapping languages a
-# Bridge profile may offer (XSLT 3, SPARQL, and RML, which is Turtle), the
+# and documents (XML, under both its media types), the mapping languages a
+# Bridge profile may offer (XSLT 3, and SPARQL for a profile not yet specified), the
 # lookup tables (Turtle for SKOS, CSV where a table arrives as one), the plain
 # text a NOTICE or a checksum sidecar is, and the archive a referenced release
 # is published as. It is deliberately short. A format an adapter needs and this
@@ -266,7 +285,7 @@
       "text/turtle"
       "text/xml"
     ) ;
-    sh:message "encodingFormat is one of the media types an adapter package may declare: application/gzip, application/json, application/ld+json, application/sparql-query, application/xml, application/xslt+xml, application/yaml, text/csv, text/markdown, text/plain, text/turtle, text/xml. A media type outside that set is how a file that executes would enter a package that claims to be data (docs/adapter/validation.md)."
+    sh:message "encodingFormat is one of the media types an adapter package may declare: application/gzip, application/json, application/ld+json, application/sparql-query, application/xml, application/xslt+xml, application/yaml, text/csv, text/markdown, text/plain, text/turtle, text/xml. A media type outside that set is how a file that executes would enter a package that claims to be data (adapter/validation.md)."
   ] .
 
 # ============================================================================

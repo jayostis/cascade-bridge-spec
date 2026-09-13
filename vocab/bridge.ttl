@@ -9,9 +9,7 @@
 # RO-Crate context expands conformsTo to dct:conformsTo, not to a schema.org
 # term, so a query written with schema:conformsTo matches nothing.
 #
-# An adapter declares no tier: a tier is measured by running
-# an adapter's fixtures on every published Bridge, and recorded in a catalogue
-# downstream of both, which does not exist yet (docs/pinning.md).
+# An adapter declares no tier, and v1-draft specifies none.
 #
 # Test terms: a small set on top of W3C's mf: test-manifest vocabulary, the way
 # the SHACL test suite adds sht:. An adapter's fixtures/manifest.ttl is an
@@ -54,7 +52,7 @@ bridge:Envelope a owl:Class ;
 
 bridge:Profile a owl:Class ;
   rdfs:label "Profile"@en ;
-  rdfs:comment "An optional Bridge profile beyond Core: a capability a Bridge may offer and an adapter may require, such as xslt-3, sparql-construct or streaming."@en ;
+  rdfs:comment "An optional Bridge profile beyond Core: a capability a Bridge may offer and an adapter may require. v1-draft defines one, bridge:xslt-3."@en ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
 # ----------------------------------------------------------------------------
@@ -72,7 +70,7 @@ bridge:xslt-3 a bridge:Profile ;
 
 bridge:profileRequired a owl:ObjectProperty ;
   rdfs:label "profile required"@en ;
-  rdfs:comment "A Bridge profile the adapter needs beyond Core, by IRI; repeatable, zero or more. An adapter that needs Core only names none. This is all an adapter declares about where it runs: its tier is not declared here but measured, by a catalogue that records which published Bridges pass its test manifest, and a lint may say \"universal candidate\" only when the package holds no code and every profile named here is in Core."@en ;
+  rdfs:comment "A Bridge profile the adapter needs beyond Core, by IRI; repeatable. Every adapter requires bridge:xslt-3, the profile its mapping (the crate's schema:mainEntity) runs under; v1-draft specifies no other."@en ;
   rdfs:domain bridge:Adapter ;
   rdfs:range bridge:Profile ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
@@ -104,7 +102,7 @@ bridge:sourceMediaType a owl:DatatypeProperty ;
 
 bridge:sourceSchema a owl:ObjectProperty ;
   rdfs:label "source schema"@en ;
-  rdfs:comment "The pinned source-side schema (XSD, JSON Schema, Schematron) a Bridge validates every unit against, by IRI: a schema:File entity in the crate. Exactly one."@en ;
+  rdfs:comment "The pinned source-side schema, an XSD, a Bridge validates every unit against, by IRI: a schema:File entity in the crate. Exactly one."@en ;
   rdfs:domain bridge:Adapter ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
@@ -130,13 +128,13 @@ bridge:detectXPath a owl:DatatypeProperty ;
 
 bridge:table a owl:ObjectProperty ;
   rdfs:label "table"@en ;
-  rdfs:comment "A lookup table the mapping reads, by IRI: a schema:File entity in the crate whose schema:isBasedOn names where its rows came from and whose schema:license is stated where it differs from the package's. Repeatable, zero or more; none until phase 2 adds the mapping."@en ;
+  rdfs:comment "A lookup table the mapping reads, by IRI: a schema:File entity in the crate whose schema:isBasedOn names where its rows came from and whose schema:license is stated where it differs from the package's. Repeatable, zero or more."@en ;
   rdfs:domain bridge:Adapter ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
 bridge:extensionVocabulary a owl:ObjectProperty ;
   rdfs:label "extension vocabulary"@en ;
-  rdfs:comment "The adapter's own namespace for values that have no Cascade term, by IRI: a schema:DefinedTermSet entity in the crate, its file a schema:File in hasPart. At most one; absent until phase 2 adds it. Terms in it are the adapter's, never cascade: or genomics: terms."@en ;
+  rdfs:comment "The adapter's own namespace for values that have no Cascade term, by IRI: a schema:DefinedTermSet entity in the crate, its file a schema:File in hasPart. At most one. Terms in it are the adapter's, never cascade: or genomics: terms."@en ;
   rdfs:domain bridge:Adapter ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 

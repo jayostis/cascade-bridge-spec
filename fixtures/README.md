@@ -16,7 +16,7 @@ lint nobody should trust, so it has to run somewhere on every change here — an
 the one thing it must not run against is a real adapter.
 
 **This repository must not know that any adapter exists**
-([`docs/pinning.md`](../docs/pinning.md) says why). A real adapter here — as a
+([`pinning.md`](../pinning.md) says why). A real adapter here — as a
 submodule, a clone, a pinned SHA or a name in a workflow — is that bug wearing
 a fixture's clothes.
 
@@ -32,7 +32,7 @@ vocabulary are made up; every URL that is not this repository's own is under
 real format, publisher, dataset or adapter is named anywhere in it.
 
 It is minimal, and every part of it earns its place by covering a branch of the
-six checks in [`docs/adapter/validation.md`](../docs/adapter/validation.md) that a single real
+six checks in [`adapter/validation.md`](../adapter/validation.md) that a single real
 adapter would not cover at once:
 
 | what it holds | the branch it covers |
@@ -44,15 +44,7 @@ adapter would not cover at once:
 | an isomorphic conversion test | check 6 has an expected graph to parse |
 | an input-only test | a test with no `mf:result`, which judges nothing |
 | a dataset completion test | check 5 meets a test whose bytes are not here, and says so instead of counting it validated |
-| no `bridge:profileRequired` | the lint's `universal candidate` line, which no adapter requiring a profile can reach |
-
-The last row is the honest reading of a package with no mapping: it requires no
-Bridge profile because it asks a Bridge to do nothing. It is also the only shape
-of adapter for which `universal candidate` is decidable at all while Core is
-unsettled, which is why the fixture is the only
-place that line is ever printed here. **Candidate, never universal**: a tier is
-measured by running an adapter's fixtures on every published Bridge, and no
-Bridge exists.
+| a stub XSLT 3 stylesheet as `mainEntity`, requiring `xslt-3` | the mapping check 2 requires of every adapter; nothing runs it |
 
 ## The specification pin
 
@@ -78,8 +70,8 @@ python3 -m pip install pyshacl rdflib roc-validator lxml
 python3 scripts/selftest-lint.py
 ```
 
-Eight cases: the package unbroken passing, and one red case each for an
-undescribed file, a wrong local `sha256`, a wrong publisher `md5`, an input that
+Nine cases: the package unbroken passing, and one red case each for a crate
+that names no mapping, an undescribed file, a wrong local `sha256`, a wrong publisher `md5`, an input that
 does not satisfy its schema, a schema language the lint does not read, an
 expected graph that is not Turtle, and a manifest that names no expected graph.
 The schema language the lint does not read, and the manifest that names no

@@ -1,7 +1,7 @@
 # Executing a test manifest
 
 What a Bridge's harness must do with an adapter's `fixtures/manifest.ttl`. The
-manifest's shape is [`../adapter/test-manifest.md`](../adapter/test-manifest.md);
+manifest's shape is [`../adapter/fixtures/manifest.md`](../adapter/fixtures/manifest.md);
 this is the other side of it.
 
 ## Load the crate and the manifest as one graph
@@ -16,7 +16,7 @@ validates it, instead of matching on file names.
 ## Execute the entry, not the file name
 
 A harness reads the entry's **type** and applies the rule that type carries. The
-rules are normative in [`../../vocab/bridge.ttl`](../../vocab/bridge.ttl), as the
+rules are normative in [`../vocab/bridge.ttl`](../vocab/bridge.ttl), as the
 `rdfs:comment` on each of `bridge:IsomorphicConversionTest`,
 `bridge:InputOnlyTest` and `bridge:DatasetCompletionTest`. They are not restated
 here, and a harness that implements this document rather than those comments is
@@ -36,13 +36,13 @@ Two obligations sit outside the individual rules:
 ## Report in EARL
 
 One `earl:Assertion` per manifest entry: `earl:test` the entry's IRI,
-`earl:subject` the Bridge, `earl:outcome` the result, `earl:mode automatic`.
-That is the form every W3C test suite's implementation reports take.
+`earl:subject` the Bridge, `earl:mode earl:automatic`, and `earl:result` an
+`earl:TestResult` whose `earl:outcome` is the result. That is the form every W3C
+test suite's implementation reports take.
 
-An adapter's tier is a query over those assertions, never a claim in the adapter
-and never something a Bridge writes back to one — a Bridge that pinned an adapter
-would be claiming ownership of it, and an adapter that pinned a Bridge would stop
-being portable ([`../pinning.md`](../pinning.md)).
+A report is never written back to the adapter it is about: a Bridge that pinned
+an adapter would be claiming ownership of it, and an adapter that pinned a Bridge
+would stop being portable ([`../pinning.md`](../pinning.md)).
 
 No Bridge exists, so no EARL report exists and nothing here has executed a
 manifest. The contract is written from one adapter and checked by SHACL; it is

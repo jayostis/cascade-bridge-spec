@@ -57,9 +57,10 @@ What the lint runs is [`validation.md`](adapter/validation.md).
 
 ## Every dependency is a commit SHA, and every pinned SHA is tagged
 
-A pin is a full 40-character SHA, never a branch name, never a tag alone, never
-"latest". Without a pin, a consumer silently tracks whatever is on `main`, so a
-run that passed yesterday can pass today for a different reason.
+In a crate, a pin is a full 40-character commit SHA, never a branch name, a tag
+or "latest"; the `uses:` ref that calls the lint is a tag on that same commit.
+Without a pin, a consumer silently tracks whatever is on `main`, so a run that
+passed yesterday can pass today for a different reason.
 
 A tag is what keeps the commit reachable, because a branch tip is not a
 guarantee. A tag holds the object even if the branch it sat on is later reset or
@@ -69,17 +70,20 @@ garbage-collected. Do not pin a SHA that no tag points at.
 
 So: **every commit of this repository that anything pins is tagged in this
 repository**, verified with `git ls-remote` before the pin lands, and the same
-obligation falls on any repository an adapter or a Bridge pins. A pin to an
-untagged commit is not a pin; it is a bet on nobody rewriting a branch. It
-applies to the `uses:` ref as much as to the SHA in a crate: an action called at
-a branch is an action whose meaning changes without a commit anywhere.
+obligation falls on any repository an adapter or a Bridge pins. A tag here is
+annotated, so `git ls-remote <repository> 'refs/tags/<tag>^{}'` prints the
+commit it points at, which is the SHA to pin; without `^{}` it prints the tag
+object's own SHA. A pin to an untagged commit is not a pin; it is a bet on
+nobody rewriting a branch. It applies to the `uses:` ref as much as to the SHA in
+a crate: an action called at a branch is an action whose meaning changes without
+a commit anywhere.
 
 A pin is written as an entity, not a string: a `SoftwareSourceCode` with
 `codeRepository` and `version`, which is the shape `bridge:specPin` and
-`bridge:vocabularyPin` both use. The repository half is carried explicitly for
-this reason: a commit that exists only on a fork
-must name the fork, or CI clones a repository that does not hold the object, and
-the pin moves back to the org in the same commit that re-pins to an org SHA.
+`bridge:vocabularyPin` both use. The repository half is carried explicitly
+because a commit that exists only on a fork must name the fork, or CI clones a
+repository that does not hold the object. This specification's repository is
+`https://github.com/jayostis/cascade-bridge-spec`; there is no other copy to pin.
 
 ## Pins move in the pull request that needs them
 
@@ -99,9 +103,12 @@ same rule: the pin and the measurement move together, in one deliberate commit.
 
 ## Nothing pins what it does not consume
 
-A pin is a statement that this artefact reads that revision. An adapter that
-writes no `genomics:` term does not pin the genomics vocabulary; a Bridge that
-implements no profile an adapter requires does not pin that adapter. Pins added
+A pin is a statement that this artefact reads that revision. An adapter pins one
+revision of the Cascade vocabularies (`bridge:vocabularyPin`) because it always
+writes at least one of them, and names only those it writes
+(`bridge:vocabulary`): one that writes no `genomics:` term does not name the
+genomics vocabulary. A Bridge that implements no profile an adapter requires
+does not pin that adapter. Pins added
 "for completeness" are pins nobody re-measures, and an unre-measured pin is a
 stale fact with a SHA attached to make it look checked.
 
@@ -116,7 +123,7 @@ that asserts more than it means makes correct work fail, and the failure lands o
 whoever runs it next rather than on whoever wrote it.
 
 An RDF graph does not mean its blank node labels, and a findings array does not
-mean its element order, so [`test-manifest.md`](adapter/test-manifest.md)
+mean its element order, so [`adapter/fixtures/manifest.md`](adapter/fixtures/manifest.md)
 compares graphs up to relabelling and findings as a multiset. A stricter rule
 than the format's meaning does not catch more mapping errors; it only fails
 harnesses that are right.
