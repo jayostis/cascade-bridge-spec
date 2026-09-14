@@ -30,7 +30,9 @@ triples in the shape of SPARQL Anything's Facade-X. Every node is a blank node.
   sections with nothing but dropped content between them are one text child.
 - **Dropped:** a text child made only of whitespace, comments, processing
   instructions, the document type declaration and the XML declaration. What is
-  dropped takes no number.
+  dropped takes no number. Whitespace is XML's `S` production: space, tab,
+  carriage return and line feed, and no other character. A no-break space is
+  text, alone or beside spaces.
 
 Every name in the vectors is ASCII. How a name with other characters is
 written in an IRI is not specified in v1-draft.

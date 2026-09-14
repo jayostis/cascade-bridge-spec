@@ -17,6 +17,7 @@
     <#cdata>
     <#dropped>
     <#namespaces>
+    <#no-break-space>
   ) .
 
 <#attributes> a bridge:LiftTest ;
@@ -54,3 +55,9 @@
   rdfs:comment "A namespaced element or attribute is named by its namespace IRI and local name; an unnamespaced one under the Facade-X data namespace. The namespace declaration is not an attribute." ;
   mf:action [ bridge:input <namespaces.xml> ] ;
   mf:result [ bridge:graph <namespaces.nt> ] .
+
+<#no-break-space> a bridge:LiftTest ;
+  mf:name "no-break-space" ;
+  rdfs:comment "Whitespace is XML's S production, space, tab, CR and LF. A no-break space is not whitespace: alone it is a text child, beside spaces the text is kept verbatim, and a text of only a line feed is dropped." ;
+  mf:action [ bridge:input <no-break-space.xml> ] ;
+  mf:result [ bridge:graph <no-break-space.nt> ] .
