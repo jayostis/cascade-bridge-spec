@@ -57,11 +57,14 @@ single real adapter would not cover at once:
 The one entity in the crate that names something real is `bridge:specPin`:
 `jayostis/cascade-bridge-spec` at the commit released as v0.2.0.
 
-A package inside this repository cannot pin a release that contains it, so the
-pin trails the shapes it conforms to and moves after a release is tagged. It is
-not compared: CI calls the action by local path, so there is no ref to resolve
-and the run reports the pin without comparing it — which is itself one of the
-states the lint has to be seen reporting.
+That is a tagged commit, as every pin must be, and not a revision the package
+conforms to. The package conforms to the shapes in its own commit, and a
+package inside this repository cannot pin a release that contains it, so its
+pin can only name an earlier tag, whose shapes it need not satisfy. Nothing
+moves the pin when a release is tagged, because nothing compares it: CI calls
+the action by local path, so there is no ref to resolve and the run reports the
+pin without comparing it — which is itself one of the states the lint has to be
+seen reporting.
 
 ## Seeing the lint fail
 

@@ -346,7 +346,9 @@ CASES = [
         "statuses": {2: "FAIL", 7: "ok"},
         "expect": [
             "encodingFormat is one of the media types an adapter package may declare",
-            "Every bridge:mapping is declared application/sparql-query.",
+            "bridge:mapping, a SPARQL 1.1 CONSTRUCT a Bridge runs on each "
+            "unit: a crate File entity (schema:MediaObject) by IRI, declared "
+            "application/sparql-query.",
         ],
     },
     {

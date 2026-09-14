@@ -854,19 +854,10 @@ def validate_expected_graphs(adapter, graph, manifest_iri, check):
 # Check 7
 # ============================================================================
 
-# The form each query property declares, as rdflib names it and as SPARQL
-# spells it, and the variables a Bridge turns each findings row into
-# (engine/sparql.md).
 QUERY_FORMS = {
-    BRIDGE.mapping: ("bridge:mapping", "ConstructQuery"),
-    BRIDGE.findingsQuery: ("bridge:findingsQuery", "SelectQuery"),
-    BRIDGE.detectQuery: ("bridge:detectQuery", "AskQuery"),
-}
-FORM_WORDS = {
-    "ConstructQuery": "CONSTRUCT",
-    "SelectQuery": "SELECT",
-    "AskQuery": "ASK",
-    "DescribeQuery": "DESCRIBE",
+    BRIDGE.mapping: ("bridge:mapping", "CONSTRUCT"),
+    BRIDGE.findingsQuery: ("bridge:findingsQuery", "SELECT"),
+    BRIDGE.detectQuery: ("bridge:detectQuery", "ASK"),
 }
 FINDING_VARIABLES = ("sourceField", "reason", "severity", "context")
 
@@ -906,24 +897,26 @@ def validate_queries(adapter, graph, root, check):
             report(False, f"{name} does not parse as SPARQL 1.1")
             print(f"        {error}")
             continue
-        found = FORM_WORDS.get(parsed.algebra.name, parsed.algebra.name)
-        if found != FORM_WORDS[form]:
+        found = parsed.algebra.name.removesuffix("Query").upper()
+        if found != form:
             failures += 1
             report(
                 False,
-                f"{name} is a {found} query, where {term} requires "
-                f"{FORM_WORDS[form]}",
+                f"{name} is a {found} query, where {term} requires {form}",
             )
             continue
         if prop == BRIDGE.findingsQuery:
             projected = [str(variable) for variable in parsed.algebra["PV"]]
+            # Sorted rather than a set: rdflib keeps a variable projected
+            # twice, and a set would pass it as the four.
             if sorted(projected) != sorted(FINDING_VARIABLES):
                 failures += 1
                 listed = " ".join("?" + v for v in projected)
                 report(
                     False,
                     f"{name} projects {listed}, where a findings query "
-                    "projects exactly ?sourceField ?reason ?severity ?context",
+                    "projects ?sourceField ?reason ?severity ?context, in any "
+                    "order and no other variable",
                 )
 
     if not failures:

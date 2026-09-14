@@ -141,8 +141,8 @@ the crate names.
 7. **Every query parses as SPARQL 1.1, in the form its property declares.**
    Each file `bridge:mapping`, `bridge:findingsQuery` and `bridge:detectQuery`
    names, parsed by rdflib: a mapping is a CONSTRUCT, a findings query a SELECT
-   projecting exactly `?sourceField ?reason ?severity ?context`, and the detect
-   query an ASK.
+   projecting `?sourceField ?reason ?severity ?context`, in any order and no
+   other variable, and the detect query an ASK.
 
 A package whose run passes, by the table above, is a conforming adapter package.
 Nothing in the list runs a mapping or compares a graph: that is the test

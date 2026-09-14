@@ -43,6 +43,10 @@ rather than reporting a mistake.
 The type is the comparison rule. Each is an `mf:ManifestEntry` with exactly one
 `mf:name` (which is also its fragment IRI) and exactly one `mf:action`.
 
+The vocabulary has a fourth, `bridge:LiftTest`, which tests a Bridge's lift
+rather than an adapter. An adapter's manifest lists none: the shapes refuse a
+lift test in a manifest that names a `bridge:adapter`.
+
 ### `bridge:IsomorphicConversionTest`
 
 A committed input with a committed expected graph and a committed expected

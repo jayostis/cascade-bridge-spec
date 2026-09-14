@@ -127,7 +127,7 @@ bridge:mapping a owl:ObjectProperty ;
 
 bridge:findingsQuery a owl:ObjectProperty ;
   rdfs:label "findings query"@en ;
-  rdfs:comment "A query whose rows are the findings a unit produces, by IRI: a schema:File entity in the crate declared application/sparql-query, a SPARQL 1.1 SELECT over the same dataset as the mappings, projecting exactly ?sourceField ?reason ?severity ?context. Each row is one finding, a JSON object with those four string members; rows are not deduplicated, and a unit's findings are the rows of every findings query, concatenated. Zero or more."@en ;
+  rdfs:comment "A query whose rows are the findings a unit produces, by IRI: a schema:File entity in the crate declared application/sparql-query, a SPARQL 1.1 SELECT over the same dataset as the mappings, projecting ?sourceField ?reason ?severity ?context, in any order, and no other variable. Each row is one finding, a JSON object with those four members, each a string written as engine/sparql.md specifies; rows are not deduplicated, and a unit's findings are the rows of every findings query, concatenated. Zero or more."@en ;
   rdfs:domain bridge:Adapter ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
@@ -211,7 +211,7 @@ bridge:LiftTest a owl:Class ;
 
 bridge:adapter a owl:ObjectProperty ;
   rdfs:label "adapter"@en ;
-  rdfs:comment "The adapter the manifest tests, by IRI: the root entity of the adapter's crate, a bridge:Adapter whose bridge:testManifest is this manifest. Exactly one on the manifest."@en ;
+  rdfs:comment "The adapter the manifest tests, by IRI: the root entity of the adapter's crate, a bridge:Adapter whose bridge:testManifest is this manifest. Exactly one on a manifest listing an adapter's tests; none on one listing a bridge:LiftTest, which tests a Bridge."@en ;
   rdfs:domain mf:Manifest ;
   rdfs:range bridge:Adapter ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .

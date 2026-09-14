@@ -47,9 +47,10 @@ and a unit inside another, are not specified.
 **The detect query** runs over the document's *envelope skeleton*: the lift of
 the whole document, with the document element as the lift root, except that
 every unit is lifted as an empty container — its type triples and its place
-among its parent's children, without its attributes or its children. A router
-can build it while streaming, so detecting a multi-gigabyte release does not
-mean lifting it.
+among its parent's children, without its attributes or its children. A unit
+that is the document element is lifted as an empty container too: the skeleton
+is then its type triples alone. A router can build it while streaming, so
+detecting a multi-gigabyte release does not mean lifting it.
 
 ## Running an adapter
 
@@ -62,10 +63,15 @@ document order, a Bridge:
    graph. No other table format is specified in v1-draft;
 3. runs every `bridge:mapping`, a CONSTRUCT, over that dataset. The unit's
    graph is the union of their results;
-4. runs every `bridge:findingsQuery`, a SELECT projecting exactly
-   `?sourceField ?reason ?severity ?context`, over the same dataset. Each row is
-   one finding: a JSON object with those four members, each the string the
-   variable is bound to. The unit's findings are the rows of every findings
-   query, concatenated; rows are not deduplicated.
+4. runs every `bridge:findingsQuery`, a SELECT projecting
+   `?sourceField ?reason ?severity ?context`, in any order and no other
+   variable, over the same dataset. Each row is one finding: a JSON object with
+   those four members, each a string, the lexical form of the term its variable
+   is bound to: an IRI's own characters, or a literal's lexical form without its
+   datatype or language tag. A row in which a variable is unbound, or bound to a
+   blank node, has no such string. It is an error in the findings query, and a
+   Bridge reports it rather than choosing a value for the member. The unit's
+   findings are the rows of every findings query, concatenated; rows are not
+   deduplicated.
 
 The stages around this are [`stages.md`](stages.md).
