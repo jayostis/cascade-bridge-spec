@@ -32,6 +32,14 @@
 #
 #   The links between crate and manifest are sh:sparql, so the engine must
 #   support SHACL-SPARQL (pySHACL, Jena).
+#
+# A compatibility.json (compatibility.md) is validated against the same file on
+# its own, parsed as JSON-LD through vocab/compatibility.context.jsonld. Its
+# shapes, at the end, target only the compatibility terms, so nothing in a crate
+# or a manifest reaches them. Which of the file's two forms applies depends on
+# whether its directory holds an adapter's crate, which the file does not say:
+# the shapes accept either form, and scripts/compatibility.py holds the form to
+# the directory.
 
 @prefix sh:     <http://www.w3.org/ns/shacl#> .
 @prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
@@ -47,7 +55,8 @@
 <> a owl:Ontology ;
   sh:declare [ sh:prefix "rdf" ;    sh:namespace "http://www.w3.org/1999/02/22-rdf-syntax-ns#"^^xsd:anyURI ] ;
   sh:declare [ sh:prefix "mf" ;     sh:namespace "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#"^^xsd:anyURI ] ;
-  sh:declare [ sh:prefix "bridge" ; sh:namespace "https://ns.cascadeprotocol.org/bridge/v1-draft#"^^xsd:anyURI ] .
+  sh:declare [ sh:prefix "bridge" ; sh:namespace "https://ns.cascadeprotocol.org/bridge/v1-draft#"^^xsd:anyURI ] ;
+  sh:declare [ sh:prefix "schema" ; sh:namespace "http://schema.org/"^^xsd:anyURI ] .
 
 # ============================================================================
 # The adapter
@@ -606,4 +615,105 @@
     sh:maxCount 1 ;
     sh:nodeKind sh:IRI ;
     sh:message "The result of a lift test names exactly one bridge:graph, the graph the lift must be isomorphic to, by IRI."
+  ] .
+
+# ============================================================================
+# compatibility.json
+# ============================================================================
+
+<#Compatibility> a sh:NodeShape ;
+  sh:targetSubjectsOf bridge:specification, bridge:setup, bridge:command, bridge:testedWith ;
+  rdfs:comment "The document a compatibility.json is: an engine's, which pins the specification and says how to set itself up and run, or an adapter's, whose crate pins the specification and which is run rather than running anything. Either lists the counterparts it asserts it passes with." ;
+  sh:xone ( <#EngineCompatibility> <#AdapterCompatibility> ) ;
+  sh:message "A compatibility.json is an engine's, carrying exactly one specification, one setup and one command, or an adapter's, carrying none of the three." ;
+  sh:property [
+    sh:path bridge:testedWith ;
+    sh:nodeKind sh:BlankNodeOrIRI ;
+    sh:node <#Pin> ;
+    sh:message "Each testedWith entry is a pin: a codeRepository and exactly one of commit, tag or branch."
+  ] ;
+  sh:sparql [
+    sh:prefixes <> ;
+    sh:message "Each repository appears in testedWith at most once: two pins to one repository would need two checkouts in the one place beside this repository." ;
+    sh:select """
+      SELECT DISTINCT $this ?value WHERE {
+        $this bridge:testedWith ?first, ?second .
+        ?first schema:codeRepository ?value .
+        ?second schema:codeRepository ?value .
+        FILTER (?first != ?second)
+      }
+    """
+  ] .
+
+<#EngineCompatibility> a sh:NodeShape ;
+  rdfs:comment "An engine's form: the specification it is written against, and the two argument vectors the tooling runs." ;
+  sh:property [
+    sh:path bridge:specification ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:node <#Pin>
+  ] ;
+  sh:property [
+    sh:path bridge:setup ;
+    sh:minCount 1 ;
+    sh:maxCount 1
+  ] ;
+  sh:property [
+    sh:path ( bridge:setup [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string
+  ] ;
+  sh:property [
+    sh:path bridge:command ;
+    sh:minCount 1 ;
+    sh:maxCount 1
+  ] ;
+  sh:property [
+    sh:path ( bridge:command [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string
+  ] .
+
+<#AdapterCompatibility> a sh:NodeShape ;
+  rdfs:comment "An adapter's form: no specification, because the crate carries bridge:specPin, and no setup or command, because an adapter is data a Bridge runs." ;
+  sh:property [ sh:path bridge:specification ; sh:maxCount 0 ] ;
+  sh:property [ sh:path bridge:setup ; sh:maxCount 0 ] ;
+  sh:property [ sh:path bridge:command ; sh:maxCount 0 ] .
+
+<#Pin> a sh:NodeShape ;
+  sh:targetObjectsOf bridge:testedWith, bridge:specification ;
+  rdfs:comment "A repository at a revision. The context declares no base, so a codeRepository that is not an absolute URL yields no triple and fails the minimum below rather than resolving against the file's location." ;
+  sh:property [
+    sh:path schema:codeRepository ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "A pin names exactly one codeRepository, the repository's absolute URL."
+  ] ;
+  sh:xone (
+    [ sh:path schema:version ; sh:minCount 1 ]
+    [ sh:path bridge:tag ; sh:minCount 1 ]
+    [ sh:path bridge:branch ; sh:minCount 1 ]
+  ) ;
+  sh:message "A pin names exactly one of commit, tag or branch." ;
+  sh:property [
+    sh:path schema:version ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:pattern "^[0-9a-f]{40}$" ;
+    sh:message "A commit is a full 40-character lowercase SHA."
+  ] ;
+  sh:property [
+    sh:path bridge:tag ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:minLength 1 ;
+    sh:message "A tag is one non-empty name."
+  ] ;
+  sh:property [
+    sh:path bridge:branch ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:minLength 1 ;
+    sh:message "A branch is one non-empty name."
   ] .

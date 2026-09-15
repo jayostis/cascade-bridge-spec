@@ -36,7 +36,10 @@ not a conforming adapter package:
 - the adapter manifest contract, [`adapter/ro-crate-metadata.md`](adapter/ro-crate-metadata.md);
 - the test manifest contract, [`adapter/fixtures/manifest.md`](adapter/fixtures/manifest.md);
 - the validation list, [`adapter/validation.md`](adapter/validation.md);
-- the pinning rules, [`pinning.md`](pinning.md).
+- the command an engine offers, [`engine/command.md`](engine/command.md);
+- the pinning rules, [`pinning.md`](pinning.md);
+- the compatibility file, [`compatibility.md`](compatibility.md), and its
+  context, [`vocab/compatibility.context.jsonld`](vocab/compatibility.context.jsonld).
 
 Not settled, and not answerable from anything in this repository. If one of these
 blocks you, ask:
@@ -65,8 +68,9 @@ building; its entry point names what it needs from the other.
 | **an adapter** — a data package for one source format | [`adapter/`](adapter/) | the crate, fixtures, the test manifest, and the seven checks your package must pass |
 | **an engine** — a Bridge, the thing that runs adapters | [`engine/`](engine/) | the stages you run around a mapping, and how you execute an adapter's test manifest |
 
-Building an adapter, you also need [`pinning.md`](pinning.md): how an adapter
-names the revision of this specification it is built against.
+Building either, you also need [`pinning.md`](pinning.md): how you name the
+revision of this specification you are built against. To assert that an adapter
+and an engine pass together, [`compatibility.md`](compatibility.md).
 
 ## Layout
 
@@ -74,8 +78,10 @@ names the revision of this specification it is built against.
 adapter/                       building an adapter: its crate, fixtures, test manifest, validation
 adapter/profile/               the RO-Crate 1.2 Profile Crate an adapter names in conformsTo
 engine/                        building an engine: stages, the sparql-1.1 profile, test manifests
-pinning.md                     how the three sides name the revisions they were built against
-vocab/bridge.ttl               the bridge: vocabulary: adapter terms, and test terms on top of W3C's mf:
+pinning.md                     how adapters and engines name the revisions they were built against
+compatibility.md               compatibility.json: the counterparts a repository asserts it passes with
+vocab/bridge.ttl               the bridge: vocabulary: adapter, test and compatibility terms
+vocab/compatibility.context.jsonld  the JSON-LD context a compatibility.json names
 shapes/bridge.shapes.ttl       SHACL shapes for an adapter's crate and its test manifest, as one graph
 scripts/validate-adapter.py    the adapter lint: the seven checks of adapter/validation.md
 scripts/selftest-lint.py       the mutation cases that show each check failing
@@ -127,13 +133,18 @@ and this is not a second copy of it. Exit status is 0 when the run passes.
 three different sentences: a lint that silently checks nothing is worse than no
 lint.
 
-An adapter does not run that by hand. The same checks are published from this
-repository as a composite GitHub Action, and an adapter's whole CI is the two
-lines in [`adapter/validation.md`](adapter/validation.md). The ref in
-the second is the adapter's `bridge:specPin` in executable form: the two name
-the same commit of this repository, and the action checks that they do. The
-action takes a directory, names no adapter, and clones nothing but the caller's
-own checkout — the arrow runs from adapter to specification.
+An adapter does not run that by hand. Its CI calls one action from this
+repository at a tag that never moves:
+
+```yaml
+      - uses: jayostis/cascade-bridge-spec/.github/actions/start@start-v1
+```
+
+The starter reads the adapter's `bridge:specPin`, checks this repository out at
+exactly that commit, and runs the lint from there, so the pin is written once, in
+the crate, and bumping it never touches the workflow. The tools take a
+directory and name no adapter — the arrow runs from adapter to specification.
+[`compatibility.md`](compatibility.md) has the rest of what the starter runs.
 
 [`adapter/validation.md`](adapter/validation.md) has the full seven-item list a
 conforming package must pass, the words a check may be reported in, and the
@@ -144,21 +155,24 @@ failing.
 
 ## Alignment, in brief
 
-The specification knows about itself. An adapter knows about the specification.
-A Bridge knows about the specification. A catalogue knows about all of them and
-nothing knows about it — and that catalogue is a repository of its own, which
-does not exist yet. **Nothing here names an adapter**, and this repository's CI
-validates this repository's own files and no one else's.
+The specification knows about itself. An adapter and a Bridge each know about
+the specification, and pin it: the adapter in its crate, the Bridge in its
+`compatibility.json`. That pin is the only one required. An adapter and a Bridge
+know about each other only by saying so, in an entry of their own
+`compatibility.json` that blocks their merge when the pairing fails. **Nothing
+here names an adapter or an engine**, and this repository's CI validates this
+repository's own files and no one else's. A catalogue is a later publishing
+concern, not the place tests run.
 
-Every dependency is a commit SHA, and every pinned SHA is tagged in the
-repository it pins, because a branch tip is not a guarantee. An adapter's
-`uses:` ref and its `bridge:specPin` name the same commit of this repository.
-Pins move in the pull request that needs them, with the measurement re-run in
-the same commit, never swept forward on a schedule and never synced to `main`.
-Nothing pins what it does not consume — which is why this repository pins
-nothing at all. A comparison is insensitive to everything the format does not
-mean. And a Bridge's verdict on an adapter reaches a catalogue as an EARL
-report, never as a pin in either direction.
+A pin is a commit, a tag or a branch, and at merge time it names the
+counterpart's default branch or something on it. This specification is upstream
+of everything: a change here merges first, and nothing waits on a tag. Commit
+and tag pins move in the pull request that needs them, with the measurement
+re-run in the same commit; a default-branch pin is the recorded choice to be kept
+current. Nothing pins what it does not consume — which is why this repository
+pins nothing at all. A comparison is insensitive to everything the format does
+not mean. And a Bridge's verdict on an adapter is an EARL report, judged in the
+run that produced it and never stored.
 
 The reasoning is in [`pinning.md`](pinning.md).
 

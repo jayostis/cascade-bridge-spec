@@ -47,6 +47,7 @@ One `earl:Assertion` per manifest entry: `earl:test` the entry's IRI,
 `earl:TestResult` whose `earl:outcome` is the result. That is the form every W3C
 test suite's implementation reports take.
 
-A report is never written back to the adapter it is about: a Bridge that pinned
-an adapter would be claiming ownership of it, and an adapter that pinned a Bridge
-would stop being portable ([`../pinning.md`](../pinning.md)).
+A report is never written back to the adapter it is about: it is a measurement
+of one pairing at one pair of commits, and stored anywhere it goes stale against
+both ([`../pinning.md`](../pinning.md)). The command that writes it is
+[`command.md`](command.md).

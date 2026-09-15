@@ -20,4 +20,8 @@ a change to the "no code" guarantee, not housekeeping.
 - **A shape meant to reject something is verified by mutation** — break the
   adapter's copy, see it go red, restore it, see it go green. A constraint nobody
   saw fail is a constraint nobody knows fires.
-- What each shape checks must match `../adapter/validation.md` exactly.
+- What each shape checks must match `../adapter/validation.md` exactly, and the
+  `compatibility.json` shapes must match `../compatibility.md`.
+- The `compatibility.json` shapes target only compatibility terms. A target that
+  reached a crate — `bridge:specPin`, say — would put an engine's rules on every
+  adapter the lint validates.

@@ -16,6 +16,11 @@
 # mf:Manifest whose entries are typed with the three test classes below, and
 # the type carries the comparison rule. bridge:LiftTest, the fourth, tests a
 # Bridge's lift rather than an adapter; fixtures/lift/ holds its entries.
+#
+# Compatibility terms: what an engine's or an adapter's compatibility.json
+# says, through the context vocab/compatibility.context.jsonld. A pin reuses
+# what bridge:specPin's entity already carries, schema:codeRepository and, for
+# a commit, schema:version; compatibility.md is the file's contract.
 
 @prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 @prefix mf:     <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .
@@ -26,7 +31,7 @@
 
 <https://ns.cascadeprotocol.org/bridge/v1-draft#> a owl:Ontology ;
   dct:title "Cascade Bridge Vocabulary"@en ;
-  dct:description "Terms for an adapter's manifest and its test manifest. Adapter terms: the classes bridge:Adapter, bridge:Envelope and bridge:Profile, and the properties that carry what schema.org cannot about an adapter package described as an RO-Crate. Test terms: the test types that carry the comparison rule, three for an adapter's fixtures and one for a Bridge's lift, and the properties that name a test's input, expected output and the stamp predicates ignored when comparing, used with W3C's mf: test-manifest vocabulary (mf:Manifest, mf:entries, mf:name, mf:action, mf:result)."@en ;
+  dct:description "Terms for an adapter's manifest, its test manifest, and the compatibility.json an engine or an adapter commits. Adapter terms: the classes bridge:Adapter, bridge:Envelope and bridge:Profile, and the properties that carry what schema.org cannot about an adapter package described as an RO-Crate. Test terms: the test types that carry the comparison rule, three for an adapter's fixtures and one for a Bridge's lift, and the properties that name a test's input, expected output and the stamp predicates ignored when comparing, used with W3C's mf: test-manifest vocabulary (mf:Manifest, mf:entries, mf:name, mf:action, mf:result). Compatibility terms: the specification an engine pins, how to set it up and run it, the counterparts a repository asserts it passes with, and the tag or branch a pin names where schema:version would name a commit."@en ;
   dct:created "2026-09-06"^^xsd:date ;
   owl:versionInfo "v1-draft" ;
   rdfs:comment "DRAFT. The vocabulary of the Cascade Bridge Specification, whose home is the cascade-bridge-spec repository. No compatibility is promised before a numbered release."@en ;
@@ -77,7 +82,7 @@ bridge:profileRequired a owl:ObjectProperty ;
 
 bridge:specPin a owl:ObjectProperty ;
   rdfs:label "specification pin"@en ;
-  rdfs:comment "The revision of the Cascade Bridge Specification the adapter is written against, by the commit's IRI: a schema:SoftwareSourceCode entity in the crate with schema:codeRepository (the cascade-bridge-spec repository) and schema:version (the full SHA), the same shape as bridge:vocabularyPin. Exactly one. Every commit an adapter pins is tagged in that repository."@en ;
+  rdfs:comment "The revision of the Cascade Bridge Specification the adapter is written against, by the commit's IRI: a schema:SoftwareSourceCode entity in the crate with schema:codeRepository (the cascade-bridge-spec repository) and schema:version (the full SHA), the same shape as bridge:vocabularyPin. Exactly one. By the time the adapter merges, the commit is on that repository's default branch (compatibility.md, the merge-time rule). An engine, which has no crate, states the same fact as bridge:specification."@en ;
   rdfs:domain bridge:Adapter ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
@@ -266,4 +271,40 @@ bridge:outputDigest a owl:DatatypeProperty ;
 bridge:ignorePredicate a owl:ObjectProperty ;
   rdfs:label "ignore predicate"@en ;
   rdfs:comment "A stamp predicate (a triple a Bridge adds after the mapping; the stamp stage, EIP Message History) removed from both sides before comparison. By IRI; repeatable. The stamp set is a property of the Bridge's stamp stage, not of any one fixture, so it is stated on the mf:Manifest and every entry inherits it; an entry that carries its own replaces the manifest's set for that entry alone."@en ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+# ============================================================================
+# Compatibility terms
+# ============================================================================
+
+bridge:specification a owl:ObjectProperty ;
+  rdfs:label "specification"@en ;
+  rdfs:comment "The revision of the Cascade Bridge Specification an engine is written against: a pin naming the cascade-bridge-spec repository by schema:codeRepository and exactly one of schema:version (a commit), bridge:tag or bridge:branch. Exactly one in an engine's compatibility.json and none in an adapter's, whose crate carries bridge:specPin instead: a host loading an adapter reads the crate, and an engine has no crate. A term of its own rather than bridge:specPin because bridge:specPin names a crate entity on a bridge:Adapter."@en ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:setup a owl:ObjectProperty ;
+  rdfs:label "setup"@en ;
+  rdfs:comment "How to prepare an engine to run, as an rdf:List of strings: an argument vector run without a shell in the engine's checkout, so that one file works on every platform. Exactly one in an engine's compatibility.json and none in an adapter's. This specification learns no language's build; the engine states its own."@en ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:command a owl:ObjectProperty ;
+  rdfs:label "command"@en ;
+  rdfs:comment "How to run an engine, as an rdf:List of strings: an argument vector run without a shell in the engine's checkout, to which the tooling appends test, the adapter directory, --earl and the report file (engine/command.md). Exactly one in an engine's compatibility.json and none in an adapter's."@en ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:testedWith a owl:ObjectProperty ;
+  rdfs:label "tested with"@en ;
+  rdfs:comment "A counterpart this repository asserts it passes with, as a pin: in an engine's compatibility.json an adapter the engine runs, in an adapter's an engine that runs it. Each is an assertion that blocks the merge when it does not hold, and it holds when the engine ran the adapter's test manifest and no outcome in its EARL report is earl:failed or earl:inapplicable. Zero or more; each repository at most once. No expected counts are recorded: the adapter's own manifest decides what should pass."@en ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:tag a owl:DatatypeProperty ;
+  rdfs:label "tag"@en ;
+  rdfs:comment "A pin to the commit a tag of the pinned repository names, by the tag's name. The alternative to schema:version (a commit) and bridge:branch; a pin names exactly one of the three. schema.org has no property that tells a tag from a commit or a branch."@en ;
+  rdfs:range xsd:string ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:branch a owl:DatatypeProperty ;
+  rdfs:label "branch"@en ;
+  rdfs:comment "A pin to a branch of the pinned repository, by the branch's name: its tip in CI, and locally the sibling clone's working tree when the sibling is on that branch. The alternative to schema:version (a commit) and bridge:tag. At merge time the only branch a pin may name is the repository's default branch, which keeps the pinning repository current and lets the other side's merges turn it red."@en ;
+  rdfs:range xsd:string ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .

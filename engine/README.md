@@ -12,6 +12,8 @@ one, this directory is what you need.
 3. [`executing.md`](executing.md) — running an adapter's test manifest: loading
    the crate and the manifest as one graph, applying each entry type's rule, and
    reporting in EARL.
+4. [`command.md`](command.md) — normative: the `test` command you offer, and the
+   `compatibility.json` that pins this specification and says how to run you.
 
 You do not need most of [`../adapter/`](../adapter/) — that is how a package is
 authored. The exception is [`../adapter/fixtures/manifest.md`](../adapter/fixtures/manifest.md),

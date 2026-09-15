@@ -57,8 +57,8 @@ single real adapter would not cover at once:
 The one entity in the crate that names something real is `bridge:specPin`:
 `jayostis/cascade-bridge-spec` at the commit released as v0.2.0.
 
-That is a tagged commit, as every pin must be, and not a revision the package
-conforms to. The package conforms to the shapes in its own commit, and a
+That is a commit on this repository's default branch, as every merged pin must
+be, and not a revision the package conforms to. The package conforms to the shapes in its own commit, and a
 package inside this repository cannot pin a release that contains it, so its
 pin can only name an earlier tag, whose shapes it need not satisfy. Nothing
 moves the pin when a release is tagged, because nothing compares it: CI calls

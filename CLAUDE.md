@@ -9,12 +9,13 @@ adapter.
 
 ## What is normative
 
-`vocab/bridge.ttl`, `shapes/bridge.shapes.ttl`, `pinning.md`,
-`engine/sparql.md`, and in `adapter/`: `profile/ro-crate-metadata.json`,
-`ro-crate-metadata.md`, `fixtures/manifest.md`, `validation.md`. Changing any
-of them changes what every adapter and every Bridge must do, and needs its
-reasoning recorded in the same commit. The rest is explanatory, machinery, or
-the lint's own test subject: see each directory.
+`vocab/bridge.ttl`, `vocab/compatibility.context.jsonld`,
+`shapes/bridge.shapes.ttl`, `pinning.md`, `compatibility.md`, `engine/sparql.md`,
+`engine/command.md`, and in `adapter/`: `profile/ro-crate-metadata.json`,
+`ro-crate-metadata.md`, `fixtures/manifest.md`, `validation.md`. Changing any of
+them changes what every adapter and every Bridge must do, and needs its reasoning
+recorded in the same commit. The rest is explanatory, machinery, or the lint's
+own test subject: see each directory.
 
 **The prose must agree with the Turtle exactly** — term names, cardinalities,
 what each shape checks. The Turtle is what runs, and a document disagreeing with
@@ -31,12 +32,13 @@ commit.
   passing mention.
 - **No Cascade terms are minted here.** `bridge:` only; a term in `cascade:` or
   `genomics:` goes through spec's own process.
-- **This repository must not know that any adapter exists.** The specification
-  knows about itself; an adapter and a Bridge know about the specification; a
-  catalogue knows about all of them and nothing knows about it. Prose citing the
-  ClinVar pilot as an example is fine; a machine-readable reference to a
-  particular adapter is the bug. Publishing the lint is not an inversion: it
-  takes a directory and learns no adapter's name.
+- **This repository must not know that any adapter or engine exists.** The
+  specification knows about itself; an adapter and a Bridge know about the
+  specification, and about each other only through a `compatibility.json` of
+  their own. Prose citing the ClinVar pilot as an example is fine; a
+  machine-readable reference to a particular adapter or engine is the bug.
+  Publishing the tooling is not an inversion: it takes a directory and learns
+  no one's name.
 - **Tiers are not specified in v1-draft.** When they are, they are measured,
   never declared: an adapter declares no tier.
 - **Standards, not inventions.** RO-Crate 1.2, W3C's `mf:`, SHACL, Enterprise
@@ -44,10 +46,11 @@ commit.
   table. If something seems to need a new convention, find the published one.
 - **The pilot is evidence, not authority.** A fact taken from the pilot adapter
   is written here generalised. Do not modify it here.
-- **Everything that pins this repository pins a tagged commit**, verified with
-  `git ls-remote` first: a pin to an untagged commit dies at `git checkout` the
-  first time a branch is reset. This repository pins nothing, in either
-  direction; `pinning.md` is the mechanism in full.
+- **Everything that pins this repository names, at merge time, a commit or tag
+  on its default branch, or that branch**: a pin to a feature branch's commit
+  dies at `git checkout` the first time the branch is reset. A downstream pull
+  request may pin a branch here while both are open. This repository pins
+  nothing; `pinning.md` is the mechanism and `compatibility.md` the file.
 
 ## Where a rule goes
 

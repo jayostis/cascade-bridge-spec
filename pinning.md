@@ -7,92 +7,90 @@ visible and testable in CI. This document is the mechanism.
 ## What knows about what
 
 - **The specification knows about itself.** It defines the contract and
-  publishes the lint that enforces it. It names no adapter and no engine.
+  publishes the tooling that enforces it. It names no adapter and no engine.
 - **An adapter knows about the specification.** It pins a revision of it, in its
-  crate as `bridge:specPin` and in its CI as the ref it calls the lint at.
-- **A Bridge knows about the specification.** The same way. It reads adapters at
-  run time, which is being handed an input, not depending on a particular one.
-- **A catalogue knows about all of them, and nothing knows about the
-  catalogue.** It is downstream of everything.
+  crate as `bridge:specPin`.
+- **A Bridge knows about the specification.** It pins a revision of it too, in
+  its `compatibility.json`, because it has no crate. It reads adapters at run
+  time, which is being handed an input, not depending on a particular one.
+- **An engine and an adapter may know about each other, and only by saying so.**
+  A relationship between them is optional and declared, never implied: an entry
+  in one side's `compatibility.json`, which is an assertion that the pairing
+  passes ([`compatibility.md`](compatibility.md)).
 
-The direction is the whole discipline. An adapter that pinned a Bridge would be
-an adapter that runs on one Bridge, which is the opposite of what "an adapter is
-data" is for; a specification that pinned an implementation would be a
-specification the implementation could change.
+The spec pin is the only pin every repository must carry. A pin from a Bridge to
+an adapter, or from an adapter to a Bridge, is opt-in, and the repository that
+opts in is the one whose merge it blocks.
 
-The cost is real and accepted: more repositories to keep in step.
+A catalogue of adapters and Bridges is a later publishing concern, not the place
+tests run.
 
-### The specification does not know which adapters exist
+### The specification does not know which adapters or engines exist
 
 A check belongs with the thing it checks. A specification that named adapters,
 or cloned one in CI, would go red for a property missing from somebody else's
 repository, would clone every adapter on every push, and would put diagnosis on
-whoever did not cause the failure. An adapter can live on any account in any
-organisation, and this specification must stay checkable without knowing that
-one exists. The check therefore runs in the adapter, against the head being
-proposed — the next section.
+whoever did not cause the failure. An adapter or an engine can live on any
+account in any organisation, and this specification must stay checkable without
+knowing that one exists. Every check therefore runs in the adapter or the engine,
+against the head being proposed.
 
-A catalogue is downstream of every adapter and every Bridge. It does not exist,
-and nothing about it belongs here.
+## Every repository's CI calls the starter
 
-## An adapter's CI calls this repository's lint
+The tooling is published from here as composite GitHub Actions. A repository's
+CI calls one of them, `start`, at the reserved tag `start-v1`, which never moves.
+The starter reads the repository's own spec pin, checks this repository out at
+exactly that commit, and runs the real tools from there. Bumping the spec pin
+therefore never touches the workflow, and the pin is written in one place: the
+crate for an adapter, `compatibility.json` for an engine.
+[`compatibility.md`](compatibility.md) has the line.
 
-The lint is published from here as a composite GitHub Action, so an adapter's
-whole CI is two lines: [`validation.md`](adapter/validation.md) has them.
+**Publishing the tooling from here is not an inversion.** The specification
+publishes an artefact and the adapter or engine consumes it, so the arrow runs
+towards the specification, the way it must. The tools take a directory and read
+the files in it. They never learn that any particular adapter or engine exists,
+and they name none.
 
-**Publishing the lint from here is not an inversion.** The specification
-publishes an artefact and the adapter consumes it, so the arrow runs from adapter
-to specification, the way it must. The action takes a directory and validates it
-against these shapes. It never learns that any particular adapter exists, it
-names none, and it clones nothing but the caller's own checkout.
+## A pin is a commit, a tag or a branch
 
-**The tag in that `uses:` line is the adapter's `bridge:specPin` in executable
-form.** The two name the same commit of this repository, one for the machine and
-one for the reader, and they move together in the same pull request. The action
-resolves the ref it was called at and hands the SHA to the lint, which fails the
-run when the crate's pin names a different one; where the ref cannot be resolved
-the run says so rather than quietly checking nothing.
+In a crate, `bridge:specPin` is a full 40-character commit SHA. In a
+`compatibility.json`, a pin names a commit, a tag or a branch, and every run
+records the commit each resolved to; [`compatibility.md`](compatibility.md) says
+how each kind resolves and what each guarantees.
 
-What the lint runs is [`validation.md`](adapter/validation.md).
+**At merge time, every pin names the counterpart's default branch or something
+on it**: a commit or a tag on that branch, or the branch itself. A pin to any
+other branch is refused by the `ready-to-merge` check. That is what keeps a pin
+reachable: a commit on the default branch survives a feature branch being reset
+or rebased, where a commit only on that feature branch would leave every later
+CI run dying at `git checkout` on an object that has been garbage-collected.
 
-## Every dependency is a commit SHA, and every pinned SHA is tagged
-
-In a crate, a pin is a full 40-character commit SHA, never a branch name, a tag
-or "latest"; the `uses:` ref that calls the lint is a tag on that same commit.
-Without a pin, a consumer silently tracks whatever is on `main`, so a run that
-passed yesterday can pass today for a different reason.
-
-A tag is what keeps the commit reachable, because a branch tip is not a
-guarantee. A tag holds the object even if the branch it sat on is later reset or
-rebased, which would otherwise leave every CI run — including runs of unrelated
-pull requests — dying at `git checkout` on an object that has been
-garbage-collected. Do not pin a SHA that no tag points at.
-
-So: **every commit of this repository that anything pins is tagged in this
-repository**, verified with `git ls-remote` before the pin lands, and the same
-obligation falls on any repository an adapter or a Bridge pins. A tag here is
-annotated, so `git ls-remote <repository> 'refs/tags/<tag>^{}'` prints the
-commit it points at, which is the SHA to pin; without `^{}` it prints the tag
-object's own SHA. A pin to an untagged commit is not a pin; it is a bet on
-nobody rewriting a branch. It applies to the `uses:` ref as much as to the SHA in
-a crate: an action called at a branch is an action whose meaning changes without
-a commit anywhere.
-
-A pin is written as an entity, not a string: a `SoftwareSourceCode` with
-`codeRepository` and `version`, which is the shape `bridge:specPin` and
-`bridge:vocabularyPin` both use. The repository half is carried explicitly
-because a commit that exists only on a fork must name the fork, or CI clones a
-repository that does not hold the object. This specification's repository is
+A pin is written as an entity, not a string: a repository and a revision. The
+repository half is carried explicitly because a commit that exists only on a
+fork must name the fork, or CI clones a repository that does not hold the
+object. This specification's repository is
 `https://github.com/jayostis/cascade-bridge-spec`; there is no other copy to pin.
+
+## Changes flow downstream
+
+This specification is upstream of every engine and every adapter. A change here
+merges first; a downstream pull request that needs it pins this repository's
+feature branch while both are open, and swaps that for the merge commit once
+this side has merged. Nothing waits on a tag: a tag is a label on a commit that
+has already passed, not a step between a merge and the pin that uses it.
+
+The same direction holds between an engine and an adapter that name each other.
+The side that changes first merges first, and the other follows against its
+merged commit.
 
 ## Pins move in the pull request that needs them
 
-A pin is not swept forward on a schedule and is not synced to `main`. It moves
-when a change needs what the new revision contains, in the pull request that
-makes the change, and that pull request re-measures whatever the pin's numbers
-are and records the before and after.
+A commit or tag pin is not swept forward on a schedule. It moves when a change
+needs what the new revision contains, in the pull request that makes the change,
+and that pull request re-measures whatever the pin's numbers are and records the
+before and after.
 
-Why not sync to `main`: a suite pinned to a moving target passes today for a
+Why not track a moving target silently: a suite pinned to one passes today for a
 different reason than it passed yesterday, and the difference is invisible.
 Worse, the failure surfaces in whichever unrelated pull request happens to run
 next, so the person who has to diagnose it is never the person who caused it.
@@ -101,6 +99,11 @@ the pin. A mandatory-verification section quoting numbers no run can reproduce
 teaches the reader to disbelieve the section. Both failures are avoided by the
 same rule: the pin and the measurement move together, in one deliberate commit.
 
+A default-branch pin in a `compatibility.json` is the one pin that moves without
+a commit here, and it is a choice the file records rather than an accident: the
+repository has asked to be kept current and blocked when the other side breaks
+it.
+
 ## Nothing pins what it does not consume
 
 A pin is a statement that this artefact reads that revision. An adapter pins one
@@ -108,13 +111,13 @@ revision of the Cascade vocabularies (`bridge:vocabularyPin`) because it always
 writes at least one of them, and names only those it writes
 (`bridge:vocabulary`): one that writes no `genomics:` term does not name the
 genomics vocabulary. A Bridge that implements no profile an adapter requires
-does not pin that adapter. Pins added
+does not list that adapter. Pins added
 "for completeness" are pins nobody re-measures, and an unre-measured pin is a
 stale fact with a SHA attached to make it look checked.
 
 It is why this repository pins nothing at all. It writes no Cascade term, so it
-consumes no vocabulary revision; it runs no adapter, so it consumes no adapter's
-commit.
+consumes no vocabulary revision; it runs no adapter and no engine, so it
+consumes no one's commit.
 
 ## A comparison is insensitive to everything the format does not mean
 
@@ -128,9 +131,10 @@ compares graphs up to relabelling and findings as a multiset. A stricter rule
 than the format's meaning does not catch more mapping errors; it only fails
 harnesses that are right.
 
-## A Bridge's results flow as reports, not as pins
+## Results are reports, not stored facts
 
-A Bridge's verdict on an adapter reaches a catalogue as an EARL report, never as
-a pin in either direction: a Bridge pinning an adapter would be claiming
-ownership of it, and an adapter pinning a Bridge would stop being portable. The
-report's shape is [`engine/executing.md`](engine/executing.md).
+A Bridge's verdict on an adapter is an EARL report
+([`engine/executing.md`](engine/executing.md)). The tooling judges it in the run
+that produced it, and it is kept as that run's artifact. It is never written
+back into the adapter, the Bridge or this repository: a stored result is a
+measurement that goes stale against the pins that produced it.

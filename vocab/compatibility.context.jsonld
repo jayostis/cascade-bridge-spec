@@ -1,0 +1,36 @@
+{
+  "@context": {
+    "@version": 1.1,
+    "@base": null,
+    "bridge": "https://ns.cascadeprotocol.org/bridge/v1-draft#",
+    "schema": "http://schema.org/",
+    "specification": {
+      "@id": "bridge:specification"
+    },
+    "setup": {
+      "@id": "bridge:setup",
+      "@container": "@list"
+    },
+    "command": {
+      "@id": "bridge:command",
+      "@container": "@list"
+    },
+    "testedWith": {
+      "@id": "bridge:testedWith",
+      "@container": "@set"
+    },
+    "codeRepository": {
+      "@id": "schema:codeRepository",
+      "@type": "@id"
+    },
+    "commit": {
+      "@id": "schema:version"
+    },
+    "tag": {
+      "@id": "bridge:tag"
+    },
+    "branch": {
+      "@id": "bridge:branch"
+    }
+  }
+}

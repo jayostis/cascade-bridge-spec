@@ -19,8 +19,9 @@ need is listed here, in this order.
    and how to run them locally and in your CI.
 
 Also relevant, and short: [`../pinning.md`](../pinning.md), for how your adapter
-names the revision of this specification it is written against, and why that
-revision must be a tagged commit.
+names the revision of this specification it is written against, and
+[`../compatibility.md`](../compatibility.md), for asserting that your adapter
+passes with a particular engine.
 
 The rest of [`../engine/`](../engine/) is how a Bridge executes what you
 declare; nothing there changes what you write.

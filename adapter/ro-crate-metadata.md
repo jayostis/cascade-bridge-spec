@@ -70,8 +70,8 @@ repository, and the IRI is an identifier rather than a location.
 
 The pin is an entity, not a string: a `SoftwareSourceCode` in the crate with
 `codeRepository` and `version` (the full SHA), the same shape
-`bridge:vocabularyPin` uses. The commit it names is tagged;
-[`pinning.md`](../pinning.md) says why.
+`bridge:vocabularyPin` uses. By the time the adapter merges, the commit it names
+is on this repository's default branch; [`pinning.md`](../pinning.md) says why.
 
 ### What RO-Crate 1.2 requires beyond the table
 
