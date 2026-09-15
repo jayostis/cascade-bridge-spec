@@ -39,6 +39,7 @@ from pathlib import Path
 SPEC_ROOT = Path(__file__).resolve().parent.parent
 TOOL = SPEC_ROOT / "scripts" / "compatibility.py"
 ADAPTER = SPEC_ROOT / "fixtures" / "synthetic-adapter"
+FAKE_ENGINE = SPEC_ROOT / "fixtures" / "fake-engine"
 CONTEXT_IRI = "https://ns.cascadeprotocol.org/bridge/v1-draft/compatibility.jsonld"
 
 IDENTITY = [
@@ -73,7 +74,8 @@ class World:
     specification  one commit on main: what an engine's specification pins
     adapter        a copy of fixtures/synthetic-adapter: main, tag v1 on main,
                    and a feature branch feat/next one commit ahead of main
-    engine         an engine's repository, holding whatever the case needs
+    engine         fixtures/fake-engine, with an engine's compatibility.json
+                   committed beside it, so a checkout at any commit can run it
     """
 
     def __init__(self, root):
@@ -101,9 +103,12 @@ class World:
         self.commits["adapter feat/next"] = self.head("adapter")
         git("checkout", "-q", "main", cwd=self.origins / "adapter")
 
-        self.publish("engine", lambda path: (path / "README.md").write_text(
-            "an engine\n", encoding="utf-8"
-        ))
+        def engine(path):
+            shutil.copytree(FAKE_ENGINE, path, dirs_exist_ok=True)
+            write_file(path, engine_file(self, []))
+
+        self.publish("engine", engine)
+        self.commits["engine"] = self.head("engine")
 
     def publish(self, name, fill):
         path = self.origins / name
@@ -132,16 +137,17 @@ def write_file(directory, document):
     )
 
 
-def engine_file(world, tested_with, **overrides):
-    """An engine's compatibility.json. The vectors name the running interpreter,
-    so the case runs where python3 is not on PATH."""
+def engine_file(world, tested_with, canned="passed", **overrides):
+    """An engine's compatibility.json, running the fake engine with the report
+    `canned` names. The vectors name the running interpreter, so the case runs
+    where python3 is not on PATH."""
     document = {
         "specification": {
             "codeRepository": world.url("specification"),
             "commit": world.commits["specification"],
         },
         "setup": [sys.executable, "-c", "pass"],
-        "command": [sys.executable, "-c", "pass"],
+        "command": [sys.executable, "engine.py", "--canned", canned],
         "testedWith": tested_with,
     }
     document.update(overrides)
@@ -245,6 +251,60 @@ def tag_on_main(world):
     engine = world.clone("engine")
     write_file(engine, engine_file(world, adapter_pin(world, tag="v1")))
     return engine
+
+
+def engine_and_adapter(canned):
+    """An engine on its adapter's default branch, the adapter's clone beside it."""
+    def build(world):
+        engine = world.clone("engine")
+        write_file(engine, engine_file(world, adapter_pin(world, branch="main"), canned=canned))
+        world.clone("adapter")
+        return engine
+    return build
+
+
+def sibling_state(path):
+    return (
+        git("rev-parse", "HEAD", cwd=path),
+        git("symbolic-ref", "--short", "HEAD", cwd=path),
+        git("status", "--porcelain", cwd=path),
+    )
+
+
+def adapter_on_engine_commit(world):
+    """The other direction: an adapter pinning its engine by commit, the
+    engine's clone beside it on main with an edit of its own in flight."""
+    adapter = world.clone("adapter")
+    write_file(adapter, {
+        "testedWith": [{"codeRepository": world.url("engine"), "commit": world.commits["engine"]}]
+    })
+    engine = world.clone("engine")
+    (engine / "work-in-progress.txt").write_text("not committed\n", encoding="utf-8")
+    world.before = sibling_state(engine)
+    return adapter
+
+
+def record_of(subject, temporary):
+    path = temporary / "cascade-compatibility" / subject.name / "record.json"
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def sibling_untouched(world, subject, temporary):
+    failures = []
+    if sibling_state(world.workspace / "engine") != world.before:
+        failures.append("the sibling's working copy is not as it was")
+    checkout = Path(record_of(subject, temporary)["pins"][0]["path"]).resolve()
+    if temporary.resolve() not in checkout.parents:
+        failures.append(f"the checkout is {checkout}, not a worktree under the temporary directory")
+    return failures
+
+
+def cloned_at_commit(world, subject, temporary):
+    clone = world.workspace / "adapter"
+    if not clone.is_dir():
+        return ["nothing was cloned beside the repository under test"]
+    head = git("rev-parse", "HEAD", cwd=clone)
+    return [] if head == world.commits["adapter"] else [f"the clone is at {head}"]
 
 
 VALIDATE_ERROR = (
@@ -353,6 +413,66 @@ CASES = [
         "build": engine_on_main,
         "steps": [("ready", 0)],
         "expect": ["branch main: the default branch"],
+    },
+    {
+        "name": "checkout, run, judge: an engine holding on its adapter's default branch",
+        "build": engine_and_adapter("passed"),
+        "steps": [("checkout", 0), ("run", 0), ("judge", 0)],
+        "expect": [
+            "fake engine: testing",
+            "branch main): holds; 1 cantTell, 1 passed, 1 untested",
+            "judge: ok",
+        ],
+        "forbid": ["does not hold"],
+    },
+    {
+        "name": "judge: an entry that does not hold, from an engine that exits 0",
+        "build": engine_and_adapter("failed"),
+        "steps": [("checkout", 0), ("run", 0), ("judge", 1)],
+        "expect": ["does not hold; 1 cantTell, 1 failed, 1 untested"],
+    },
+    {
+        "name": "judge: a run that writes no report",
+        "build": engine_and_adapter("none"),
+        "steps": [("checkout", 0), ("run", 0), ("judge", 1)],
+        "expect": ["it wrote no report", "does not hold; it wrote no report"],
+    },
+    {
+        "name": "judge: a report that is not Turtle",
+        "build": engine_and_adapter("garbled"),
+        "steps": [("checkout", 0), ("run", 0), ("judge", 1)],
+        "expect": ["does not hold; its report does not parse as Turtle"],
+    },
+    {
+        "name": "checkout: a missing sibling",
+        "build": engine_on_main,
+        "steps": [("checkout", 1)],
+        "expect": ["has no clone beside engine; clone it with: git clone {url adapter}"],
+        "forbid": ["Traceback"],
+    },
+    {
+        "name": "judge: a branch pin on a sibling's uncommitted edits holds, flagged",
+        "build": dirty_sibling,
+        "steps": [("checkout", 0), ("run", 0), ("judge", 0)],
+        "expect": [
+            "(branch main, with uncommitted edits): holds",
+            "a result produced from uncommitted edits is feedback, never evidence",
+        ],
+    },
+    {
+        "name": "checkout: a commit pin runs from a worktree, the sibling untouched",
+        "build": adapter_on_engine_commit,
+        "steps": [("checkout", 0), ("run", 0), ("judge", 0)],
+        "expect": ["commit {engine} is {engine} (the commit pinned)", "holds"],
+        "check": sibling_untouched,
+    },
+    {
+        "name": "checkout: in CI, a clone at the resolved commit",
+        "build": tag_on_main,
+        "mode": "ci",
+        "steps": [("checkout", 0), ("run", 0), ("judge", 0)],
+        "expect": ["tag v1 is {adapter} (the tag)", "holds"],
+        "check": cloned_at_commit,
     },
 ]
 

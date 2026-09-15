@@ -4,8 +4,16 @@ The subjects this repository's machinery is run against.
 
 ```
 synthetic-adapter/   a synthetic adapter package: the lint's own test subject
+fake-engine/         an engine that honours the command contract and runs nothing
 lift/                the lift vectors a sparql-1.1 Bridge must reproduce
 ```
+
+The fake engine is `scripts/selftest-compatibility.py`'s counterpart to the
+synthetic adapter: it takes `test <adapter directory> --earl <file>`
+([`../engine/command.md`](../engine/command.md)) and writes a canned EARL
+report, so that judging a report is exercised without this repository running,
+or naming, a real engine. Its exit status is 0 whatever it reports, because the
+tooling must rely on the report and never on the exit code.
 
 The lift vectors are an engine's subject rather than the lint's: each is an XML
 document and the N-Triples its lift must be isomorphic to, listed in

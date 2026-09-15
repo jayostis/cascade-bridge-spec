@@ -11,6 +11,13 @@ the bug pinning.md is written against.
                      needs: an adapter's, when the directory holds
                      ro-crate-metadata.json, and an engine's when it does not
     resolve <dir>    every pin resolves to a commit, printed and recorded
+    checkout <dir>   each counterpart beside the repository: in CI a clone at
+                     the resolved commit, locally the sibling as it is for a
+                     branch pin and a temporary worktree of it otherwise
+    run <dir>        each engine's setup and command on each adapter, as
+                     argument vectors without a shell, collecting the reports
+    judge [<dir>]    each EARL report against the rule compatibility.md
+                     states, one line per entry
     ready <dir>      the merge-time rule: every pin names the counterpart's
                      default branch, or a commit or tag on it
 
@@ -35,18 +42,23 @@ Usage:
 
     python3 scripts/compatibility.py validate <dir>
     python3 scripts/compatibility.py resolve <dir> [--mode ci|local] [--results <dir>]
+    python3 scripts/compatibility.py checkout <dir> [--mode ci|local] [--results <dir>]
+    python3 scripts/compatibility.py run <dir> [--results <dir>]
+    python3 scripts/compatibility.py judge [<dir>] [--results <dir>]
     python3 scripts/compatibility.py ready <dir>
 
 Exit status is 0 when the subcommand passes and 1 when it fails.
 
-Requires git. validate also needs pyshacl and rdflib (pip install pyshacl
-rdflib), imported only there, so that the rest runs on a bare interpreter.
+Requires git. validate also needs pyshacl and rdflib, and judge rdflib (pip
+install pyshacl rdflib), imported only there, so that the rest runs on a bare
+interpreter.
 """
 
 import argparse
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -109,6 +121,16 @@ def git(*args, cwd=None):
 
 def first_line(text):
     return next((line.strip() for line in text.splitlines() if line.strip()), "")
+
+
+def unreachable(url, run):
+    """A stop, not a failure of one pin: nothing about the counterpart can be
+    checked. Said in a sentence naming it, with git's own line after for
+    whoever has to diagnose it."""
+    return Stop(
+        f"{url} could not be reached: it may be private, renamed or deleted, "
+        f"or the network refused (git: {first_line(run.stderr)})"
+    )
 
 
 # ============================================================================
@@ -324,10 +346,7 @@ def ls_remote(url, *patterns):
     one pin: nothing about the counterpart can be checked."""
     run = git("ls-remote", url, *patterns)
     if run.returncode != 0:
-        raise Stop(
-            f"{url} could not be reached: it may be private, renamed or "
-            f"deleted, or the network refused (git: {first_line(run.stderr)})"
-        )
+        raise unreachable(url, run)
     refs = {}
     for line in run.stdout.splitlines():
         sha, _, ref = line.partition("\t")
@@ -350,10 +369,7 @@ def default_branch(url):
     """Read from the counterpart, never assumed to be main."""
     run = git("ls-remote", "--symref", url, "HEAD")
     if run.returncode != 0:
-        raise Stop(
-            f"{url} could not be reached: it may be private, renamed or "
-            f"deleted, or the network refused (git: {first_line(run.stderr)})"
-        )
+        raise unreachable(url, run)
     for line in run.stdout.splitlines():
         if line.startswith("ref: refs/heads/"):
             return line[len("ref: refs/heads/"):].split("\t", 1)[0]
@@ -520,10 +536,7 @@ class Ancestry:
                 cwd=repository,
             )
             if run.returncode != 0:
-                raise Stop(
-                    f"{url} could not be reached: it may be private, renamed "
-                    f"or deleted, or the network refused (git: {first_line(run.stderr)})"
-                )
+                raise unreachable(url, run)
             self.fetched[url] = repository
         run = git("merge-base", "--is-ancestor", commit, f"refs/heads/{branch}", cwd=repository)
         return run.returncode == 0
@@ -568,9 +581,240 @@ def cmd_ready(directory, _args):
 
 # ============================================================================
 
+# checkout
+# ============================================================================
+
+
+def local_checkout(directory, resolved):
+    """A counterpart on this machine. A branch pin whose sibling is on that
+    branch is the sibling itself, edits and all; anything else is a worktree
+    of the sibling at the commit, under the system temporary directory, so the
+    sibling's working copy is never touched."""
+    pin = Pin(resolved["label"], resolved["codeRepository"], resolved["kind"], resolved["value"])
+    path = sibling(directory, pin)
+    if resolved["source"] == "the sibling's working tree":
+        return path
+    commit = resolved["commit"]
+    if local_commit(path, commit) is None:
+        raise Stop(
+            f"the sibling at {path} does not hold {commit}; fetch it, with "
+            f"git -C {path} fetch --all --tags, and run again"
+        )
+    tree = Path(tempfile.gettempdir()) / "cascade-compatibility" / "worktrees" / f"{pin.name}-{commit[:12]}"
+    if tree.exists():
+        if local_commit(tree, "HEAD") == commit:
+            return tree
+        git("worktree", "remove", "--force", str(tree), cwd=path)
+        shutil.rmtree(tree, ignore_errors=True)
+        git("worktree", "prune", cwd=path)
+    tree.parent.mkdir(parents=True, exist_ok=True)
+    run = git("worktree", "add", "--detach", "--quiet", str(tree), commit, cwd=path)
+    if run.returncode != 0:
+        raise Stop(f"git made no worktree of {path} at {commit}: {first_line(run.stderr)}")
+    return tree
+
+
+def ci_checkout(directory, resolved):
+    """A clone at the resolved commit, beside the repository under test and
+    inside the workspace, which is all GitHub's runner lets a job write to."""
+    path = directory.parent / resolved["name"]
+    commit = resolved["commit"]
+    if path.exists():
+        if local_commit(path, "HEAD") == commit:
+            return path
+        raise Stop(f"{path} is already there, and is not {resolved['codeRepository']} at {commit}")
+    run = git(
+        "clone", "--quiet", "--no-checkout", "--filter=blob:none",
+        resolved["codeRepository"], str(path),
+    )
+    if run.returncode != 0:
+        raise unreachable(resolved["codeRepository"], run)
+    run = git("checkout", "--quiet", "--detach", commit, cwd=path)
+    if run.returncode != 0:
+        raise Stop(f"{resolved['codeRepository']} does not hold {commit}: {first_line(run.stderr)}")
+    return path
+
+
+def cmd_checkout(directory, args):
+    print(f"Counterparts, checked out in {args.mode} mode beside {directory.name}")
+    results = results_directory(directory, args)
+    pins = entries(read_file(directory))
+    resolved, ok = resolve_all(directory, args, pins)
+    record = {"directory": str(directory), "mode": args.mode, "pins": resolved, "checkedOut": ok}
+    if ok:
+        place = ci_checkout if args.mode == "ci" else local_checkout
+        for entry in resolved:
+            entry["path"] = str(place(directory, entry))
+            report(True, f"{entry['codeRepository']} is at {entry['path']}")
+    write_record(results, record)
+    if not pins:
+        report(True, f"{directory} lists no counterpart: nothing to check")
+        return NONE
+    note(f"recorded in {results / 'record.json'}")
+    return OK if ok else FAIL
+
+
+# ============================================================================
+# run
+# ============================================================================
+
+
+def executable(argv, cwd):
+    """The vector as the platform runs it without a shell. A first argument
+    that is a path is taken from the checkout; a bare name is looked up on
+    PATH, which on Windows is also how npm is found as npm.cmd."""
+    first = argv[0]
+    if "/" in first or "\\" in first:
+        candidate = Path(cwd, first)
+        return [str(candidate) if candidate.exists() else first, *argv[1:]]
+    return [shutil.which(first) or first, *argv[1:]]
+
+
+def execute(argv, cwd):
+    """Run one vector and print what it said, indented. Its exit status, or
+    None when it could not be started."""
+    try:
+        run = subprocess.run(
+            executable(argv, cwd), cwd=cwd, capture_output=True,
+            encoding="utf-8", errors="replace",
+        )
+    except OSError as error:
+        report(False, f"{argv[0]} could not be started in {cwd}: {error}")
+        return None
+    for line in (run.stdout + run.stderr).splitlines():
+        print(f"        | {line}")
+    return run.returncode
+
+
+def vectors(engine):
+    document = read_file(engine) or {}
+    setup, command = document.get("setup"), document.get("command")
+    if isinstance(setup, list) and setup and isinstance(command, list) and command:
+        return setup, command
+    return None
+
+
+def cmd_run(directory, args):
+    """Every report from an earlier run is removed first: a stale one standing
+    in for a run that wrote nothing is exactly the pass nobody earned."""
+    results = results_directory(directory, args)
+    record = read_record(results)
+    if not record.get("checkedOut"):
+        raise Stop("the record holds no checkout: run checkout first")
+    reports = results / "earl"
+    shutil.rmtree(reports, ignore_errors=True)
+    reports.mkdir(parents=True)
+    pins = [entry for entry in record["pins"] if entry["label"] == "testedWith"]
+    print("Each engine on each adapter")
+    if not pins:
+        report(True, "no counterpart to run: nothing to check")
+        return NONE
+
+    adapter_side = is_adapter(directory)
+    set_up = {}
+    not_run = 0
+    for entry in pins:
+        counterpart = Path(entry["path"])
+        engine, adapter = (counterpart, directory) if adapter_side else (directory, counterpart)
+        entry["report"] = str(reports / f"{entry['name']}.ttl")
+        found = vectors(engine)
+        if found is None:
+            not_run += 1
+            report(False, f"{engine} states no setup and command, so {entry['name']} was not run")
+            continue
+        setup, command = found
+        if engine not in set_up:
+            print(f"  setup {' '.join(setup)}   (in {engine})")
+            set_up[engine] = execute(setup, engine) == 0
+            if not set_up[engine]:
+                report(False, f"the setup failed in {engine}")
+        if not set_up[engine]:
+            not_run += 1
+            report(False, f"{entry['name']} was not run: its engine's setup failed")
+            continue
+        argv = [*command, "test", str(adapter), "--earl", entry["report"]]
+        print(f"  run   {' '.join(argv)}   (in {engine})")
+        status = execute(argv, engine)
+        if status is None:
+            not_run += 1
+            continue
+        wrote = Path(entry["report"]).is_file()
+        report(
+            True,
+            f"{entry['name']} ran, exit status {status}, which nothing relies on; "
+            + ("its report is " + entry["report"] if wrote else "it wrote no report"),
+        )
+    write_record(results, record)
+    return NOT_RUN if not_run else OK
+
+
+# ============================================================================
+# judge
+# ============================================================================
+
+EARL = "http://www.w3.org/ns/earl#"
+OUTCOMES = {"passed", "failed", "cantTell", "inapplicable", "untested"}
+NOT_HOLDING = {"failed", "inapplicable"}
+
+
+def judge_report(path):
+    """Whether one report holds, and what it says. The engine's exit code is
+    never read: the report is the result."""
+    from rdflib import Graph, URIRef
+
+    if not path.is_file():
+        return False, "it wrote no report"
+    try:
+        graph = Graph().parse(path, format="turtle")
+    except Exception as error:  # rdflib raises several unrelated parser types
+        return False, f"its report does not parse as Turtle: {first_line(str(error))}"
+    tally = {}
+    for outcome in graph.objects(None, URIRef(EARL + "outcome")):
+        name = str(outcome).removeprefix(EARL)
+        tally[name] = tally.get(name, 0) + 1
+    if not tally:
+        return False, "its report records no outcome"
+    unknown = sorted(name for name in tally if name not in OUTCOMES)
+    said = ", ".join(f"{count} {name}" for name, count in sorted(tally.items()))
+    if unknown:
+        said += f"; {', '.join(unknown)} is not one of EARL's five outcomes"
+    return not unknown and not (NOT_HOLDING & tally.keys()), said
+
+
+def cmd_judge(directory, args):
+    results = results_directory(directory, args)
+    pins = [entry for entry in read_record(results)["pins"] if entry["label"] == "testedWith"]
+    print("Each entry, judged by its EARL report")
+    if not pins:
+        report(True, "no entry: nothing to check")
+        return NONE
+    held = 0
+    for entry in pins:
+        if "report" in entry:
+            holds, said = judge_report(Path(entry["report"]))
+        else:
+            holds, said = False, "it was not run"
+        held += holds
+        flag = ", with uncommitted edits" if entry["uncommittedEdits"] else ""
+        report(
+            holds,
+            f"{entry['codeRepository']} at {entry['commit']} ({entry['kind']} "
+            f"{entry['value']}{flag}): {'holds' if holds else 'does not hold'}; {said}",
+        )
+    if any(entry["uncommittedEdits"] for entry in pins):
+        note("a result produced from uncommitted edits is feedback, never evidence")
+    print(f"  {len(pins)} entr{'y' if len(pins) == 1 else 'ies'}: {held} hold, {len(pins) - held} do not")
+    return OK if held == len(pins) else FAIL
+
+
+# ============================================================================
+
 COMMANDS = {
     "validate": cmd_validate,
     "resolve": cmd_resolve,
+    "checkout": cmd_checkout,
+    "run": cmd_run,
+    "judge": cmd_judge,
     "ready": cmd_ready,
 }
 
@@ -581,7 +825,10 @@ def main():
         "Cascade Bridge Specification (compatibility.md)."
     )
     parser.add_argument("command", choices=sorted(COMMANDS))
-    parser.add_argument("directory", type=Path, help="the repository under test")
+    parser.add_argument(
+        "directory", type=Path, nargs="?", default=Path("."),
+        help="the repository under test; the current directory when omitted",
+    )
     parser.add_argument(
         "--mode",
         choices=("ci", "local"),
