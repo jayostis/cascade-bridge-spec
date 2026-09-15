@@ -50,7 +50,3 @@ test suite's implementation reports take.
 A report is never written back to the adapter it is about: a Bridge that pinned
 an adapter would be claiming ownership of it, and an adapter that pinned a Bridge
 would stop being portable ([`../pinning.md`](../pinning.md)).
-
-No Bridge exists, so no EARL report exists and nothing here has executed a
-manifest. The contract is written from one adapter and checked by SHACL; it is
-unproven until an engine runs it.

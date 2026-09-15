@@ -4,7 +4,7 @@ The home of the **Cascade Bridge Specification**: the contract every Cascade
 Bridge Adapter and every Bridge implementation follows.
 
 DRAFT, thin and pilot-driven. Every artefact was seeded from phase 1 of the pilot
-adapter, and nothing has yet been executed by a Bridge, because no Bridge exists.
+adapter.
 **No compatibility is promised before a numbered v1.** Do not re-derive that.
 
 ## What is normative

@@ -25,8 +25,6 @@ v1-draft specifies XML source formats and one mapping language, SPARQL 1.1
 over a specified lift of the XML, as the `sparql-1.1` profile. Other source
 formats and mapping languages are not specified yet.
 
-Nothing here has yet been executed by a Bridge, because no Bridge exists.
-
 ### What is normative here, and what is not settled
 
 Normative — this repository is the authority, and an adapter that fails these is

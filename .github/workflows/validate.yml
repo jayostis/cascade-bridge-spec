@@ -56,9 +56,9 @@ jobs:
       - name: the shapes are valid SHACL
         run: python3 -m pyshacl --metashacl --shacl shapes/bridge.shapes.ttl shapes/bridge.shapes.ttl
 
-      # Nothing else judges the lift vectors: no Bridge exists to run them, and
-      # parsing alone passes an entry naming a missing file, an entry left out
-      # of mf:entries, and a vector no entry names.
+      # Nothing else here judges the lift vectors: this repository runs no
+      # Bridge, and parsing alone passes an entry naming a missing file, an
+      # entry left out of mf:entries, and a vector no entry names.
       - name: the lift manifest conforms to the shapes and names every vector
         run: |
           python3 - <<'PY'
