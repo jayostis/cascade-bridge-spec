@@ -31,7 +31,7 @@
 
 <#example-0001> a bridge:IsomorphicConversionTest ;
   mf:name "example-0001" ;
-  rdfs:comment "Two invented records in the set envelope, with an expected graph and a findings sidecar beside them. The graph is parsed by the lint and judged by nobody: no Bridge exists to produce one to compare it against." ;
+  rdfs:comment "Two invented records in the set envelope, with an expected graph and a findings sidecar beside them. The graph is parsed by the lint and judged by nobody." ;
   mf:action [
     bridge:input <in/example-0001.xml> ;
     bridge:envelope <../ro-crate-metadata.json#envelope-set>

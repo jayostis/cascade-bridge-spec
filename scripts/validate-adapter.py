@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Validate a Cascade Bridge Adapter package against this specification.
 
-The six checks adapter/validation.md names, in the order it names them, so that
-the cheapest check that can fail comes first and each later check may assume
-the earlier ones held:
+The seven checks adapter/validation.md names, in the order it names them, so
+that the cheapest check that can fail comes first and each later check may
+assume the earlier ones held:
 
   1. the package is a valid RO-Crate 1.2, by the RO-Crate validator;
   2. the crate and the test manifest it names, loaded as one RDF graph, conform
@@ -16,12 +16,14 @@ the earlier ones held:
   4. every digest matches its file, the local claim and the publisher's claim
      reported as the different assertions they are;
   5. every committed input validates against the schema its envelope declares;
-  6. every expected graph parses as Turtle. Parsing, not conforming.
+  6. every expected graph parses as Turtle. Parsing, not conforming;
+  7. every query the adapter names parses as SPARQL 1.1 and has the form its
+     property declares. Parsing, not running.
 
 **Every check says whether it ran.** A check whose tool is absent, and a check
 that found nothing of its kind in the package, are each reported in their own
 words and never as a pass: a lint that silently checks nothing is worse than no
-lint. The summary at the end lists all six with the word each earned.
+lint. The summary at the end lists all seven with the word each earned.
 
 Nothing here runs a mapping or compares a graph, and nothing an adapter names
 is fetched: check 4 recomputes digests over the committed bytes. The tools it
@@ -78,6 +80,7 @@ from urllib.request import url2pathname
 from pyshacl import validate as shacl_validate
 from rdflib import Graph, Namespace, URIRef
 from rdflib.namespace import RDF, SH
+from rdflib.plugins.sparql import prepareQuery
 
 BRIDGE = Namespace("https://ns.cascadeprotocol.org/bridge/v1-draft#")
 SCHEMA = Namespace("http://schema.org/")
@@ -146,7 +149,7 @@ NONE = "nothing to check"
 
 
 class Check:
-    """One of the six, and whether it ran.
+    """One of the seven, and whether it ran.
 
     `fails` is deliberately not the same question as `status != OK`. A check
     that found nothing of its kind in the package (NONE) has not failed: an
@@ -848,6 +851,87 @@ def validate_expected_graphs(adapter, graph, manifest_iri, check):
 
 
 # ============================================================================
+# Check 7
+# ============================================================================
+
+QUERY_FORMS = {
+    BRIDGE.mapping: ("bridge:mapping", "CONSTRUCT"),
+    BRIDGE.findingsQuery: ("bridge:findingsQuery", "SELECT"),
+    BRIDGE.detectQuery: ("bridge:detectQuery", "ASK"),
+}
+FINDING_VARIABLES = ("sourceField", "reason", "severity", "context")
+
+
+def validate_queries(adapter, graph, root, check):
+    """Check 7: every query the adapter names parses, in its declared form.
+
+    Parsing, not running: whether a mapping produces its expected graph is the
+    test manifest's question, and it needs a Bridge.
+    """
+    print("7. Queries")
+    named = [
+        (prop, query)
+        for prop in QUERY_FORMS
+        for query in sorted(graph.objects(root, prop))
+    ]
+    if not named:
+        report(True, "the adapter names no query")
+        return check.set(NONE, "the adapter names no query")
+
+    failures = 0
+    for prop, query in named:
+        term, form = QUERY_FORMS[prop]
+        name = entity_name(query)
+        path = local_path(adapter, query)
+        if path is None or not path.is_file():
+            failures += 1
+            report(
+                False,
+                f"{term} names {query}, which is not a file in this package",
+            )
+            continue
+        try:
+            parsed = prepareQuery(path.read_text(encoding="utf-8"))
+        except Exception as error:  # the parser raises several unrelated types
+            failures += 1
+            report(False, f"{name} does not parse as SPARQL 1.1")
+            print(f"        {error}")
+            continue
+        found = parsed.algebra.name.removesuffix("Query").upper()
+        if found != form:
+            failures += 1
+            report(
+                False,
+                f"{name} is a {found} query, where {term} requires {form}",
+            )
+            continue
+        if prop == BRIDGE.findingsQuery:
+            projected = [str(variable) for variable in parsed.algebra["PV"]]
+            # Sorted rather than a set: rdflib keeps a variable projected
+            # twice, and a set would pass it as the four.
+            if sorted(projected) != sorted(FINDING_VARIABLES):
+                failures += 1
+                listed = " ".join("?" + v for v in projected)
+                report(
+                    False,
+                    f"{name} projects {listed}, where a findings query "
+                    "projects ?sourceField ?reason ?severity ?context, in any "
+                    "order and no other variable",
+                )
+
+    if not failures:
+        report(
+            True,
+            f"{len(named)} query file(s) parse as SPARQL 1.1, each in the "
+            "form its property declares",
+        )
+    return check.set(
+        OK if not failures else FAIL,
+        f"{len(named) - failures} of {len(named)} in their declared form",
+    )
+
+
+# ============================================================================
 # The specification pin
 # ============================================================================
 
@@ -904,13 +988,13 @@ def check_spec_pin(graph, root, spec_revision):
 
 
 def summarise(checks, pin_ok, pin_note):
-    """All six, each with the word it earned.
+    """All seven, each with the word it earned.
 
     The summary exists because the failure this lint is written against is a
     check that quietly did nothing. "ok" and "nothing to check" are different
     sentences and are printed as different sentences.
     """
-    print("The six checks of adapter/validation.md, and how each ended:")
+    print("The seven checks of adapter/validation.md, and how each ended:")
     width = max(len(check.title) for check in checks)
     for check in checks:
         print(
@@ -964,8 +1048,9 @@ def main():
         Check(4, "every digest matches its file"),
         Check(5, "every input validates against the declared schema"),
         Check(6, "every expected graph parses"),
+        Check(7, "every query parses in its declared form"),
     ]
-    one, two, three, four, five, six = checks
+    one, two, three, four, five, six, seven = checks
 
     validate_crate(adapter, one)
     graph, root, manifest_iri, manifest_file = load(adapter)
@@ -974,6 +1059,7 @@ def main():
     validate_digests(adapter, graph, four)
     validate_inputs(adapter, graph, root, manifest_iri, five)
     validate_expected_graphs(adapter, graph, manifest_iri, six)
+    validate_queries(adapter, graph, root, seven)
     pin_ok, pin_note = check_spec_pin(graph, root, args.spec_revision)
 
     print()

@@ -1,11 +1,17 @@
 # Fixtures
 
-The subject this repository's lint is run against, so that the lint published
-from here is exercised by the thing it is published for.
+The subjects this repository's machinery is run against.
 
 ```
 synthetic-adapter/   a synthetic adapter package: the lint's own test subject
+lift/                the lift vectors a sparql-1.1 Bridge must reproduce
 ```
+
+The lift vectors are an engine's subject rather than the lint's: each is an XML
+document and the N-Triples its lift must be isomorphic to, listed in
+`lift/manifest.ttl` as `bridge:LiftTest` entries
+([`../engine/sparql.md`](../engine/sparql.md)). The rest of this file is about
+the synthetic adapter.
 
 ## Why a synthetic package and not a real adapter
 
@@ -32,8 +38,8 @@ vocabulary are made up; every URL that is not this repository's own is under
 real format, publisher, dataset or adapter is named anywhere in it.
 
 It is minimal, and every part of it earns its place by covering a branch of the
-six checks in [`adapter/validation.md`](../adapter/validation.md) that a single real
-adapter would not cover at once:
+seven checks in [`adapter/validation.md`](../adapter/validation.md) that a
+single real adapter would not cover at once:
 
 | what it holds | the branch it covers |
 |---|---|
@@ -44,21 +50,21 @@ adapter would not cover at once:
 | an isomorphic conversion test | check 6 has an expected graph to parse |
 | an input-only test | a test with no `mf:result`, which judges nothing |
 | a dataset completion test | check 5 meets a test whose bytes are not here, and says so instead of counting it validated |
-| a stub XSLT 3 stylesheet as `mainEntity`, requiring `xslt-3` | the mapping check 2 requires of every adapter; nothing runs it |
+| a mapping, a findings query and a detect query, requiring `sparql-1.1` | the queries check 2 requires of every adapter and check 7 parses; the mapping and the findings query produce the expected graph and findings from `example-0001.xml` |
 
 ## The specification pin
 
 The one entity in the crate that names something real is `bridge:specPin`:
-`jayostis/cascade-bridge-spec` at the commit released as v0.2.0, the revision at
-which the shapes and the allowed media types this package conforms to were last
-changed.
+`jayostis/cascade-bridge-spec` at the commit released as v0.2.0.
 
-It does not move with every release here. The pin is compared against the ref
-the lint was called at, and CI calls the action by local path, so there is no
-ref to resolve and the run reports the pin without comparing it — which is
-itself one of the states the lint has to be seen reporting. The pin moves when
-a change here would make this package non-conforming, in the same commit that
-makes it conform again.
+That is a tagged commit, as every pin must be, and not a revision the package
+conforms to. The package conforms to the shapes in its own commit, and a
+package inside this repository cannot pin a release that contains it, so its
+pin can only name an earlier tag, whose shapes it need not satisfy. Nothing
+moves the pin when a release is tagged, because nothing compares it: CI calls
+the action by local path, so there is no ref to resolve and the run reports the
+pin without comparing it — which is itself one of the states the lint has to be
+seen reporting.
 
 ## Seeing the lint fail
 
@@ -70,14 +76,17 @@ python3 -m pip install pyshacl rdflib roc-validator lxml
 python3 scripts/selftest-lint.py
 ```
 
-Nine cases: the package unbroken passing, and one red case each for a crate
-that names no mapping, an undescribed file, a wrong local `sha256`, a wrong publisher `md5`, an input that
-does not satisfy its schema, a schema language the lint does not read, an
-expected graph that is not Turtle, and a manifest that names no expected graph.
-The schema language the lint does not read, and the manifest that names no
-expected graph, exit 0 on purpose: `not run` and `nothing to check` are not
-failures, and the case asserts that the lint says them in their own words rather
-than reporting a pass.
+Fourteen cases: the package unbroken passing, and one red case each for a crate
+that names no mapping, a query declared with the wrong media type, a crate that
+does not require `sparql-1.1`, an undescribed file, a wrong local `sha256`, a
+wrong publisher `md5`, an input that does not satisfy its schema, a schema
+language the lint does not read, an expected graph that is not Turtle, a
+manifest that names no expected graph, a query that does not parse, a query of
+the wrong form, and a findings query projecting the wrong variables. The schema
+language the lint does not read, and the manifest that names no expected graph,
+exit 0 on purpose: `not run` and `nothing to check` are not failures, and the
+case asserts that the lint says them in their own words rather than reporting a
+pass.
 
 Nothing tracked is mutated, and no mutated copy is ever written inside the
 repository.

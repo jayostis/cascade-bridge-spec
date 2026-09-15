@@ -4,8 +4,9 @@ What a conforming adapter package must pass, written as the list a lint
 implements. The list is ordered so that the cheapest check that can fail comes
 first and each later check can assume the earlier ones held.
 
-All six run, in [`scripts/validate-adapter.py`](../scripts/validate-adapter.py),
-which is what the published action
+All seven run, in
+[`scripts/validate-adapter.py`](../scripts/validate-adapter.py), which is what
+the published action
 ([`.github/actions/validate-adapter`](../.github/actions/validate-adapter/action.yml))
 runs.
 
@@ -55,15 +56,16 @@ the crate names.
 
    They also carry the two constraints that make an IRI naming a file mean
    something. `bridge:input`, `bridge:graph` and `bridge:findings` in the
-   manifest, and `mainEntity`, `bridge:sourceSchema` and `bridge:documentSchema`
-   in the crate, are `sh:class schema:MediaObject`, what the RO-Crate 1.2
-   context expands `File` to, so a mistyped name fails: an IRI naming no entity
-   is still an IRI. And every declared `encodingFormat` is one of the media
-   types below.
+   manifest, and `bridge:mapping`, `bridge:findingsQuery`, `bridge:detectQuery`,
+   `bridge:sourceSchema` and `bridge:documentSchema` in the crate, are
+   `sh:class schema:MediaObject`, what the RO-Crate 1.2 context expands `File`
+   to, so a mistyped name fails: an IRI naming no entity is still an IRI. And
+   every declared `encodingFormat` is one of the media types below.
 
-   And they carry what the lint can assert about a mapping it does not run: the
-   adapter names exactly one `mainEntity`, declared `application/xslt+xml`, and
-   requires `bridge:xslt-3`.
+   And they carry what can be asserted about queries the lint does not run: the
+   adapter names at least one `bridge:mapping` and exactly one
+   `bridge:detectQuery`, every query it names is declared
+   `application/sparql-query`, and it requires `bridge:sparql-1.1`.
 
 3. **Every git-tracked file is accounted for.** Each file in the repository is
    either a crate entity carrying a declared `encodingFormat`, or is in a short
@@ -136,6 +138,12 @@ the crate names.
    findings sidecar beside it is for. The lint says so in its own output, so
    that a pass here is never read as more than "this file is Turtle".
 
+7. **Every query parses as SPARQL 1.1, in the form its property declares.**
+   Each file `bridge:mapping`, `bridge:findingsQuery` and `bridge:detectQuery`
+   names, parsed by rdflib: a mapping is a CONSTRUCT, a findings query a SELECT
+   projecting `?sourceField ?reason ?severity ?context`, in any order and no
+   other variable, and the detect query an ASK.
+
 A package whose run passes, by the table above, is a conforming adapter package.
 Nothing in the list runs a mapping or compares a graph: that is the test
 manifest, and it needs a Bridge ([`fixtures/manifest.md`](fixtures/manifest.md)).
@@ -152,9 +160,8 @@ table restates it, and the two change in the same commit.
 | `application/gzip` | a referenced release published as an archive |
 | `application/json` | a findings sidecar, a lookup table's source |
 | `application/ld+json` | a crate, a context |
-| `application/sparql-query` | a mapping under a SPARQL profile, not yet specified |
+| `application/sparql-query` | a mapping, findings query or detect query, under the `sparql-1.1` profile |
 | `application/xml` | a source document, an XSD |
-| `application/xslt+xml` | a mapping under the `xslt-3` profile |
 | `application/yaml` | a manifest or table an adapter carries as YAML |
 | `text/csv` | a lookup table that arrives as one |
 | `text/markdown` | a document under `docs/` |
@@ -199,7 +206,7 @@ disagree.
 `<tag>` is a tag on the commit your crate's `bridge:specPin` names; the action
 resolves it and fails the run when the two disagree.
 
-All six checks run. The action ends by printing each of them with the word it
+All seven checks run. The action ends by printing each of them with the word it
 earned, so a package is never reported as passing a check that did not happen.
 
 Three things the action keeps from the script, and must go on keeping:

@@ -22,7 +22,7 @@ must refuse rather than walk.
 
 Two kinds of assertion are made about each case, and the second is the one that
 makes this more than an exit-code test: the run's exit status, and the word the
-summary gives each of the six checks. `ok`, `FAIL`, `not run` and
+summary gives each of the seven checks. `ok`, `FAIL`, `not run` and
 `nothing to check` are four different sentences, and a check that found nothing
 of its kind in a package must never be reported in the same word as a check
 that ran and passed.
@@ -49,6 +49,9 @@ MANIFEST = "fixtures/manifest.ttl"
 INPUT_SET = "fixtures/in/example-0001.xml"
 INPUT_RECORD = "fixtures/in/example-0002.xml"
 EXPECTED = "fixtures/expected/example-0001.ttl"
+MAPPING = "in/example-record.rq"
+FINDINGS_QUERY = "in/example-findings.rq"
+DETECT_QUERY = "in/example-detect.rq"
 
 # The four words a check may earn, longest first so the summary line parser
 # does not stop at the "not run" inside a longer phrase.
@@ -244,16 +247,67 @@ def mutate_undescribed_file(package):
 def mutate_away_mapping(package):
     """Check 2: the crate names no mapping.
 
-    The stylesheet stays described and in hasPart, so check 3 still holds; only
-    the root's mainEntity goes. A package that names no mapping converts
+    The query stays described and in hasPart, so check 3 still holds; only the
+    root's bridge:mapping goes. A package that names no mapping converts
     nothing, and the shapes refuse it.
     """
     edit(
         package,
         CRATE,
-        '      "mainEntity": {\n        "@id": "in/example-record.xsl"\n      },\n',
+        '      "bridge:mapping": [\n        {\n'
+        '          "@id": "in/example-record.rq"\n        }\n      ],\n',
         "",
     )
+
+
+def mutate_query_media_type(package):
+    """Check 2: the mapping is declared XSLT.
+
+    application/xslt+xml is outside the media types an adapter package may
+    declare, and it is not the one language the sparql-1.1 profile runs, so the
+    shapes say both.
+    """
+    edit(
+        package,
+        CRATE,
+        '"name": "Mapping",\n      "encodingFormat": "application/sparql-query"',
+        '"name": "Mapping",\n      "encodingFormat": "application/xslt+xml"',
+    )
+
+
+def mutate_away_profile(package):
+    """Check 2: the crate does not require the profile its queries run under."""
+    edit(
+        package,
+        CRATE,
+        '      "bridge:profileRequired": [\n        {\n'
+        '          "@id": "https://ns.cascadeprotocol.org/bridge/v1-draft#sparql-1.1"\n'
+        "        }\n      ],\n",
+        "",
+    )
+
+
+def mutate_query_syntax(package):
+    """Check 7: the mapping is not SPARQL."""
+    edit(package, MAPPING, "CONSTRUCT {", "CONSTRUCTED {")
+    restate_digest(package, MAPPING)
+
+
+def mutate_query_form(package):
+    """Check 7: the detect query parses, and is not an ASK."""
+    edit(package, DETECT_QUERY, "ASK {", "SELECT * WHERE {")
+    restate_digest(package, DETECT_QUERY)
+
+
+def mutate_finding_variables(package):
+    """Check 7: a findings query projecting three of the four variables."""
+    edit(
+        package,
+        FINDINGS_QUERY,
+        "SELECT ?sourceField ?reason ?severity ?context",
+        "SELECT ?sourceField ?reason ?severity",
+    )
+    restate_digest(package, FINDINGS_QUERY)
 
 
 # ---------------------------------------------------------------------------
@@ -265,11 +319,14 @@ CASES = [
         "name": "green: the fixture package as committed",
         "mutate": None,
         "exit": 0,
-        "statuses": {1: "ok", 2: "ok", 3: "ok", 4: "ok", 5: "ok", 6: "ok"},
+        "statuses": {
+            1: "ok", 2: "ok", 3: "ok", 4: "ok", 5: "ok", 6: "ok", 7: "ok"
+        },
         "expect": [
-            "7 local sha256 and 2 publisher digest(s) recomputed",
+            "9 local sha256 and 2 publisher digest(s) recomputed",
             "2 committed input(s) against the schema each test's envelope declares",
             "1 expected graph(s) parse as Turtle",
+            "3 query file(s) parse as SPARQL 1.1",
             "PASS",
         ],
     },
@@ -277,9 +334,58 @@ CASES = [
         "name": "check 2: a crate that names no mapping",
         "mutate": mutate_away_mapping,
         "exit": 1,
-        "statuses": {1: "ok", 2: "FAIL", 3: "ok"},
+        "statuses": {1: "ok", 2: "FAIL", 3: "ok", 7: "ok"},
         "expect": [
-            "The adapter names exactly one mainEntity, its mapping",
+            "The adapter names at least one bridge:mapping",
+        ],
+    },
+    {
+        "name": "check 2: a query declared in a media type the profile does not run",
+        "mutate": mutate_query_media_type,
+        "exit": 1,
+        "statuses": {2: "FAIL", 7: "ok"},
+        "expect": [
+            "encodingFormat is one of the media types an adapter package may declare",
+            "bridge:mapping, a SPARQL 1.1 CONSTRUCT a Bridge runs on each "
+            "unit: a crate File entity (schema:MediaObject) by IRI, declared "
+            "application/sparql-query.",
+        ],
+    },
+    {
+        "name": "check 2: a crate that does not require sparql-1.1",
+        "mutate": mutate_away_profile,
+        "exit": 1,
+        "statuses": {2: "FAIL"},
+        "expect": [
+            "The adapter requires bridge:sparql-1.1",
+        ],
+    },
+    {
+        "name": "check 7: a mapping that is not SPARQL",
+        "mutate": mutate_query_syntax,
+        "exit": 1,
+        "statuses": {2: "ok", 4: "ok", 7: "FAIL"},
+        "expect": [
+            "example-record.rq does not parse as SPARQL 1.1",
+        ],
+    },
+    {
+        "name": "check 7: a detect query that is not an ASK",
+        "mutate": mutate_query_form,
+        "exit": 1,
+        "statuses": {2: "ok", 4: "ok", 7: "FAIL"},
+        "expect": [
+            "example-detect.rq is a SELECT query, where bridge:detectQuery "
+            "requires ASK",
+        ],
+    },
+    {
+        "name": "check 7: a findings query projecting three of the four variables",
+        "mutate": mutate_finding_variables,
+        "exit": 1,
+        "statuses": {4: "ok", 7: "FAIL"},
+        "expect": [
+            "example-findings.rq projects ?sourceField ?reason ?severity, where",
         ],
     },
     {
@@ -361,7 +467,7 @@ CASES = [
 
 
 def summary_statuses(output):
-    """The word the summary gave each of the six checks."""
+    """The word the summary gave each of the seven checks."""
     found = {}
     for line in output.splitlines():
         match = SUMMARY_LINE.match(line)
@@ -388,9 +494,9 @@ def run_case(case):
                 f"exit status {run.returncode}, {case['exit']} expected"
             )
         statuses = summary_statuses(output)
-        if len(statuses) != 6:
+        if len(statuses) != 7:
             failures.append(
-                f"the summary reported {len(statuses)} of the six checks"
+                f"the summary reported {len(statuses)} of the seven checks"
             )
         for number, expected in case["statuses"].items():
             if statuses.get(number) != expected:

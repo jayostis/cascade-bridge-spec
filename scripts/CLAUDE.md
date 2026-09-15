@@ -17,7 +17,7 @@ pass is invisible from a green run.
 - **Nothing mutates a tracked file.** Mutation happens on a copy, outside the
   repository.
 - **A check that is specified but not built says so in the output.** A package
-  that passed three checks must not read as though it passed six.
+  that passed three checks must not read as though it passed seven.
 - A new check lands with `../adapter/validation.md` and a `selftest-lint.py` case in
   the same commit.
 

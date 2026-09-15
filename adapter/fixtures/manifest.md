@@ -11,7 +11,7 @@ test runner.
 An adapter does not choose among test conventions. Every convention an adapter
 may choose is a harness every Bridge must implement, and two adapters proving
 conformance by different rules prove different things. Profile-specific unit
-suites — XSpec over an `xslt-3` mapping's modules, say — are optional, declared,
+suites — tests of a mapping's individual queries, say — are optional, declared,
 and no part of the conformance claim.
 
 ## The manifest
@@ -42,6 +42,10 @@ rather than reporting a mistake.
 
 The type is the comparison rule. Each is an `mf:ManifestEntry` with exactly one
 `mf:name` (which is also its fragment IRI) and exactly one `mf:action`.
+
+The vocabulary has a fourth, `bridge:LiftTest`, which tests a Bridge's lift
+rather than an adapter. An adapter's manifest lists none: the shapes refuse a
+lift test in a manifest that names a `bridge:adapter`.
 
 ### `bridge:IsomorphicConversionTest`
 
