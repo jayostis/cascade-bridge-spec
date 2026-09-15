@@ -49,7 +49,9 @@ Usage:
     python3 scripts/compatibility.py judge [<dir>] [--results <dir>]
     python3 scripts/compatibility.py ready <dir>
 
-Exit status is 0 when the subcommand passes and 1 when it fails.
+Exit status is 1 when the subcommand fails or did not run, and 0 otherwise.
+Nothing to check exits 0, because it fails nothing (adapter/validation.md),
+but its last line says nothing to check, not PASS.
 
 Requires git. validate also needs pyshacl and rdflib, and judge rdflib (pip
 install pyshacl rdflib), imported only there, so that the rest runs on a bare
@@ -182,6 +184,8 @@ class Pin:
 
 
 def pin_from(label, entry):
+    if not isinstance(entry, dict):
+        raise Stop(f"{label} is not a pin; run validate first")
     kinds = [kind for kind in PIN_KINDS if kind in entry]
     if not isinstance(entry.get("codeRepository"), str) or len(kinds) != 1:
         raise Stop(f"{label} is not a pin; run validate first")
@@ -233,17 +237,24 @@ def spec_pin(directory, document):
 
 
 def unknown_keys(document):
-    """Keys the context does not define, and argument vectors not written as
-    arrays. JSON-LD drops the first silently and turns the second into a
-    one-element list, so SHACL never sees either: a misspelt testedWith would
-    be a file asserting nothing, and "npm ci" would be one argument, run
-    without a shell."""
+    """Keys the context does not define, and values not written in the JSON
+    type their key takes. JSON-LD drops the first silently and reads a lone
+    value and a one-element array alike, so SHACL never sees either: a
+    misspelt testedWith would be a file asserting nothing, "npm ci" would be
+    one argument, run without a shell, and a testedWith written as one object
+    would be read by the other subcommands as a list of its keys."""
     problems = [f"{key} is not a key the context defines" for key in document if key not in TOP_KEYS]
     for key in ("setup", "command"):
         if key in document and not isinstance(document[key], list):
             problems.append(f"{key} is an argument vector, written as a JSON array of strings")
-    pins = [("specification", document.get("specification"))]
-    pins += [("testedWith", entry) for entry in document.get("testedWith") or []]
+    if "testedWith" in document and not isinstance(document["testedWith"], list):
+        problems.append("testedWith is a list of pins, written as a JSON array, even of one")
+    if "specification" in document and not isinstance(document["specification"], dict):
+        problems.append("specification is one pin, written as a JSON object")
+    pins = []
+    for label in ("specification", "testedWith"):
+        value = document.get(label)
+        pins += [(label, pin) for pin in (value if isinstance(value, list) else [value])]
     for label, pin in pins:
         if isinstance(pin, dict):
             problems += [
@@ -718,6 +729,7 @@ def cmd_run(directory, args):
     for entry in pins:
         counterpart = Path(entry["path"])
         engine, adapter = (counterpart, directory) if adapter_side else (directory, counterpart)
+        entry["adapter"] = str(adapter)
         entry["report"] = str(reports / f"{entry['name']}.ttl")
         found = vectors(engine)
         if found is None:
@@ -755,13 +767,36 @@ def cmd_run(directory, args):
 # ============================================================================
 
 EARL = "http://www.w3.org/ns/earl#"
+MF = "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#"
 OUTCOMES = {"passed", "failed", "cantTell", "inapplicable", "untested"}
 NOT_HOLDING = {"failed", "inapplicable"}
 
 
-def judge_report(path):
+def manifest_entries(adapter):
+    """The entries of the test manifest the adapter's crate names, each as its
+    IRI below the adapter directory. Below it the IRI is the manifest's own;
+    above it, the engine and this tool may spell one directory differently, a
+    symlink resolved or a drive letter cased, so that part is not compared."""
+    from rdflib import Graph, URIRef
+
+    adapter = adapter.resolve()
+    crate = json.loads((adapter / CRATE).read_text(encoding="utf-8"))
+    nodes = {node.get("@id"): node for node in crate.get("@graph", [])}
+    named = (nodes.get("./") or {}).get("bridge:testManifest")
+    if not isinstance(named, dict) or not named.get("@id"):
+        raise Stop(f"{adapter / CRATE} names no bridge:testManifest")
+    path = adapter / named["@id"]
+    graph = Graph().parse(path, format="turtle", publicID=path.as_uri())
+    listed = graph.value(URIRef(path.as_uri()), URIRef(MF + "entries"))
+    root = adapter.as_uri() + "/"
+    return [str(entry).removeprefix(root) for entry in graph.items(listed)] if listed else []
+
+
+def judge_report(path, adapter):
     """Whether one report holds, and what it says. The engine's exit code is
-    never read: the report is the result."""
+    never read: the report is the result. It is held to the adapter's
+    manifest as well as to its own outcomes, because an engine that stopped
+    part-way leaves a report in which nothing failed."""
     from rdflib import Graph, URIRef
 
     if not path.is_file():
@@ -780,7 +815,27 @@ def judge_report(path):
     said = ", ".join(f"{count} {name}" for name, count in sorted(tally.items()))
     if unknown:
         said += f"; {', '.join(unknown)} is not one of EARL's five outcomes"
-    return not unknown and not (NOT_HOLDING & tally.keys()), said
+
+    try:
+        expected = manifest_entries(adapter)
+    except Exception as error:  # the crate's JSON, the file, or rdflib's parser
+        return False, f"{said}; the adapter's test manifest could not be read: {first_line(str(error))}"
+    tested = set()
+    for assertion, result in graph.subject_objects(URIRef(EARL + "result")):
+        if graph.value(result, URIRef(EARL + "outcome")) is not None:
+            tested.update(str(test) for test in graph.objects(assertion, URIRef(EARL + "test")))
+    missing = [
+        entry for entry in expected
+        if not any(test == entry or test.endswith("/" + entry) for test in tested)
+    ]
+    if missing:
+        said += (
+            f"; {len(missing)} of the manifest's {len(expected)} tests have no outcome: "
+            + ", ".join(entry.rsplit("#", 1)[-1] for entry in missing)
+        )
+    else:
+        said += f", covering all {len(expected)} of the manifest's tests"
+    return not unknown and not missing and not (NOT_HOLDING & tally.keys()), said
 
 
 def cmd_judge(directory, args):
@@ -793,7 +848,7 @@ def cmd_judge(directory, args):
     held = 0
     for entry in pins:
         if "report" in entry:
-            holds, said = judge_report(Path(entry["report"]))
+            holds, said = judge_report(Path(entry["report"]), Path(entry["adapter"]))
         else:
             holds, said = False, "it was not run"
         held += holds
@@ -880,7 +935,7 @@ def main():
         status = FAIL
     print()
     print(f"{args.command}: {status}")
-    print("FAIL" if status in (FAIL, NOT_RUN) else "PASS")
+    print("PASS" if status == OK else NONE if status == NONE else "FAIL")
     return 1 if status in (FAIL, NOT_RUN) else 0
 
 

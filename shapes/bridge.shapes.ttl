@@ -634,13 +634,25 @@
   ] ;
   sh:sparql [
     sh:prefixes <> ;
-    sh:message "Each repository appears in testedWith at most once: two pins to one repository would need two checkouts in the one place beside this repository." ;
+    sh:message "Each repository name appears in testedWith at most once, compared without case: a counterpart is checked out beside this repository in a directory named for the last segment of its codeRepository, without .git, so a fork and its original, or one URL with and without .git, would need two checkouts in one place, as would two names differing only in case where file names fold it." ;
     sh:select """
       SELECT DISTINCT $this ?value WHERE {
         $this bridge:testedWith ?first, ?second .
-        ?first schema:codeRepository ?value .
-        ?second schema:codeRepository ?value .
         FILTER (?first != ?second)
+        ?first schema:codeRepository ?value .
+        ?second schema:codeRepository ?other .
+        BIND (LCASE(REPLACE(REPLACE(REPLACE(STR(?value), "[?#].*$", ""), "/+$", ""), "^.*/|[.]git$", "")) AS ?name)
+        FILTER (LCASE(REPLACE(REPLACE(REPLACE(STR(?other), "[?#].*$", ""), "/+$", ""), "^.*/|[.]git$", "")) = ?name)
+      }
+    """
+  ] ;
+  sh:sparql [
+    sh:prefixes <> ;
+    sh:message "No repository in testedWith is named cascade-bridge-spec, compared without case: that is the specification's own name, and the starter checks the specification out under it beside this repository." ;
+    sh:select """
+      SELECT DISTINCT $this ?value WHERE {
+        $this bridge:testedWith/schema:codeRepository ?value .
+        FILTER (LCASE(REPLACE(REPLACE(REPLACE(STR(?value), "[?#].*$", ""), "/+$", ""), "^.*/|[.]git$", "")) = "cascade-bridge-spec")
       }
     """
   ] .

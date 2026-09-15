@@ -56,10 +56,10 @@ An adapter's file, which has no `specification`, `setup` or `command`:
 
 | key | term | in an engine's file | in an adapter's file | value |
 |---|---|---|---|---|
-| `specification` | `bridge:specification` | exactly 1 | none | a pin naming this repository |
+| `specification` | `bridge:specification` | exactly 1 | none | a pin naming this repository, as one JSON object |
 | `setup` | `bridge:setup` | exactly 1 | none | an argument vector: an array of at least one string |
 | `command` | `bridge:command` | exactly 1 | none | an argument vector: an array of at least one string |
-| `testedWith` | `bridge:testedWith` | 0 or more | 0 or more | a pin; each repository at most once |
+| `testedWith` | `bridge:testedWith` | 0 or more | 0 or more | a JSON array of pins; each repository name at most once, and none `cascade-bridge-spec` ([below](#sibling-layout)) |
 
 Which form applies is decided by the directory, not by the file: a directory
 holding `ro-crate-metadata.json` is an adapter, and one without is an engine.
@@ -73,9 +73,12 @@ The shapes accept either form; the tooling holds the form to the directory.
   repository learns no language's build; the engine states its own.
 - **`command` receives `test <adapter directory> --earl <file>`**, the contract
   every engine meets ([`engine/command.md`](engine/command.md)).
-- **Every key is one the context defines.** JSON-LD drops a key its context does
-  not define, so a misspelt `testedwith` would otherwise be a file asserting
-  nothing, read as a file asserting something. The tooling refuses it.
+- **Every key is one the context defines, and every value is the JSON type the
+  table gives.** JSON-LD drops a key its context does not define, and reads a
+  lone value and a one-element array alike, so a misspelt `testedwith` would
+  otherwise be a file asserting nothing, read as a file asserting something,
+  and a `testedWith` written as one object would get past the shapes. The
+  tooling refuses both.
 - **In an adapter, the crate lists `compatibility.json`** as a file like any
   other, declared `application/ld+json`, so the lint's inventory accounts for it.
 
@@ -121,15 +124,20 @@ assumed to be `main`.
 
 ## When an entry holds
 
-An entry **holds** when the engine ran the adapter's test manifest and no test's
-outcome in the EARL report is `earl:failed` or `earl:inapplicable`.
-`earl:passed`, `earl:cantTell` and `earl:untested` hold.
+An entry **holds** when the EARL report records an outcome for every entry of
+the adapter's test manifest, and no outcome in it is `earl:failed` or
+`earl:inapplicable`. `earl:passed`, `earl:cantTell` and `earl:untested` hold.
 
 - **The report decides, not the exit code.** An engine's exit code carries no
   meaning the tooling relies on.
 - **No report is not a pass.** A run that wrote no report, a report that does not
   parse as Turtle, and a report recording no outcome at all do not hold. Nor
   does an outcome that is not one of EARL's five.
+- **A partial report is not a pass.** A report with no outcome for some entry of
+  the manifest does not hold, however many of the rest passed: an engine that
+  stopped part-way has not run the manifest. An entry is matched by its IRI
+  from the adapter directory down, since the engine and the tooling may spell
+  the directory's absolute path differently.
 - **The adapter's own manifest decides what should pass.** The file records no
   expected counts.
 
@@ -149,7 +157,11 @@ outcome in the EARL report is `earl:failed` or `earl:inapplicable`.
 
 Every repository sits beside the others under one directory, named exactly as
 its repository: the last segment of its `codeRepository`, without `.git`. The
-tooling looks for a counterpart at `../<repository name>`.
+tooling looks for a counterpart at `../<repository name>`. So no two entries of
+`testedWith` may share a name, a fork and its original or one URL with and
+without `.git`, nor two names differing only in case, which Windows and macOS
+fold into one directory; and none may be named `cascade-bridge-spec`, where the
+starter checks the specification out.
 
 - **Locally**, a branch pin uses the sibling as it is, uncommitted edits
   included, when the sibling is on that branch. A commit or tag pin runs from a

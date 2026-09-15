@@ -217,6 +217,43 @@ def string_vector(world):
     return engine
 
 
+def tested_with_object(world):
+    """One pin written as an object where the array goes, which JSON-LD reads
+    as a one-element array and so gets past the shapes."""
+    engine = world.clone("engine")
+    write_file(engine, engine_file(world, adapter_pin(world, branch="main")[0]))
+    return engine
+
+
+def specification_array(world):
+    engine = world.clone("engine")
+    document = engine_file(world, [])
+    write_file(engine, dict(document, specification=[document["specification"]]))
+    return engine
+
+
+def two_of_one_name(second):
+    """Two counterparts whose clones would share one directory beside the
+    repository under test: the adapter, and `second`'s URL."""
+    def build(world):
+        engine = world.clone("engine")
+        write_file(engine, engine_file(world, [
+            *adapter_pin(world, branch="main"),
+            {"codeRepository": second(world), "branch": "main"},
+        ]))
+        return engine
+    return build
+
+
+def named_as_specification(world):
+    engine = world.clone("engine")
+    write_file(engine, engine_file(world, [{
+        "codeRepository": (world.origins / "cascade-bridge-spec").as_uri(),
+        "branch": "main",
+    }]))
+    return engine
+
+
 def dirty_sibling(world):
     engine = engine_on_main(world)
     adapter = world.clone("adapter")
@@ -330,6 +367,14 @@ CASES = [
         "build": lambda world: world.clone("adapter"),
         "steps": [("validate", 0)],
         "expect": ["has no compatibility.json: nothing to check", "validate: nothing to check"],
+        "forbid": ["\nPASS\n"],
+    },
+    {
+        "name": "checkout: an engine listing no counterpart",
+        "build": lambda world: world.clone("engine"),
+        "steps": [("checkout", 0)],
+        "expect": ["lists no counterpart: nothing to check", "checkout: nothing to check"],
+        "forbid": ["\nPASS\n"],
     },
     {
         "name": "validate: two pin kinds in one entry",
@@ -369,6 +414,43 @@ CASES = [
         "build": string_vector,
         "steps": [("validate", 1)],
         "expect": ["setup is an argument vector, written as a JSON array of strings"],
+    },
+    {
+        "name": "validate: testedWith written as one object",
+        "build": tested_with_object,
+        "steps": [("validate", 1)],
+        "expect": ["testedWith is a list of pins, written as a JSON array"],
+    },
+    {
+        "name": "validate: specification written as an array",
+        "build": specification_array,
+        "steps": [("validate", 1)],
+        "expect": ["specification is one pin, written as a JSON object"],
+    },
+    {
+        "name": "checkout: testedWith written as one object stops in a sentence",
+        "build": tested_with_object,
+        "steps": [("checkout", 1)],
+        "expect": ["testedWith is not a pin; run validate first"],
+        "forbid": ["Traceback"],
+    },
+    {
+        "name": "validate: a fork of a counterpart, its name in another case",
+        "build": two_of_one_name(lambda world: (world.origins / "fork" / "Adapter").as_uri()),
+        "steps": [("validate", 1)],
+        "expect": ["Each repository name appears in testedWith at most once"],
+    },
+    {
+        "name": "validate: one counterpart with and without .git",
+        "build": two_of_one_name(lambda world: world.url("adapter") + ".git"),
+        "steps": [("validate", 1)],
+        "expect": ["Each repository name appears in testedWith at most once"],
+    },
+    {
+        "name": "validate: a counterpart named as the specification",
+        "build": named_as_specification,
+        "steps": [("validate", 1)],
+        "expect": ["No repository in testedWith is named cascade-bridge-spec"],
     },
     {
         "name": "resolve: a branch pin uses the sibling's uncommitted edits, flagged",
@@ -454,6 +536,15 @@ CASES = [
         "build": engine_and_adapter("garbled"),
         "steps": [("checkout", 0), ("run", 0), ("judge", 1)],
         "expect": ["does not hold; its report does not parse as Turtle"],
+    },
+    {
+        "name": "judge: a report missing entries of the manifest, none failed",
+        "build": engine_and_adapter("partial"),
+        "steps": [("checkout", 0), ("run", 0), ("judge", 1)],
+        "expect": [
+            "does not hold; 1 passed; 2 of the manifest's 3 tests have no outcome: "
+            "example-0002, example-release-2026-01"
+        ],
     },
     {
         "name": "checkout: a missing sibling",

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """A fake engine: the command contract of engine/command.md, and nothing else.
 
-    engine.py [--canned passed|failed|none|garbled] test <adapter directory> --earl <file>
+    engine.py [--canned passed|failed|partial|none|garbled] test <adapter directory> --earl <file>
 
 It runs nothing. It checks it was handed an adapter package, prints the
 directory, and writes an EARL report in Turtle whose outcomes are canned, for
@@ -11,6 +11,8 @@ which report:
     passed   example-0001 passed, example-0002 cantTell, the dataset untested,
              which holds: none is earl:failed or earl:inapplicable
     failed   example-0001 failed, which does not hold
+    partial  example-0001 passed and nothing else, as from an engine that
+             stopped part-way, which does not hold
     none     no report at all, which does not hold
     garbled  a file that is not Turtle, which does not hold
 
@@ -44,12 +46,13 @@ ASSERTION = """
 CANNED = {
     "passed": {"example-0001": "passed", "example-0002": "cantTell", "example-release-2026-01": "untested"},
     "failed": {"example-0001": "failed", "example-0002": "cantTell", "example-release-2026-01": "untested"},
+    "partial": {"example-0001": "passed"},
 }
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--canned", choices=("passed", "failed", "none", "garbled"), default="passed")
+    parser.add_argument("--canned", choices=("passed", "failed", "partial", "none", "garbled"), default="passed")
     parser.add_argument("command", choices=("test",))
     parser.add_argument("adapter", type=Path)
     parser.add_argument("--earl", type=Path)

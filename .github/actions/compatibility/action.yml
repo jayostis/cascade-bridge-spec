@@ -54,13 +54,25 @@ runs:
         python3 "${tool}" run "${REPOSITORY_PATH}" --results "${RESULTS}" || true
         python3 "${tool}" judge "${REPOSITORY_PATH}" --results "${RESULTS}"
 
+    # Every leg of a matrix shares the job's id, so the id alone would have
+    # each leg's reports replace the last's. The check run is one per leg and
+    # per attempt; a runner that does not report it still gets a name no other
+    # leg has.
+    - name: name the reports for this leg
+      id: artifact
+      if: always()
+      shell: bash
+      env:
+        JOB: ${{ github.job }}
+        CHECK_RUN: ${{ job.check_run_id }}
+      run: echo "name=compatibility-earl-${JOB}-${CHECK_RUN:-${RANDOM}${RANDOM}}" >> "$GITHUB_OUTPUT"
+
     # The reports are the run's evidence, and a run's artifacts are where they
     # live: nothing stores a result in any repository.
     - name: keep the EARL reports
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: compatibility-earl-${{ github.job }}
+        name: ${{ steps.artifact.outputs.name }}
         path: ${{ runner.temp }}/compatibility
         if-no-files-found: ignore
-        overwrite: true
