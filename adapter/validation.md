@@ -176,35 +176,50 @@ than a PRONOM IRI: RO-Crate 1.2 allows either, every adapter written so far uses
 the media type, and a set of two spellings is a set that can disagree with
 itself.
 
-## The specification pin is checked against the ref the lint was called at
+## The specification pin
 
 An adapter states the revision of this specification it is written against
-twice: as `bridge:specPin` in its crate, for the reader, and as the ref its
-workflow calls the action at, for the machine. They are the same fact, so the
-lint holds them to it. The action resolves its own ref to a SHA and hands it to
-the script as `--spec-revision`; a crate pinning a different commit fails the
-run. Where the ref cannot be resolved — the action was called by a local path, or
-the network refused — the pin is reported and not compared, and the run says
-which of the two happened. A check that silently checks nothing is worse than no
-check.
+once, as `bridge:specPin` in its crate. The lint reads it and reports the commit
+and the repository it names, and compares it with nothing: the starter checks
+this repository out at exactly that commit before the lint runs, so the revision
+running is the pinned one by construction. A pin that names no `version` or no
+`codeRepository` fails the run.
+
+Whether the pinned commit is on this repository's default branch is a
+merge-time question, and the merge gate asks it: `ready`, in
+[`../compatibility.md`](../compatibility.md).
 
 ## The lint as a reusable action
 
 The checks are published from this repository as a **composite GitHub Action**,
-so that an adapter repository's CI is one `uses:` line pinned at a tag rather
-than the checks copied between adapters. Copied checks are the failure this
-repository exists to prevent: a second statement of a fact is one that can
-disagree.
+`.github/actions/validate-adapter`, rather than copied between adapters. Copied
+checks are the failure this repository exists to prevent: a second statement of
+a fact is one that can disagree.
+
+An adapter's CI does not call it directly. It calls the starter, at a tag that
+never moves:
 
 ```yaml
-      - uses: actions/checkout@v4
-      - uses: jayostis/cascade-bridge-spec/.github/actions/validate-adapter@<tag>
+jobs:
+  adapter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: jayostis/cascade-bridge-spec/.github/actions/start@start-v1
+  ready-to-merge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: jayostis/cascade-bridge-spec/.github/actions/start@start-v1
         with:
-          path: .          # the default; the directory holding ro-crate-metadata.json
+          check: ready-to-merge
 ```
 
-`<tag>` is a tag on the commit your crate's `bridge:specPin` names; the action
-resolves it and fails the run when the two disagree.
+The starter checks the adapter out into a directory named as its repository,
+reads the crate's `bridge:specPin`, checks this repository out beside it at that
+commit, and runs this action from there, followed by the `compatibility` action
+when the adapter commits a `compatibility.json`. The second job is the merge
+gate, meant to be a required status check. Bumping the pin is an edit to the
+crate and nothing else; [`../compatibility.md`](../compatibility.md) has the
+rest.
 
 All seven checks run. The action ends by printing each of them with the word it
 earned, so a package is never reported as passing a check that did not happen.

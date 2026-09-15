@@ -193,4 +193,6 @@ only the first:
   written in exactly one place, and bumping it never touches the workflow.
 - **`compatibility`**: `validate`, `checkout`, `run` and `judge`. The gating
   check. The EARL reports are the run's artifacts; nothing stores them here.
-- **`ready-to-merge`**: `ready`.
+- **`ready-to-merge`**: `ready`. The starter runs it instead of the two above
+  when called `with: { check: ready-to-merge }`, in a job of its own, so that
+  it can be required on its own.

@@ -89,7 +89,10 @@ scripts/compatibility.py       validate, resolve, check out, run and judge a com
 scripts/selftest-compatibility.py  its cases, against throwaway repositories
 fixtures/synthetic-adapter/    a synthetic adapter package: the lint's own test subject
 fixtures/lift/                 the lift vectors a sparql-1.1 Bridge must reproduce
-.github/actions/validate-adapter/  the lint published as an action, which an adapter's CI calls
+.github/actions/start/         the starter, which every adapter's and engine's CI calls at start-v1
+.github/actions/validate-adapter/  the lint published as an action, which the starter calls
+.github/actions/compatibility/ compatibility.json's entries, checked out, run and judged
+.github/actions/ready-to-merge/  the merge gate, meant to be a required status check
 .github/workflows/validate.yml CI: this repository's own files, and nothing else's
 ```
 

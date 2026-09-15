@@ -20,6 +20,8 @@ the bug pinning.md is written against.
                      states, one line per entry
     ready <dir>      the merge-time rule: every pin names the counterpart's
                      default branch, or a commit or tag on it
+    spec-pin <dir>   the spec pin alone, which the starter checks this
+                     repository out at
 
 **Every subcommand says whether it checked anything.** It reports in the words
 adapter/validation.md fixes -- ok, FAIL, nothing to check, not run -- and a
@@ -809,7 +811,22 @@ def cmd_judge(directory, args):
 
 # ============================================================================
 
+def cmd_spec_pin(directory, args):
+    """The pin the starter checks this repository out at, before any checkout
+    of it exists: so it runs from the starter's own revision, on a bare
+    interpreter. With --output, appended as repository=, kind= and ref= lines,
+    the form GitHub reads step outputs in."""
+    print("The specification pin")
+    pin = spec_pin(directory, read_file(directory))
+    report(True, str(pin))
+    if args.output:
+        with open(args.output, "a", encoding="utf-8") as handle:
+            handle.write(f"repository={pin.repository}\nkind={pin.kind}\nref={pin.value}\n")
+    return OK
+
+
 COMMANDS = {
+    "spec-pin": cmd_spec_pin,
     "validate": cmd_validate,
     "resolve": cmd_resolve,
     "checkout": cmd_checkout,
@@ -841,6 +858,11 @@ def main():
         default=None,
         help="where the record and the EARL reports go; by default a directory "
         "named for the repository under the system temporary directory",
+    )
+    parser.add_argument(
+        "--output",
+        default=None,
+        help="spec-pin only: a file to append repository=, kind= and ref= to",
     )
     args = parser.parse_args()
     directory = args.directory.resolve()

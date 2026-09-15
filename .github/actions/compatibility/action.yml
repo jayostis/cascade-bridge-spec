@@ -1,0 +1,66 @@
+# The gating check of compatibility.md. Every entry of a repository's
+# compatibility.json is an assertion, and this is where it is held to it: the
+# file is validated, each counterpart is cloned beside the repository at the
+# commit its pin resolves to, each engine runs each adapter's test manifest, and
+# every EARL report is judged. An entry that does not hold fails the run.
+#
+# The starter hands over to this action from a checkout of this repository at
+# the caller's spec pin. It takes a directory, names no adapter and no engine,
+# and learns every counterpart from the file. The engine's toolchain -- what its
+# setup and command name -- is the calling job's to provide.
+name: Cascade Bridge compatibility
+description: >-
+  Validate the repository's compatibility.json, clone each counterpart beside
+  it at its resolved commit, run each engine on each adapter, and judge every
+  EARL report. Fails when any entry does not hold.
+
+inputs:
+  path:
+    description: >-
+      Path to the repository under test, relative to the workspace: a
+      directory named as its repository, so that its counterparts can be
+      cloned beside it.
+    required: false
+    default: '.'
+  python-version:
+    description: The Python the tooling runs on.
+    required: false
+    default: '3.12'
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: install the validators
+      shell: bash
+      run: python3 -m pip install --upgrade pip pyshacl rdflib
+
+    # run exits non-zero when an entry could not be run at all. Such an entry
+    # has no report, and judge fails it with the reason, so run's status is
+    # not the one that decides.
+    - name: validate, check out, run and judge
+      shell: bash
+      env:
+        REPOSITORY_PATH: ${{ inputs.path }}
+        RESULTS: ${{ runner.temp }}/compatibility
+      run: |
+        set -euo pipefail
+        tool="$(cd "${{ github.action_path }}/../../.." && pwd)/scripts/compatibility.py"
+        python3 "${tool}" validate "${REPOSITORY_PATH}"
+        python3 "${tool}" checkout "${REPOSITORY_PATH}" --mode ci --results "${RESULTS}"
+        python3 "${tool}" run "${REPOSITORY_PATH}" --results "${RESULTS}" || true
+        python3 "${tool}" judge "${REPOSITORY_PATH}" --results "${RESULTS}"
+
+    # The reports are the run's evidence, and a run's artifacts are where they
+    # live: nothing stores a result in any repository.
+    - name: keep the EARL reports
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: compatibility-earl-${{ github.job }}
+        path: ${{ runner.temp }}/compatibility
+        if-no-files-found: ignore
+        overwrite: true

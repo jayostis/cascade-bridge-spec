@@ -1,0 +1,41 @@
+# The merge gate of compatibility.md, meant to be a required status check: every
+# pin a repository carries -- its spec pin and every testedWith entry -- names
+# the counterpart's default branch, or a commit or tag on it. A pull request may
+# pin the other side's feature branch while both are open; this is what stops it
+# merging that way.
+#
+# The starter hands over to this action from a checkout of this repository at
+# the caller's spec pin, so the rule applied is the one that revision states.
+# It takes a directory, names no adapter and no engine, and needs no Python
+# package: ready reads JSON and asks git.
+name: Cascade Bridge compatibility, ready to merge
+description: >-
+  Refuse a merge while any pin in the repository -- its spec pin and every
+  compatibility.json entry -- names anything but the counterpart's default
+  branch or a commit or tag on it.
+
+inputs:
+  path:
+    description: Path to the repository under test, relative to the workspace.
+    required: false
+    default: '.'
+  python-version:
+    description: The Python the check runs on.
+    required: false
+    default: '3.12'
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: every pin names the counterpart's default branch or something on it
+      shell: bash
+      env:
+        REPOSITORY_PATH: ${{ inputs.path }}
+      run: |
+        set -euo pipefail
+        spec_root="$(cd "${{ github.action_path }}/../../.." && pwd)"
+        python3 "${spec_root}/scripts/compatibility.py" ready "${REPOSITORY_PATH}"

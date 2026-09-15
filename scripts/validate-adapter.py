@@ -29,9 +29,10 @@ Nothing here runs a mapping or compares a graph, and nothing an adapter names
 is fetched: check 4 recomputes digests over the committed bytes. The tools it
 runs do use the network, starting with the RO-Crate context the crate names.
 
-This script is what .github/actions/validate-adapter runs, so an adapter's CI
-is one `uses:` line pinned at a tag of this repository rather than a copy of
-this file. It takes a directory. It knows no adapter's name, no adapter's
+This script is what .github/actions/validate-adapter runs, and the starter
+hands over to that action from a checkout of this repository at the adapter's
+own bridge:specPin, so an adapter's CI is the starter's one line rather than a
+copy of this file. It takes a directory. It knows no adapter's name, no adapter's
 repository and no format id, and it must stay that way: a specification that
 knows which adapters exist is the bug pinning.md is written against.
 
@@ -51,12 +52,12 @@ those walks crosses between the two files.
 Usage:
 
     python3 scripts/validate-adapter.py <path to an adapter checkout>
-    python3 scripts/validate-adapter.py <path> --spec-revision <full SHA>
 
-With --spec-revision, the adapter's bridge:specPin is compared against the
-revision of this specification the caller is actually running, which is how the
-`uses:` pin in an adapter's workflow and the pin in its crate are held to naming
-the same commit. Without it the pin is reported and not compared.
+The adapter's bridge:specPin is read and reported, not compared with anything:
+the starter checks this repository out at exactly the commit it names, so the
+revision running is the pinned one by construction. Whether that commit is on
+this repository's default branch is the merge gate's question
+(scripts/compatibility.py ready), not this lint's.
 
 Exit status is 0 when the run passes and 1 when it fails; adapter/validation.md
 says which words fail it.
@@ -936,12 +937,13 @@ def validate_queries(adapter, graph, root, check):
 # ============================================================================
 
 
-def check_spec_pin(graph, root, spec_revision):
-    """The crate's bridge:specPin and the revision being run must agree.
+def check_spec_pin(graph, root):
+    """The crate's bridge:specPin names a commit, in a repository.
 
-    The `uses:` pin in an adapter's workflow and the bridge:specPin in its
-    crate are the same fact written twice, one for the machine and one for the
-    reader (pinning.md). This is where they are held to it.
+    Nothing is compared: the pin is written once, in the crate, and the
+    starter checks this repository out at that commit before this lint runs
+    (pinning.md). What is left to check here is that the pin says which
+    commit, and where.
     """
     print("Specification pin")
     pins = list(graph.objects(root, BRIDGE.specPin))
@@ -962,26 +964,12 @@ def check_spec_pin(graph, root, spec_revision):
             "which repository holds that commit",
         )
         return False, "no repository named"
-    if spec_revision is None:
-        note(
-            "the revision of this specification being run was not given "
-            "(--spec-revision), so the pin is reported and not compared"
-        )
-        return True, "reported, not compared"
-    ok = str(version) == spec_revision
-    report(
-        ok,
-        f"bridge:specPin names {version}, and this specification is "
-        f"{spec_revision}",
+    report(True, f"bridge:specPin names {version}, in {repository}")
+    note(
+        "read, not compared: the starter runs this lint from that commit, and "
+        "whether it is on the default branch is compatibility.py ready's question"
     )
-    if not ok:
-        print(
-            "        The crate's pin and the revision of this specification the\n"
-            "        adapter's workflow calls are the same fact written twice.\n"
-            "        They move together, in the pull request that needs them\n"
-            "        (pinning.md)."
-        )
-    return ok, ("agrees with the ref this lint was called at" if ok else "disagrees")
+    return True, "names a commit and its repository"
 
 
 # ============================================================================
@@ -1025,12 +1013,6 @@ def main():
         "the Cascade Bridge Specification."
     )
     parser.add_argument("adapter", type=Path, help="path to an adapter checkout")
-    parser.add_argument(
-        "--spec-revision",
-        default=None,
-        help="the full SHA of the revision of this specification being run; "
-        "when given, the adapter's bridge:specPin must name it",
-    )
     args = parser.parse_args()
 
     adapter = args.adapter.resolve()
@@ -1060,7 +1042,7 @@ def main():
     validate_inputs(adapter, graph, root, manifest_iri, five)
     validate_expected_graphs(adapter, graph, manifest_iri, six)
     validate_queries(adapter, graph, root, seven)
-    pin_ok, pin_note = check_spec_pin(graph, root, args.spec_revision)
+    pin_ok, pin_note = check_spec_pin(graph, root)
 
     print()
     summarise(checks, pin_ok, pin_note)

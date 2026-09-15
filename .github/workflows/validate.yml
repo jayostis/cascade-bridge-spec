@@ -1,20 +1,20 @@
 # This repository's own CI, and all of it. Everything adapter/validation.md and
 # CLAUDE.md say can be checked without a Bridge, run on every change.
 #
-# It validates no real adapter, and that is deliberate. A specification that
-# clones the adapters it knows about goes red because of a property missing
-# from somebody else's repository, and grows a job per adapter for as long as
-# adapters keep being written. The check an adapter needs is published from
-# here instead, as .github/actions/validate-adapter, and each adapter's own CI
-# calls it at a tag of this repository: the arrow runs from adapter to
-# specification, and this repository never learns that any particular adapter
+# It validates no real adapter and runs no real engine, and that is deliberate.
+# A specification that clones the adapters it knows about goes red because of a
+# property missing from somebody else's repository, and grows a job per adapter
+# for as long as adapters keep being written. The checks are published from
+# here instead, as actions, and each adapter's and engine's own CI calls the
+# starter at a tag that never moves: the arrow runs towards the specification,
+# and this repository never learns that any particular adapter or engine
 # exists (pinning.md).
 #
-# The lint still has to be exercised, or it is published untested. The second
-# job below runs it against fixtures/synthetic-adapter, a synthetic package
-# this repository wrote and owns, and then runs the mutation cases that show
-# each check failing. A subject this repository owns is the one way to test a
-# published lint without knowing an adapter.
+# The tools still have to be exercised, or they are published untested. The
+# jobs below run them against subjects this repository wrote and owns --
+# fixtures/synthetic-adapter, fixtures/fake-engine and throwaway repositories
+# -- and run the cases that show each check failing. A subject this repository
+# owns is the one way to test a published tool without knowing an adapter.
 name: validate
 
 on:
@@ -107,11 +107,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # The action, called by local path, so that what runs here is the file an
-      # adapter's CI calls at a tag rather than a copy of the command inside
-      # it. Called by path there is no ref to resolve to a SHA, so the fixture
-      # package's bridge:specPin is reported and not compared, and the run says
-      # which of the two happened.
+      # The action, called by local path, so that what runs here is the file
+      # the starter hands over to rather than a copy of the command inside it.
       - name: the action validates the fixture package
         uses: ./.github/actions/validate-adapter
         with:
@@ -142,3 +139,39 @@ jobs:
             exit 1
           fi
           echo "the lint refused it, as it must"
+
+  compatibility:
+    name: the compatibility tooling, and the starter by local path
+    runs-on: ubuntu-latest
+    steps:
+      # Under its own name, the way the starter lays siblings out: it hands
+      # over to this repository's actions at ./cascade-bridge-spec/.
+      - uses: actions/checkout@v4
+        with:
+          path: cascade-bridge-spec
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: install
+        run: python3 -m pip install --upgrade pip pyshacl rdflib
+
+      # Throwaway repositories named by file:// URLs, so no network: each case
+      # breaks one rule, or exercises one, and asserts what the tool says.
+      - name: the tooling can be seen failing
+        run: python3 cascade-bridge-spec/scripts/selftest-compatibility.py
+
+      # start-v1 does not exist until it is tagged, so the starter is called by
+      # local path. It says so, and runs the tools from this checkout rather
+      # than from the fixture's pin, whose revision predates them.
+      - name: the starter runs the lint on the fixture package
+        uses: ./cascade-bridge-spec/.github/actions/start
+        with:
+          path: cascade-bridge-spec/fixtures/synthetic-adapter
+
+      - name: the starter runs the merge gate on the fixture package
+        uses: ./cascade-bridge-spec/.github/actions/start
+        with:
+          path: cascade-bridge-spec/fixtures/synthetic-adapter
+          check: ready-to-merge

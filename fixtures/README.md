@@ -25,7 +25,7 @@ the synthetic adapter.
 
 `scripts/validate-adapter.py` is published as
 [`.github/actions/validate-adapter`](../.github/actions/validate-adapter/action.yml)
-for an adapter repository's CI to call at a tag. A lint published untested is a
+for an adapter repository's CI to reach through the starter. A lint published untested is a
 lint nobody should trust, so it has to run somewhere on every change here — and
 the one thing it must not run against is a real adapter.
 
@@ -69,10 +69,11 @@ That is a commit on this repository's default branch, as every merged pin must
 be, and not a revision the package conforms to. The package conforms to the shapes in its own commit, and a
 package inside this repository cannot pin a release that contains it, so its
 pin can only name an earlier tag, whose shapes it need not satisfy. Nothing
-moves the pin when a release is tagged, because nothing compares it: CI calls
-the action by local path, so there is no ref to resolve and the run reports the
-pin without comparing it — which is itself one of the states the lint has to be
-seen reporting.
+moves the pin, because nothing needs it to: the lint reads a pin and compares it
+with nothing, and CI calls the starter by local path, which runs the tools from
+the checkout it is in rather than from the pinned commit. The merge gate does
+run against the pin in CI, and holds, because the commit is on this
+repository's default branch.
 
 ## Seeing the lint fail
 

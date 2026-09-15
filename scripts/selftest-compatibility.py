@@ -415,6 +415,18 @@ CASES = [
         "expect": ["branch main: the default branch"],
     },
     {
+        "name": "spec-pin: an engine's specification",
+        "build": engine_on_main,
+        "steps": [("spec-pin", 0)],
+        "expect": ["specification: {url specification} commit {specification}"],
+    },
+    {
+        "name": "spec-pin: an adapter's bridge:specPin, read from its crate",
+        "build": lambda world: world.clone("adapter"),
+        "steps": [("spec-pin", 0)],
+        "expect": ["bridge:specPin: https://github.com/jayostis/cascade-bridge-spec commit "],
+    },
+    {
         "name": "checkout, run, judge: an engine holding on its adapter's default branch",
         "build": engine_and_adapter("passed"),
         "steps": [("checkout", 0), ("run", 0), ("judge", 0)],
