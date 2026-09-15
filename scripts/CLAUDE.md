@@ -12,19 +12,32 @@ in a temporary directory and asserts the lint says so, in the words
 `../adapter/validation.md` fixes. A check that quietly does nothing and reports a
 pass is invisible from a green run.
 
-- **Nothing here may learn an adapter's name.** The lint takes a directory;
-  `../fixtures/README.md` says why its test subject is synthetic.
+`compatibility.py` implements `../compatibility.md`, and is published the same
+way, through the actions the starter hands over to. `selftest-compatibility.py`
+asks it the same question, against throwaway git repositories it makes in a
+temporary directory and names by `file://` URLs: no network, and no real
+adapter or engine.
+
+- **Nothing here may learn an adapter's or an engine's name.** The tools take a
+  directory and read the files in it; `../fixtures/README.md` says why their
+  test subjects are synthetic.
 - **Nothing mutates a tracked file.** Mutation happens on a copy, outside the
   repository.
 - **A check that is specified but not built says so in the output.** A package
   that passed three checks must not read as though it passed seven.
 - A new check lands with `../adapter/validation.md` and a `selftest-lint.py` case in
-  the same commit.
+  the same commit; a new rule in `compatibility.py` with `../compatibility.md` and
+  a `selftest-compatibility.py` case.
+- **The selftests set their own temporary directory for each run**, so a record
+  or a worktree a tool makes goes with the case, and never into a developer's
+  directory.
 
 ```bash
 python3 -m pip install pyshacl rdflib roc-validator lxml
 python3 scripts/validate-adapter.py <path to an adapter checkout>
 python3 scripts/selftest-lint.py
+python3 scripts/compatibility.py validate <path to a repository>
+python3 scripts/selftest-compatibility.py
 ```
 
 The adapter run stays out of CI on purpose; `../pinning.md` says why.

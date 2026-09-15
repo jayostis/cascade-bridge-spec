@@ -85,6 +85,8 @@ vocab/compatibility.context.jsonld  the JSON-LD context a compatibility.json nam
 shapes/bridge.shapes.ttl       SHACL shapes for an adapter's crate and its test manifest, as one graph
 scripts/validate-adapter.py    the adapter lint: the seven checks of adapter/validation.md
 scripts/selftest-lint.py       the mutation cases that show each check failing
+scripts/compatibility.py       validate, resolve, check out, run and judge a compatibility.json
+scripts/selftest-compatibility.py  its cases, against throwaway repositories
 fixtures/synthetic-adapter/    a synthetic adapter package: the lint's own test subject
 fixtures/lift/                 the lift vectors a sparql-1.1 Bridge must reproduce
 .github/actions/validate-adapter/  the lint published as an action, which an adapter's CI calls
