@@ -5,7 +5,7 @@ The subjects this repository's machinery is run against.
 ```
 synthetic-adapter/   a synthetic adapter package: the lint's own test subject
 fake-engine/         an engine that honours the command contract and runs nothing
-lift/                the lift vectors a sparql-1.1 Bridge must reproduce
+lift/                the lift and envelope-skeleton vectors a sparql-1.1 Bridge must reproduce
 ```
 
 The fake engine is `scripts/selftest-compatibility.py`'s counterpart to the
@@ -17,10 +17,11 @@ whose report says `failed` still exercises the rule in
 [`../engine/command.md`](../engine/command.md).
 
 The lift vectors are an engine's subject rather than the lint's: each is an XML
-document and the N-Triples its lift must be isomorphic to, listed in
-`lift/manifest.ttl` as `bridge:LiftTest` entries
-([`../engine/sparql.md`](../engine/sparql.md)). The rest of this file is about
-the synthetic adapter.
+document and the N-Triples a Bridge must produce from it, listed in
+`lift/manifest.ttl` ([`../engine/sparql.md`](../engine/sparql.md)) — the lift
+itself, and the envelope skeleton a detect query is evaluated over, which is the
+one the vectors are here to pin down. The rest of this file is about the
+synthetic adapter.
 
 ## Why a synthetic package and not a real adapter
 

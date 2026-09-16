@@ -89,7 +89,7 @@ scripts/selftest-lint.py       the mutation cases that show each check failing
 scripts/compatibility.py       validate, resolve, check out, run and judge a compatibility.json
 scripts/selftest-compatibility.py  its cases, against throwaway repositories
 fixtures/synthetic-adapter/    a synthetic adapter package: the lint's own test subject
-fixtures/lift/                 the lift vectors a sparql-1.1 Bridge must reproduce
+fixtures/lift/                 the lift and envelope-skeleton vectors a sparql-1.1 Bridge must reproduce
 .github/actions/start/         the starter, which every adapter's and engine's CI calls at start-v1
 .github/actions/validate-adapter/  the lint published as an action, which the starter calls
 .github/actions/compatibility/ compatibility.json's entries, checked out, run and judged

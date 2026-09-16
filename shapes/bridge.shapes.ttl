@@ -14,10 +14,10 @@
 #   bridge:mapping, findingsQuery, detectQuery, input, graph, findings,
 #   sourceSchema and documentSchema carry sh:class schema:MediaObject, what the
 #   RO-Crate 1.2 context expands File to, because sh:nodeKind sh:IRI alone lets
-#   a typo through: an IRI naming no entity is still an IRI. A lift test's
-#   input and graph carry sh:nodeKind sh:IRI alone, because no crate describes
-#   a lift vector; the spec job in .github/workflows/validate.yml checks that
-#   each names a file.
+#   a typo through: an IRI naming no entity is still an IRI. The input and
+#   graph of a test that tests a Bridge carry sh:nodeKind sh:IRI alone, because
+#   no crate describes a vector; the spec job in .github/workflows/validate.yml
+#   checks that each names a file.
 #
 #   Action and result nodes are closed. A property they do not declare is a
 #   mistake, not an extension.
@@ -321,7 +321,7 @@
 
 <#Manifest> a sh:NodeShape ;
   sh:targetClass mf:Manifest ;
-  rdfs:comment "One mf:entries list, every member of the list a test of exactly one of the four types. A manifest listing an adapter's tests is that adapter's: one bridge:adapter that points back at it, every envelope its tests name one the adapter lists, and the stamp set the entries inherit. A manifest listing a lift test names no adapter (<#LiftTest>)." ;
+  rdfs:comment "One mf:entries list, every member of the list a test of exactly one of the types <#Entry> allows. A manifest listing an adapter's tests is that adapter's: one bridge:adapter that points back at it, every envelope its tests name one the adapter lists, and the stamp set the entries inherit. A manifest that tests a Bridge names no adapter (<#BridgeTest>)." ;
   sh:property [
     sh:path bridge:adapter ;
     sh:maxCount 1 ;
@@ -345,7 +345,7 @@
     sh:path ( mf:entries [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ;
     sh:minCount 1 ;
     sh:node <#Entry> ;
-    sh:message "mf:entries lists at least one test, and every member is a test of exactly one of the four types."
+    sh:message "mf:entries lists at least one test, and every member is a test of exactly one of the types <#Entry> allows."
   ] ;
   sh:sparql [
     sh:prefixes <> ;
@@ -387,15 +387,16 @@
     [ sh:class bridge:InputOnlyTest ]
     [ sh:class bridge:DatasetCompletionTest ]
     [ sh:class bridge:LiftTest ]
+    [ sh:class bridge:SkeletonTest ]
   ) ;
-  sh:message "A manifest entry is an IRI typed with exactly one of bridge:IsomorphicConversionTest, bridge:InputOnlyTest, bridge:DatasetCompletionTest, bridge:LiftTest." .
+  sh:message "A manifest entry is an IRI typed with exactly one of bridge:IsomorphicConversionTest, bridge:InputOnlyTest, bridge:DatasetCompletionTest, bridge:LiftTest, bridge:SkeletonTest." .
 
 # ----------------------------------------------------------------------------
 # Every test: a name (the entry's id) and one action
 # ----------------------------------------------------------------------------
 
 <#Test> a sh:NodeShape ;
-  sh:targetClass bridge:IsomorphicConversionTest, bridge:InputOnlyTest, bridge:DatasetCompletionTest, bridge:LiftTest ;
+  sh:targetClass bridge:IsomorphicConversionTest, bridge:InputOnlyTest, bridge:DatasetCompletionTest, bridge:LiftTest, bridge:SkeletonTest ;
   sh:nodeKind sh:IRI ;
   sh:property [
     sh:path mf:name ;
@@ -469,34 +470,46 @@
     sh:message "A dataset completion test carries at most one mf:result, holding bridge:records and bridge:outputDigest once a run has recorded them."
   ] .
 
-<#LiftTest> a sh:NodeShape ;
-  sh:targetClass bridge:LiftTest ;
-  rdfs:comment "A test of a Bridge's lift, not of an adapter: a committed XML document and the graph its lift must be isomorphic to, with nothing removed from either side." ;
-  sh:property [
-    sh:path mf:action ;
-    sh:node <#LiftAction>
-  ] ;
+<#BridgeTest> a sh:NodeShape ;
+  sh:targetClass bridge:LiftTest, bridge:SkeletonTest ;
+  rdfs:comment "What the two types that test a Bridge rather than an adapter share: one expected graph, nothing removed from either side, and a manifest that names no adapter." ;
   sh:property [
     sh:path mf:result ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:node <#LiftResult> ;
-    sh:message "A lift test carries exactly one mf:result naming the expected graph."
+    sh:message "A test of a Bridge carries exactly one mf:result naming the expected graph."
   ] ;
   sh:property [
     sh:path bridge:ignorePredicate ;
     sh:maxCount 0 ;
-    sh:message "A lift test has no bridge:ignorePredicate: nothing is removed from either side."
+    sh:message "A test of a Bridge has no bridge:ignorePredicate: nothing is removed from either side."
   ] ;
   sh:sparql [
     sh:prefixes <> ;
-    sh:message "A lift test is listed only in a manifest that names no bridge:adapter and no bridge:ignorePredicate: it tests a Bridge, not an adapter, and nothing is removed from either side." ;
+    sh:message "A test of a Bridge is listed only in a manifest that names no bridge:adapter and no bridge:ignorePredicate: it tests a Bridge, not an adapter, and nothing is removed from either side." ;
     sh:select """
       SELECT $this ?value WHERE {
         ?manifest mf:entries/rdf:rest*/rdf:first $this .
         { ?manifest bridge:adapter ?value } UNION { ?manifest bridge:ignorePredicate ?value }
       }
     """
+  ] .
+
+<#LiftTest> a sh:NodeShape ;
+  sh:targetClass bridge:LiftTest ;
+  rdfs:comment "A committed XML document and the graph its lift must be isomorphic to." ;
+  sh:property [
+    sh:path mf:action ;
+    sh:node <#LiftAction>
+  ] .
+
+<#SkeletonTest> a sh:NodeShape ;
+  sh:targetClass bridge:SkeletonTest ;
+  rdfs:comment "A committed XML document, the unit to empty, and the graph its envelope skeleton must be isomorphic to." ;
+  sh:property [
+    sh:path mf:action ;
+    sh:node <#SkeletonAction>
   ] .
 
 # ----------------------------------------------------------------------------
@@ -605,6 +618,25 @@
     sh:maxCount 1 ;
     sh:nodeKind sh:IRI ;
     sh:message "The action of a lift test names exactly one bridge:input, the XML document lifted, by IRI."
+  ] .
+
+<#SkeletonAction> a sh:NodeShape ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  rdfs:comment "No envelope: the lift root is the document element, and bridge:unit says which element is emptied." ;
+  sh:property [
+    sh:path bridge:input ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "The action of a skeleton test names exactly one bridge:input, the XML document the skeleton is built from, by IRI."
+  ] ;
+  sh:property [
+    sh:path bridge:unit ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "The action of a skeleton test names exactly one bridge:unit, the local name of the element emptied: no adapter is there to read it from."
   ] .
 
 <#LiftResult> a sh:NodeShape ;

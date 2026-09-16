@@ -22,12 +22,13 @@ rules are normative in [`../vocab/bridge.ttl`](../vocab/bridge.ttl), as the
 here, and a harness that implements this document rather than those comments is
 implementing the wrong thing.
 
-The fourth type, `bridge:LiftTest`, tests a Bridge rather than an adapter, and
-its rule is in the same place. A Bridge offering `bridge:sparql-1.1` executes
-[`../fixtures/lift/manifest.ttl`](../fixtures/lift/manifest.ttl), whose entries
-are all lift tests, loaded on its own with its own location as base: no crate
-describes it, it names no adapter, and it names no stamp predicate, so nothing
-comes off either side. It is reported in EARL like any other manifest.
+Two more types, `bridge:LiftTest` and `bridge:SkeletonTest`, test a Bridge rather
+than an adapter, and their rules are in the same place. A Bridge offering
+`bridge:sparql-1.1` executes
+[`../fixtures/lift/manifest.ttl`](../fixtures/lift/manifest.ttl), which holds
+both, loaded on its own with its own location as base: no crate describes it, it
+names no adapter, and it names no stamp predicate, so nothing comes off either
+side. It is reported in EARL like any other manifest.
 
 One obligation sits outside the individual rules. **Stamp predicates come off
 both sides first**: the set is the entry's `bridge:ignorePredicate` if it carries

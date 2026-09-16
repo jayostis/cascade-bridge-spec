@@ -7,9 +7,9 @@ and every adapter requires it
 
 Two Bridges produce the same graph from one adapter only if they produce the
 same lift, so the lift is specified exactly, and
-[`../fixtures/lift/`](../fixtures/lift/) holds the vectors a Bridge's lift must
-reproduce, each judged by `bridge:LiftTest`
-([`../vocab/bridge.ttl`](../vocab/bridge.ttl)).
+[`../fixtures/lift/`](../fixtures/lift/) holds the vectors a Bridge must
+reproduce — the lift by `bridge:LiftTest`, the envelope skeleton below by
+`bridge:SkeletonTest` ([`../vocab/bridge.ttl`](../vocab/bridge.ttl)).
 
 ## The lift
 
@@ -51,6 +51,11 @@ among its parent's children, without its attributes or its children. A unit
 that is the document element is lifted as an empty container too: the skeleton
 is then its type triples alone. A router can build it while streaming, so
 detecting a multi-gigabyte release does not mean lifting it.
+
+Both of those are vectors: `skeleton` and `skeleton-unit-root` in
+[`../fixtures/lift/`](../fixtures/lift/). A Bridge that lifts every unit
+correctly and empties one wrongly routes wrongly, on documents no adapter's own
+fixtures reach.
 
 ## Running an adapter
 

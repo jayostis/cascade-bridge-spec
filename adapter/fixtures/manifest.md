@@ -42,9 +42,9 @@ rather than reporting a mistake.
 The type is the comparison rule. Each is an `mf:ManifestEntry` with exactly one
 `mf:name` (which is also its fragment IRI) and exactly one `mf:action`.
 
-The vocabulary has a fourth, `bridge:LiftTest`, which tests a Bridge's lift
-rather than an adapter. An adapter's manifest lists none: the shapes refuse a
-lift test in a manifest that names a `bridge:adapter`.
+The vocabulary has two more, `bridge:LiftTest` and `bridge:SkeletonTest`, which
+test a Bridge rather than an adapter. An adapter's manifest lists neither: the
+shapes refuse both in a manifest that names a `bridge:adapter`.
 
 ### `bridge:IsomorphicConversionTest`
 

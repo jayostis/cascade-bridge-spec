@@ -80,7 +80,9 @@ jobs:
 
           listed = set(graph.items(graph.value(URIRef(manifest.as_uri()), MF.entries)))
           named = set()
-          for entry in sorted(graph.subjects(RDF.type, BRIDGE.LiftTest)):
+          tests = {s for t in (BRIDGE.LiftTest, BRIDGE.SkeletonTest)
+                     for s in graph.subjects(RDF.type, t)}
+          for entry in sorted(tests):
               if entry not in listed:
                   problems.append(f"{entry} is not in mf:entries")
               for step, term in ((MF.action, BRIDGE.input), (MF.result, BRIDGE.graph)):

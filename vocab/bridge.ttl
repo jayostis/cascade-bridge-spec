@@ -119,8 +119,7 @@ bridge:envelope a owl:ObjectProperty ;
 
 bridge:unit a owl:DatatypeProperty ;
   rdfs:label "unit"@en ;
-  rdfs:comment "The element a Bridge splits a document on and hands to the mapping one at a time (Enterprise Integration Patterns: Splitter). The unit's raw bytes are preserved. Exactly one."@en ;
-  rdfs:domain bridge:Adapter ;
+  rdfs:comment "The element a Bridge splits a document on and hands to the mapping one at a time (Enterprise Integration Patterns: Splitter), by local name. The unit's raw bytes are preserved. Exactly one on an adapter; exactly one on the action of a bridge:SkeletonTest, which has no adapter to read it from."@en ;
   rdfs:range xsd:string ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
@@ -208,6 +207,12 @@ bridge:LiftTest a owl:Class ;
   rdfs:subClassOf mf:ManifestEntry ;
   rdfs:label "Lift test"@en ;
   rdfs:comment "A test of a Bridge offering bridge:sparql-1.1, not of an adapter: lift bridge:input with its document element as the lift root (engine/sparql.md); the produced graph must be isomorphic to bridge:graph, blank nodes relabelled and IRIs and literals exact. No mapping runs, and nothing is removed from either side."@en ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:SkeletonTest a owl:Class ;
+  rdfs:subClassOf mf:ManifestEntry ;
+  rdfs:label "Envelope skeleton test"@en ;
+  rdfs:comment "A test of a Bridge offering bridge:sparql-1.1, not of an adapter: build the envelope skeleton of bridge:input, taking the action's bridge:unit as the unit's local name (engine/sparql.md); the produced graph must be isomorphic to bridge:graph, blank nodes relabelled and IRIs and literals exact. This is what a detect query is evaluated over, so a Bridge that lifts a unit correctly and empties it wrongly routes wrongly. Nothing is removed from either side."@en ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
 # ----------------------------------------------------------------------------

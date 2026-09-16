@@ -1,8 +1,8 @@
 # The lift vectors: what a Bridge offering bridge:sparql-1.1 must produce from
-# each document, lifted with its document element as the lift root
-# (engine/sparql.md). Each entry is judged by the bridge:LiftTest rule. This is
-# not an adapter's test manifest: it names no adapter, and a Bridge runs it to
-# test itself.
+# each document, lifted with its document element as the lift root, and for a
+# bridge:SkeletonTest emptied of its units first (engine/sparql.md). Each entry
+# is judged by the rule its type carries. This is not an adapter's test
+# manifest: it names no adapter, and a Bridge runs it to test itself.
 
 @prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix mf:     <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .
@@ -18,6 +18,8 @@
     <#dropped>
     <#namespaces>
     <#no-break-space>
+    <#skeleton>
+    <#skeleton-unit-root>
   ) .
 
 <#attributes> a bridge:LiftTest ;
@@ -61,3 +63,15 @@
   rdfs:comment "Whitespace is XML's S production, space, tab, CR and LF. A no-break space is not whitespace: alone it is a text child, beside spaces the text is kept verbatim, and a text of only a line feed is dropped." ;
   mf:action [ bridge:input <no-break-space.xml> ] ;
   mf:result [ bridge:graph <no-break-space.nt> ] .
+
+<#skeleton> a bridge:SkeletonTest ;
+  mf:name "skeleton" ;
+  rdfs:comment "A unit keeps its type triples and its number among its parent's children, and loses its attributes and its children. A sibling that is not a unit is lifted whole, and the numbering counts the emptied units." ;
+  mf:action [ bridge:input <skeleton.xml> ; bridge:unit "Unit" ] ;
+  mf:result [ bridge:graph <skeleton.nt> ] .
+
+<#skeleton-unit-root> a bridge:SkeletonTest ;
+  mf:name "skeleton-unit-root" ;
+  rdfs:comment "A unit that is the document element is emptied like any other, so the skeleton is its type triples alone: the lift root type and its own. A Bridge that special-cases the root instead routes on a document it has lifted entirely." ;
+  mf:action [ bridge:input <skeleton-unit-root.xml> ; bridge:unit "Unit" ] ;
+  mf:result [ bridge:graph <skeleton-unit-root.nt> ] .
