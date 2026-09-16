@@ -25,7 +25,9 @@ runs:
 
     - name: install the validators
       shell: bash
-      run: python3 -m pip install --upgrade pip pyshacl rdflib roc-validator lxml
+      run: |
+        python3 -m pip install --upgrade pip
+        python3 -m pip install --group "${{ github.action_path }}/../../../pyproject.toml:validators"
 
     - name: validate the adapter package
       shell: bash

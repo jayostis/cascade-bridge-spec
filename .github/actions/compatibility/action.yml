@@ -36,7 +36,9 @@ runs:
 
     - name: install the validators
       shell: bash
-      run: python3 -m pip install --upgrade pip pyshacl rdflib
+      run: |
+        python3 -m pip install --upgrade pip
+        python3 -m pip install --group "${{ github.action_path }}/../../../pyproject.toml:validators"
 
     # run exits non-zero when an entry could not be run at all. Such an entry
     # has no report, and judge fails it with the reason, so run's status is

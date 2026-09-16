@@ -38,7 +38,9 @@ jobs:
           python-version: '3.12'
 
       - name: install
-        run: python3 -m pip install --upgrade pip pyshacl rdflib roc-validator
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install --group validators
 
       - name: every Turtle file parses
         run: |
@@ -140,7 +142,9 @@ jobs:
           python-version: '3.12'
 
       - name: install
-        run: python3 -m pip install --upgrade pip pyshacl rdflib
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install --group cascade-bridge-spec/pyproject.toml:validators
 
       # Throwaway repositories named by file:// URLs, so no network: each case
       # breaks one rule, or exercises one, and asserts what the tool says.

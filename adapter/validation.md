@@ -85,7 +85,7 @@ What the starter reads, checks out and hands over to is
 ## Running it
 
 ```bash
-python3 -m pip install pyshacl rdflib roc-validator lxml
+python3 -m pip install --group <this repository>/pyproject.toml:validators
 rocrate-validator validate <adapter> \
   --extra-profiles-path <this repository>/adapter \
   --profile-identifier cascade-bridge-adapter --no-paging --verbose

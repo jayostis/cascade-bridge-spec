@@ -3,6 +3,7 @@ import json
 import os
 import re
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -143,7 +144,10 @@ def test_the_validator_runs_the_profile(package, tmp_path, mutate, passes, says,
     report = tmp_path / "report.json"
     run = subprocess.run(
         [
-            "rocrate-validator", "validate", str(package.path),
+            # The console script, run by this interpreter: the validator the
+            # tests import is the one they run, whatever else is on PATH.
+            sys.executable, "-c", "from rocrate_validator.cli import cli; cli()",
+            "validate", str(package.path),
             "--extra-profiles-path", str(ROOT / "adapter"),
             "--profile-identifier", "cascade-bridge-adapter",
             "--no-paging", "--output-format", "json", "--output-file", str(report),
