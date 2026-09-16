@@ -14,10 +14,8 @@ What is where is each file's own docstring. The rules that are not:
   repository.
 - **A requirement nothing could check reports that, and fails.** Silence reads
   as a pass, which is the failure this whole thing is written against.
-- A new requirement lands as one file in `profiles/cascade-bridge-adapter/must/`,
-  with `../adapter/validation.md` and a `unittest-lint.py` test, in the same
-  commit; a new rule in `compatibility.py` with `../compatibility.md` and a
-  `selftest-compatibility.py` case.
+- A new rule in `compatibility.py` lands with `../compatibility.md` and a
+  `selftest-compatibility.py` case, in the same commit.
 - **The selftests set their own temporary directory for each run**, so a record
   or a worktree a tool makes goes with the case, and never into a developer's
   directory.

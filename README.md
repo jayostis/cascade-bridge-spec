@@ -32,7 +32,7 @@ not a conforming adapter package:
 
 - the `bridge:` vocabulary, [`vocab/bridge.ttl`](vocab/bridge.ttl);
 - the SHACL shapes, [`shapes/bridge.shapes.ttl`](shapes/bridge.shapes.ttl);
-- the adapter profile, [`adapter/profile/ro-crate-metadata.json`](adapter/profile/ro-crate-metadata.json);
+- the adapter profile, [`adapter/profile/`](adapter/profile/);
 - the adapter manifest contract, [`adapter/ro-crate-metadata.md`](adapter/ro-crate-metadata.md);
 - the test manifest contract, [`adapter/fixtures/manifest.md`](adapter/fixtures/manifest.md);
 - the validation list, [`adapter/validation.md`](adapter/validation.md);

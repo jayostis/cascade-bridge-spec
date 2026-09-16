@@ -1,6 +1,12 @@
-from bridgelint.requirement import held
-from bridgelint.crate import from_context
-from bridgelint.terms import BRIDGE, MF
+import sys
+from pathlib import Path
+
+# The validator imports this file by path, without its directory on sys.path.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from _held import held
+from _crate import from_context
+from _terms import BRIDGE, MF
 from rdflib import Graph
 from rocrate_validator.models import ValidationContext
 from rocrate_validator.requirements.python import PyFunctionCheck, check, requirement

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """What each requirement of the cascade-bridge-adapter profile decides.
 
-Every requirement under scripts/profiles/cascade-bridge-adapter/must/ is a plain
+Every requirement under adapter/profile/must/ is a plain
 generator of the messages it would report, and a four-line class that hands them
 to the validator. These tests call the generator. Nothing runs the lint, starts a
 process or reaches a network, so the file is seconds and can be run on every
@@ -28,8 +28,8 @@ import tempfile
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE))
-sys.path.insert(0, str(HERE / "profiles" / "cascade-bridge-adapter" / "must"))
+sys.path.insert(0, str(HERE.parent / "adapter" / "profile"))
+sys.path.insert(0, str(HERE.parent / "adapter" / "profile" / "must"))
 
 import digests  # noqa: E402
 import expected_graphs  # noqa: E402
@@ -38,8 +38,8 @@ import inventory  # noqa: E402
 import queries  # noqa: E402
 import shapes  # noqa: E402
 import spec_pin  # noqa: E402
-from bridgelint import crate as crate_module  # noqa: E402
-from bridgelint.terms import BRIDGE, SCHEMA  # noqa: E402
+import _crate as crate_module  # noqa: E402
+from _terms import BRIDGE, SCHEMA  # noqa: E402
 from rdflib import Graph, Literal, URIRef  # noqa: E402
 
 PACKAGE = HERE.parent / "fixtures" / "synthetic-adapter"

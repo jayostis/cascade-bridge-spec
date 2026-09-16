@@ -39,7 +39,7 @@ import tempfile
 from pathlib import Path
 
 SCRIPTS = Path(__file__).resolve().parent
-PROFILES = SCRIPTS / "profiles"
+PROFILES = SCRIPTS.parent / "adapter"
 PROFILE = "cascade-bridge-adapter"
 
 

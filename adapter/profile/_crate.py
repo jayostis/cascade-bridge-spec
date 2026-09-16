@@ -8,10 +8,6 @@ the same IRI; and the manifest's <../ro-crate-metadata.json#envelope-efetch>
 resolves onto the envelope entity the crate declares. Load either file with the
 wrong base and every link between them silently becomes two unrelated nodes,
 and the shapes report nothing rather than reporting a mistake.
-
-Every check after the first takes one of these, so each walk from a test to its
-input, to its envelope's schema and to its expected graph crosses between the
-two files without matching on file names.
 """
 
 from __future__ import annotations
@@ -24,7 +20,7 @@ from urllib.request import url2pathname
 from rdflib import Graph, URIRef
 from rdflib.namespace import RDF
 
-from .terms import BRIDGE, MF
+from _terms import BRIDGE, MF
 
 
 @dataclass(frozen=True)

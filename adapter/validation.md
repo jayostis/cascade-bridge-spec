@@ -42,8 +42,7 @@ RO-Crate 1.2 conformance comes first, inherited: an adapter package is an
 RO-Crate before it is anything else, and the profile says so rather than this
 list repeating it.
 
-Each is one file under
-[`scripts/profiles/cascade-bridge-adapter/must/`](../scripts/profiles/cascade-bridge-adapter/must/).
+Each is one file under [`profile/must/`](profile/must/).
 
 A package that meets all of them, and RO-Crate 1.2's own, is a conforming
 adapter package. None of them runs a mapping or compares a graph: that is the

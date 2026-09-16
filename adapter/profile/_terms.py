@@ -1,8 +1,4 @@
-"""The namespaces and the constants every check shares.
-
-What each term means is its rdfs:comment in vocab/bridge.ttl; nothing is
-restated here.
-"""
+"""What each term means is its rdfs:comment in vocab/bridge.ttl."""
 
 from __future__ import annotations
 

@@ -11,7 +11,7 @@ adapter.
 
 `vocab/bridge.ttl`, `vocab/compatibility.context.jsonld`,
 `shapes/bridge.shapes.ttl`, `pinning.md`, `compatibility.md`, `engine/sparql.md`,
-`engine/command.md`, and in `adapter/`: `profile/ro-crate-metadata.json`,
+`engine/command.md`, and in `adapter/`: `profile/`,
 `ro-crate-metadata.md`, `fixtures/manifest.md`, `validation.md`. Changing any of
 them changes what every adapter and every Bridge must do, and needs its reasoning
 recorded in the same commit. The rest is explanatory, machinery, or the lint's
@@ -60,9 +60,9 @@ only when that directory is touched. Keep this file under 80 lines.
 A `README.md` addresses whoever is building something that must conform; a
 `CLAUDE.md` addresses whoever is changing this repository, so rules for authoring
 an adapter never go in one. Conformance targets are top-level (`adapter/`,
-`engine/`), each holding its own contract; `vocab/` and `shapes/` are the spine
-they share; `scripts/` and `fixtures/` are machinery, never inside a target.
-`.github/` is where GitHub requires it.
+`engine/`), each holding its own contract and the profile that checks it;
+`vocab/` and `shapes/` are the spine they share; `scripts/` and `fixtures/` are
+machinery, never inside a target. `.github/` is where GitHub requires it.
 
 ## Conventions
 
