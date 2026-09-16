@@ -155,8 +155,8 @@ def test_the_validator_runs_the_profile(package, tmp_path, mutate, passes, says,
         capture_output=True,
         encoding="utf-8",
         errors="replace",
-        # The validator logs through rich, which a Windows console code page
-        # cannot encode.
+        # Python on Windows encodes piped output in the locale code page, which
+        # cannot encode the validator's non-ASCII output.
         env={**os.environ, "PYTHONIOENCODING": "utf-8"},
     )
     assert report.is_file(), run.stdout + run.stderr

@@ -6,8 +6,9 @@
     a prof:Profile ;
     rdfs:label "Cascade Bridge Adapter" ;
     rdfs:comment "The contract an adapter package conforms to. The requirements are must/, one file each."@en ;
-    # Stated because the validator derives a token from the directory path by
-    # stripping its base with a forward slash, which fails on Windows.
+    # The name --profile-identifier selects. Without it the validator names a
+    # profile after its directory, here "profile":
+    # https://github.com/crs4/rocrate-validator/blob/develop/docs/11_writing_a_profile.rst
     prof:hasToken "cascade-bridge-adapter" ;
     dct:publisher <https://github.com/jayostis/cascade-bridge-spec> ;
     prof:isProfileOf <https://w3id.org/ro/crate/1.2> ;
