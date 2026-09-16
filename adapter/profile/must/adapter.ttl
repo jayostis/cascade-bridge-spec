@@ -40,15 +40,8 @@
   ] ;
   sh:property [
     sh:path <http://purl.org/dc/terms/conformsTo> ;
-    sh:minCount 1 ;
-    sh:nodeKind sh:IRI ;
-    sh:message "The adapter carries at least one conformsTo, by IRI: the Bridge specification it is written against."
-  ] ;
-  sh:property [
-    sh:path <http://purl.org/dc/terms/conformsTo> ;
     sh:hasValue <https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/> ;
-    sh:severity sh:Warning ;
-    sh:message "The adapter does not name the Cascade Bridge Adapter profile, https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/, in conformsTo; that IRI on the crate root is how an adapter declares conformance to this specification (adapter/ro-crate-metadata.md)."
+    sh:message "The adapter names the Cascade Bridge Adapter profile, https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/, in conformsTo: how a crate declares it is an adapter, to rocrate-validator's profile detection and to any other reader (adapter/ro-crate-metadata.md)."
   ] ;
   sh:property [
     sh:path bridge:profileRequired ;

@@ -14,18 +14,14 @@ from rocrate_validator.requirements.python import PyFunctionCheck, check, requir
 
 
 def violations(crate):
-    """Every shape violation, as a message each. Warnings are not violations
-    and are not yielded."""
+    """Every shape violation, as a message each."""
     _, report, _ = shacl_validate(
         crate.graph,
         shacl_graph=Graph().parse(SHAPES, format="turtle"),
         advanced=True,          # the shapes use sh:sparql constraints
-        allow_warnings=True,
         inplace=False,
     )
     for found in report.subjects(RDF.type, SH.ValidationResult):
-        if report.value(found, SH.resultSeverity) != SH.Violation:
-            continue
         path = report.value(found, SH.resultPath)
         message = str(report.value(found, SH.resultMessage) or "").strip()
         yield f"{path or '-'}: {message}"

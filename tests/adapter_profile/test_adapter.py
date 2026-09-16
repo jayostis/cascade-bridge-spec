@@ -1,8 +1,20 @@
 from _terms import BRIDGE
+from rdflib import URIRef
+from rdflib.namespace import DCTERMS
+
+PROFILE = URIRef("https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/")
 
 
 def test_reports_nothing_for_an_adapter_that_conforms(crate, native):
     assert not native(crate, "adapter.ttl")
+
+
+def test_reports_a_crate_that_does_not_name_the_adapter_profile(crate, native):
+    crate.graph.remove((crate.root, DCTERMS.conformsTo, PROFILE))
+    assert "names the Cascade Bridge Adapter profile" in native(crate, "adapter.ttl"), (
+        "conformsTo is how a crate declares it is an adapter to anything that "
+        "does not already know"
+    )
 
 
 def test_reports_a_crate_that_names_no_mapping(crate, native):

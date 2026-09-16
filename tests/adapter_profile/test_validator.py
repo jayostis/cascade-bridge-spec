@@ -35,6 +35,18 @@ def identifier_not_a_format_id(package):
     package.edit(CRATE, '"identifier": "synthetic-example",', '"identifier": "Synthetic_Example",')
 
 
+def adapter_profile_not_named(package):
+    package.edit(
+        CRATE,
+        '      "conformsTo": [\n'
+        "        {\n"
+        '          "@id": "https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/"\n'
+        "        }\n"
+        "      ],\n",
+        "",
+    )
+
+
 def expected_graph_not_turtle(package):
     package.edit(EXPECTED, "@prefix ex:", "@prefixx ex:")
     restate_digest(package, EXPECTED)
@@ -90,6 +102,11 @@ def pin_not_a_data_entity(package):
             identifier_not_a_format_id, False,
             ["The adapter carries exactly one identifier, the format id"], [],
             id="a shape unmet fails: an identifier that is not a format id",
+        ),
+        pytest.param(
+            adapter_profile_not_named, False,
+            ["names the Cascade Bridge Adapter profile"], [],
+            id="a crate that does not name the adapter profile fails",
         ),
         pytest.param(
             expected_graph_not_turtle, False,

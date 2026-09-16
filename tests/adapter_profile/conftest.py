@@ -80,12 +80,10 @@ def native():
             crate.graph,
             shacl_graph=Graph().parse(MUST / shapes_file, format="turtle"),
             advanced=True,
-            allow_warnings=True,
         )
         return "\n".join(
             str(report.value(result, SH.resultMessage))
             for result in report.subjects(RDF.type, SH.ValidationResult)
-            if report.value(result, SH.resultSeverity) == SH.Violation
         )
 
     return run
