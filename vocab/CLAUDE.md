@@ -16,9 +16,10 @@ the SHACL test suite adds `sht:`.
 - **No Cascade terms are minted here.** `bridge:` only. A term in `cascade:`,
   `genomics:` or any other Cascade vocabulary goes through spec's own process.
 - **An adapter declares no tier**, so no term names one.
-- Term names and cardinalities must match `../adapter/ro-crate-metadata.md`,
-  `../adapter/fixtures/manifest.md` and `../compatibility.md` exactly. Change
-  both in one commit.
+- **A term's cardinality goes in its `rdfs:comment`**, in words, because this is
+  the only copy: `../adapter/ro-crate-metadata.md`,
+  `../adapter/fixtures/manifest.md` and `../compatibility.md` name terms and give
+  reasons, and list none of them. A reader sent here has to find it here.
 - `compatibility.context.jsonld` is the JSON-LD context a `compatibility.json`
   names, and every key it defines is a term here or a schema.org term. Its IRI,
   like the profile IRI, does not dereference yet; `../scripts/compatibility.py`

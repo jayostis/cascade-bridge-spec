@@ -150,24 +150,11 @@ manifest, and it needs a Bridge ([`fixtures/manifest.md`](fixtures/manifest.md))
 
 ## The media types an adapter package may declare
 
-The allowed set for check 3, enforced by the shapes as `<#DescribedFile>` so
-that it runs rather than only being written down.
-[`shapes/bridge.shapes.ttl`](../shapes/bridge.shapes.ttl) is the authority; this
-table restates it, and the two change in the same commit.
-
-| media type | what declares it |
-|---|---|
-| `application/gzip` | a referenced release published as an archive |
-| `application/json` | a findings sidecar, a lookup table's source |
-| `application/ld+json` | a crate, a context |
-| `application/sparql-query` | a mapping, findings query or detect query, under the `sparql-1.1` profile |
-| `application/xml` | a source document, an XSD |
-| `application/yaml` | a manifest or table an adapter carries as YAML |
-| `text/csv` | a lookup table that arrives as one |
-| `text/markdown` | a document under `docs/` |
-| `text/plain` | a NOTICE, a checksum sidecar |
-| `text/turtle` | a test manifest, an expected graph, a SKOS table |
-| `text/xml` | the other spelling of XML, which publishers do use |
+The allowed set is the `sh:in` list on `<#DescribedFile>` in
+[`shapes/bridge.shapes.ttl`](../shapes/bridge.shapes.ttl), and a run that trips
+on it prints the whole set in the violation. That is the set; it is not copied
+here, because a copy is how a package comes to declare a media type the shapes
+reject.
 
 The set is deliberately short, and it is where "no code" is enforced. A format an
 adapter needs and this set lacks is a pull request here, argued once, rather than

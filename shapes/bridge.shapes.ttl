@@ -7,7 +7,8 @@
 # fixtures/lift/manifest.ttl, is validated against the same shapes on its own:
 # it tests a Bridge, names no adapter, and no crate describes it.
 #
-# What the shapes require is below, and in prose in adapter/. What
+# What the shapes require is below, and nowhere else: adapter/ gives the
+# reasoning and names the terms, and lists no cardinalities of its own. What
 # reading them does not tell you:
 #
 #   bridge:mapping, findingsQuery, detectQuery, input, graph, findings,
@@ -27,8 +28,8 @@
 #
 #   The allowed encodingFormat set, <#DescribedFile> below, is where "no code"
 #   is enforced: not by scanning a file for a language, but by refusing one
-#   whose media type says it executes. This file is the authority for the set,
-#   and adapter/validation.md restates it for the reader.
+#   whose media type says it executes. Its sh:message spells the set out,
+#   because a run that trips on it is the only place a reader is shown it.
 #
 #   The links between crate and manifest are sh:sparql, so the engine must
 #   support SHACL-SPARQL (pySHACL, Jena).

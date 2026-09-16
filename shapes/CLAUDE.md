@@ -19,8 +19,10 @@ code" guarantee the file header describes, not housekeeping.
 - **A shape meant to reject something is verified by mutation** — break the
   adapter's copy, see it go red, restore it, see it go green. A constraint nobody
   saw fail is a constraint nobody knows fires.
-- What each shape checks must match `../adapter/validation.md` exactly, and the
-  `compatibility.json` shapes must match `../compatibility.md`.
+- **Every constraint carries an `sh:message` that names what was wanted**, and
+  the `sh:in` sets spell their members out. `../adapter/validation.md` and
+  `../compatibility.md` send the reader here rather than copying, so a failing
+  run's own output is the whole answer.
 - The `compatibility.json` shapes target only compatibility terms. A target that
   reached a crate — `bridge:specPin`, say — would put an engine's rules on every
   adapter the lint validates.

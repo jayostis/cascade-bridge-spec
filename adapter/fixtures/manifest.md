@@ -24,11 +24,10 @@ and no part of the conformance claim.
   mf:entries ( <#first> <#second> ) .
 ```
 
-| property | cardinality | what it is |
-|---|---|---|
-| `bridge:adapter` | exactly 1 | the adapter's crate root entity, whose `bridge:testManifest` is this file. The shapes check both directions |
-| `bridge:ignorePredicate` | 0 or more | the stamp set, below |
-| `mf:entries` | exactly 1 | an RDF list, at least one member, every member typed with exactly one of the three test types |
+What a manifest carries is `<#Manifest>` in
+[`../../shapes/bridge.shapes.ttl`](../../shapes/bridge.shapes.ttl), which also
+checks that `bridge:adapter` and the crate's `bridge:testManifest` point at each
+other.
 
 Relative IRIs resolve against the manifest's own location. In the pilot, from
 `fixtures/manifest.ttl`, `<>` is the crate's `fixtures/manifest.ttl` entity,
@@ -93,14 +92,11 @@ it.
 
 ### `bridge:InputOnlyTest`
 
-A committed input with no expected output. Parse and validate `bridge:input`;
-record the graph and findings a Bridge produces; judge nothing.
+A committed input with no expected output.
 
-- `mf:action`: as above.
-- `mf:result`: **none**. The shape sets `sh:maxCount 0`, because a result that is
-  not judged is not a result.
-- `bridge:ignorePredicate`: **none**, for the same reason. Nothing is compared,
-  so there is nothing to exclude from a comparison.
+The shape allows it no `mf:result` and no `bridge:ignorePredicate`, for one
+reason: a result that is not judged is not a result, and nothing being compared
+leaves nothing to exclude from a comparison.
 
 This type exists so that an input whose provenance is worth having can be
 committed and exercised before anyone has produced an expected graph for it. The
@@ -111,20 +107,10 @@ unimpeachable.
 
 A dataset too large to commit, streamed from where it is published.
 
-- `mf:action`: `bridge:dataset` (exactly one, the `@id` of a crate `Dataset`
-  entity) and `bridge:envelope` (exactly one). Closed.
-- `mf:result`: at most one, holding `bridge:records` (a non-negative
-  `xsd:integer`, the number of units processed) and `bridge:outputDigest` (the
-  string `sha256:<64 lowercase hex>`, over the canonical N-Quads output with the
-  stamp triples removed). Closed.
-
-**The rule.** Stream the dataset in its envelope. The run must complete without
-rejection. Where `bridge:records` and `bridge:outputDigest` are present they must
-match; where absent, the harness records them.
-
-Absent, not empty: RDF has no null, so the two unknown-until-run values are
-written by the first run rather than carried as placeholders. A multi-gigabyte
-expected output that fits in one line is the whole point of the type.
+Absent, not empty: `bridge:records` and `bridge:outputDigest` are the two values
+nothing knows until the first run, and RDF has no null, so the first run writes
+them rather than the author carrying placeholders. A multi-gigabyte expected
+output that fits in one line is the whole point of the type.
 
 **The dataset must be fetchable.** `<#RunnableDataset>` in the shapes requires
 the named crate `Dataset` to carry exactly one `schema:contentUrl`. An entity

@@ -17,10 +17,12 @@ them changes what every adapter and every Bridge must do, and needs its reasonin
 recorded in the same commit. The rest is explanatory, machinery, or the lint's
 own test subject: see each directory.
 
-**The prose must agree with the Turtle exactly** — term names, cardinalities,
-what each shape checks. The Turtle is what runs, and a document disagreeing with
-it is the failure mode this project is organised against. Change both in one
-commit.
+**The prose does not restate the Turtle, it links it.** A term's cardinality, its
+value and what it is are its `rdfs:comment`; what is checked is the shape's
+`sh:message`. A document names the term and gives the reasoning neither has room
+for. Prose that agrees with the Turtle today is prose that can disagree with it
+tomorrow, and that is the failure mode this project is organised against; the
+only fix that holds is not having the second copy.
 
 ## The rules
 
@@ -69,8 +71,8 @@ they share; `scripts/` and `fixtures/` are machinery, never inside a target.
 
 - Conventional commits: `feat(spec): ...`, `docs: ...`, `fix(shapes): ...`.
 - Impersonal: findings and decisions, not promises by a person.
-- **Say it once.** A fact in the vocabulary or the shapes is linked,
-  never restated: two statements of one contract can disagree, and have.
+- **Say it once**, between documents as much as against the Turtle. Two
+  statements of one contract can disagree, and have.
 - **No archaeology.** What a file used to be, and what changed in a move, is
   git's job. Not a header, not a comment.
 - **Why, never what.** A comment restating the line below it goes. A reason that

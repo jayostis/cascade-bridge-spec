@@ -22,30 +22,17 @@ context expands that key to `dcterms:conformsTo`, not a schema.org term, so a
 query written with `schema:conformsTo` matches nothing), and the `bridge:`
 vocabulary carries what neither has.
 
-Every cardinality below is enforced by `<#Adapter>` in the shapes; every term is
-declared with an `rdfs:comment` in [`vocab/bridge.ttl`](../vocab/bridge.ttl).
+**What the root entity carries is `<#Adapter>` in
+[`shapes/bridge.shapes.ttl`](../shapes/bridge.shapes.ttl).** Every property it
+declares, with its cardinality, its value and the message a violation reports, is
+there; what each term means is its `rdfs:comment` in
+[`vocab/bridge.ttl`](../vocab/bridge.ttl). Read the properties from those two.
+There is no list of them here, because a list here would be a second contract
+with nothing keeping it honest.
 
-| property | cardinality | value | what it is |
-|---|---|---|---|
-| `identifier` | exactly 1 | string, `^[a-z][a-z0-9-]*$` | the format id a Bridge routes on. `clinvar` in the pilot |
-| `name` | exactly 1 | string | the human name of the source format |
-| `version` | exactly 1 | string, semver | the adapter package's own version |
-| `license` | exactly 1 | IRI | the SPDX licence entity for the package |
-| `conformsTo` | 1 or more | IRI | what the adapter is written against. The profile IRI below is how conformance to this specification is declared |
-| `bridge:mapping` | 1 or more | IRI, a crate `File` declared `application/sparql-query` | a SPARQL 1.1 CONSTRUCT a Bridge runs on each unit; the unit's graph is the union of every mapping's result |
-| `bridge:findingsQuery` | 0 or more | IRI, a crate `File` declared `application/sparql-query` | a SPARQL 1.1 SELECT whose rows are the unit's findings |
-| `bridge:profileRequired` | 1 or more, `bridge:sparql-1.1` among them | IRI, a `bridge:Profile` | a Bridge profile needed beyond Core. Every adapter requires `sparql-1.1`, the one v1-draft specifies |
-| `bridge:specPin` | exactly 1 | IRI | the commit of the Cascade Bridge Specification the adapter is written against |
-| `bridge:vocabularyPin` | exactly 1 | IRI | the `spec` commit the adapter's Cascade vocabularies are pinned to |
-| `bridge:vocabulary` | 1 or more | IRI, a `DefinedTermSet` carrying `version` | a Cascade vocabulary the adapter writes, by namespace; `version` is its version at the pin |
-| `bridge:sourceMediaType` | exactly 1 | string | IANA media type of the source documents |
-| `bridge:sourceSchema` | exactly 1 | IRI, a crate `File` | the pinned source-side schema every unit is validated against |
-| `bridge:envelope` | 1 or more | IRI, a `bridge:Envelope` | a document root the format arrives in |
-| `bridge:unit` | exactly 1 | string | the element a Bridge splits a document on |
-| `bridge:detectQuery` | exactly 1 | IRI, a crate `File` declared `application/sparql-query` | the content-based router's rule, a SPARQL 1.1 ASK |
-| `bridge:table` | 0 or more | IRI, a crate `File` | a lookup table the mapping reads |
-| `bridge:extensionVocabulary` | at most 1 | IRI | the adapter's own namespace for values with no Cascade term |
-| `bridge:testManifest` | exactly 1 | IRI, an `mf:Manifest` | the test manifest a Bridge's harness executes |
+The rest of this document is what neither file has room for: why the crate is
+shaped this way, and the three parts of it — conformance, the detect query and
+the mapping — a first adapter gets wrong.
 
 ### Declaring conformance
 
@@ -73,10 +60,10 @@ The pin is an entity, not a string: a `SoftwareSourceCode` in the crate with
 `bridge:vocabularyPin` uses. By the time the adapter merges, the commit it names
 is on this repository's default branch; [`pinning.md`](../pinning.md) says why.
 
-### What RO-Crate 1.2 requires beyond the table
+### What RO-Crate 1.2 requires beyond the properties
 
-Four things the table does not show, each of which fails check 1 or check 2
-when missing. The lint's own test subject,
+Four things no property of the adapter states, each of which fails check 1 or
+check 2 when missing. The lint's own test subject,
 [`fixtures/synthetic-adapter`](../fixtures/synthetic-adapter/ro-crate-metadata.json),
 is a crate that has them all.
 
@@ -95,13 +82,8 @@ is a crate that has them all.
 ## Envelope entities
 
 An envelope is a document root the source format arrives in. A Bridge accepts
-any of the adapter's envelopes and splits each on the unit.
-
-| property | cardinality | value |
-|---|---|---|
-| `name` | exactly 1 | string, `^[a-z][a-z0-9-]*$`, the short id a test action's envelope reference is read as |
-| `bridge:rootElement` | exactly 1 | local name of the document element |
-| `bridge:documentSchema` | at most 1 | IRI, a crate `File`: a schema that validates a whole document in this envelope |
+any of the adapter's envelopes and splits each on the unit. What one carries is
+`<#Envelope>` in the shapes.
 
 `bridge:documentSchema` is absent when the source schema declares the root
 directly, and present when it does not. In the pilot, NCBI's XSD declares the

@@ -54,12 +54,11 @@ An adapter's file, which has no `specification`, `setup` or `command`:
 }
 ```
 
-| key | term | in an engine's file | in an adapter's file | value |
-|---|---|---|---|---|
-| `specification` | `bridge:specification` | exactly 1 | none | a pin naming this repository, as one JSON object |
-| `setup` | `bridge:setup` | exactly 1 | none | an argument vector: an array of at least one string |
-| `command` | `bridge:command` | exactly 1 | none | an argument vector: an array of at least one string |
-| `testedWith` | `bridge:testedWith` | 0 or more | 0 or more | a JSON array of pins; each repository name at most once, and none named `cascade-bridge-spec` or this repository itself ([below](#sibling-layout)) |
+Each key is the `bridge:` term of the same name — `specification`, `setup`,
+`command`, `testedWith` — mapped by
+[`vocab/compatibility.context.jsonld`](vocab/compatibility.context.jsonld), which
+is the list of keys there are. What each means is its `rdfs:comment`; which form
+requires it, how many it takes and what it holds is the shape that checks it.
 
 Which form applies is decided by the directory, not by the file: a directory
 holding `ro-crate-metadata.json` is an adapter, and one without is an engine.
@@ -85,16 +84,12 @@ The shapes accept either form; the tooling holds the form to the directory.
 ## Pins
 
 A pin names a repository by `codeRepository`, its absolute URL, and exactly one
-of:
+of `commit`, `tag` or `branch`. What each resolves to is the `rdfs:comment` on
+`schema:version`, `bridge:tag` and `bridge:branch`.
 
-| key | term | resolves to |
-|---|---|---|
-| `commit` | `schema:version` | itself: a full 40-character SHA |
-| `tag` | `bridge:tag` | the commit the tag names |
-| `branch` | `bridge:branch` | the branch's tip in CI. Locally, the sibling's working tree when the sibling is on that branch; otherwise the branch's last commit, with a warning |
-
-`commit` is `schema:version` because that is what the entity `bridge:specPin`
-names already carries for the SHA: one pin, one shape.
+`commit` is `schema:version` rather than a `bridge:` term of its own because that
+is what the entity `bridge:specPin` names already carries for the SHA: one pin,
+one shape.
 
 **Every run records what each pin resolved to**: the commit, and a flag when the
 sibling's uncommitted edits were used. A result produced from uncommitted edits
@@ -124,22 +119,19 @@ assumed to be `main`.
 
 ## When an entry holds
 
-An entry **holds** when the EARL report records an outcome for every entry of
-the adapter's test manifest, and no outcome in it is `earl:failed` or
-`earl:inapplicable`. `earl:passed`, `earl:cantTell` and `earl:untested` hold.
-Nothing else is consulted, and least of all the engine's exit code
-([`engine/command.md`](engine/command.md)).
+When an entry holds is `bridge:testedWith`'s `rdfs:comment`. Three readings of it
+the tooling had to settle, which are judging decisions rather than parts of the
+term:
 
 - **No report is not a pass.** A run that wrote no report, a report that does not
   parse as Turtle, and a report recording no outcome at all do not hold. Nor
-  does an outcome that is not one of EARL's five.
+  does an outcome that is not one of EARL's five. Nothing else is consulted, and
+  least of all the engine's exit code ([`engine/command.md`](engine/command.md)).
 - **A partial report is not a pass.** A report with no outcome for some entry of
   the manifest does not hold, however many of the rest passed: an engine that
-  stopped part-way has not run the manifest. An entry is matched by its IRI
-  from the adapter directory down, since the engine and the tooling may spell
-  the directory's absolute path differently.
-- **The adapter's own manifest decides what should pass.** The file records no
-  expected counts.
+  stopped part-way has not run the manifest.
+- **An entry is matched by its IRI from the adapter directory down**, since the
+  engine and the tooling may spell the directory's absolute path differently.
 
 ## Changing an entry
 
