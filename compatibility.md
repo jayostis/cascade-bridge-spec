@@ -12,19 +12,19 @@ An engine's file:
 ```json
 {
   "@context": "https://ns.cascadeprotocol.org/bridge/v1-draft/compatibility.jsonld",
-  "specification": {
+  "specPin": {
     "codeRepository": "https://github.com/jayostis/cascade-bridge-spec",
     "commit": "7a614179c4856a3f6e1a4b5a6c90a183b0c7c99a"
   },
   "setup": ["npm", "ci"],
   "command": ["node", "packages/bridge-cli/src/cli.ts"],
-  "testedWith": [
+  "mustPassWith": [
     { "codeRepository": "https://github.com/jayostis/cascade-bridge-adapter-clinvar", "branch": "main" }
   ]
 }
 ```
 
-An adapter's file has only `testedWith`; its spec pin is `bridge:specPin` in its crate.
+An adapter's file has only `mustPassWith`; its spec pin is `bridge:specPin` in its crate.
 
 A commit or tag pin is reproducible. A default-branch pin can turn red when the
 other side merges, with no change of its own.

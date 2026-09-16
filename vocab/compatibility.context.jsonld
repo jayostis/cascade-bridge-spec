@@ -4,8 +4,8 @@
     "@base": null,
     "bridge": "https://ns.cascadeprotocol.org/bridge/v1-draft#",
     "schema": "http://schema.org/",
-    "specification": {
-      "@id": "bridge:specification"
+    "specPin": {
+      "@id": "bridge:specPin"
     },
     "setup": {
       "@id": "bridge:setup",
@@ -15,8 +15,8 @@
       "@id": "bridge:command",
       "@container": "@list"
     },
-    "testedWith": {
-      "@id": "bridge:testedWith",
+    "mustPassWith": {
+      "@id": "bridge:mustPassWith",
       "@container": "@set"
     },
     "codeRepository": {

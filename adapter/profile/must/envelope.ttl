@@ -15,11 +15,11 @@
     sh:message "An envelope carries exactly one name, its short id: lowercase letters, digits and hyphens, starting with a letter."
   ] ;
   sh:property [
-    sh:path bridge:rootElement ;
+    sh:path bridge:docRootElementName ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:datatype xsd:string ;
-    sh:message "An envelope carries exactly one bridge:rootElement, the local name of its document element."
+    sh:message "An envelope carries exactly one bridge:docRootElementName, the local name of its document element."
   ] ;
   sh:property [
     sh:path bridge:documentSchema ;

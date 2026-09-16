@@ -33,8 +33,8 @@ CONTEXT_IRI = "https://ns.cascadeprotocol.org/bridge/v1-draft/compatibility.json
 FILE = "compatibility.json"
 CRATE = "ro-crate-metadata.json"
 
-ENGINE_KEYS = ("specification", "setup", "command")
-TOP_KEYS = {"@context", "testedWith", *ENGINE_KEYS}
+ENGINE_KEYS = ("specPin", "setup", "command")
+TOP_KEYS = {"@context", "mustPassWith", *ENGINE_KEYS}
 PIN_KINDS = ("commit", "tag", "branch")
 PIN_KEYS = {"codeRepository", *PIN_KINDS}
 SHA = re.compile(r"^[0-9a-f]{40}$")
@@ -104,7 +104,7 @@ def repository_name(url):
 
 
 def name_clashes(directory, document):
-    listed = document.get("testedWith")
+    listed = document.get("mustPassWith")
     urls = [
         pin["codeRepository"]
         for pin in (listed if isinstance(listed, list) else [])
@@ -116,7 +116,7 @@ def name_clashes(directory, document):
         name = repository_name(url)
         if name.casefold() in seen:
             problems.append(
-                "Each repository name appears in testedWith at most once, "
+                "Each repository name appears in mustPassWith at most once, "
                 f"compared without case: {seen[name.casefold()]} and {url} "
                 f"would both be checked out at ../{name}"
             )
@@ -131,7 +131,7 @@ def name_clashes(directory, document):
         name = repository_name(url)
         if name.casefold() in reserved:
             problems.append(
-                f"No repository in testedWith is named {name}, compared "
+                f"No repository in mustPassWith is named {name}, compared "
                 f"without case: {reserved[name.casefold()]}"
             )
     return problems
@@ -163,19 +163,19 @@ def pin_from(label, entry):
 
 def entries(document):
     return [
-        pin_from("testedWith", entry)
-        for entry in (document or {}).get("testedWith", [])
+        pin_from("mustPassWith", entry)
+        for entry in (document or {}).get("mustPassWith", [])
     ]
 
 
 def spec_pin(directory, document):
     if not is_adapter(directory):
-        if not document or "specification" not in document:
+        if not document or "specPin" not in document:
             raise Stop(
                 f"{directory} holds no {CRATE}, so it is an engine, and an "
-                f"engine states its spec pin as specification in {FILE}"
+                f"engine states its spec pin as specPin in {FILE}"
             )
-        return pin_from("specification", document["specification"])
+        return pin_from("specPin", document["specPin"])
     crate = json.loads((directory / CRATE).read_text(encoding="utf-8"))
     nodes = {node.get("@id"): node for node in crate.get("@graph", [])}
     pin = (nodes.get("./") or {}).get("bridge:specPin")
@@ -198,12 +198,12 @@ def problems_json_ld_hides_from_shacl(document):
     for key in ("setup", "command"):
         if key in document and not isinstance(document[key], list):
             problems.append(f"{key} is an argument vector, written as a JSON array of strings")
-    if "testedWith" in document and not isinstance(document["testedWith"], list):
-        problems.append("testedWith is a list of pins, written as a JSON array, even of one")
-    if "specification" in document and not isinstance(document["specification"], dict):
-        problems.append("specification is one pin, written as a JSON object")
+    if "mustPassWith" in document and not isinstance(document["mustPassWith"], list):
+        problems.append("mustPassWith is a list of pins, written as a JSON array, even of one")
+    if "specPin" in document and not isinstance(document["specPin"], dict):
+        problems.append("specPin is one pin, written as a JSON object")
     pins = []
-    for label in ("specification", "testedWith"):
+    for label in ("specPin", "mustPassWith"):
         value = document.get(label)
         pins += [(label, pin) for pin in (value if isinstance(value, list) else [value])]
     for label, pin in pins:
@@ -288,14 +288,14 @@ def cmd_validate(directory, _args):
         report(
             False,
             f"{directory} holds no {CRATE}, so it is an engine, and an engine's "
-            f"{FILE} carries specification, setup and command",
+            f"{FILE} carries specPin, setup and command",
         )
     elif conforms:
         report(True, f"the form is {kind}'s, as the directory is")
 
-    count = len(document.get("testedWith") or [])
+    count = len(document.get("mustPassWith") or [])
     if not problems and conforms:
-        note(f"{count} testedWith entr{'y' if count == 1 else 'ies'}")
+        note(f"{count} mustPassWith entr{'y' if count == 1 else 'ies'}")
     return OK if conforms and not problems else FAIL
 
 
@@ -614,7 +614,7 @@ def cmd_run(directory, args):
     reports = results / "earl"
     shutil.rmtree(reports, ignore_errors=True)
     reports.mkdir(parents=True)
-    pins = [entry for entry in record["pins"] if entry["label"] == "testedWith"]
+    pins = [entry for entry in record["pins"] if entry["label"] == "mustPassWith"]
     print("Each engine on each adapter")
     if not pins:
         report(True, "no counterpart to run: nothing to check")
@@ -725,7 +725,7 @@ def judge_report(path, adapter):
 
 def cmd_judge(directory, args):
     results = results_directory(directory, args)
-    pins = [entry for entry in read_record(results)["pins"] if entry["label"] == "testedWith"]
+    pins = [entry for entry in read_record(results)["pins"] if entry["label"] == "mustPassWith"]
     print("Each entry, judged by its EARL report")
     if not pins:
         report(True, "no entry: nothing to check")

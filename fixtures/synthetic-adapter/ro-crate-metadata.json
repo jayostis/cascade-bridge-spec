@@ -4,19 +4,19 @@
     {
       "md5": "https://w3id.org/ro/terms/workflow-run#md5",
       "bridge": "https://ns.cascadeprotocol.org/bridge/v1-draft#",
-      "bridge:profileRequired": "bridge:profileRequired",
+      "bridge:requiresProfile": "bridge:requiresProfile",
       "bridge:specPin": "bridge:specPin",
-      "bridge:vocabularyPin": "bridge:vocabularyPin",
+      "bridge:cascadeVocabularyPin": "bridge:cascadeVocabularyPin",
       "bridge:vocabulary": "bridge:vocabulary",
       "bridge:sourceMediaType": "bridge:sourceMediaType",
       "bridge:sourceSchema": "bridge:sourceSchema",
       "bridge:envelope": "bridge:envelope",
-      "bridge:unit": "bridge:unit",
+      "bridge:elementNameOfEachRecord": "bridge:elementNameOfEachRecord",
       "bridge:mapping": "bridge:mapping",
       "bridge:findingsQuery": "bridge:findingsQuery",
       "bridge:detectQuery": "bridge:detectQuery",
       "bridge:testManifest": "bridge:testManifest",
-      "bridge:rootElement": "bridge:rootElement",
+      "bridge:docRootElementName": "bridge:docRootElementName",
       "bridge:documentSchema": "bridge:documentSchema"
     }
   ],
@@ -47,7 +47,7 @@
           "@id": "https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/"
         }
       ],
-      "bridge:profileRequired": [
+      "bridge:requiresProfile": [
         {
           "@id": "https://ns.cascadeprotocol.org/bridge/v1-draft#sparql-1.1"
         }
@@ -55,7 +55,7 @@
       "bridge:specPin": {
         "@id": "https://github.com/jayostis/cascade-bridge-spec/commit/0af0fc970f75360d4f84acc2203c26b5fd9d6d23"
       },
-      "bridge:vocabularyPin": {
+      "bridge:cascadeVocabularyPin": {
         "@id": "https://example.org/synthetic-adapter/vocabulary/commit/0000000000000000000000000000000000000000"
       },
       "bridge:vocabulary": [
@@ -75,7 +75,7 @@
           "@id": "#envelope-record"
         }
       ],
-      "bridge:unit": "ExampleRecord",
+      "bridge:elementNameOfEachRecord": "ExampleRecord",
       "bridge:mapping": [
         {
           "@id": "in/example-record.rq"
@@ -138,7 +138,7 @@
       "@id": "#envelope-set",
       "@type": "bridge:Envelope",
       "name": "set",
-      "bridge:rootElement": "ExampleRecordSet",
+      "bridge:docRootElementName": "ExampleRecordSet",
       "bridge:documentSchema": {
         "@id": "schema/example-set.xsd"
       }
@@ -147,7 +147,7 @@
       "@id": "#envelope-record",
       "@type": "bridge:Envelope",
       "name": "record",
-      "bridge:rootElement": "ExampleRecord"
+      "bridge:docRootElementName": "ExampleRecord"
     },
     {
       "@id": "https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/",
@@ -191,8 +191,8 @@
       "@type": "File",
       "name": "Mapping",
       "encodingFormat": "application/sparql-query",
-      "contentSize": "770",
-      "sha256": "19fda9a2be11c737fcb2e8af55afea4e9b12a7cbb31fa03bdda44ee9a98f0fe8",
+      "contentSize": "774",
+      "sha256": "4194618c49c5a08d75665f88b4c32ffe0ebae26bd909dbdfb731f2698251b893",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       }
@@ -202,8 +202,8 @@
       "@type": "File",
       "name": "Findings query",
       "encodingFormat": "application/sparql-query",
-      "contentSize": "380",
-      "sha256": "374ac4fe703af41c82f9239b135c62f600580ca6860b22cfee44288ee5d4b63d",
+      "contentSize": "382",
+      "sha256": "19b9dea07e1974d2318c316d47786523a7718db351d6182acada2528431964f6",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       }
@@ -213,8 +213,8 @@
       "@type": "File",
       "name": "Detect query",
       "encodingFormat": "application/sparql-query",
-      "contentSize": "240",
-      "sha256": "d9c2c2d73176786aa3af1b49f4c8793c2f2aa252c3b3aa28fafbe6cd1ef13701",
+      "contentSize": "244",
+      "sha256": "e7d3326c86f790d0fee2d42d692ccab1dc613e56b40598590c5723aeb06f1812",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       }
