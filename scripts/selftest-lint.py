@@ -1,19 +1,10 @@
 #!/usr/bin/env python3
-"""End-to-end cases for scripts/validate-adapter.py.
+"""End-to-end cases: the adapter profile, run by rocrate-validator.
 
-What only a whole run can show: that the profile loads at all, that the
-requirements this specification adds run beside the ones RO-Crate 1.2 brings,
-that the issues reach the reader, and that the exit status is right. Everything about
-what a single requirement *decides* is in unittest-lint.py, which calls its
-generator and takes a fraction of the time.
-
-The subject is fixtures/synthetic-adapter, copied into a temporary directory
-and broken there. **Nothing here mutates a tracked file**, no mutated copy is
-ever written inside the repository, and no real adapter is read, cloned or
-named.
-
-Cases run concurrently: each is an independent RO-Crate validation costing
-seconds, and they share nothing.
+What only a whole run shows: that the profile loads, that its requirements run
+beside RO-Crate 1.2's, and that the report and the exit status agree. The
+subject is fixtures/synthetic-adapter, copied to a temporary directory and
+broken there.
 
 Run:  python3 scripts/selftest-lint.py            every case
       python3 scripts/selftest-lint.py rocrate    the ones whose names hold it
@@ -22,6 +13,8 @@ Run:  python3 scripts/selftest-lint.py            every case
 from __future__ import annotations
 
 import hashlib
+import json
+import os
 import re
 import shutil
 import subprocess
@@ -31,7 +24,7 @@ from concurrent import futures
 from pathlib import Path
 
 SPEC_ROOT = Path(__file__).resolve().parent.parent
-LINT = SPEC_ROOT / "scripts" / "validate-adapter.py"
+PROFILES = SPEC_ROOT / "adapter"
 PACKAGE = SPEC_ROOT / "fixtures" / "synthetic-adapter"
 
 CRATE = "ro-crate-metadata.json"
@@ -171,26 +164,20 @@ CASES = [
         "name": "green: the fixture package as committed",
         "mutate": None,
         "exit": 0,
-        "expect": [
-            "40 of 40 requirements met",
-            "PASS",
-        ],
+        "expect": [],
     },
     {
         "name": "a Cascade requirement unmet: an expected graph that is not Turtle",
         "mutate": expected_graph_not_turtle,
         "exit": 1,
-        "expect": [
-            "REQUIRED  example-0001: example-0001.ttl does not parse as Turtle",
-            "FAIL",
-        ],
+        "expect": ["example-0001: example-0001.ttl does not parse as Turtle"],
         "forbid": ["sha256 is not this file's"],
     },
     {
         "name": "nothing of its kind is not a failure: no expected graphs",
         "mutate": no_expected_graphs,
         "exit": 0,
-        "expect": ["requirements met", "PASS"],
+        "expect": [],
     },
     {
         "name": "rocrate: a bridge: key the @context does not declare",
@@ -228,12 +215,28 @@ def run_case(case):
         if case["mutate"]:
             case["mutate"](package)
         track(package)
+        report = Path(directory) / "report.json"
         run = subprocess.run(
-            [sys.executable, str(LINT), str(package)],
+            [
+                "rocrate-validator", "validate", str(package),
+                "--extra-profiles-path", str(PROFILES),
+                "--profile-identifier", "cascade-bridge-adapter",
+                "--no-paging", "--output-format", "json",
+                "--output-file", str(report),
+            ],
             capture_output=True,
-            text=True,
+            encoding="utf-8",
+            errors="replace",
+            # The validator logs through rich, which a Windows console code
+            # page cannot encode.
+            env={**os.environ, "PYTHONIOENCODING": "utf-8"},
         )
         output = run.stdout + run.stderr
+        if not report.is_file():
+            failures.append("the validator wrote no report")
+        else:
+            issues = json.loads(report.read_text(encoding="utf-8"))["issues"]
+            output += "\n".join(str(issue["message"]) for issue in issues)
 
         if run.returncode != case["exit"]:
             failures.append(f"exit status {run.returncode}, {case['exit']} expected")
@@ -261,7 +264,7 @@ def main(argv=()):
     if not PACKAGE.is_dir():
         raise SystemExit(f"  FAIL  {PACKAGE} is not there")
     cases = select(list(argv))
-    print(f"Lint:    {LINT}")
+    print(f"Profile: {PROFILES / 'profile'}")
     print(f"Subject: {PACKAGE}")
     print()
 

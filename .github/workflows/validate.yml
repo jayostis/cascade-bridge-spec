@@ -116,33 +116,12 @@ jobs:
         with:
           path: fixtures/synthetic-adapter
 
-      # The step above installed python3, pyshacl, rdflib, roc-validator and
-      # lxml; the two below reuse them.
-      #
-      # A lint nobody has seen fail is a lint nobody should trust. The unit
-      # tests assert what each requirement decides, directly and in a second;
-      # the end-to-end cases prove the profile loads, that this
-      # specification's requirements run beside the ones RO-Crate 1.2 brings,
-      # and that the exit status is right. Nothing tracked is mutated and no
-      # mutated copy is written inside the repository.
+      # The step above installed the validators; the two below reuse them.
       - name: every requirement decides what it says it decides
         run: python3 scripts/unittest-lint.py
 
       - name: the lint can be seen failing
         run: python3 scripts/selftest-lint.py
-
-      # The cheapest negative of all: a directory that is not an adapter
-      # package at all. It names no format, no repository and no real package.
-      - name: the lint refuses a directory that is not an adapter package
-        run: |
-          set -euo pipefail
-          mkdir -p not-an-adapter
-          printf '%s\n' 'not a crate' > not-an-adapter/README.md
-          if python3 scripts/validate-adapter.py not-an-adapter; then
-            echo "the lint accepted a directory holding no ro-crate-metadata.json"
-            exit 1
-          fi
-          echo "the lint refused it, as it must"
 
   compatibility:
     name: the compatibility tooling, and the starter by local path

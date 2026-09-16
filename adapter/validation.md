@@ -1,16 +1,8 @@
 # Validating an adapter package
 
-What a conforming adapter package must satisfy, as **an RO-Crate profile**:
-`cascade-bridge-adapter`, which declares itself `prof:isProfileOf` RO-Crate 1.2.
-So an adapter is validated as an RO-Crate and as an adapter in one pass, against
-one report, by `rocrate-validator` —
-[`scripts/validate-adapter.py`](../scripts/validate-adapter.py) runs that profile
-and prints what it found, and is what the published action
-([`.github/actions/validate-adapter`](../.github/actions/validate-adapter/action.yml))
-runs.
-
-The requirements below are this specification's. Everything RO-Crate 1.2 requires
-is inherited and is not restated here.
+What a conforming adapter package must satisfy is an RO-Crate profile,
+[`profile/`](profile/), a profile of RO-Crate 1.2: `rocrate-validator` checks an
+adapter against both in one pass. What RO-Crate 1.2 requires is not restated here.
 
 **A requirement is met or it is not, and any unmet requirement fails the run.**
 Two consequences worth stating, because they are what a lint gets wrong:
@@ -37,10 +29,6 @@ What each requirement reports, in its own words, is
 each named for the sentence it asserts.
 
 ## The requirements
-
-RO-Crate 1.2 conformance comes first, inherited: an adapter package is an
-RO-Crate before it is anything else, and the profile says so rather than this
-list repeating it.
 
 Each is one file under [`profile/must/`](profile/must/).
 
@@ -100,10 +88,8 @@ What the starter reads, checks out and hands over to is
 
 ```bash
 python3 -m pip install pyshacl rdflib roc-validator lxml
-python3 scripts/validate-adapter.py <path to an adapter checkout>
+rocrate-validator validate <adapter> \
+  --extra-profiles-path <this repository>/adapter \
+  --profile-identifier cascade-bridge-adapter --no-paging --verbose
 ```
-
-Exit status is 0 when every requirement is met and 1 when any is not. CI on
-this project's repositories is Linux and invokes `python3` directly;
-do not commit a machine-specific way of running it.
 

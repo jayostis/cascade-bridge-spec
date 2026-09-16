@@ -25,9 +25,9 @@ synthetic adapter.
 
 ## Why a synthetic package and not a real adapter
 
-`scripts/validate-adapter.py` is published as
+The adapter profile is published through
 [`.github/actions/validate-adapter`](../.github/actions/validate-adapter/action.yml)
-for an adapter repository's CI to reach through the starter. A lint published untested is a
+for an adapter repository's CI to reach. A lint published untested is a
 lint nobody should trust, so it has to run somewhere on every change here — and
 the one thing it must not run against is a real adapter.
 

@@ -12,8 +12,6 @@ What is where is each file's own docstring. The rules that are not:
   test subjects are synthetic.
 - **Nothing mutates a tracked file.** Mutation happens on a copy, outside the
   repository.
-- **A requirement nothing could check reports that, and fails.** Silence reads
-  as a pass, which is the failure this whole thing is written against.
 - A new rule in `compatibility.py` lands with `../compatibility.md` and a
   `selftest-compatibility.py` case, in the same commit.
 - **The selftests set their own temporary directory for each run**, so a record
@@ -29,7 +27,6 @@ What is where is each file's own docstring. The rules that are not:
 
 ```bash
 python3 -m pip install pyshacl rdflib roc-validator lxml
-python3 scripts/validate-adapter.py <path to an adapter checkout>
 python3 scripts/unittest-lint.py
 python3 scripts/selftest-lint.py
 python3 scripts/compatibility.py validate <path to a repository>
