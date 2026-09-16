@@ -254,6 +254,17 @@ def named_as_specification(world):
     return engine
 
 
+def named_as_self(world):
+    """A counterpart whose name is the directory under test: its clone would
+    need the directory the repository under test already occupies."""
+    engine = world.clone("engine")
+    write_file(engine, engine_file(world, [{
+        "codeRepository": (world.origins / "elsewhere" / "engine").as_uri(),
+        "branch": "main",
+    }]))
+    return engine
+
+
 def dirty_sibling(world):
     engine = engine_on_main(world)
     adapter = world.clone("adapter")
@@ -451,6 +462,12 @@ CASES = [
         "build": named_as_specification,
         "steps": [("validate", 1)],
         "expect": ["No repository in testedWith is named cascade-bridge-spec"],
+    },
+    {
+        "name": "validate: a counterpart named as the repository under test",
+        "build": named_as_self,
+        "steps": [("validate", 1)],
+        "expect": ["No repository in testedWith is named engine"],
     },
     {
         "name": "resolve: a branch pin uses the sibling's uncommitted edits, flagged",

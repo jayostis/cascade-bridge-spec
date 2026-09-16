@@ -294,7 +294,7 @@ bridge:command a owl:ObjectProperty ;
 
 bridge:testedWith a owl:ObjectProperty ;
   rdfs:label "tested with"@en ;
-  rdfs:comment "A counterpart this repository asserts it passes with, as a pin: in an engine's compatibility.json an adapter the engine runs, in an adapter's an engine that runs it. Each is an assertion that blocks the merge when it does not hold, and it holds when the engine's EARL report records an outcome for every entry of the adapter's test manifest and none is earl:failed or earl:inapplicable. Zero or more, as a JSON array; each repository name at most once, compared without case, and none cascade-bridge-spec, because each counterpart is checked out under its repository's name beside the repository and the specification. No expected counts are recorded: the adapter's own manifest decides what should pass."@en ;
+  rdfs:comment "A counterpart this repository asserts it passes with, as a pin: in an engine's compatibility.json an adapter the engine runs, in an adapter's an engine that runs it. Each is an assertion that blocks the merge when it does not hold, and it holds when the engine's EARL report records an outcome for every entry of the adapter's test manifest and none is earl:failed or earl:inapplicable. Zero or more, as a JSON array; each repository name at most once, compared without case, and none named cascade-bridge-spec or the repository under test, because each counterpart is checked out under its repository's name beside the repository and the specification. No expected counts are recorded: the adapter's own manifest decides what should pass."@en ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
 bridge:tag a owl:DatatypeProperty ;

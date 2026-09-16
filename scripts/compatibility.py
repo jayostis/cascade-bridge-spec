@@ -166,6 +166,48 @@ def repository_name(url):
     return name[: -len(".git")] if name.endswith(".git") else name
 
 
+def name_clashes(directory, document):
+    """Counterparts whose clones would need one directory that is already
+    taken: another entry's, the specification's, or this repository's own.
+
+    The rule is here rather than in the shapes because only the tooling sees
+    the directory the file sits in, and it is this function that names the
+    clone's directory. File names fold case on Windows and macOS, so the
+    comparison does too.
+    """
+    listed = document.get("testedWith")
+    urls = [
+        pin["codeRepository"]
+        for pin in (listed if isinstance(listed, list) else [])
+        if isinstance(pin, dict) and isinstance(pin.get("codeRepository"), str)
+    ]
+    problems = []
+    seen = {}
+    for url in urls:
+        name = repository_name(url)
+        if name.casefold() in seen:
+            problems.append(
+                "Each repository name appears in testedWith at most once, "
+                f"compared without case: {seen[name.casefold()]} and {url} "
+                f"would both be checked out at ../{name}"
+            )
+        seen[name.casefold()] = url
+    reserved = {
+        "cascade-bridge-spec": "that is where the starter checks the "
+        "specification out beside this repository",
+        directory.resolve().name.casefold(): "that is this repository's own "
+        "directory",
+    }
+    for url in urls:
+        name = repository_name(url)
+        if name.casefold() in reserved:
+            problems.append(
+                f"No repository in testedWith is named {name}, compared "
+                f"without case: {reserved[name.casefold()]}"
+            )
+    return problems
+
+
 class Pin:
     """A repository at a revision, and where the pin was read."""
 
@@ -312,7 +354,7 @@ def cmd_validate(directory, _args):
         report(False, f"its @context is {found!r}, where a {FILE} names {CONTEXT_IRI}")
         return FAIL
 
-    problems = unknown_keys(document)
+    problems = unknown_keys(document) + name_clashes(directory, document)
     for problem in problems:
         report(False, problem)
 

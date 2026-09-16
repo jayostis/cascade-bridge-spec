@@ -59,7 +59,7 @@ An adapter's file, which has no `specification`, `setup` or `command`:
 | `specification` | `bridge:specification` | exactly 1 | none | a pin naming this repository, as one JSON object |
 | `setup` | `bridge:setup` | exactly 1 | none | an argument vector: an array of at least one string |
 | `command` | `bridge:command` | exactly 1 | none | an argument vector: an array of at least one string |
-| `testedWith` | `bridge:testedWith` | 0 or more | 0 or more | a JSON array of pins; each repository name at most once, and none `cascade-bridge-spec` ([below](#sibling-layout)) |
+| `testedWith` | `bridge:testedWith` | 0 or more | 0 or more | a JSON array of pins; each repository name at most once, and none named `cascade-bridge-spec` or this repository itself ([below](#sibling-layout)) |
 
 Which form applies is decided by the directory, not by the file: a directory
 holding `ro-crate-metadata.json` is an adapter, and one without is an engine.
@@ -160,8 +160,13 @@ its repository: the last segment of its `codeRepository`, without `.git`. The
 tooling looks for a counterpart at `../<repository name>`. So no two entries of
 `testedWith` may share a name, a fork and its original or one URL with and
 without `.git`, nor two names differing only in case, which Windows and macOS
-fold into one directory; and none may be named `cascade-bridge-spec`, where the
-starter checks the specification out.
+fold into one directory; none may be named `cascade-bridge-spec`, where the
+starter checks the specification out; and none may be named as the repository
+under test, which already occupies its own directory.
+
+`validate` refuses all three, and the shapes do not: a name is the directory a
+clone is given, only the tooling sees the directory the file sits in, and one
+rule stated twice is two rules that can disagree.
 
 - **Locally**, a branch pin uses the sibling as it is, uncommitted edits
   included, when the sibling is on that branch. A commit or tag pin runs from a
