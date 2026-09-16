@@ -59,3 +59,17 @@ def test_reports_a_schema_that_declares_no_media_type(crate):
     for schema in schemas:
         crate.graph.remove((schema, SCHEMA.encodingFormat, None))
     assert "declares no encodingFormat" in "\n".join(inputs.invalid(crate))
+
+
+def test_reports_a_schema_that_does_not_compile_for_every_input_validated_against_it(package):
+    crate = package.crate
+    crate.graph.remove((None, BRIDGE.documentSchema, None))
+    tests = list(inputs.committed_inputs(crate))
+    assert len(tests) > 1, "the fixture has more than one input to share the schema"
+    source_schema = crate.graph.value(crate.root, BRIDGE.sourceSchema)
+    crate.file_at(source_schema).write_text("<not-a-schema/>", encoding="utf-8")
+    faults = [message for message in inputs.invalid(crate) if "does not compile" in message]
+    assert len(faults) == len(tests), (
+        "each input validated against a schema that does not compile reports "
+        "it, not only the first"
+    )
