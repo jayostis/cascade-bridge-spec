@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tests for scripts/compatibility.py, in the pattern of selftest-lint.py.
+"""Tests for scripts/compatibility.py.
 
 The question is the same one: *what would the tool report if the thing it
 claims to check were wrong?* Each case builds a small world, breaks one property

@@ -24,9 +24,7 @@ a failure.
 committed bytes, and no publisher's file or referenced dataset is downloaded.
 The tools do use the network, starting with the RO-Crate context the crate names.
 
-What each requirement reports, in its own words, is
-[`scripts/unittest-lint.py`](../scripts/unittest-lint.py): one test per decision,
-each named for the sentence it asserts.
+What each requirement reports is [`tests/adapter_profile/`](../tests/adapter_profile/).
 
 ## The requirements
 

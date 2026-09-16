@@ -18,19 +18,10 @@ What is where is each file's own docstring. The rules that are not:
   or a worktree a tool makes goes with the case, and never into a developer's
   directory.
 - **A suite is fast enough to run on every edit**, because a suite people stop
-  running is worth nothing however many cases it has. Measure before optimising
-  it: a whole-run case costs about 10 seconds and effectively all of that is
-  rocrate-validator, which is why what can be asserted about a decision is
-  asserted against the decision. Cases run concurrently, and a case is
-  selectable by name so that changing four costs four. A filtered run says how
-  many it skipped: a filtered PASS is not the suite passing.
+  running is worth nothing however many cases it has.
 
 ```bash
-python3 -m pip install pyshacl rdflib roc-validator lxml
-python3 scripts/unittest-lint.py
-python3 scripts/selftest-lint.py
+python3 -m pip install --group dev
 python3 scripts/compatibility.py validate <path to a repository>
 python3 scripts/selftest-compatibility.py
 ```
-
-The adapter run stays out of CI on purpose; `../pinning.md` says why.

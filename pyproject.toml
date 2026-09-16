@@ -1,0 +1,7 @@
+[dependency-groups]
+dev = ["pyshacl", "rdflib", "roc-validator", "lxml", "pytest", "pytest-xdist"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["adapter/profile", "adapter/profile/must"]
+addopts = "-n auto"

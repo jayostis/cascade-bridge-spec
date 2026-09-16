@@ -120,12 +120,10 @@ jobs:
         with:
           path: fixtures/synthetic-adapter
 
-      # The step above installed the validators; the two below reuse them.
-      - name: every requirement decides what it says it decides
-        run: python3 scripts/unittest-lint.py
-
-      - name: the lint can be seen failing
-        run: python3 scripts/selftest-lint.py
+      - name: the adapter profile's tests
+        run: |
+          python3 -m pip install --group dev
+          python3 -m pytest
 
   compatibility:
     name: the compatibility tooling, and the starter by local path

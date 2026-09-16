@@ -60,8 +60,8 @@ only when that directory is touched. Keep this file under 80 lines.
 A `README.md` addresses whoever is building something that must conform; a
 `CLAUDE.md` addresses whoever is changing this repository, so rules for authoring
 an adapter never go in one. Conformance targets are top-level (`adapter/`,
-`engine/`), each holding its own contract and the profile that checks it;
-`vocab/` and `shapes/` are the spine they share; `scripts/` and `fixtures/` are
+`engine/`), each holding its contract and the profile that checks it; `vocab/`
+and `shapes/` are the spine they share; `scripts/`, `fixtures/` and `tests/` are
 machinery, never inside a target. `.github/` is where GitHub requires it.
 
 ## Conventions
