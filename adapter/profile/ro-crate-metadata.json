@@ -26,7 +26,7 @@
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       },
-      "description": "An RO-Crate 1.2 Profile Crate for a Cascade Bridge Adapter: what an adapter's crate names in conformsTo. Its requirements are profile.ttl and must/ in this directory, which rocrate-validator runs; one of them validates the crate and its test manifest as one graph against shapes/bridge.shapes.ttl. The profile IRI does not dereference yet. DRAFT: no compatibility is promised before a numbered v1. The shapes and the vocabulary are web-based data entities because they are outside this crate's root, and the profile IRI is identifier rather than the root's @id because a crate's root @id is ./.",
+      "description": "The RO-Crate 1.2 profile a Cascade Bridge Adapter's crate names in conformsTo. DRAFT.",
       "hasResource": [
         {
           "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/shapes/bridge.shapes.ttl"
@@ -55,7 +55,7 @@
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       },
-      "description": "The SHACL shapes an adapter's crate and test manifest are validated against as one graph, each with its own location as base. Requires SHACL-SPARQL."
+      "description": "The SHACL shapes an adapter's crate and test manifest are validated against as one graph."
     },
     {
       "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/vocab/bridge.ttl",
@@ -65,7 +65,7 @@
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       },
-      "description": "The bridge: vocabulary, https://ns.cascadeprotocol.org/bridge/v1-draft#: the adapter terms an adapter's crate root entity and envelopes use, and the test terms its test manifest uses on top of W3C's mf: test-manifest vocabulary. In the repository at vocab/bridge.ttl."
+      "description": "The bridge: vocabulary."
     },
     {
       "@id": "https://spdx.org/licenses/Apache-2.0",

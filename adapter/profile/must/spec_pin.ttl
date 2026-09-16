@@ -5,7 +5,6 @@
 
 <#SpecPin> a sh:NodeShape ;
   sh:name "Specification pin" ;
-  sh:description "bridge:specPin names a commit and the repository that holds it." ;
   sh:targetObjectsOf bridge:specPin ;
   sh:property [
     sh:path schema:version ;

@@ -21,7 +21,4 @@ def test_never_judges_an_expected_graph_against_cascades_shapes(package):
         prefix,
         prefix + "\n<https://example.org/x> <https://example.org/undefined> 1 .",
     )
-    assert not list(expected_graphs.unparsable(package.crate)), (
-        "a term no vocabulary defines is a Bridge's validate stage to judge, "
-        "and parsing is all this asks"
-    )
+    assert not list(expected_graphs.unparsable(package.crate))

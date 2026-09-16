@@ -15,12 +15,8 @@ def test_reports_a_tracked_file_the_crate_describes_nowhere(package):
 def test_allowlists_the_repository_documents_and_dotfiles(package):
     package.write("README.md", "# nothing the crate describes")
     package.write(".editorconfig", "root = true")
-    assert not list(inventory.unaccounted(package.crate)), (
-        "a README and a dotfile describe the repository, not the package"
-    )
+    assert not list(inventory.unaccounted(package.crate))
 
 
 def test_reports_a_package_that_is_not_a_git_checkout(loose):
-    assert "is not a git checkout" in "\n".join(inventory.unaccounted(loose.crate)), (
-        "a requirement nothing could check must not pass in silence"
-    )
+    assert "is not a git checkout" in "\n".join(inventory.unaccounted(loose.crate))

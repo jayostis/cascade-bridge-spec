@@ -1,11 +1,10 @@
 import sys
 from pathlib import Path
 
-# The validator imports this file by path, without its directory on sys.path.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from _held import held
-from _crate import entity_name
+from _crate import file_name_of
 from _terms import BRIDGE
 from rdflib.plugins.sparql import prepareQuery
 from rocrate_validator.models import ValidationContext
@@ -20,8 +19,6 @@ FINDING_VARIABLES = ("sourceField", "reason", "severity", "context")
 
 
 def malformed(crate):
-    """Every query that does not parse, or is not the form its property
-    declares, as a message each."""
     named = [
         (prop, query)
         for prop in QUERY_FORMS
@@ -29,14 +26,14 @@ def malformed(crate):
     ]
     for prop, query in named:
         term, form = QUERY_FORMS[prop]
-        name = entity_name(query)
+        name = file_name_of(query)
         path = crate.file_at(query)
         if path is None:
             yield f"{term} names {query}, which is not a file in this package"
             continue
         try:
             parsed = prepareQuery(path.read_text(encoding="utf-8"))
-        except Exception as error:  # the parser raises several unrelated types
+        except Exception as error:
             yield f"{name} does not parse as SPARQL 1.1\n{error}"
             continue
         found = parsed.algebra.name.removesuffix("Query").upper()
@@ -45,8 +42,6 @@ def malformed(crate):
             continue
         if prop == BRIDGE.findingsQuery:
             projected = [str(variable) for variable in parsed.algebra["PV"]]
-            # Sorted rather than a set: rdflib keeps a variable projected twice,
-            # and a set would pass it as the four.
             if sorted(projected) != sorted(FINDING_VARIABLES):
                 listed = " ".join("?" + v for v in projected)
                 yield (

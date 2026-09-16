@@ -1,18 +1,13 @@
 # Compatibility between engines and adapters
 
-A repository may commit a `compatibility.json` at its root saying "also test me
-against this adapter" (an engine) or "against this engine" (an adapter). **Every
-entry is an assertion, and a failed assertion blocks the merge.** Why pins work
-this way is [`pinning.md`](pinning.md).
+A repository may commit a `compatibility.json` at its root naming the adapters
+(in an engine) or engines (in an adapter) it must pass with. **Every entry that
+does not hold blocks the merge.**
 
-## The file
-
-JSON that is also JSON-LD, through
-[`vocab/compatibility.context.jsonld`](vocab/compatibility.context.jsonld), the
-list of keys there are. What each key means is its `bridge:` term's
-`rdfs:comment` in [`vocab/bridge.ttl`](vocab/bridge.ttl); what is checked is the
-shapes at the end of [`shapes/bridge.shapes.ttl`](shapes/bridge.shapes.ttl) and
-`validate` below.
+Its keys are [`vocab/compatibility.context.jsonld`](vocab/compatibility.context.jsonld),
+each a `bridge:` term in [`vocab/bridge.ttl`](vocab/bridge.ttl), checked by the
+compatibility shapes in [`shapes/bridge.shapes.ttl`](shapes/bridge.shapes.ttl).
+An engine's file:
 
 ```json
 {
@@ -29,32 +24,21 @@ shapes at the end of [`shapes/bridge.shapes.ttl`](shapes/bridge.shapes.ttl) and
 }
 ```
 
-An adapter's file has only `testedWith`: its spec pin stays in its crate, where a
-host loading the adapter reads it. A directory holding `ro-crate-metadata.json` is
-an adapter.
+An adapter's file has only `testedWith`; its spec pin is `bridge:specPin` in its crate.
 
-**A commit or tag pin is reproducible**: green on a pull request stays green once
-merged. **A default-branch pin** means "keep me current, and block me when the
-other side breaks me", and the other side merging can turn this one red with no
-change of its own.
+A commit or tag pin is reproducible. A default-branch pin can turn red when the
+other side merges, with no change of its own.
 
 ## Changing an entry
 
 - **Opt out** by deleting the entry or re-pinning it. There is no "expected to
-  fail" entry; the pull request carries the reason.
-- **Add a pairing after both sides have merged**, so a new assertion cannot
-  deadlock two open pull requests.
-- **A breaking change resolves in the open**: the engine removes or re-pins the
-  adapter's entry and merges, the adapter follows, the engine re-adds the entry.
+  fail" entry.
+- **Add a pairing after both sides have merged.**
+- **A breaking change**: the engine removes or re-pins the adapter's entry and
+  merges, the adapter follows, the engine re-adds the entry.
 
 ## The tooling
 
-[`scripts/compatibility.py`](scripts/compatibility.py): its docstring lists the
-subcommands. A repository's CI calls only the starter,
-`.github/actions/start@start-v1`, a tag that never moves ([`adapter/validation.md`](adapter/validation.md) shows the
-workflow). The starter checks this repository out at the caller's spec pin and
-hands over to the actions beside it, so the spec pin is written in one place.
-
-Every counterpart is checked out beside the repository under test, in a
-directory named as its repository. A run records the commit each pin resolved
-to; a result from a sibling's uncommitted edits is feedback, never evidence.
+[`scripts/compatibility.py`](scripts/compatibility.py); its docstring is the
+usage. A repository's CI calls only `.github/actions/start@start-v1`
+([`adapter/validation.md`](adapter/validation.md) shows the workflow).

@@ -6,7 +6,6 @@
 <#Envelope> a sh:NodeShape ;
   sh:name "Envelope" ;
   sh:targetClass bridge:Envelope ;
-  sh:description "A document root the source format arrives in." ;
   sh:property [
     sh:path schema:name ;
     sh:minCount 1 ;

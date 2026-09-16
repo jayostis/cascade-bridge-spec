@@ -15,8 +15,6 @@ MUST = ROOT / "adapter" / "profile" / "must"
 
 
 class Package:
-    """A copy of the fixture package, whose files a test may change."""
-
     def __init__(self, path, tracked=True):
         shutil.copytree(FIXTURE, path)
         self.path = path
@@ -65,16 +63,13 @@ def conforming(tmp_path_factory):
 
 @pytest.fixture
 def crate(conforming):
-    """The fixture package's crate, parsed once, with a graph a test may change."""
     graph = Graph()
     graph += conforming.graph
     return dataclasses.replace(conforming, graph=graph)
 
 
 @pytest.fixture(scope="session")
-def native():
-    """What a shape file under adapter/profile/must/ reports for a crate."""
-
+def shape_file_messages():
     def run(crate, shapes_file):
         _, report, _ = validate(
             crate.graph,

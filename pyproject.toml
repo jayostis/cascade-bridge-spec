@@ -1,5 +1,3 @@
-# validators is what the published actions install, so an adapter is validated
-# by the versions its spec pin names. A new release is a change here, tested.
 [dependency-groups]
 validators = ["roc-validator==0.11.4", "pyshacl==0.40.1", "rdflib==7.6.0", "lxml==6.1.3"]
 dev = [{include-group = "validators"}, "pytest", "pytest-xdist"]

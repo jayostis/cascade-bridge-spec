@@ -1,5 +1,3 @@
-# A Note, which the invented vocabulary has no term for, is a finding.
-
 PREFIX fx:  <http://sparql.xyz/facade-x/ns/>
 PREFIX xyz: <http://sparql.xyz/facade-x/data/>
 

@@ -1,14 +1,4 @@
-# What it does and what it hands over to is compatibility.md. Why it is this
-# small: start-v1 is reserved and never moves, so a change here costs a new tag
-# and a change in every caller's workflow.
-#
-# It reads the spec pin with its own revision's tooling, because the checkout
-# that pin names does not exist yet; everything after that runs from the pinned
-# revision.
-#
-# Called by local path, as this repository's own CI calls it, there is no pinned
-# revision to fetch that could run this repository's current tools: the starter
-# says so and runs the tools from the checkout it is in.
+# start-v1 never moves: a change here needs a new tag and an edit in every caller.
 name: Cascade Bridge start
 description: >-
   Check the Cascade Bridge Specification out at the repository's own spec pin,

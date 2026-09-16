@@ -1,7 +1,6 @@
 import sys
 from pathlib import Path
 
-# The validator imports this file by path, without its directory on sys.path.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from _held import held
@@ -12,34 +11,27 @@ from rocrate_validator.requirements.python import PyFunctionCheck, check, requir
 LOCAL_ADVICE = (
     "This is the local claim, and it is wrong about the file beside it: the "
     "file was changed without the crate, or the crate without the file. "
-    "Replace the file from its source or correct the digest, in the same "
-    "commit (adapter/fixtures/README.md)."
+    "Replace the file from its source or correct the digest, in the same commit."
 )
 
 PUBLISHER_ADVICE = (
-    "A different finding from a wrong sha256. The publisher's digest is the "
-    "source's claim about its own file, so a mismatch says this copy has "
-    "drifted from the source it claims to be byte for byte -- not that the "
-    "crate has miscounted the bytes on disk. Re-fetch from the source, or "
-    "record why the two differ."
+    "A different finding from a wrong sha256: this copy has drifted from the "
+    "source it claims to be byte for byte. Re-fetch from the source, or record "
+    "why the two differ."
 )
 
 
 def claims(crate):
-    """Every digest in the crate that names committed bytes, and whose claim
-    it is. A digest on an entity committed nowhere here is not yielded: it is
-    recorded and not compared, which is why nothing is fetched."""
     for subject, predicate, value in crate.graph:
         algorithm = str(predicate).rsplit("#", 1)[-1].rsplit("/", 1)[-1].lower()
         if algorithm not in DIGEST_ALGORITHMS:
             continue
-        path = crate.path_of(subject)
+        path = crate.path_in_package(subject)
         if path is not None:
             yield path, algorithm, str(value), predicate == LOCAL_DIGEST
 
 
 def mismatches(crate):
-    """Every digest that does not describe its file, as a message each."""
     for path, algorithm, declared, is_local in claims(crate):
         whose = "crate's" if is_local else "publisher's"
         if not path.is_file():

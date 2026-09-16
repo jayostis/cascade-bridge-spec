@@ -32,7 +32,13 @@ def test_reports_a_findings_query_projecting_other_than_the_four_variables(packa
 def test_reports_nothing_when_the_adapter_names_no_query(crate):
     for term in (BRIDGE.mapping, BRIDGE.findingsQuery, BRIDGE.detectQuery):
         crate.graph.remove((crate.root, term, None))
-    assert not list(queries.malformed(crate)), (
-        "found nothing of its kind is not a fault: the shapes are what require "
-        "an adapter to name a mapping at all"
+    assert not list(queries.malformed(crate))
+
+
+def test_reports_a_findings_query_projecting_one_of_the_four_variables_twice(package):
+    package.edit(
+        "in/example-findings.rq",
+        "SELECT ?sourceField ?reason ?severity ?context",
+        "SELECT ?sourceField ?sourceField ?reason ?severity ?context",
     )
+    assert "?sourceField ?sourceField" in "\n".join(queries.malformed(package.crate))

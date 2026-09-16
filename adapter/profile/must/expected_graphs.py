@@ -1,7 +1,6 @@
 import sys
 from pathlib import Path
 
-# The validator imports this file by path, without its directory on sys.path.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from _held import held
@@ -12,7 +11,6 @@ from rocrate_validator.requirements.python import PyFunctionCheck, check, requir
 
 
 def unparsable(crate):
-    """Every expected graph that is not Turtle here, as a message each."""
     for test in crate.entries:
         result = crate.graph.value(test, MF.result)
         if result is None:
@@ -30,7 +28,7 @@ def unparsable(crate):
             continue
         try:
             Graph().parse(path, format="turtle", publicID=str(turtle))
-        except Exception as error:  # rdflib raises several unrelated types
+        except Exception as error:
             yield f"{name}: {path.name} does not parse as Turtle\n{error}"
 
 

@@ -1,25 +1,18 @@
 import sys
 from pathlib import Path
 
-# The validator imports this file by path, without its directory on sys.path.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import subprocess
 
 from _held import held
-from _terms import ALLOWLIST, SCHEMA
+from _terms import FILES_THE_CRATE_NEED_NOT_DESCRIBE, SCHEMA
 from rdflib import URIRef
 from rocrate_validator.models import ValidationContext
 from rocrate_validator.requirements.python import PyFunctionCheck, check, requirement
 
 
-def tracked_files(adapter):
-    """Every file git tracks in the adapter's checkout, as relative paths.
-
-    git, not a directory walk: a walk sees build output, a virtual environment
-    and whatever the last run left behind, and an inventory that counts those
-    is an inventory nobody can keep green. None when it is not a checkout.
-    """
+def git_tracked_files(adapter):
     run_git = subprocess.run(
         ["git", "-C", str(adapter), "ls-files", "-z"],
         capture_output=True,
@@ -31,16 +24,12 @@ def tracked_files(adapter):
 
 
 def unaccounted(crate):
-    """Every file the crate accounts for nowhere, as a message each."""
-    paths = tracked_files(crate.adapter)
+    paths = git_tracked_files(crate.adapter)
     if paths is None:
-        yield (
-            f"{crate.adapter} is not a git checkout, so the inventory cannot be "
-            "taken and nothing here says this package is only data"
-        )
+        yield f"{crate.adapter} is not a git checkout, so the inventory cannot be taken"
         return
     for path in paths:
-        if path in ALLOWLIST or path.split("/", 1)[0].startswith("."):
+        if path in FILES_THE_CRATE_NEED_NOT_DESCRIBE or path.split("/", 1)[0].startswith("."):
             continue
         entity = URIRef((crate.adapter / path).resolve().as_uri())
         if crate.graph.value(entity, SCHEMA.encodingFormat) is None:

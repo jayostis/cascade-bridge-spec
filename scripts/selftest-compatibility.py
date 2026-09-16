@@ -1,30 +1,5 @@
 #!/usr/bin/env python3
-"""Tests for scripts/compatibility.py.
-
-The question is the same one: *what would the tool report if the thing it
-claims to check were wrong?* Each case builds a small world, breaks one property
-of it or exercises one rule, and asserts the tool's exit status and the words it
-says. The first cases show it passing, so that a red case is known to be red for
-its own reason.
-
-**No network.** The counterparts are throwaway git repositories made in a
-temporary directory: an `origins` directory standing for where repositories are
-published, named by file:// URLs, and a `workspace` directory holding clones of
-them side by side, as compatibility.md lays siblings out. Commits, tags, a
-default branch and a feature branch are made there, so resolving, checking out
-and the merge-time rule run against real git without reaching GitHub.
-
-**Nothing here mutates a tracked file.** fixtures/synthetic-adapter is copied,
-never edited, and no case writes inside the repository. No real adapter or
-engine is named: the counterparts are this repository's own fixtures, under
-names this file makes up.
-
-Each tool run gets the case's temporary directory as its system temporary
-directory, so the record, and any worktree the tool makes, land there and go
-with it.
-
-Run:  python3 scripts/selftest-compatibility.py
-"""
+"""Usage: python3 scripts/selftest-compatibility.py"""
 
 from __future__ import annotations
 
@@ -63,21 +38,7 @@ def git(*args, cwd=None):
     return run.stdout.strip()
 
 
-# ---------------------------------------------------------------------------
-# The world a case runs in
-# ---------------------------------------------------------------------------
-
-
 class World:
-    """Published repositories under origins/, and a workspace of clones.
-
-    specification  one commit on main: what an engine's specification pins
-    adapter        a copy of fixtures/synthetic-adapter: main, tag v1 on main,
-                   and a feature branch feat/next one commit ahead of main
-    engine         fixtures/fake-engine, with an engine's compatibility.json
-                   committed beside it, so a checkout at any commit can run it
-    """
-
     def __init__(self, root):
         self.root = Path(root)
         self.origins = self.root / "origins"
@@ -138,9 +99,6 @@ def write_file(directory, document):
 
 
 def engine_file(world, tested_with, canned="passed", **overrides):
-    """An engine's compatibility.json, running the fake engine with the report
-    `canned` names. The vectors name the running interpreter, so the case runs
-    where python3 is not on PATH."""
     document = {
         "specification": {
             "codeRepository": world.url("specification"),
@@ -156,11 +114,6 @@ def engine_file(world, tested_with, canned="passed", **overrides):
 
 def adapter_pin(world, **pin):
     return [{"codeRepository": world.url("adapter"), **pin}]
-
-
-# ---------------------------------------------------------------------------
-# The cases. Each builds its world and returns the directory under test.
-# ---------------------------------------------------------------------------
 
 
 def engine_on_main(world):
@@ -218,8 +171,6 @@ def string_vector(world):
 
 
 def tested_with_object(world):
-    """One pin written as an object where the array goes, which JSON-LD reads
-    as a one-element array and so gets past the shapes."""
     engine = world.clone("engine")
     write_file(engine, engine_file(world, adapter_pin(world, branch="main")[0]))
     return engine
@@ -233,8 +184,6 @@ def specification_array(world):
 
 
 def two_of_one_name(second):
-    """Two counterparts whose clones would share one directory beside the
-    repository under test: the adapter, and `second`'s URL."""
     def build(world):
         engine = world.clone("engine")
         write_file(engine, engine_file(world, [
@@ -255,8 +204,6 @@ def named_as_specification(world):
 
 
 def named_as_self(world):
-    """A counterpart whose name is the directory under test: its clone would
-    need the directory the repository under test already occupies."""
     engine = world.clone("engine")
     write_file(engine, engine_file(world, [{
         "codeRepository": (world.origins / "elsewhere" / "engine").as_uri(),
@@ -302,7 +249,6 @@ def tag_on_main(world):
 
 
 def engine_and_adapter(canned):
-    """An engine on its adapter's default branch, the adapter's clone beside it."""
     def build(world):
         engine = world.clone("engine")
         write_file(engine, engine_file(world, adapter_pin(world, branch="main"), canned=canned))
@@ -320,8 +266,6 @@ def sibling_state(path):
 
 
 def adapter_on_engine_commit(world):
-    """The other direction: an adapter pinning its engine by commit, the
-    engine's clone beside it on main with an edit of its own in flight."""
     adapter = world.clone("adapter")
     write_file(adapter, {
         "testedWith": [{"codeRepository": world.url("engine"), "commit": world.commits["engine"]}]
@@ -362,51 +306,51 @@ VALIDATE_ERROR = (
 
 CASES = [
     {
-        "name": "validate: an engine's file",
+        "name": "validate passes an engine's file in an engine's directory",
         "build": engine_on_main,
         "steps": [("validate", 0)],
         "expect": ["the form is an engine's, as the directory is", "PASS"],
     },
     {
-        "name": "validate: an adapter's file",
+        "name": "validate passes an adapter's file in an adapter's directory",
         "build": adapter_naming_engine,
         "steps": [("validate", 0)],
         "expect": ["the form is an adapter's, as the directory is", "PASS"],
     },
     {
-        "name": "validate: an adapter with no compatibility.json",
+        "name": "validate reports nothing to check, not a pass, for an adapter with no compatibility.json",
         "build": lambda world: world.clone("adapter"),
         "steps": [("validate", 0)],
         "expect": ["has no compatibility.json: nothing to check", "validate: nothing to check"],
         "forbid": ["\nPASS\n"],
     },
     {
-        "name": "checkout: an engine listing no counterpart",
+        "name": "checkout reports nothing to check, not a pass, for an engine listing no counterpart",
         "build": lambda world: world.clone("engine"),
         "steps": [("checkout", 0)],
         "expect": ["lists no counterpart: nothing to check", "checkout: nothing to check"],
         "forbid": ["\nPASS\n"],
     },
     {
-        "name": "validate: two pin kinds in one entry",
+        "name": "validate fails a pin naming two of commit, tag and branch",
         "build": two_pin_kinds,
         "steps": [("validate", 1)],
         "expect": ["A pin names exactly one of commit, tag or branch."],
     },
     {
-        "name": "validate: an engine's file without command",
+        "name": "validate fails an engine's file without command",
         "build": engine_without_command,
         "steps": [("validate", 1)],
         "expect": [VALIDATE_ERROR],
     },
     {
-        "name": "validate: an adapter's file carrying specification",
+        "name": "validate fails an adapter's file carrying specification",
         "build": adapter_carrying_specification,
         "steps": [("validate", 1)],
         "expect": [VALIDATE_ERROR],
     },
     {
-        "name": "validate: an engine's form in an adapter's directory",
+        "name": "validate fails an engine's file in an adapter's directory",
         "build": engine_form_in_adapter,
         "steps": [("validate", 1)],
         "expect": [
@@ -415,62 +359,62 @@ CASES = [
         ],
     },
     {
-        "name": "validate: a key the context does not define",
+        "name": "validate fails a key the context does not define",
         "build": misspelt_key,
         "steps": [("validate", 1)],
         "expect": ["testedwith is not a key the context defines"],
     },
     {
-        "name": "validate: an argument vector written as a string",
+        "name": "validate fails an argument vector written as a string",
         "build": string_vector,
         "steps": [("validate", 1)],
         "expect": ["setup is an argument vector, written as a JSON array of strings"],
     },
     {
-        "name": "validate: testedWith written as one object",
+        "name": "validate fails testedWith written as one object",
         "build": tested_with_object,
         "steps": [("validate", 1)],
         "expect": ["testedWith is a list of pins, written as a JSON array"],
     },
     {
-        "name": "validate: specification written as an array",
+        "name": "validate fails specification written as an array",
         "build": specification_array,
         "steps": [("validate", 1)],
         "expect": ["specification is one pin, written as a JSON object"],
     },
     {
-        "name": "checkout: testedWith written as one object stops in a sentence",
+        "name": "checkout stops in a sentence, not a traceback, on testedWith written as one object",
         "build": tested_with_object,
         "steps": [("checkout", 1)],
         "expect": ["testedWith is not a pin; run validate first"],
         "forbid": ["Traceback"],
     },
     {
-        "name": "validate: a fork of a counterpart, its name in another case",
+        "name": "validate fails two counterparts whose names differ only in case",
         "build": two_of_one_name(lambda world: (world.origins / "fork" / "Adapter").as_uri()),
         "steps": [("validate", 1)],
         "expect": ["Each repository name appears in testedWith at most once"],
     },
     {
-        "name": "validate: one counterpart with and without .git",
+        "name": "validate fails one counterpart listed with and without .git",
         "build": two_of_one_name(lambda world: world.url("adapter") + ".git"),
         "steps": [("validate", 1)],
         "expect": ["Each repository name appears in testedWith at most once"],
     },
     {
-        "name": "validate: a counterpart named as the specification",
+        "name": "validate fails a counterpart named cascade-bridge-spec",
         "build": named_as_specification,
         "steps": [("validate", 1)],
         "expect": ["No repository in testedWith is named cascade-bridge-spec"],
     },
     {
-        "name": "validate: a counterpart named as the repository under test",
+        "name": "validate fails a counterpart named as the repository under test",
         "build": named_as_self,
         "steps": [("validate", 1)],
         "expect": ["No repository in testedWith is named engine"],
     },
     {
-        "name": "resolve: a branch pin uses the sibling's uncommitted edits, flagged",
+        "name": "resolve uses a branch pin's sibling with its uncommitted edits, and flags them",
         "build": dirty_sibling,
         "steps": [("resolve", 0)],
         "expect": [
@@ -479,26 +423,26 @@ CASES = [
         ],
     },
     {
-        "name": "resolve: a counterpart that cannot be reached",
+        "name": "resolve stops in a sentence on a counterpart that cannot be reached",
         "build": unreachable,
         "steps": [("resolve", 1)],
         "expect": ["renamed-away could not be reached: it may be private, renamed or deleted"],
         "forbid": ["Traceback"],
     },
     {
-        "name": "ready: a pin to a feature branch",
+        "name": "ready fails a pin to a feature branch",
         "build": feature_branch,
         "steps": [("ready", 1)],
         "expect": ["branch feat/next: not the default branch, main"],
     },
     {
-        "name": "ready: a commit not on the default branch",
+        "name": "ready fails a commit not on the default branch",
         "build": commit_off_main,
         "steps": [("ready", 1)],
         "expect": ["{adapter feat/next} is not on main, the default branch"],
     },
     {
-        "name": "ready: a tag on the default branch, and the spec pin",
+        "name": "ready passes a tag on the default branch, and the spec pin",
         "build": tag_on_main,
         "steps": [("ready", 0)],
         "expect": [
@@ -508,25 +452,25 @@ CASES = [
         ],
     },
     {
-        "name": "ready: a pin to the default branch",
+        "name": "ready passes a pin to the default branch",
         "build": engine_on_main,
         "steps": [("ready", 0)],
         "expect": ["branch main: the default branch"],
     },
     {
-        "name": "spec-pin: an engine's specification",
+        "name": "spec-pin reads an engine's specification",
         "build": engine_on_main,
         "steps": [("spec-pin", 0)],
         "expect": ["specification: {url specification} commit {specification}"],
     },
     {
-        "name": "spec-pin: an adapter's bridge:specPin, read from its crate",
+        "name": "spec-pin reads an adapter's bridge:specPin from its crate",
         "build": lambda world: world.clone("adapter"),
         "steps": [("spec-pin", 0)],
         "expect": ["bridge:specPin: https://github.com/jayostis/cascade-bridge-spec commit "],
     },
     {
-        "name": "checkout, run, judge: an engine holding on its adapter's default branch",
+        "name": "judge holds an entry whose engine passes its adapter",
         "build": engine_and_adapter("passed"),
         "steps": [("checkout", 0), ("run", 0), ("judge", 0)],
         "expect": [
@@ -537,25 +481,25 @@ CASES = [
         "forbid": ["does not hold"],
     },
     {
-        "name": "judge: an entry that does not hold, from an engine that exits 0",
+        "name": "judge fails an entry whose report has a failure, though the engine exits 0",
         "build": engine_and_adapter("failed"),
         "steps": [("checkout", 0), ("run", 0), ("judge", 1)],
         "expect": ["does not hold; 1 cantTell, 1 failed, 1 untested"],
     },
     {
-        "name": "judge: a run that writes no report",
+        "name": "judge fails an entry whose run wrote no report",
         "build": engine_and_adapter("none"),
         "steps": [("checkout", 0), ("run", 0), ("judge", 1)],
         "expect": ["it wrote no report", "does not hold; it wrote no report"],
     },
     {
-        "name": "judge: a report that is not Turtle",
+        "name": "judge fails an entry whose report is not Turtle",
         "build": engine_and_adapter("garbled"),
         "steps": [("checkout", 0), ("run", 0), ("judge", 1)],
         "expect": ["does not hold; its report does not parse as Turtle"],
     },
     {
-        "name": "judge: a report missing entries of the manifest, none failed",
+        "name": "judge fails a report missing entries of the manifest, though none failed",
         "build": engine_and_adapter("partial"),
         "steps": [("checkout", 0), ("run", 0), ("judge", 1)],
         "expect": [
@@ -564,14 +508,14 @@ CASES = [
         ],
     },
     {
-        "name": "checkout: a missing sibling",
+        "name": "checkout stops with the git clone command for a missing sibling",
         "build": engine_on_main,
         "steps": [("checkout", 1)],
         "expect": ["has no clone beside engine; clone it with: git clone {url adapter}"],
         "forbid": ["Traceback"],
     },
     {
-        "name": "judge: a branch pin on a sibling's uncommitted edits holds, flagged",
+        "name": "judge holds an entry run on a sibling's uncommitted edits, and flags it",
         "build": dirty_sibling,
         "steps": [("checkout", 0), ("run", 0), ("judge", 0)],
         "expect": [
@@ -580,14 +524,14 @@ CASES = [
         ],
     },
     {
-        "name": "checkout: a commit pin runs from a worktree, the sibling untouched",
+        "name": "checkout runs a commit pin from a worktree, leaving the sibling untouched",
         "build": adapter_on_engine_commit,
         "steps": [("checkout", 0), ("run", 0), ("judge", 0)],
         "expect": ["commit {engine} is {engine} (the commit pinned)", "holds"],
         "check": sibling_untouched,
     },
     {
-        "name": "checkout: in CI, a clone at the resolved commit",
+        "name": "checkout in CI clones the counterpart at the resolved commit",
         "build": tag_on_main,
         "mode": "ci",
         "steps": [("checkout", 0), ("run", 0), ("judge", 0)],
@@ -597,11 +541,7 @@ CASES = [
 ]
 
 
-# ---------------------------------------------------------------------------
-
-
 def fill(fragment, world):
-    """A fragment with the world's commits and URLs put in."""
     for name, commit in world.commits.items():
         fragment = fragment.replace("{" + name + "}", commit)
     for name in ("adapter", "engine", "specification"):

@@ -1,15 +1,3 @@
-"""The adapter's crate and test manifest, loaded as one graph.
-
-Base IRIs are the point. The crate is parsed with ro-crate-metadata.json's own
-location as base and the manifest with its own, which is what makes the two
-files one graph: the crate's "./" and the manifest's <../> become the same IRI,
-the adapter; the crate's "fixtures/manifest.ttl" and the manifest's <> become
-the same IRI; and the manifest's <../ro-crate-metadata.json#envelope-efetch>
-resolves onto the envelope entity the crate declares. Load either file with the
-wrong base and every link between them silently becomes two unrelated nodes,
-and the shapes report nothing rather than reporting a mistake.
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -25,33 +13,24 @@ from _terms import BRIDGE, MF
 
 @dataclass(frozen=True)
 class Crate:
-    """An adapter package, loaded."""
-
     adapter: Path
     graph: Graph
     root: URIRef
     manifest_iri: URIRef
     manifest_file: Path
 
-    def path_of(self, iri):
-        """The file an entity IRI names, when it is one inside the package.
-
-        None for a remote entity: an https: IRI is a reference, and there are
-        no committed bytes here to hold it to.
-        """
+    def path_in_package(self, iri):
         prefix = self.adapter.resolve().as_uri().rstrip("/") + "/"
         if not str(iri).startswith(prefix):
             return None
         return Path(url2pathname(urlparse(str(iri)).path))
 
     def file_at(self, iri):
-        """The committed file an IRI names, or None if there is not one."""
-        path = self.path_of(iri)
+        path = self.path_in_package(iri)
         return path if path is not None and path.is_file() else None
 
     @property
     def entries(self):
-        """The tests in mf:entries, in the order the manifest lists them."""
         head = self.graph.value(self.manifest_iri, MF.entries)
         found = []
         while head is not None and head != RDF.nil:
@@ -65,13 +44,11 @@ class Crate:
         return str(self.graph.value(test, MF.name) or test)
 
 
-def entity_name(iri):
-    """The file name at the end of an entity IRI, for a message."""
+def file_name_of(iri):
     return Path(url2pathname(urlparse(str(iri)).path)).name or str(iri)
 
 
 def load(adapter):
-    """Load the crate and the test manifest it names as one graph."""
     crate_file = adapter / "ro-crate-metadata.json"
     graph = Graph()
     graph.parse(crate_file, format="json-ld", base=crate_file.resolve().as_uri())
@@ -105,15 +82,10 @@ def load(adapter):
     return Crate(adapter, graph, root, manifest_iri, manifest_file)
 
 
-_loaded: dict[Path, Crate] = {}
+_parsed_crates: dict[Path, Crate] = {}
 
 
 def from_context(context):
-    """The crate for the package a requirement is being run against.
-
-    Parsed once per package per run: every requirement asks for it, and the
-    parse is the expensive part.
-    """
     uri = context.settings.rocrate_uri
     for candidate in (getattr(uri, "path", None), str(uri)):
         if not candidate:
@@ -124,7 +96,7 @@ def from_context(context):
         path = Path(text)
         if path.is_dir():
             path = path.resolve()
-            if path not in _loaded:
-                _loaded[path] = load(path)
-            return _loaded[path]
+            if path not in _parsed_crates:
+                _parsed_crates[path] = load(path)
+            return _parsed_crates[path]
     raise FileNotFoundError(f"cannot read {uri} as a directory")

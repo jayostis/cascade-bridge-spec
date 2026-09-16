@@ -1,12 +1,8 @@
 # The `sparql-1.1` profile
 
 What a Bridge offering `bridge:sparql-1.1` does: lift XML to RDF, and run an
-adapter's SPARQL 1.1 queries over the lift.
-
-Two Bridges produce the same graph from one adapter only if they produce the
-same lift, so the lift is specified exactly, and
-[`../fixtures/lift/`](../fixtures/lift/) holds the vectors a Bridge must
-reproduce.
+adapter's SPARQL 1.1 queries over the lift. A Bridge must reproduce the vectors
+in [`../fixtures/lift/`](../fixtures/lift/).
 
 ## The lift
 
@@ -31,8 +27,7 @@ triples in the shape of SPARQL Anything's Facade-X. Every node is a blank node.
   carriage return and line feed, and no other character. A no-break space is
   text, alone or beside spaces.
 
-Every name in the vectors is ASCII. How a name with other characters is
-written in an IRI is not specified in v1-draft.
+How a non-ASCII name is written in an IRI is not specified.
 
 ## What is lifted
 
@@ -46,8 +41,7 @@ the whole document, with the document element as the lift root, except that
 every unit is lifted as an empty container — its type triples and its place
 among its parent's children, without its attributes or its children. A unit
 that is the document element is lifted as an empty container too: the skeleton
-is then its type triples alone. A router can build it while streaming, so
-detecting a multi-gigabyte release does not mean lifting it.
+is then its type triples alone.
 
 ## Running an adapter
 
@@ -56,7 +50,7 @@ document order, a Bridge:
 
 1. lifts the unit into the default graph of an empty dataset;
 2. loads every `bridge:table` declared `text/turtle` into the same default
-   graph. No other table format is specified in v1-draft;
+   graph. No other table format is specified;
 3. runs every `bridge:mapping`, a CONSTRUCT, over that dataset. The unit's
    graph is the union of their results;
 4. runs every `bridge:findingsQuery` over the same dataset. Each member of a

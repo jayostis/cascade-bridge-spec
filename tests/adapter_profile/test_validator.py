@@ -9,6 +9,8 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
+ROCRATE_VALIDATOR_IN_THIS_PYTHON = [sys.executable, "-c", "from rocrate_validator.cli import cli; cli()"]
+UTF8_OUTPUT_ENV = {**os.environ, "PYTHONIOENCODING": "utf-8"}
 
 CRATE = "ro-crate-metadata.json"
 MANIFEST = "fixtures/manifest.ttl"
@@ -16,8 +18,6 @@ EXPECTED = "fixtures/expected/example-0001.ttl"
 
 
 def restate_digest(package, relative):
-    """Rewrite the crate's sha256 and contentSize for a file just changed, so a
-    case fails for the one reason it names and not also for its digest."""
     data = (package.path / relative).read_bytes()
     crate = package.path / CRATE
     text = crate.read_text(encoding="utf-8")
@@ -76,8 +76,6 @@ def no_expected_graphs(package):
 
 
 def undeclared_context_key(package):
-    """JSON-LD expands bridge:specPin from the prefix alone, so only RO-Crate
-    1.2's rule that every key is in the @context sees this."""
     package.edit(CRATE, '      "bridge:specPin": "bridge:specPin",\n', "")
 
 
@@ -144,9 +142,7 @@ def test_the_validator_runs_the_profile(package, tmp_path, mutate, passes, says,
     report = tmp_path / "report.json"
     run = subprocess.run(
         [
-            # The console script, run by this interpreter: the validator the
-            # tests import is the one they run, whatever else is on PATH.
-            sys.executable, "-c", "from rocrate_validator.cli import cli; cli()",
+            *ROCRATE_VALIDATOR_IN_THIS_PYTHON,
             "validate", str(package.path),
             "--extra-profiles-path", str(ROOT / "adapter"),
             "--profile-identifier", "cascade-bridge-adapter",
@@ -155,9 +151,7 @@ def test_the_validator_runs_the_profile(package, tmp_path, mutate, passes, says,
         capture_output=True,
         encoding="utf-8",
         errors="replace",
-        # Python on Windows encodes piped output in the locale code page, which
-        # cannot encode the validator's non-ASCII output.
-        env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+        env=UTF8_OUTPUT_ENV,
     )
     assert report.is_file(), run.stdout + run.stderr
     found = json.loads(report.read_text(encoding="utf-8"))

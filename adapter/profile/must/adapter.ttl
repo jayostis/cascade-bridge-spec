@@ -7,7 +7,6 @@
   sh:name "Adapter" ;
   sh:targetClass bridge:Adapter ;
   sh:nodeKind sh:IRI ;
-  sh:description "The root entity of the adapter's crate: what a Bridge reads first." ;
   sh:property [
     sh:path schema:identifier ;
     sh:minCount 1 ;
@@ -41,7 +40,7 @@
   sh:property [
     sh:path <http://purl.org/dc/terms/conformsTo> ;
     sh:hasValue <https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/> ;
-    sh:message "The adapter names the Cascade Bridge Adapter profile, https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/, in conformsTo: how a crate declares it is an adapter, to rocrate-validator's profile detection and to any other reader (adapter/ro-crate-metadata.md)."
+    sh:message "The adapter names the Cascade Bridge Adapter profile, https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/, in conformsTo."
   ] ;
   sh:property [
     sh:path bridge:profileRequired ;
@@ -52,7 +51,7 @@
   sh:property [
     sh:path bridge:profileRequired ;
     sh:hasValue bridge:sparql-1.1 ;
-    sh:message "The adapter requires bridge:sparql-1.1, the profile its queries run under; v1-draft specifies no other."
+    sh:message "The adapter requires bridge:sparql-1.1."
   ] ;
   sh:property [
     sh:path bridge:mapping ;
@@ -63,14 +62,14 @@
   sh:property [
     sh:path bridge:findingsQuery ;
     sh:node <#Query> ;
-    sh:message "Each bridge:findingsQuery is a SPARQL 1.1 SELECT whose rows are a unit's findings: a crate File entity (schema:MediaObject) by IRI, declared application/sparql-query. Zero or more."
+    sh:message "Each bridge:findingsQuery is a SPARQL 1.1 SELECT whose rows are a unit's findings: a crate File entity (schema:MediaObject) by IRI, declared application/sparql-query."
   ] ;
   sh:property [
     sh:path bridge:specPin ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:nodeKind sh:IRI ;
-    sh:message "The adapter carries exactly one bridge:specPin, the pinned cascade-bridge-spec commit by IRI: a SoftwareSourceCode entity in the crate with codeRepository and version (the full SHA), the same shape as bridge:vocabularyPin."
+    sh:message "The adapter carries exactly one bridge:specPin, the pinned cascade-bridge-spec commit by IRI."
   ] ;
   sh:property [
     sh:path bridge:vocabularyPin ;
@@ -125,7 +124,7 @@
     sh:path bridge:table ;
     sh:nodeKind sh:IRI ;
     sh:node <#Table> ;
-    sh:message "Each bridge:table is a crate File by IRI that names where its rows came from (schema:isBasedOn). Zero or more."
+    sh:message "Each bridge:table is a crate File by IRI that names where its rows came from (schema:isBasedOn)."
   ] ;
   sh:property [
     sh:path bridge:extensionVocabulary ;
@@ -143,7 +142,6 @@
 
 <#Table> a sh:NodeShape ;
   sh:name "Table" ;
-  sh:description "A lookup table the mapping reads. Where its rows came from is recorded on the table's crate entity, and, where it differs from the package's, its licence." ;
   sh:property [
     sh:path schema:isBasedOn ;
     sh:minCount 1 ;
@@ -153,7 +151,6 @@
 
 <#Query> a sh:NodeShape ;
   sh:name "Query" ;
-  sh:description "A query an adapter names: a crate File in the one language the sparql-1.1 profile runs." ;
   sh:nodeKind sh:IRI ;
   sh:class schema:MediaObject ;
   sh:property [

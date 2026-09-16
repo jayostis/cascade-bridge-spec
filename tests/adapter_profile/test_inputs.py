@@ -30,10 +30,7 @@ def test_holds_a_package_to_nothing_when_the_schema_language_is_one_it_cannot_re
     )
     for schema in schemas:
         crate.graph.set((schema, SCHEMA.encodingFormat, Literal("application/json")))
-    assert not list(inputs.invalid(crate)), (
-        "a JSON source schema is outside v1-draft: a gap in this lint, not a "
-        "fault in the package"
-    )
+    assert not list(inputs.invalid(crate))
 
 
 def test_reports_a_schema_that_is_not_a_file_in_the_package(package):
@@ -69,7 +66,4 @@ def test_reports_a_schema_that_does_not_compile_for_every_input_validated_agains
     source_schema = crate.graph.value(crate.root, BRIDGE.sourceSchema)
     crate.file_at(source_schema).write_text("<not-a-schema/>", encoding="utf-8")
     faults = [message for message in inputs.invalid(crate) if "does not compile" in message]
-    assert len(faults) == len(tests), (
-        "each input validated against a schema that does not compile reports "
-        "it, not only the first"
-    )
+    assert len(faults) == len(tests)

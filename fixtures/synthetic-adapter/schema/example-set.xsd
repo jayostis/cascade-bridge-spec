@@ -1,8 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-  The wrapper schema of the invented format's set envelope, whose root the
-  source schema does not declare. Written by this package, not a copy.
--->
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 
   <xs:include schemaLocation="example-record.xsd"/>

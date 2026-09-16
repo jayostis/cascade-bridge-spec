@@ -1,12 +1,3 @@
-# The graph the package's mapping, in/example-record.rq, produces from
-# in/example-0001.xml, one ExampleRecord unit at a time.
-#
-# It is not validated against Cascade's shapes -- that is a Bridge's validate
-# stage, on the graph a mapping actually produced -- and the terms below are
-# deliberately in an invented namespace under example.org, IANA's reserved
-# example domain, rather than in cascade: or genomics:. A fixture in this repository must not
-# read as an assertion about a Cascade vocabulary.
-
 @prefix ex:   <https://example.org/synthetic-adapter/v1#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .

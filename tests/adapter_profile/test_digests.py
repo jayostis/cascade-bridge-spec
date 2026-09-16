@@ -23,15 +23,10 @@ def test_blames_this_copy_when_the_publishers_digest_disagrees(crate):
     crate.graph.set((record, md5, Literal("0" * 32)))
     found = "\n".join(digests.mismatches(crate))
     assert "the publisher's md5 is not this copy's" in found
-    assert "A different finding from a wrong sha256" in found, (
-        "the two claims are different assertions and are reported as such"
-    )
+    assert "A different finding from a wrong sha256" in found
 
 
 def test_never_compares_a_digest_on_bytes_that_are_not_committed(crate):
     committed = {path for path, _, _, _ in digests.claims(crate)}
     assert committed, "the fixture records digests on committed files"
-    assert all(path.is_file() for path in committed), (
-        "a digest on a referenced release is recorded and not compared, which "
-        "is why nothing is fetched"
-    )
+    assert all(path.is_file() for path in committed)

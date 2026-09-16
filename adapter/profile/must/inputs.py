@@ -1,23 +1,16 @@
 import sys
 from pathlib import Path
 
-# The validator imports this file by path, without its directory on sys.path.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from _held import held
-from _crate import entity_name
+from _crate import file_name_of
 from _terms import BRIDGE, JSON_SCHEMA_MEDIA_TYPES, MF, SCHEMA, XSD_MEDIA_TYPES
 from rocrate_validator.models import ValidationContext
 from rocrate_validator.requirements.python import PyFunctionCheck, check, requirement
 
 
 def schema_for(crate, envelope):
-    """The schema an input arriving in this envelope is validated against.
-
-    The envelope's own bridge:documentSchema where it declares one -- an
-    envelope has one exactly when its document root is not the one the source
-    schema declares -- and the adapter's bridge:sourceSchema where it does not.
-    """
     document_schema = crate.graph.value(envelope, BRIDGE.documentSchema)
     if document_schema is not None:
         return document_schema, "bridge:documentSchema"
@@ -25,7 +18,6 @@ def schema_for(crate, envelope):
 
 
 def committed_inputs(crate):
-    """Each test that names committed bytes, with its input and its envelope."""
     for test in crate.entries:
         action = crate.graph.value(test, MF.action)
         if action is None:
@@ -37,8 +29,6 @@ def committed_inputs(crate):
 
 
 def invalid(crate):
-    """Every input that does not satisfy its declared schema, as a message
-    each, plus anything that stopped this being asked at all."""
     inputs = list(committed_inputs(crate))
     if not inputs:
         return
@@ -46,30 +36,24 @@ def invalid(crate):
     try:
         from lxml import etree
     except ImportError:
-        yield (
-            "lxml is not installed (pip install lxml), so no input was "
-            "validated against any schema and nothing here says they would be"
-        )
+        yield "lxml is not installed (pip install lxml), so no input was validated"
         return
 
     compiled = {}
     faults = {}
-    unreadable = set()
+    json_schemas = set()
 
-    def engine_for(schema_iri, declared_by):
-        """An lxml XMLSchema, or None with a message when there is a fault, or
-        None with nothing for a schema declared JSON: v1-draft does not specify
-        one, so not reading it is a gap in this lint (adapter/validation.md)."""
+    def xsd_or_fault(schema_iri, declared_by):
         if schema_iri in compiled:
             return compiled[schema_iri], None
         if schema_iri in faults:
             return None, faults[schema_iri]
-        if schema_iri in unreadable:
+        if schema_iri in json_schemas:
             return None, None
         declared = crate.graph.value(schema_iri, SCHEMA.encodingFormat)
         media_type = str(declared or "")
         if media_type in JSON_SCHEMA_MEDIA_TYPES:
-            unreadable.add(schema_iri)
+            json_schemas.add(schema_iri)
             return None, None
         path = crate.file_at(schema_iri)
         if path is None:
@@ -114,8 +98,8 @@ def invalid(crate):
                 "this package"
             )
             continue
-        engine, fault = engine_for(schema_iri, declared_by)
-        if engine is None:
+        xsd, fault = xsd_or_fault(schema_iri, declared_by)
+        if xsd is None:
             if fault:
                 yield f"{name}: {fault}"
             continue
@@ -124,13 +108,13 @@ def invalid(crate):
         except etree.Error as error:
             yield f"{name}: {input_path.name} is not well-formed XML\n{error}"
             continue
-        if not engine.validate(document):
+        if not xsd.validate(document):
             lines = "\n".join(
-                f"line {entry.line}: {entry.message}" for entry in engine.error_log
+                f"line {entry.line}: {entry.message}" for entry in xsd.error_log
             )
             yield (
                 f"{name}: {input_path.name} does not validate against "
-                f"{entity_name(schema_iri)}, the envelope's {declared_by}\n{lines}"
+                f"{file_name_of(schema_iri)}, the envelope's {declared_by}\n{lines}"
             )
 
 

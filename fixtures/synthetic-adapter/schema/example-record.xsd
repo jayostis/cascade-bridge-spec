@@ -1,8 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-  The source schema of an invented format, standing in for one an adapter pins
-  byte for byte from its publisher. Its root element, ExampleRecord, is the unit.
--->
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 
   <xs:element name="ExampleRecord" type="ExampleRecordType"/>

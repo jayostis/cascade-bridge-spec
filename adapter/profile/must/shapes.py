@@ -1,7 +1,6 @@
 import sys
 from pathlib import Path
 
-# The validator imports this file by path, without its directory on sys.path.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from _held import held
@@ -14,11 +13,10 @@ from rocrate_validator.requirements.python import PyFunctionCheck, check, requir
 
 
 def violations(crate):
-    """Every shape violation, as a message each."""
     _, report, _ = shacl_validate(
         crate.graph,
         shacl_graph=Graph().parse(SHAPES, format="turtle"),
-        advanced=True,          # the shapes use sh:sparql constraints
+        advanced=True,
         inplace=False,
     )
     for found in report.subjects(RDF.type, SH.ValidationResult):
