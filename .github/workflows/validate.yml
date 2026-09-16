@@ -119,13 +119,15 @@ jobs:
       # The step above installed python3, pyshacl, rdflib, roc-validator and
       # lxml; the two below reuse them.
       #
-      # A lint nobody has seen fail is a lint nobody should trust. Each case
-      # copies the fixture package into a temporary directory, breaks exactly
-      # one property, and asserts that the lint says so in the words
-      # adapter/validation.md fixes -- and that a check which found nothing of its
-      # kind is never reported in the same word as one that ran and passed.
-      # Nothing tracked is mutated and no mutated copy is written inside the
-      # repository.
+      # A lint nobody has seen fail is a lint nobody should trust. The unit
+      # tests assert what each requirement decides, directly and in a second;
+      # the end-to-end cases prove the profile loads, that this
+      # specification's requirements run beside the ones RO-Crate 1.2 brings,
+      # and that the exit status is right. Nothing tracked is mutated and no
+      # mutated copy is written inside the repository.
+      - name: every requirement decides what it says it decides
+        run: python3 scripts/unittest-lint.py
+
       - name: the lint can be seen failing
         run: python3 scripts/selftest-lint.py
 

@@ -68,7 +68,8 @@ is described as a `Profile`, that a pin typed `SoftwareSourceCode` is also a
 `File` in `hasPart`, that a required profile is an entity the crate types.
 
 They are RO-Crate's rules and the shapes', not prose here, and each is a case in
-[`scripts/selftest-lint.py`](../scripts/selftest-lint.py): what the lint says
+[`scripts/selftest-lint.py`](../scripts/selftest-lint.py) or
+[`scripts/unittest-lint.py`](../scripts/unittest-lint.py): what the lint says
 when it is missing is recorded there, in the run's own words, and a rule that
 stopped holding would fail that case rather than quietly outlive a paragraph.
 [`fixtures/synthetic-adapter`](../fixtures/synthetic-adapter/ro-crate-metadata.json)
@@ -76,9 +77,9 @@ is a crate that satisfies all of them.
 
 Worth knowing because it is counter-intuitive: the `@context` entries are
 RO-Crate's requirement, not JSON-LD's. JSON-LD expands `bridge:specPin` from the
-`bridge` prefix alone, so the graph is unaffected and the shapes still pass —
-it is check 1 that fails, because RO-Crate 1.2 requires every key of a compacted
-descriptor to be present in the `@context`.
+`bridge` prefix alone, so the graph is unaffected and the shapes still pass — it
+is the inherited RO-Crate 1.2 requirements that fail, because RO-Crate requires
+every key of a compacted descriptor to be present in the `@context`.
 
 ## Envelope entities
 

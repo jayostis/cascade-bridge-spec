@@ -1,48 +1,48 @@
 # Validating an adapter package
 
-What a conforming adapter package must pass, written as the list a lint
-implements. The list is ordered so that the cheapest check that can fail comes
-first and each later check can assume the earlier ones held.
-
-They all run, in
-[`scripts/validate-adapter.py`](../scripts/validate-adapter.py), which is what
-the published action
+What a conforming adapter package must satisfy, as **an RO-Crate profile**:
+`cascade-bridge-adapter`, which declares itself `prof:isProfileOf` RO-Crate 1.2.
+So an adapter is validated as an RO-Crate and as an adapter in one pass, against
+one report, by `rocrate-validator` —
+[`scripts/validate-adapter.py`](../scripts/validate-adapter.py) runs that profile
+and prints what it found, and is what the published action
 ([`.github/actions/validate-adapter`](../.github/actions/validate-adapter/action.yml))
 runs.
 
-**Every check says whether it ran**, and the words are part of the contract,
-because the failure this list is written against is a check that quietly did
-nothing and was read as a pass:
+The requirements below are this specification's. Everything RO-Crate 1.2 requires
+is inherited and is not restated here.
 
-| word | what it means | fails the run |
-|---|---|---|
-| `ok` | the check ran and everything it asked for held | no |
-| `FAIL` | the check ran and something did not hold | yes |
-| `nothing to check` | the check ran and found nothing of its kind in this package | no |
-| `not run` | the check did not happen | yes, unless the reason is that the package is outside what the lint reads rather than that a tool is missing |
+**A requirement is met or it is not, and any unmet requirement fails the run.**
+Two consequences worth stating, because they are what a lint gets wrong:
 
-`ok` and `nothing to check` are different sentences and are printed as
-different sentences. An adapter with no expected graph has not *passed* check
-6; it has given check 6 nothing to disbelieve. A machine where `lxml` is not
-installed has not passed check 5 either: it never asked the question, and the
-run fails so that nobody reads the silence as an answer. The one case where a
-check that did not happen leaves the run green is a package the lint has
-nothing against and cannot read — a source schema declared JSON, check 5 below
-— and even there the word printed is `not run`.
+- **A check that could not run reports an unmet requirement**, not silence. A
+  machine without `lxml` has not satisfied the schema requirement; it never asked
+  the question, and reporting nothing would let the silence read as an answer.
+- **A check that ran and found nothing of its kind reports nothing.** An adapter
+  whose manifest holds only `bridge:InputOnlyTest` entries has no expected graph,
+  and has broken no rule: that type exists for exactly that case. There is
+  nothing for its author to do, so there is nothing to say.
+
+The one exception to the first is a package this lint has nothing against and
+cannot read — a source schema declared JSON, which v1-draft does not specify.
+That is a gap in the lint, not a fault in the package, and it is not reported as
+a failure.
 
 **Nothing an adapter names is fetched.** Digests are recomputed over the
 committed bytes, and no publisher's file or referenced dataset is downloaded.
-The tools the lint runs do use the network, starting with the RO-Crate context
-the crate names.
+The tools do use the network, starting with the RO-Crate context the crate names.
 
-## The list
+What each requirement reports, in its own words, is
+[`scripts/unittest-lint.py`](../scripts/unittest-lint.py): one test per decision,
+each named for the sentence it asserts.
 
-1. **The package is a valid RO-Crate 1.2.**
-   `rocrate-validator validate <adapter> --profile-identifier ro-crate-1.2`.
-   Where the validator cannot be run, a JSON-LD parse is the floor, and whoever
-   reports the result says which of the two ran.
+## The requirements
 
-2. **The crate and the test manifest conform to the shapes.** The crate parsed
+RO-Crate 1.2 conformance comes first, inherited: an adapter package is an
+RO-Crate before it is anything else, and the profile says so rather than this
+list repeating it.
+
+1. **The crate and the test manifest conform to the shapes.** The crate parsed
    as JSON-LD with `ro-crate-metadata.json`'s own location as base, the test
    manifest parsed as Turtle with its own, loaded as **one graph**, validated
    against [`shapes/bridge.shapes.ttl`](../shapes/bridge.shapes.ttl) with a SHACL
@@ -67,7 +67,7 @@ the crate names.
    `bridge:detectQuery`, every query it names is declared
    `application/sparql-query`, and it requires `bridge:sparql-1.1`.
 
-3. **Every git-tracked file is accounted for.** Each file in the repository is
+2. **Every git-tracked file is accounted for.** Each file in the repository is
    either a crate entity carrying a declared `encodingFormat`, or is in a short
    allowlist: `README.md`, `LICENSE`, `CHANGELOG.md`, `CLAUDE.md`,
    `ro-crate-metadata.json`, and dotfiles (`.gitattributes`, `.editorconfig`,
@@ -89,7 +89,7 @@ the crate names.
    enforced — not by scanning for a language, but by refusing to accept a file
    whose media type says it executes.
 
-4. **Every digest matches its file.** A crate records two kinds of claim about
+3. **Every digest matches its file.** A crate records two kinds of claim about
    a file's bytes, and they are not the same assertion
    ([`fixtures/README.md`](fixtures/README.md)). Both are
    recomputed over the committed bytes; **a mismatch in each is a different
@@ -113,7 +113,7 @@ the crate names.
    bytes are not committed — a referenced release, a pinned commit — is
    recorded, counted and not compared, and the run says how many.
 
-5. **Every input validates against the declared schema.** For each test in the
+4. **Every input validates against the declared schema.** For each test in the
    test manifest, the committed `bridge:input` of its action against the
    `bridge:documentSchema` of the envelope that test names, or against the
    adapter's `bridge:sourceSchema` where that envelope declares none. An
@@ -126,11 +126,11 @@ the crate names.
    action names a `bridge:dataset` has no committed bytes here, and the Bridge
    that streams them validates them; a schema entity that is referenced rather
    than committed is not fetched; and a **source schema declared JSON** is
-   outside v1-draft, which specifies XML sources, and is reported `not run`.
-   A schema declared XML that does not compile as an XSD is a different matter
-   and fails.
+   outside v1-draft, which specifies XML sources, so the lint says it could not
+   read it and holds the package to nothing. A schema declared XML that does not
+   compile as an XSD is a different matter and fails.
 
-6. **Every expected graph parses.** Each `bridge:graph` as Turtle. Parsing, not
+5. **Every expected graph parses.** Each `bridge:graph` as Turtle. Parsing, not
    conforming: an expected graph is what a mapping must produce, and judging it
    against Cascade's shapes is the Bridge's validate stage, not the lint's job
    — a lint that judged a fixture against them would report it as wrong for
@@ -138,15 +138,15 @@ the crate names.
    findings sidecar beside it is for. The lint says so in its own output, so
    that a pass here is never read as more than "this file is Turtle".
 
-7. **Every query parses as SPARQL 1.1, in the form its property declares.**
+6. **Every query parses as SPARQL 1.1, in the form its property declares.**
    Each file `bridge:mapping`, `bridge:findingsQuery` and `bridge:detectQuery`
    names, parsed by rdflib: a mapping is a CONSTRUCT, a findings query a SELECT
    projecting `?sourceField ?reason ?severity ?context`, in any order and no
    other variable, and the detect query an ASK.
 
-A package whose run passes, by the table above, is a conforming adapter package.
-Nothing in the list runs a mapping or compares a graph: that is the test
-manifest, and it needs a Bridge ([`fixtures/manifest.md`](fixtures/manifest.md)).
+A package that meets every requirement above, and RO-Crate 1.2's own, is a
+conforming adapter package. None of them runs a mapping or compares a graph:
+that is the test manifest, and it needs a Bridge ([`fixtures/manifest.md`](fixtures/manifest.md)).
 
 ## The media types an adapter package may declare
 
@@ -159,9 +159,8 @@ reject.
 The set is deliberately short, and it is where "no code" is enforced. A format an
 adapter needs and this set lacks is a pull request here, argued once, rather than
 a media type invented in one adapter's crate. `encodingFormat` is a string rather
-than a PRONOM IRI: RO-Crate 1.2 allows either, every adapter written so far uses
-the media type, and a set of two spellings is a set that can disagree with
-itself.
+than a PRONOM IRI: RO-Crate 1.2 allows either, and a set of two spellings is a
+set that can disagree with itself.
 
 ## The specification pin
 
@@ -202,26 +201,17 @@ required status check. Bumping the pin is an edit to the crate and nothing else.
 What the starter reads, checks out and hands over to is
 [`../compatibility.md`](../compatibility.md).
 
-Every check runs. The action ends by printing each of them with the word it
-earned, so a package is never reported as passing a check that did not happen.
+The run ends by listing every requirement with the word it earned, so a package
+is never reported as meeting one that was never checked.
 
-Two things the action keeps from the script, and must go on keeping:
-
-- **The base IRIs**, set explicitly, for the reason in check 2.
-- **The naming of a missing `bridge:specPin` in its own words.** That is the one
-  failure every adapter written before this repository existed will hit, and a
-  generic "missing property" message would send its author looking in the wrong
-  file. The wording is `the crate is valid and the manifest conforms except for
-  the missing bridge:specPin`.
-
-## Running the checks
+## Running it
 
 ```bash
 python3 -m pip install pyshacl rdflib roc-validator lxml
 python3 scripts/validate-adapter.py <path to an adapter checkout>
 ```
 
-Exit status is 0 when the run passes, by the table at the top, and 1 when it
-fails. CI on this project's repositories is Linux and invokes `python3` directly;
+Exit status is 0 when every requirement is met and 1 when any is not. CI on
+this project's repositories is Linux and invokes `python3` directly;
 do not commit a machine-specific way of running it.
 

@@ -18,9 +18,9 @@ code" guarantee the file header describes, not housekeeping.
   per adapter forever (`../pinning.md`).
 - **A shape meant to reject something is verified by seeing it fail** — break a
   copy, watch it go red, restore it. A constraint nobody saw fail is a
-  constraint nobody knows fires. Add the case to `selftest-lint.py`, which runs
-  its cases concurrently and takes a name to run one; keep it that way, because
-  a suite too slow to run on every edit stops being run at all
+  constraint nobody knows fires. Add the case to `../scripts/unittest-lint.py`,
+  which asserts what a check decides without running the lint; keep it that way,
+  because a suite too slow to run on every edit stops being run at all
   (`../scripts/CLAUDE.md`).
 - **Every constraint carries an `sh:message` that names what was wanted**, and
   the `sh:in` sets spell their members out. `../adapter/validation.md` and

@@ -1,9 +1,8 @@
 """One module per check of adapter/validation.md, in the order it names them."""
 
-from . import digests, graphs, inputs, inventory, queries, rocrate, shapes, specpin
+from . import digests, graphs, inputs, inventory, queries, shapes, specpin
 
 __all__ = [
-    "rocrate",
     "shapes",
     "inventory",
     "digests",

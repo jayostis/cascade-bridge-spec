@@ -70,12 +70,10 @@ repository's default branch.
 
 ## Seeing the lint fail
 
-`scripts/selftest-lint.py` copies this package into a temporary directory, breaks
-one property per case, and asserts what the lint says about it. Its cases are the
-list of what this package is able to show going wrong; read them there rather
-than from a census here, which would be stale on the next one anyone adds. Two of
-them exit 0 on purpose, because `not run` and `nothing to check` are not
-failures.
+`scripts/unittest-lint.py` asserts what each requirement decides, calling it
+directly; `scripts/selftest-lint.py` breaks one property per case and runs the
+whole lint, for what only a whole run shows. Read the cases there rather than a
+census here, which would be stale on the next one anyone adds.
 
 Nothing tracked is mutated, and no mutated copy is ever written inside the
 repository.

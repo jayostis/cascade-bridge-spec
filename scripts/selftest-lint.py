@@ -1,36 +1,22 @@
 #!/usr/bin/env python3
-"""Mutation tests for scripts/validate-adapter.py.
+"""End-to-end cases for scripts/validate-adapter.py.
 
-The question this file exists to answer is: *what would the lint report if the
-thing it claims to check were wrong?* A lint nobody has seen fail is a lint
-nobody should trust, and the failure mode it is written against -- a check that
-quietly does nothing and reports a pass -- is invisible from a green run. So
-every case here breaks one property of a conforming package and asserts that
-the lint says so, in the words adapter/validation.md fixes, and that it exits
-non-zero; and the first case asserts that the same package, unbroken, passes.
+What only a whole run can show: that the profile loads at all, that the
+requirements this specification adds run beside the ones RO-Crate 1.2 brings,
+that the report renders, and that the exit status is right. Everything about
+what a single check *decides* is in unittest-lint.py, which asserts on the
+Result each check returns and takes a fraction of the time.
 
-The subject is fixtures/synthetic-adapter, this repository's own synthetic
-adapter package. It is copied into a temporary directory and mutated there.
-**Nothing here mutates a tracked file**, no mutated copy is ever written inside
-the repository, and no real adapter is read, cloned or named: this repository
-must not know that any adapter exists (pinning.md), and a fixture it
-wrote itself is a subject it owns.
+The subject is fixtures/synthetic-adapter, copied into a temporary directory
+and broken there. **Nothing here mutates a tracked file**, no mutated copy is
+ever written inside the repository, and no real adapter is read, cloned or
+named.
 
-The copy is made into a fresh `git init`, because check 3 takes its inventory
-with `git ls-files` and a directory that is not a checkout is a directory it
-must refuse rather than walk.
-
-Two kinds of assertion are made about each case, and the second is the one that
-makes this more than an exit-code test: the run's exit status, and the word the
-summary gives each check. `ok`, `FAIL`, `not run` and `nothing to check` are
-four different sentences, and a check that found nothing of its kind in a
-package must never be reported in the same word as a check that ran and passed.
+Cases run concurrently: each is an independent RO-Crate validation costing
+seconds, and they share nothing.
 
 Run:  python3 scripts/selftest-lint.py            every case
-      python3 scripts/selftest-lint.py check 4    the cases whose names hold
-                                                  both words
-A filtered run says how many it did not run, because a filtered PASS is not the
-suite passing.
+      python3 scripts/selftest-lint.py rocrate    the ones whose names hold it
 """
 
 from __future__ import annotations
@@ -44,66 +30,41 @@ import tempfile
 from concurrent import futures
 from pathlib import Path
 
-# Measured: one case is ~16s and four at once are ~21s, so the cost is waiting
-# on the validator and not computing. Cores are therefore the wrong bound --
-# capping at them leaves a second wave costing another whole case. Run every
-# case at once, with a ceiling so that a suite grown to hundreds does not open
-# hundreds of processes.
-MAX_WORKERS = 32
-
 SPEC_ROOT = Path(__file__).resolve().parent.parent
 LINT = SPEC_ROOT / "scripts" / "validate-adapter.py"
 PACKAGE = SPEC_ROOT / "fixtures" / "synthetic-adapter"
 
 CRATE = "ro-crate-metadata.json"
 MANIFEST = "fixtures/manifest.ttl"
-INPUT_SET = "fixtures/in/example-0001.xml"
-INPUT_RECORD = "fixtures/in/example-0002.xml"
 EXPECTED = "fixtures/expected/example-0001.ttl"
-MAPPING = "in/example-record.rq"
-FINDINGS_QUERY = "in/example-findings.rq"
-DETECT_QUERY = "in/example-detect.rq"
 
-# The four words a check may earn, longest first so the summary line parser
-# does not stop at the "not run" inside a longer phrase.
-STATUS = ("nothing to check", "not run", "FAIL", "ok")
-SUMMARY_HEADER = re.compile(
-    r"^The (?P<count>\d+) checks of adapter/validation\.md, and how each ended:$"
-)
-
-SUMMARY_LINE = re.compile(
-    r"^\s{2}(?P<number>\d)\s\s(?P<title>.+?)\s\s+"
-    r"(?P<status>" + "|".join(STATUS) + r")\s\s+(?P<note>.*)$"
-)
+MAX_WORKERS = 16
 
 
 class SelfTestFailure(AssertionError):
     pass
 
 
-# ---------------------------------------------------------------------------
-# Staging and mutating a copy
-# ---------------------------------------------------------------------------
-
-
 def stage(directory):
     """A copy of the fixture package in a fresh git checkout."""
     package = Path(directory) / "package"
     shutil.copytree(PACKAGE, package)
+    return package
+
+
+def track(package):
     subprocess.run(
         ["git", "init", "-q", str(package)], check=True, capture_output=True
     )
     subprocess.run(
         ["git", "-C", str(package), "add", "-A"], check=True, capture_output=True
     )
-    return package
 
 
 def edit(package, relative, old, new):
     """Replace `old` with `new` in one file, insisting it occurred exactly once.
 
-    A mutation that silently matched nothing is a test that asserts nothing,
-    which is the failure this whole file is written against.
+    A mutation that silently matched nothing is a test that asserts nothing.
     """
     path = package / relative
     text = path.read_text(encoding="utf-8")
@@ -115,122 +76,73 @@ def edit(package, relative, old, new):
     path.write_text(text.replace(old, new), encoding="utf-8", newline="")
 
 
-def entity_block(text, relative):
-    """The crate text of one file entity, and nothing that merely references it.
-
-    The trailing comma is what tells an entity's own "@id" apart from the
-    references to it in hasPart and isBasedOn, which carry none. Match without
-    it and a mutation lands on the next entity in the file, which is a test
-    asserting something nobody meant.
-    """
-    start = text.index(f'"@id": "{relative}",')
-    return start, text.index("\n    }", start)
-
-
-def declared_digest(package, relative, algorithm, digits):
-    """The digest the crate records for a file, under one algorithm."""
-    text = (package / CRATE).read_text(encoding="utf-8")
-    start, end = entity_block(text, relative)
-    found = re.search(
-        r'"%s": "([0-9a-f]{%d})"' % (algorithm, digits), text[start:end]
-    )
-    if not found:
-        raise SelfTestFailure(
-            f"{relative}: the crate records no {algorithm}, so there is nothing "
-            "to mutate"
-        )
-    return found.group(1)
-
-
 def restate_digest(package, relative):
     """Rewrite the crate's sha256 and contentSize for a file just mutated.
 
-    A mutated fixture would otherwise fail check 4 as well as the check the
-    case is about, and a case that fails for two reasons demonstrates neither.
+    Without this the digest requirement fails too, and a case that fails for
+    two reasons demonstrates neither.
     """
     data = (package / relative).read_bytes()
     crate = package / CRATE
     text = crate.read_text(encoding="utf-8")
-    block, end = entity_block(text, relative)
-    head, entity, tail = text[:block], text[block:end], text[end:]
+    start = text.index(f'"@id": "{relative}",')
+    end = text.index("\n    }", start)
+    head, entity, tail = text[:start], text[start:end], text[end:]
     entity = re.sub(
         r'"sha256": "[0-9a-f]{64}"',
         f'"sha256": "{hashlib.sha256(data).hexdigest()}"',
         entity,
     )
-    entity = re.sub(
-        r'"contentSize": "\d+"', f'"contentSize": "{len(data)}"', entity
-    )
+    entity = re.sub(r'"contentSize": "\d+"', f'"contentSize": "{len(data)}"', entity)
     crate.write_text(head + entity + tail, encoding="utf-8", newline="")
 
 
 # ---------------------------------------------------------------------------
-# The mutations, one per property
+# The mutations
 # ---------------------------------------------------------------------------
 
 
-def flip_hex(digest):
-    """One hex digit changed: a digest that is the right shape and wrong."""
-    return ("f" if digest[0] != "f" else "0") + digest[1:]
+def undeclared_context_key(package):
+    """RO-Crate 1.2's rule, not JSON-LD's: every key of a compacted descriptor
+    must be present in the @context. JSON-LD expands bridge:specPin from the
+    prefix alone, so the graph is unchanged and the shapes still pass. Only the
+    inherited RO-Crate requirements see it."""
+    edit(package, CRATE, '      "bridge:specPin": "bridge:specPin",\n', "")
 
 
-def mutate_local_sha256(package):
-    """Check 4: the crate's own sha256 no longer describes the file beside it."""
-    digest = declared_digest(package, INPUT_SET, "sha256", 64)
-    edit(package, CRATE, f'"sha256": "{digest}"', f'"sha256": "{flip_hex(digest)}"')
-
-
-def mutate_publisher_md5(package):
-    """Check 4: the publisher's digest and this copy of the file disagree.
-
-    The realistic shape of it: the publisher republished the file, someone
-    copied the new digest out of the `.md5` beside it and did not re-fetch the
-    bytes. The local sha256 is untouched and still true, which is exactly why
-    this must not be reported in the same words as a wrong sha256.
-    """
-    digest = declared_digest(package, INPUT_RECORD, "md5", 32)
-    edit(package, CRATE, f'"md5": "{digest}"', f'"md5": "{flip_hex(digest)}"')
-
-
-def mutate_input_against_schema(package):
-    """Check 5: an input stops satisfying the schema its envelope declares."""
-    edit(package, INPUT_SET, 'Version="3"', 'Version="third"')
-    restate_digest(package, INPUT_SET)
-
-
-def mutate_schema_language(package):
-    """Check 5: the schemas are declared JSON, which v1-draft does not specify.
-
-    The lint has nothing against the package and cannot read it. It must say
-    it did not run rather than crash, and must not report the inputs as
-    validated.
-    """
+def profile_not_an_entity(package):
+    """What conformsTo names is not described as a Profile."""
     edit(
         package,
         CRATE,
-        '"name": "Example record XSD, pinned copy",\n      "encodingFormat": "application/xml"',
-        '"name": "Example record XSD, pinned copy",\n      "encodingFormat": "application/json"',
+        '      "@type": ["CreativeWork", "Profile"],',
+        '      "@type": "CreativeWork",',
     )
+
+
+def pin_not_a_data_entity(package):
+    """RO-Crate reads a SoftwareSourceCode as a script, and a script has to be
+    a data entity."""
     edit(
         package,
         CRATE,
-        '"name": "Example set XSD, this package\'s wrapper",\n      "encodingFormat": "application/xml"',
-        '"name": "Example set XSD, this package\'s wrapper",\n      "encodingFormat": "application/json"',
+        '      "@type": ["SoftwareSourceCode", "File"],\n'
+        '      "name": "cascade-bridge-spec at 0af0fc9",',
+        '      "@type": "SoftwareSourceCode",\n'
+        '      "name": "cascade-bridge-spec at 0af0fc9",',
     )
 
 
-def mutate_expected_graph(package):
-    """Check 6: an expected graph stops being Turtle."""
-    edit(package, EXPECTED, 'rdfs:label "first synthetic record" .', 'rdfs:label "first synthetic record"')
+def expected_graph_not_turtle(package):
+    edit(package, EXPECTED, "@prefix ex:", "@prefixx ex:")
     restate_digest(package, EXPECTED)
 
 
-def mutate_away_expected_graphs(package):
-    """Check 6: the manifest names no expected graph at all.
+def no_expected_graphs(package):
+    """The one conversion test becomes an input-only test, which judges nothing.
 
-    The entry becomes an input-only test, which judges nothing and therefore
-    carries no mf:result. A conforming package: the shapes accept it and check
-    6 has nothing to look at. What it must not do is report that as a pass.
+    A conforming package: the shapes accept it, and the expected-graph
+    requirement has nothing of its kind to look at. It must not fail the run.
     """
     edit(
         package,
@@ -247,129 +159,7 @@ def mutate_away_expected_graphs(package):
         "  ] .",
         "  ] .",
     )
-
-
-def mutate_undescribed_file(package):
-    """Check 3: a git-tracked file the crate describes nowhere."""
-    (package / "mapping.xsl").write_text(
-        "<!-- a file nobody described -->\n", encoding="utf-8", newline=""
-    )
-    subprocess.run(
-        ["git", "-C", str(package), "add", "-A"], check=True, capture_output=True
-    )
-
-
-def mutate_away_mapping(package):
-    """Check 2: the crate names no mapping.
-
-    The query stays described and in hasPart, so check 3 still holds; only the
-    root's bridge:mapping goes. A package that names no mapping converts
-    nothing, and the shapes refuse it.
-    """
-    edit(
-        package,
-        CRATE,
-        '      "bridge:mapping": [\n        {\n'
-        '          "@id": "in/example-record.rq"\n        }\n      ],\n',
-        "",
-    )
-
-
-def mutate_query_media_type(package):
-    """Check 2: the mapping is declared XSLT.
-
-    application/xslt+xml is outside the media types an adapter package may
-    declare, and it is not the one language the sparql-1.1 profile runs, so the
-    shapes say both.
-    """
-    edit(
-        package,
-        CRATE,
-        '"name": "Mapping",\n      "encodingFormat": "application/sparql-query"',
-        '"name": "Mapping",\n      "encodingFormat": "application/xslt+xml"',
-    )
-
-
-def mutate_away_profile(package):
-    """Check 2: the crate does not require the profile its queries run under."""
-    edit(
-        package,
-        CRATE,
-        '      "bridge:profileRequired": [\n        {\n'
-        '          "@id": "https://ns.cascadeprotocol.org/bridge/v1-draft#sparql-1.1"\n'
-        "        }\n      ],\n",
-        "",
-    )
-
-
-def mutate_query_syntax(package):
-    """Check 7: the mapping is not SPARQL."""
-    edit(package, MAPPING, "CONSTRUCT {", "CONSTRUCTED {")
-    restate_digest(package, MAPPING)
-
-
-def mutate_query_form(package):
-    """Check 7: the detect query parses, and is not an ASK."""
-    edit(package, DETECT_QUERY, "ASK {", "SELECT * WHERE {")
-    restate_digest(package, DETECT_QUERY)
-
-
-def mutate_finding_variables(package):
-    """Check 7: a findings query projecting three of the four variables."""
-    edit(
-        package,
-        FINDINGS_QUERY,
-        "SELECT ?sourceField ?reason ?severity ?context",
-        "SELECT ?sourceField ?reason ?severity",
-    )
-    restate_digest(package, FINDINGS_QUERY)
-
-
-def mutate_undeclared_context_key(package):
-    """Check 1: a bridge: key the @context does not declare.
-
-    RO-Crate 1.2's rule, not JSON-LD's: every key of a compacted descriptor
-    must be present in the @context. JSON-LD expands bridge:specPin from the
-    prefix alone, so the graph is unchanged and check 2 still passes -- which
-    is why this case asserts check 2 stays `ok`. Only the RO-Crate validator
-    sees it.
-    """
-    edit(package, CRATE, '      "bridge:specPin": "bridge:specPin",\n', "")
-
-
-def mutate_profile_not_an_entity(package):
-    """Check 1: what conformsTo names is not described as a Profile."""
-    edit(
-        package,
-        CRATE,
-        '      "@type": ["CreativeWork", "Profile"],',
-        '      "@type": "CreativeWork",',
-    )
-
-
-def mutate_pin_not_a_data_entity(package):
-    """Check 1: a pin typed SoftwareSourceCode and not File.
-
-    RO-Crate reads a SoftwareSourceCode as a script, and a script has to be a
-    data entity.
-    """
-    edit(
-        package,
-        CRATE,
-        '      "@type": ["SoftwareSourceCode", "File"],\n'
-        '      "name": "cascade-bridge-spec at 0af0fc9",',
-        '      "@type": "SoftwareSourceCode",\n'
-        '      "name": "cascade-bridge-spec at 0af0fc9",',
-    )
-
-
-def mutate_required_profile_untyped(package):
-    """Check 2: a required profile that is not a bridge:Profile in the crate.
-
-    The shapes look the type up in the crate's own graph, not in the
-    vocabulary, so an adapter naming a profile it does not describe fails.
-    """
-    edit(package, CRATE, '      "@type": "bridge:Profile",\n', "")
+    restate_digest(package, MANIFEST)
 
 
 # ---------------------------------------------------------------------------
@@ -381,183 +171,53 @@ CASES = [
         "name": "green: the fixture package as committed",
         "mutate": None,
         "exit": 0,
-        "statuses": {
-            1: "ok", 2: "ok", 3: "ok", 4: "ok", 5: "ok", 6: "ok", 7: "ok"
-        },
         "expect": [
-            "9 local sha256 and 2 publisher digest(s) recomputed",
-            "2 committed input(s) against the schema each test's envelope declares",
-            "1 expected graph(s) parse as Turtle",
-            "3 query file(s) parse as SPARQL 1.1",
+            "ok    Cascade Bridge shapes",
+            "ok    Digests",
+            "ok    Queries",
+            "inherited requirement(s), 0 unmet",
             "PASS",
         ],
     },
     {
-        "name": "check 2: a crate that names no mapping",
-        "mutate": mutate_away_mapping,
+        "name": "a Cascade requirement unmet: an expected graph that is not Turtle",
+        "mutate": expected_graph_not_turtle,
         "exit": 1,
-        "statuses": {1: "ok", 2: "FAIL", 3: "ok", 7: "ok"},
         "expect": [
-            "The adapter names at least one bridge:mapping",
+            "FAIL  Expected graphs",
+            "example-0001.ttl does not parse as Turtle",
+            "FAIL",
         ],
+        "forbid": ["FAIL  Digests"],
     },
     {
-        "name": "check 2: a query declared in a media type the profile does not run",
-        "mutate": mutate_query_media_type,
-        "exit": 1,
-        "statuses": {2: "FAIL", 7: "ok"},
-        "expect": [
-            "encodingFormat is one of the media types an adapter package may declare",
-            "bridge:mapping, a SPARQL 1.1 CONSTRUCT a Bridge runs on each "
-            "unit: a crate File entity (schema:MediaObject) by IRI, declared "
-            "application/sparql-query.",
-        ],
-    },
-    {
-        "name": "check 2: a crate that does not require sparql-1.1",
-        "mutate": mutate_away_profile,
-        "exit": 1,
-        "statuses": {2: "FAIL"},
-        "expect": [
-            "The adapter requires bridge:sparql-1.1",
-        ],
-    },
-    {
-        "name": "check 7: a mapping that is not SPARQL",
-        "mutate": mutate_query_syntax,
-        "exit": 1,
-        "statuses": {2: "ok", 4: "ok", 7: "FAIL"},
-        "expect": [
-            "example-record.rq does not parse as SPARQL 1.1",
-        ],
-    },
-    {
-        "name": "check 7: a detect query that is not an ASK",
-        "mutate": mutate_query_form,
-        "exit": 1,
-        "statuses": {2: "ok", 4: "ok", 7: "FAIL"},
-        "expect": [
-            "example-detect.rq is a SELECT query, where bridge:detectQuery "
-            "requires ASK",
-        ],
-    },
-    {
-        "name": "check 7: a findings query projecting three of the four variables",
-        "mutate": mutate_finding_variables,
-        "exit": 1,
-        "statuses": {4: "ok", 7: "FAIL"},
-        "expect": [
-            "example-findings.rq projects ?sourceField ?reason ?severity, where",
-        ],
-    },
-    {
-        "name": "check 3: a git-tracked file the crate describes nowhere",
-        "mutate": mutate_undescribed_file,
-        "exit": 1,
-        "statuses": {3: "FAIL"},
-        "expect": [
-            "mapping.xsl: no crate entity with a declared encodingFormat",
-        ],
-    },
-    {
-        "name": "check 4: the crate's sha256 is not the file's",
-        "mutate": mutate_local_sha256,
-        "exit": 1,
-        "statuses": {4: "FAIL", 5: "ok", 6: "ok"},
-        "expect": [
-            "example-0001.xml: the crate's sha256 is not this file's",
-            "This is the local claim, and it is wrong about the file",
-        ],
-    },
-    {
-        "name": "check 4: the publisher's md5 is not this copy's",
-        "mutate": mutate_publisher_md5,
-        "exit": 1,
-        "statuses": {4: "FAIL"},
-        "expect": [
-            "example-0002.xml: the publisher's md5 is not this copy's",
-            "this copy has drifted from the source it",
-            "A different finding from a wrong sha256",
-        ],
-    },
-    {
-        "name": "check 5: an input does not satisfy its envelope's schema",
-        "mutate": mutate_input_against_schema,
-        "exit": 1,
-        "statuses": {4: "ok", 5: "FAIL", 6: "ok"},
-        "expect": [
-            "example-0001: example-0001.xml does not validate against "
-            "example-set.xsd, the envelope's bridge:documentSchema",
-            "Version",
-        ],
-    },
-    {
-        "name": "check 5: a schema language this lint does not read",
-        "mutate": mutate_schema_language,
+        "name": "nothing of its kind is not a failure: no expected graphs",
+        "mutate": no_expected_graphs,
         "exit": 0,
-        "statuses": {5: "not run"},
-        "expect": [
-            "a JSON source schema is outside v1-draft, which specifies XML sources",
-            "A check reported `not run` did not happen",
-        ],
-        "forbid": ["input(s) validated"],
+        "expect": ["ok    Expected graphs", "PASS"],
     },
     {
-        "name": "check 6: an expected graph that is not Turtle",
-        "mutate": mutate_expected_graph,
+        "name": "rocrate: a bridge: key the @context does not declare",
+        "mutate": undeclared_context_key,
         "exit": 1,
-        "statuses": {4: "ok", 5: "ok", 6: "FAIL"},
         "expect": [
-            "example-0001: example-0001.ttl does not parse as Turtle",
+            "FAIL  RO-Crate 1.2",
+            "is not allowed in the compacted format because it is not present "
+            "in the @context",
         ],
+        "forbid": ["FAIL  Cascade Bridge shapes"],
     },
     {
-        "name": "check 6: a manifest that names no expected graph",
-        "mutate": mutate_away_expected_graphs,
-        "exit": 0,
-        "statuses": {6: "nothing to check"},
-        "expect": [
-            "the test manifest names no expected graph",
-            "A check reported `nothing to check` ran and found nothing of its kind",
-        ],
-        "forbid": ["expected graph(s) parse as Turtle"],
-    },
-    {
-        "name": "check 1: a bridge: key the @context does not declare",
-        "mutate": mutate_undeclared_context_key,
+        "name": "rocrate: what conformsTo names is not typed Profile",
+        "mutate": profile_not_an_entity,
         "exit": 1,
-        "statuses": {1: "FAIL", 2: "ok"},
-        "expect": [
-            'the JSON-LD key "bridge:specPin" is not allowed in the compacted '
-            "format because it is not present in the @context",
-        ],
+        "expect": ["FAIL  RO-Crate 1.2", "MUST reference Profile entities"],
     },
     {
-        "name": "check 1: what conformsTo names is not typed Profile",
-        "mutate": mutate_profile_not_an_entity,
+        "name": "rocrate: a pin typed SoftwareSourceCode and not File",
+        "mutate": pin_not_a_data_entity,
         "exit": 1,
-        "statuses": {1: "FAIL", 2: "ok"},
-        "expect": [
-            "its values MUST reference Profile entities",
-        ],
-    },
-    {
-        "name": "check 1: a pin typed SoftwareSourceCode and not File",
-        "mutate": mutate_pin_not_a_data_entity,
-        "exit": 1,
-        "statuses": {1: "FAIL", 2: "ok"},
-        "expect": [
-            "A Script MUST include `File` in its `@type`",
-        ],
-    },
-    {
-        "name": "check 2: a required profile the crate does not type",
-        "mutate": mutate_required_profile_untyped,
-        "exit": 1,
-        "statuses": {1: "FAIL", 2: "FAIL"},
-        "expect": [
-            "Each bridge:profileRequired is a bridge:Profile by IRI.",
-        ],
+        "expect": ["FAIL  RO-Crate 1.2", "MUST include `File` in its `@type`"],
     },
 ]
 
@@ -565,37 +225,14 @@ CASES = [
 # ---------------------------------------------------------------------------
 
 
-def summary_statuses(output):
-    """The word the summary gave each check, and how many it said there were.
-
-    The count comes from the summary's own header rather than from a number
-    here, so that adding a check does not need this file edited to keep the
-    "every check is accounted for" assertion true.
-    """
-    found = {}
-    declared = None
-    for line in output.splitlines():
-        header = SUMMARY_HEADER.match(line)
-        if header:
-            declared = int(header.group("count"))
-        match = SUMMARY_LINE.match(line)
-        if match:
-            found[int(match.group("number"))] = match.group("status")
-    return found, declared
-
-
 def run_case(case):
-    """One case, in a directory of its own. Returns its failures and its output.
-
-    Nothing is printed here: cases run concurrently, and interleaved output is
-    output nobody can read. The caller prints, in the order the cases are
-    written.
-    """
+    """One case, in a directory of its own. Returns its failures and its output."""
     failures = []
     with tempfile.TemporaryDirectory() as directory:
         package = stage(directory)
         if case["mutate"]:
             case["mutate"](package)
+        track(package)
         run = subprocess.run(
             [sys.executable, str(LINT), str(package)],
             capture_output=True,
@@ -604,49 +241,24 @@ def run_case(case):
         output = run.stdout + run.stderr
 
         if run.returncode != case["exit"]:
-            failures.append(
-                f"exit status {run.returncode}, {case['exit']} expected"
-            )
-        statuses, declared = summary_statuses(output)
-        if declared is None:
-            failures.append("the run printed no summary")
-        elif len(statuses) != declared:
-            failures.append(
-                f"the summary reported {len(statuses)} of its {declared} checks"
-            )
-        for number, expected in case["statuses"].items():
-            if statuses.get(number) != expected:
-                failures.append(
-                    f"check {number} was reported `{statuses.get(number)}`, "
-                    f"`{expected}` expected"
-                )
+            failures.append(f"exit status {run.returncode}, {case['exit']} expected")
         for fragment in case["expect"]:
             if fragment not in output:
                 failures.append(f"the run does not say: {fragment}")
         for fragment in case.get("forbid", ()):
             if fragment in output:
                 failures.append(f"the run says what it must not: {fragment}")
-
     return failures, output
 
 
 def select(argv):
-    """The cases whose name contains every argument given, or all of them.
-
-    Editing four cases costs four runs, not all of them. CI passes no argument
-    and so runs everything; a partial run says so in its last line, because a
-    filtered PASS is not the suite passing.
-    """
     chosen = [
         case
         for case in CASES
         if all(term.lower() in case["name"].lower() for term in argv)
     ]
     if argv and not chosen:
-        raise SystemExit(
-            f"  FAIL  no case matches {' '.join(argv)}; "
-            f"the names are:\n" + "\n".join(f"        {c['name']}" for c in CASES)
-        )
+        raise SystemExit(f"  FAIL  no case matches {' '.join(argv)}")
     return chosen
 
 
@@ -658,23 +270,17 @@ def main(argv=()):
     print(f"Subject: {PACKAGE}")
     print()
 
-    # Every case pays for a full RO-Crate profile validation, which is seconds
-    # of loading before it looks at the crate, and they are independent: each
-    # mutates its own copy in its own directory and shares nothing. Run
-    # serially the suite costs that many times over, which is a suite people
-    # stop running. Threads, not processes, because each case is waiting on a
-    # subprocess rather than holding the GIL.
     with futures.ThreadPoolExecutor(
         max_workers=min(MAX_WORKERS, max(1, len(cases)))
     ) as pool:
         results = list(pool.map(run_case, cases))
 
     failed = 0
-    for case, (failures, output) in zip(cases, results):
-        if failures:
+    for case, (case_failures, output) in zip(cases, results):
+        if case_failures:
             failed += 1
             print(f"  FAIL  {case['name']}")
-            for failure in failures:
+            for failure in case_failures:
                 print(f"        {failure}")
             print(output)
         else:

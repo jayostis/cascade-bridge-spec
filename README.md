@@ -84,8 +84,11 @@ compatibility.md               compatibility.json: the counterparts a repository
 vocab/bridge.ttl               the bridge: vocabulary: adapter, test and compatibility terms
 vocab/compatibility.context.jsonld  the JSON-LD context a compatibility.json names
 shapes/bridge.shapes.ttl       SHACL shapes for an adapter's crate and its test manifest, as one graph
-scripts/validate-adapter.py    the adapter lint: the checks of adapter/validation.md
-scripts/selftest-lint.py       the mutation cases that show each check failing
+scripts/profiles/               the cascade-bridge-adapter RO-Crate profile: the requirements of adapter/validation.md
+scripts/bridgelint/            what those requirements call, one module each
+scripts/validate-adapter.py    the adapter lint: runs the profile and prints what it found
+scripts/unittest-lint.py       what each requirement decides, asserted directly
+scripts/selftest-lint.py       the cases that show the whole lint failing
 scripts/compatibility.py       validate, resolve, check out, run and judge a compatibility.json
 scripts/selftest-compatibility.py  its cases, against throwaway repositories
 fixtures/synthetic-adapter/    a synthetic adapter package: the lint's own test subject

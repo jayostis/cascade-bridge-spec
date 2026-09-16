@@ -188,9 +188,10 @@ it meets [`pinning.md`](pinning.md)'s rule about what this repository may know.
 | `judge [<dir>]` | applies the rule above to each report, one line per entry naming the resolved commit and any uncommitted-edits flag |
 | `ready <dir>` | the merge-time rule |
 
-Every subcommand reports in the words [`adapter/validation.md`](adapter/validation.md)
-fixes — `ok`, `FAIL`, `nothing to check`, `not run` — and a repository with no
-`compatibility.json` has nothing to check rather than a pass.
+Every subcommand reports in one of four words — `ok`, `FAIL`, `nothing to check`
+and `not run` — because a tool that silently did nothing must not read as one
+that passed. A repository with no `compatibility.json` has nothing to check
+rather than a pass, and a step that could not run says so and fails.
 
 Three actions under `.github/actions/` run it in CI, and a repository's CI calls
 only the first:

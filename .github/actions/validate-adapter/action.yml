@@ -20,11 +20,12 @@
 # credentials.
 name: Validate a Cascade Bridge Adapter
 description: >-
-  Validate an adapter package against the Cascade Bridge Specification: all
-  checks of adapter/validation.md -- RO-Crate 1.2, the SHACL shapes over
-  the crate and the test manifest as one graph, the file inventory, the digests,
-  every input against the schema its envelope declares, every expected graph as
-  Turtle, and every query as SPARQL 1.1. Each check reports whether it ran.
+  Validate an adapter package against the Cascade Bridge Specification. One
+  pass over the cascade-bridge-adapter RO-Crate profile, which is a profile of
+  RO-Crate 1.2: the crate and the test manifest as one graph against the SHACL
+  shapes, the file inventory, the digests, every input against the schema its
+  envelope declares, every expected graph as Turtle, every query as SPARQL 1.1,
+  and RO-Crate 1.2 conformance inherited.
 
 inputs:
   path:

@@ -1,20 +1,22 @@
 #!/usr/bin/env python3
 """Validate a Cascade Bridge Adapter package against this specification.
 
-The checks adapter/validation.md names, in the order it names them, so that the
-cheapest check that can fail comes first and each later check may assume the
-earlier ones held. What each check is, and what a failure means, is that
-document and the module that implements it, one per check under
-scripts/bridgelint/checks/.
+The checks are an RO-Crate profile, scripts/profiles/cascade-bridge-adapter,
+which declares itself a profile of RO-Crate 1.2. So one pass validates the
+package as an RO-Crate and as an adapter, and every requirement -- theirs and
+this specification's -- is reported the same way, at the same severity, by the
+same tool. This script is the front end: it runs that profile and prints what it
+found.
 
-**Every check says whether it ran.** A check whose tool is absent, and a check
-that found nothing of its kind in the package, are each reported in their own
-words and never as a pass: a lint that silently checks nothing is worse than no
-lint. The summary at the end lists every check with the word it earned.
+What each requirement is, and what a failure means, is adapter/validation.md and
+the module that implements it under scripts/bridgelint/checks/.
 
-Nothing here runs a mapping or compares a graph, and nothing an adapter names is
-fetched: check 4 recomputes digests over the committed bytes. The tools it runs
-do use the network, starting with the RO-Crate context the crate names.
+A requirement is met, or it is not, and a run fails on any unmet requirement.
+A check that could not run -- a missing tool -- reports an unmet requirement
+rather than silence, because a lint that silently checks nothing is worse than
+no lint. A check that ran and found nothing of its kind in the package reports
+nothing: an adapter whose manifest holds only input-only tests has broken no
+rule.
 
 This script is what .github/actions/validate-adapter runs, and the starter hands
 over to that action from a checkout of this repository at the adapter's own
@@ -23,15 +25,14 @@ of this file. It takes a directory. It knows no adapter's name, no adapter's
 repository and no format id, and it must stay that way: a specification that
 knows which adapters exist is the bug pinning.md is written against.
 
+Nothing here runs a mapping or compares a graph, and nothing an adapter names is
+fetched: digests are recomputed over the committed bytes.
+
 Usage:
 
     python3 scripts/validate-adapter.py <path to an adapter checkout>
 
-Exit status is 0 when the run passes and 1 when it fails; adapter/validation.md
-says which words fail it.
-
-Requires pyshacl, rdflib, roc-validator and lxml (pip install pyshacl rdflib
-roc-validator lxml).
+Requires pyshacl, rdflib, roc-validator and lxml.
 """
 
 import argparse
@@ -40,19 +41,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from bridgelint import crate as crate_module  # noqa: E402
-from bridgelint import report  # noqa: E402
-from bridgelint.checks import (  # noqa: E402
-    digests,
-    graphs,
-    inputs,
-    inventory,
-    queries,
-    rocrate,
-    shapes,
-    specpin,
-)
-from bridgelint.terms import SPEC_ROOT  # noqa: E402
+PROFILES = Path(__file__).resolve().parent / "profiles"
+PROFILE = "cascade-bridge-adapter"
+SPEC_ROOT = Path(__file__).resolve().parent.parent
+
+
+def ours(check):
+    """Whether a check comes from this specification's profile."""
+    return getattr(check.requirement.profile, "token", None) == PROFILE
 
 
 def main():
@@ -67,30 +63,54 @@ def main():
     if not (adapter / "ro-crate-metadata.json").is_file():
         raise SystemExit(f"  FAIL  {adapter} holds no ro-crate-metadata.json")
 
+    from bridgelint.checks.quiet import quieten
+    from rocrate_validator import services
+    from rocrate_validator.models import ValidationSettings
+
+    quieten()
     print(f"Adapter: {adapter}")
     print(f"Spec:    {SPEC_ROOT}")
     print()
 
-    # Check 1 runs before the crate is loaded: an invalid RO-Crate is the
-    # cheapest thing that can be wrong, and loading it here would raise before
-    # the report could say so.
-    results = [(1, rocrate.TITLE, report.render(rocrate.HEADING, rocrate.run(adapter)))]
-
-    crate = crate_module.load(adapter)
-    for number, module in enumerate(
-        (shapes, inventory, digests, inputs, graphs, queries), start=2
-    ):
-        results.append(
-            (number, module.TITLE, report.render(module.HEADING, module.run(crate)))
+    result = services.validate(
+        ValidationSettings(
+            rocrate_uri=str(adapter),
+            extra_profiles_path=str(PROFILES),
+            profile_identifier=PROFILE,
         )
-    pin = report.render(specpin.HEADING, specpin.run(crate))
+    )
+
+    issues = list(result.get_issues())
+    unmet = {issue.check.identifier for issue in issues}
+
+    mine = sorted(
+        (c for c in result.executed_checks if ours(c)),
+        key=lambda c: c.identifier,
+    )
+    inherited = [c for c in result.executed_checks if not ours(c)]
+
+    print("The Cascade Bridge Adapter requirements, and how each ended:")
+    width = max((len(c.requirement.name) for c in mine), default=0)
+    for check in mine:
+        word = "FAIL" if check.identifier in unmet else "ok"
+        print(f"  {word:<6}{check.requirement.name.ljust(width)}  {check.name}")
+    failed_inherited = sum(1 for c in inherited if c.identifier in unmet)
+    print(
+        f"  {'FAIL' if failed_inherited else 'ok':<6}"
+        f"{'RO-Crate 1.2'.ljust(width)}  "
+        f"{len(inherited)} inherited requirement(s), {failed_inherited} unmet"
+    )
+
+    for issue in issues:
+        print()
+        head, *rest = issue.message.splitlines()
+        print(f"  {issue.check.requirement.name}: {head}")
+        for line in rest:
+            print(f"        {line}")
 
     print()
-    report.summarise(results, pin)
-    print()
-    ok = not pin.fails and not any(result.fails for _, _, result in results)
-    print("PASS" if ok else "FAIL")
-    return 0 if ok else 1
+    print("PASS" if result.passed() else "FAIL")
+    return 0 if result.passed() else 1
 
 
 if __name__ == "__main__":
