@@ -58,15 +58,13 @@ findings sidecar.
 - `mf:result`: `bridge:graph` (the expected Turtle) and `bridge:findings` (the
   expected sidecar), exactly one each. Also closed.
 
-**The comparison rule.** Run the mapping on `bridge:input`. The produced graph
-must be **isomorphic** to `bridge:graph` — blank nodes relabelled, IRIs and
-literals exact — after every triple whose predicate is a `bridge:ignorePredicate`
-has been removed from **both sides**. The produced findings must **equal** the
-expected sidecar as a **multiset**: the same entries with the same multiplicity,
-in any order, two entries being equal when they have the same member names and
-equal values (JSON object equality, not byte equality).
+**The comparison rule** is the `rdfs:comment` on `bridge:IsomorphicConversionTest`
+in [`../../vocab/bridge.ttl`](../../vocab/bridge.ttl): a graph compared up to
+relabelling, findings compared as a multiset, stamps off both sides first. That
+is the copy a harness implements and the only one that is normative. What follows
+is why it says that, which the vocabulary has no room for.
 
-Both halves of that are the same principle: **a comparison is insensitive to
+Both halves of it are the same principle: **a comparison is insensitive to
 everything the format does not mean.** A stricter rule than the format's meaning
 does not catch more mapping errors; it only fails harnesses that are right.
 
@@ -89,12 +87,9 @@ pin a CLDR version nothing states, to compare a bookkeeping array.
 Multiplicity **is** compared: entries do repeat, the repeats are identical whole
 objects, and a set comparison would silently lose them.
 
-Separately, and as file hygiene rather than judgement: a sidecar written from
-scratch SHOULD be sorted by Unicode code point on (`sourceField`, `severity`,
-`reason`), because every language reproduces code-point order identically and it
-keeps regeneration diffs readable. That is a property of the file and never of
-the comparison, so a sidecar copied verbatim from elsewhere is not re-sorted to
-satisfy it.
+The sort order the comment then recommends is file hygiene and never judgement,
+which is why a sidecar copied verbatim from elsewhere is not re-sorted to satisfy
+it.
 
 ### `bridge:InputOnlyTest`
 

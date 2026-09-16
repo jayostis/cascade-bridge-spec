@@ -191,13 +191,10 @@ merge-time question, and the merge gate asks it: `ready`, in
 
 ## The lint as a reusable action
 
-The checks are published from this repository as a **composite GitHub Action**,
-`.github/actions/validate-adapter`, rather than copied between adapters. Copied
-checks are the failure this repository exists to prevent: a second statement of
-a fact is one that can disagree.
-
-An adapter's CI does not call it directly. It calls the starter, at a tag that
-never moves:
+The checks are published as a composite GitHub Action,
+`.github/actions/validate-adapter`, for the reason in
+[`../pinning.md`](../pinning.md). An adapter's CI does not call it directly. It
+calls the starter, at a tag that never moves:
 
 ```yaml
 jobs:
@@ -213,18 +210,15 @@ jobs:
           check: ready-to-merge
 ```
 
-The starter checks the adapter out into a directory named as its repository,
-reads the crate's `bridge:specPin`, checks this repository out beside it at that
-commit, and runs this action from there, followed by the `compatibility` action
-when the adapter commits a `compatibility.json`. The second job is the merge
-gate, meant to be a required status check. Bumping the pin is an edit to the
-crate and nothing else; [`../compatibility.md`](../compatibility.md) has the
-rest.
+That is the whole of it: two jobs, the second the merge gate, meant to be a
+required status check. Bumping the pin is an edit to the crate and nothing else.
+What the starter reads, checks out and hands over to is
+[`../compatibility.md`](../compatibility.md).
 
 All seven checks run. The action ends by printing each of them with the word it
 earned, so a package is never reported as passing a check that did not happen.
 
-Three things the action keeps from the script, and must go on keeping:
+Two things the action keeps from the script, and must go on keeping:
 
 - **The base IRIs**, set explicitly, for the reason in check 2.
 - **The naming of a missing `bridge:specPin` in its own words.** That is the one
@@ -232,8 +226,6 @@ Three things the action keeps from the script, and must go on keeping:
   generic "missing property" message would send its author looking in the wrong
   file. The wording is `the crate is valid and the manifest conforms except for
   the missing bridge:specPin`.
-- **Knowing no adapter.** It takes a directory. It names no repository, no
-  format id and no package, and it clones nothing but the caller's own checkout.
 
 ## Running the checks
 

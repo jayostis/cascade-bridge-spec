@@ -35,21 +35,16 @@ account in any organisation, and this specification must stay checkable without
 knowing that one exists. Every check therefore runs in the adapter or the engine,
 against the head being proposed.
 
-## Every repository's CI calls the starter
+## The tooling is published from here
 
-The tooling is published from here as composite GitHub Actions. A repository's
-CI calls one of them, `start`, at the reserved tag `start-v1`, which never moves.
-The starter reads the repository's own spec pin, checks this repository out at
-exactly that commit, and runs the real tools from there. Bumping the spec pin
-therefore never touches the workflow, and the pin is written in one place: the
-crate for an adapter, `compatibility.json` for an engine.
-[`compatibility.md`](compatibility.md) has the line.
+Checks are published as composite GitHub Actions for a repository's CI to call,
+rather than copied into it, so that a fact has one statement in one place. What
+a repository calls, and what each action runs, is
+[`compatibility.md`](compatibility.md).
 
-**Publishing the tooling from here is not an inversion.** The specification
-publishes an artefact and the adapter or engine consumes it, so the arrow runs
-towards the specification, the way it must. The tools take a directory and read
-the files in it. They never learn that any particular adapter or engine exists,
-and they name none.
+**That is not an inversion.** The specification publishes an artefact and the
+adapter or engine consumes it, so the arrow runs towards the specification, the
+way it must.
 
 ## A pin is a commit, a tag or a branch
 
@@ -58,12 +53,11 @@ In a crate, `bridge:specPin` is a full 40-character commit SHA. In a
 records the commit each resolved to; [`compatibility.md`](compatibility.md) says
 how each kind resolves and what each guarantees.
 
-**At merge time, every pin names the counterpart's default branch or something
-on it**: a commit or a tag on that branch, or the branch itself. A pin to any
-other branch is refused by the `ready-to-merge` check. That is what keeps a pin
-reachable: a commit on the default branch survives a feature branch being reset
-or rebased, where a commit only on that feature branch would leave every later
-CI run dying at `git checkout` on an object that has been garbage-collected.
+**At merge time a pin must be reachable**, which is the rule the `ready-to-merge`
+check applies ([`compatibility.md`](compatibility.md)). Why there is such a rule
+at all: a commit on the default branch survives a feature branch being reset or
+rebased, where a commit only on that feature branch would leave every later CI
+run dying at `git checkout` on an object that has been garbage-collected.
 
 A pin is written as an entity, not a string: a repository and a revision. The
 repository half is carried explicitly because a commit that exists only on a
@@ -100,9 +94,9 @@ teaches the reader to disbelieve the section. Both failures are avoided by the
 same rule: the pin and the measurement move together, in one deliberate commit.
 
 A default-branch pin in a `compatibility.json` is the one pin that moves without
-a commit here, and it is a choice the file records rather than an accident: the
-repository has asked to be kept current and blocked when the other side breaks
-it.
+a commit here. It is not an exception to this rule but an application of it: what
+the pull request deliberately records is the standing choice
+([`compatibility.md`](compatibility.md)), rather than one revision.
 
 ## Nothing pins what it does not consume
 
@@ -123,13 +117,13 @@ consumes no one's commit.
 
 Not a pinning rule, but the same failure wearing different clothes: a contract
 that asserts more than it means makes correct work fail, and the failure lands on
-whoever runs it next rather than on whoever wrote it.
+whoever runs it next rather than on whoever wrote it. A stricter rule than the
+format's meaning catches no mapping errors; it only fails harnesses that are
+right.
 
-An RDF graph does not mean its blank node labels, and a findings array does not
-mean its element order, so [`adapter/fixtures/manifest.md`](adapter/fixtures/manifest.md)
-compares graphs up to relabelling and findings as a multiset. A stricter rule
-than the format's meaning does not catch more mapping errors; it only fails
-harnesses that are right.
+Each test class in [`vocab/bridge.ttl`](vocab/bridge.ttl) carries the comparison
+it is judged by, in the `rdfs:comment` a harness implements. That is where the
+rule is; it is not paraphrased here.
 
 ## Results are reports, not stored facts
 

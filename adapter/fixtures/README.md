@@ -84,13 +84,11 @@ record — `sourceField`, `reason`, `severity`, `context` — one entry per thin
 mapping could not carry across. It is a private shape, and it is what the oracles
 are asserted against, so it is what an adapter writes today.
 
-The order the entries happen to be in is **not** part of the comparison:
-`bridge:IsomorphicConversionTest` compares the array as a multiset
-([`manifest.md`](manifest.md)). A sidecar written from scratch SHOULD
-be sorted by Unicode code point on (`sourceField`, `severity`, `reason`), which
-keeps regeneration diffs readable, but that is file hygiene and never a
-judgement: the copied sidecars are in the ICU collation their
-authoring script left them in and are not re-sorted.
+The order the entries happen to be in is **not** part of the comparison, and the
+sort order to write a new sidecar in is a recommendation and not a judgement:
+both are `bridge:IsomorphicConversionTest`'s rule, and
+[`manifest.md`](manifest.md) is why it is that. It is why the copied sidecars are
+left in the ICU collation their authoring script produced.
 
 **It should not stay private.** One canonical findings model belongs inside the
 Bridge, into which source-side validation, the

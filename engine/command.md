@@ -25,22 +25,15 @@ judged as not holding ([`../compatibility.md`](../compatibility.md)).
 ## `compatibility.json`
 
 An engine commits a `compatibility.json` at its repository root, because it has
-no crate to carry its spec pin. It carries, in the engine's form
-[`../compatibility.md`](../compatibility.md) defines:
+no crate to carry its spec pin. Its keys, their types and their cardinalities are
+the engine's form in [`../compatibility.md`](../compatibility.md); what an engine
+puts in them is the build it already has, as an argument vector rather than a
+shell line:
 
-- **`specification`**, the revision of this specification the engine is
-  written against;
-- **`setup`**, the argument vector that prepares the engine in a fresh checkout
-  (`["npm", "ci"]`, `["cargo", "build", "--release", "-p", "cascade-bridge-cli"]`);
-- **`command`**, the argument vector the tooling appends
-  `test <adapter directory> --earl <file>` to
-  (`["node", "packages/bridge-cli/src/cli.ts"]`,
-  `["cargo", "run", "--release", "-p", "cascade-bridge-cli", "--"]`).
+```jsonc
+"setup":   ["cargo", "build", "--release", "-p", "cascade-bridge-cli"],
+"command": ["cargo", "run", "--release", "-p", "cascade-bridge-cli", "--"]
+```
 
-Both vectors run without a shell, with the engine's checkout as the working
-directory, so one file works on Windows and on Linux CI. The toolchain they
-name is the engine's to provide in its own CI; this specification learns no
-language's build.
-
-`testedWith` is optional: an engine lists an adapter only to assert that it
-passes it.
+The tooling appends `test`, the adapter directory, `--earl` and the report file
+to `command`, so what it runs is the command above.

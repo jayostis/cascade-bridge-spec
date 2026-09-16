@@ -7,9 +7,8 @@ entity. The cross-file constraints — that a test's envelope is one the adapter
 lists, and that the manifest and adapter point at each other — are
 `sh:sparql`, so pySHACL must run with `advanced=True`.
 
-The allowed `encodingFormat` set lives here. It is what keeps a file that
-executes out of a package that claims to be data, so adding a media type to it is
-a change to the "no code" guarantee, not housekeeping.
+Adding a media type to the allowed `encodingFormat` set is a change to the "no
+code" guarantee the file header describes, not housekeeping.
 
 - Shapes are valid SHACL:
   `python3 -m pyshacl --metashacl --shacl shapes/bridge.shapes.ttl shapes/bridge.shapes.ttl`

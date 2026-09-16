@@ -1,11 +1,10 @@
 # scripts — Agent Context
 
 Machinery, not contract: `../adapter/validation.md` is the contract and
-`validate-adapter.py` implements it. But it is the *published* machinery — the
-starter runs it, through `../.github/actions/validate-adapter`, from a checkout
-of this repository at each adapter's own spec pin — so a change here is felt by
-every adapter when it moves its pin, and by none of them before. That is the
-whole reason the pin exists.
+`validate-adapter.py` implements it. But it is the *published* machinery, run in
+every adapter's CI from a checkout at that adapter's own spec pin
+(`../compatibility.md`), so a change here is felt by an adapter when it moves its
+pin and not before. That is the whole reason the pin exists.
 
 `selftest-lint.py` is the answer to "what would the lint report if the thing it
 claims to check were wrong?" It mutates a copy of `../fixtures/synthetic-adapter`

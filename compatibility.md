@@ -127,9 +127,9 @@ assumed to be `main`.
 An entry **holds** when the EARL report records an outcome for every entry of
 the adapter's test manifest, and no outcome in it is `earl:failed` or
 `earl:inapplicable`. `earl:passed`, `earl:cantTell` and `earl:untested` hold.
+Nothing else is consulted, and least of all the engine's exit code
+([`engine/command.md`](engine/command.md)).
 
-- **The report decides, not the exit code.** An engine's exit code carries no
-  meaning the tooling relies on.
 - **No report is not a pass.** A run that wrote no report, a report that does not
   parse as Turtle, and a report recording no outcome at all do not hold. Nor
   does an outcome that is not one of EARL's five.
@@ -184,8 +184,8 @@ rule stated twice is two rules that can disagree.
 ## The tooling
 
 [`scripts/compatibility.py`](scripts/compatibility.py) is one tool, and needs
-`git`, `rdflib` and `pyshacl`. It takes directories and reads files: it names no
-adapter and no engine.
+`git`, `rdflib` and `pyshacl`. It takes directories and reads files, which is how
+it meets [`pinning.md`](pinning.md)'s rule about what this repository may know.
 
 | subcommand | does |
 |---|---|

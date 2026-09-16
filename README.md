@@ -69,8 +69,9 @@ building; its entry point names what it needs from the other.
 | **an engine** — a Bridge, the thing that runs adapters | [`engine/`](engine/) | the stages you run around a mapping, and how you execute an adapter's test manifest |
 
 Building either, you also need [`pinning.md`](pinning.md): how you name the
-revision of this specification you are built against. To assert that an adapter
-and an engine pass together, [`compatibility.md`](compatibility.md).
+revision of this specification you are built against, and why the specification
+names no adapter and no engine. To assert that a particular adapter and a
+particular engine pass together, [`compatibility.md`](compatibility.md).
 
 ## Layout
 
@@ -95,91 +96,6 @@ fixtures/lift/                 the lift vectors a sparql-1.1 Bridge must reprodu
 .github/actions/ready-to-merge/  the merge gate, meant to be a required status check
 .github/workflows/validate.yml CI: this repository's own files, and nothing else's
 ```
-
-## How an adapter declares conformance
-
-An adapter package is an RO-Crate 1.2 whose root entity is the adapter. Two
-properties on that root entity declare conformance to this specification:
-
-```jsonc
-"conformsTo": [
-  { "@id": "https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/" }
-],
-"bridge:specPin": {
-  "@id": "https://github.com/jayostis/cascade-bridge-spec/commit/<full SHA>"
-}
-```
-
-`conformsTo` names *which contract*; `bridge:specPin` names *which revision of
-it*, as a `SoftwareSourceCode` entity in the crate carrying `codeRepository` and
-`version` (the full SHA) — the same shape `bridge:vocabularyPin` uses.
-
-**The profile IRI does not dereference yet.** Nothing is published at
-`https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/`. It is an
-identifier, and the Profile Crate that describes it is
-[`adapter/profile/ro-crate-metadata.json`](adapter/profile/ro-crate-metadata.json) in this
-repository. The full field-by-field contract is
-[`adapter/ro-crate-metadata.md`](adapter/ro-crate-metadata.md).
-
-## How to validate an adapter
-
-```bash
-python3 -m pip install pyshacl rdflib roc-validator lxml
-python3 scripts/validate-adapter.py <path to an adapter checkout>
-```
-
-That runs the seven checks a conforming adapter package must pass — the crate,
-the shapes, the file inventory, the digests, the inputs against their schemas,
-the expected graphs and the queries. What each one is, and what a failure
-means, is [`adapter/validation.md`](adapter/validation.md); it is the authority
-and this is not a second copy of it. Exit status is 0 when the run passes.
-
-**Every check says whether it ran.** `ok`, `nothing to check` and `not run` are
-three different sentences: a lint that silently checks nothing is worse than no
-lint.
-
-An adapter does not run that by hand. Its CI calls one action from this
-repository at a tag that never moves:
-
-```yaml
-      - uses: jayostis/cascade-bridge-spec/.github/actions/start@start-v1
-```
-
-The starter reads the adapter's `bridge:specPin`, checks this repository out at
-exactly that commit, and runs the lint from there, so the pin is written once, in
-the crate, and bumping it never touches the workflow. The tools take a
-directory and name no adapter — the arrow runs from adapter to specification.
-[`compatibility.md`](compatibility.md) has the rest of what the starter runs.
-
-[`adapter/validation.md`](adapter/validation.md) has the full seven-item list a
-conforming package must pass, the words a check may be reported in, and the
-media types an adapter package may declare.
-[`fixtures/README.md`](fixtures/README.md) is the synthetic package the lint is
-run against here, and `scripts/selftest-lint.py` is where each check is seen
-failing.
-
-## Alignment, in brief
-
-The specification knows about itself. An adapter and a Bridge each know about
-the specification, and pin it: the adapter in its crate, the Bridge in its
-`compatibility.json`. That pin is the only one required. An adapter and a Bridge
-know about each other only by saying so, in an entry of their own
-`compatibility.json` that blocks their merge when the pairing fails. **Nothing
-here names an adapter or an engine**, and this repository's CI validates this
-repository's own files and no one else's. A catalogue is a later publishing
-concern, not the place tests run.
-
-A pin is a commit, a tag or a branch, and at merge time it names the
-counterpart's default branch or something on it. This specification is upstream
-of everything: a change here merges first, and nothing waits on a tag. Commit
-and tag pins move in the pull request that needs them, with the measurement
-re-run in the same commit; a default-branch pin is the recorded choice to be kept
-current. Nothing pins what it does not consume — which is why this repository
-pins nothing at all. A comparison is insensitive to everything the format does
-not mean. And a Bridge's verdict on an adapter is an EARL report, judged in the
-run that produced it and never stored.
-
-The reasoning is in [`pinning.md`](pinning.md).
 
 ## Licence
 

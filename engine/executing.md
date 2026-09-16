@@ -29,16 +29,15 @@ are all lift tests, loaded on its own with its own location as base: no crate
 describes it, it names no adapter, and it names no stamp predicate, so nothing
 comes off either side. It is reported in EARL like any other manifest.
 
-Two obligations sit outside the individual rules:
+One obligation sits outside the individual rules. **Stamp predicates come off
+both sides first**: the set is the entry's `bridge:ignorePredicate` if it carries
+one, otherwise the manifest's. A Bridge writes its own stamps and an oracle
+carries whatever produced it, so a comparison that kept them would fail every
+correct implementation.
 
-- **Stamp predicates come off both sides first.** The set is the entry's
-  `bridge:ignorePredicate` if it carries one, otherwise the manifest's. A Bridge
-  writes its own stamps and an oracle carries whatever produced it, so a
-  comparison that kept them would fail every correct implementation.
-- **A comparison is insensitive to everything the format does not mean.** Blank
-  node labels in a graph, element order in a findings array. A stricter rule than
-  the format's meaning catches no mapping errors; it only fails harnesses that
-  are right.
+What each rule is insensitive to — blank node labels, the order of a findings
+array — is written into the rule itself, in the `rdfs:comment`. Implement it from
+there; a harness written from a summary of it is strict where the format is not.
 
 ## Report in EARL
 

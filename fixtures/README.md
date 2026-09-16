@@ -11,9 +11,10 @@ lift/                the lift vectors a sparql-1.1 Bridge must reproduce
 The fake engine is `scripts/selftest-compatibility.py`'s counterpart to the
 synthetic adapter: it takes `test <adapter directory> --earl <file>`
 ([`../engine/command.md`](../engine/command.md)) and writes a canned EARL
-report, so that judging a report is exercised without this repository running,
-or naming, a real engine. Its exit status is 0 whatever it reports, because the
-tooling must rely on the report and never on the exit code.
+report, so that judging a report is exercised without this repository running, or
+naming, a real engine. Its exit status is 0 whatever it reports, so that a case
+whose report says `failed` still exercises the rule in
+[`../engine/command.md`](../engine/command.md).
 
 The lift vectors are an engine's subject rather than the lint's: each is an XML
 document and the N-Triples its lift must be isomorphic to, listed in
@@ -38,27 +39,18 @@ A package this repository wrote itself is the way out. It is a subject this
 repository owns, it changes only when someone here changes it, and it names no
 adapter.
 
-## What is in it, and what is invented
-
-Everything. The format, its two schemas, its records, its release and its
-vocabulary are made up; every URL that is not this repository's own is under
-`example.org`, IANA's reserved example domain, and none of them resolves. No
-real format, publisher, dataset or adapter is named anywhere in it.
+## What is in it
 
 It is minimal, and every part of it earns its place by covering a branch of the
-seven checks in [`adapter/validation.md`](../adapter/validation.md) that a
-single real adapter would not cover at once:
+seven checks in [`adapter/validation.md`](../adapter/validation.md) that a single
+real adapter would not cover at once: two envelopes for check 5's two ways of
+finding a schema, three digest arrangements for check 4's local and publisher's
+claims and for bytes that are not committed, one test of each type, and the three
+queries checks 2 and 7 want.
 
-| what it holds | the branch it covers |
-|---|---|
-| two envelopes, one with a `bridge:documentSchema` and one without | check 5 takes the envelope's schema where there is one and falls back to the adapter's `bridge:sourceSchema` where there is not |
-| a file carrying only a `sha256` | check 4's local claim: these bytes, here, now |
-| two files carrying a `sha256` and an `md5` | check 4's publisher's claim, recomputed and reported as a different finding from a wrong `sha256` |
-| a referenced release under `example.org` | a digest on bytes that are not committed: recorded, not compared, and never fetched |
-| an isomorphic conversion test | check 6 has an expected graph to parse |
-| an input-only test | a test with no `mf:result`, which judges nothing |
-| a dataset completion test | check 5 meets a test whose bytes are not here, and says so instead of counting it validated |
-| a mapping, a findings query and a detect query, requiring `sparql-1.1` | the queries check 2 requires of every adapter and check 7 parses; the mapping and the findings query produce the expected graph and findings from `example-0001.xml` |
+Which branch each part is there for is the entity's own `description` in
+`synthetic-adapter/ro-crate-metadata.json`. That is the copy a reader of the
+package meets, and it is the one that moves when the package does.
 
 ## The specification pin
 
@@ -77,25 +69,12 @@ repository's default branch.
 
 ## Seeing the lint fail
 
-`scripts/selftest-lint.py` copies this package into a temporary directory,
-breaks one property per case, and asserts what the lint says about it:
-
-```bash
-python3 -m pip install pyshacl rdflib roc-validator lxml
-python3 scripts/selftest-lint.py
-```
-
-Fourteen cases: the package unbroken passing, and one red case each for a crate
-that names no mapping, a query declared with the wrong media type, a crate that
-does not require `sparql-1.1`, an undescribed file, a wrong local `sha256`, a
-wrong publisher `md5`, an input that does not satisfy its schema, a schema
-language the lint does not read, an expected graph that is not Turtle, a
-manifest that names no expected graph, a query that does not parse, a query of
-the wrong form, and a findings query projecting the wrong variables. The schema
-language the lint does not read, and the manifest that names no expected graph,
-exit 0 on purpose: `not run` and `nothing to check` are not failures, and the
-case asserts that the lint says them in their own words rather than reporting a
-pass.
+`scripts/selftest-lint.py` copies this package into a temporary directory, breaks
+one property per case, and asserts what the lint says about it. Its cases are the
+list of what this package is able to show going wrong; read them there rather
+than from a census here, which would be stale on the next one anyone adds. Two of
+them exit 0 on purpose, because `not run` and `nothing to check` are not
+failures.
 
 Nothing tracked is mutated, and no mutated copy is ever written inside the
 repository.
@@ -105,9 +84,7 @@ repository.
 A change to the shapes, the vocabulary or the media-type set changes what this
 package must look like. Change it in the same commit, run the lint against it,
 run the selftest, and — because a fixture cannot tell you what it breaks in the
-wild — run the lint by hand against a real adapter checkout beside this one,
-saying in the commit which adapter and at which commit, without adding it to
-this repository in any form (`../shapes/CLAUDE.md`).
+wild — do what `../shapes/CLAUDE.md` says about a real adapter checkout.
 
 The digests in the crate are recorded over the committed bytes. Editing a file
 here without restating its `sha256` and `contentSize` in the same commit fails
