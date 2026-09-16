@@ -36,7 +36,6 @@ suite passing.
 from __future__ import annotations
 
 import hashlib
-import os
 import re
 import shutil
 import subprocess
@@ -45,10 +44,12 @@ import tempfile
 from concurrent import futures
 from pathlib import Path
 
-# Each case is waiting on a validator subprocess, not computing, so more
-# workers than cores still helps; the cap keeps a laptop usable and a CI
-# runner from thrashing on memory.
-WORKERS = min(16, (os.cpu_count() or 4) * 2)
+# Measured: one case is ~16s and four at once are ~21s, so the cost is waiting
+# on the validator and not computing. Cores are therefore the wrong bound --
+# capping at them leaves a second wave costing another whole case. Run every
+# case at once, with a ceiling so that a suite grown to hundreds does not open
+# hundreds of processes.
+MAX_WORKERS = 32
 
 SPEC_ROOT = Path(__file__).resolve().parent.parent
 LINT = SPEC_ROOT / "scripts" / "validate-adapter.py"
@@ -657,13 +658,15 @@ def main(argv=()):
     print(f"Subject: {PACKAGE}")
     print()
 
-    # Every case pays for a full RO-Crate profile validation, which is
-    # seconds of loading before it looks at the crate, and they are
-    # independent: each mutates its own copy in its own directory and shares
-    # nothing. Run serially the suite costs that many times over, which is a
-    # suite people stop running. Threads, not processes, because each case is
-    # waiting on a subprocess rather than holding the GIL.
-    with futures.ThreadPoolExecutor(max_workers=WORKERS) as pool:
+    # Every case pays for a full RO-Crate profile validation, which is seconds
+    # of loading before it looks at the crate, and they are independent: each
+    # mutates its own copy in its own directory and shares nothing. Run
+    # serially the suite costs that many times over, which is a suite people
+    # stop running. Threads, not processes, because each case is waiting on a
+    # subprocess rather than holding the GIL.
+    with futures.ThreadPoolExecutor(
+        max_workers=min(MAX_WORKERS, max(1, len(cases)))
+    ) as pool:
         results = list(pool.map(run_case, cases))
 
     failed = 0
