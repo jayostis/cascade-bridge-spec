@@ -15,7 +15,7 @@
 # fixtures/synthetic-adapter, fixtures/fake-engine and throwaway repositories
 # -- and run the cases that show each check failing. A subject this repository
 # owns is the one way to test a published tool without knowing an adapter.
-name: validate
+name: CI
 
 on:
   push:
@@ -28,7 +28,7 @@ permissions:
 
 jobs:
   spec:
-    name: the specification's own files
+    name: Spec files (Turtle, SHACL, lift vectors)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -37,12 +37,12 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: install
+      - name: Install validators
         run: |
           python3 -m pip install --upgrade pip
           python3 -m pip install --group validators
 
-      - name: every Turtle file parses
+      - name: Parse Turtle files
         run: |
           python3 - <<'PY'
           from glob import glob
@@ -56,7 +56,7 @@ jobs:
               print(f"{path}: {len(graph)} triples")
           PY
 
-      - name: the shapes are valid SHACL
+      - name: Check shapes are valid SHACL
         run: |
           for shapes in shapes/bridge.shapes.ttl adapter/profile/must/*.ttl; do
             python3 -m pyshacl --metashacl --shacl "$shapes" "$shapes"
@@ -65,7 +65,7 @@ jobs:
       # Nothing else here judges the lift vectors: this repository runs no
       # Bridge, and parsing alone passes an entry naming a missing file, an
       # entry left out of mf:entries, and a vector no entry names.
-      - name: the lift manifest conforms to the shapes and names every vector
+      - name: Check lift test manifest
         run: |
           python3 - <<'PY'
           import sys
@@ -106,29 +106,29 @@ jobs:
           sys.exit(1 if problems else 0)
           PY
 
-      - name: the profile crate is a valid RO-Crate 1.2
+      - name: Validate adapter profile crate (RO-Crate 1.2)
         run: rocrate-validator validate adapter/profile/ --profile-identifier ro-crate-1.2 --no-paging
 
   lint:
-    name: the published lint, on a package of its own
+    name: Adapter profile (validator + pytest)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       # The action, called by local path, so that what runs here is the file
       # the starter hands over to rather than a copy of the command inside it.
-      - name: the action validates the fixture package
+      - name: Validate synthetic adapter
         uses: ./.github/actions/validate-adapter
         with:
           path: fixtures/synthetic-adapter
 
-      - name: the adapter profile's tests
+      - name: Run pytest
         run: |
           python3 -m pip install --group dev
           python3 -m pytest
 
   compatibility:
-    name: the compatibility tooling, and the starter by local path
+    name: Compatibility tooling (selftest + starter)
     runs-on: ubuntu-latest
     steps:
       # Under its own name, the way the starter lays siblings out: it hands
@@ -141,25 +141,25 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: install
+      - name: Install validators
         run: |
           python3 -m pip install --upgrade pip
           python3 -m pip install --group cascade-bridge-spec/pyproject.toml:validators
 
       # Throwaway repositories named by file:// URLs, so no network: each case
       # breaks one rule, or exercises one, and asserts what the tool says.
-      - name: the tooling can be seen failing
+      - name: Run compatibility selftest
         run: python3 cascade-bridge-spec/scripts/selftest-compatibility.py
 
       # start-v1 does not exist until it is tagged, so the starter is called by
       # local path. It says so, and runs the tools from this checkout rather
       # than from the fixture's pin, whose revision predates them.
-      - name: the starter runs the lint on the fixture package
+      - name: Starter - validate synthetic adapter
         uses: ./cascade-bridge-spec/.github/actions/start
         with:
           path: cascade-bridge-spec/fixtures/synthetic-adapter
 
-      - name: the starter runs the merge gate on the fixture package
+      - name: Starter - merge gate on synthetic adapter
         uses: ./cascade-bridge-spec/.github/actions/start
         with:
           path: cascade-bridge-spec/fixtures/synthetic-adapter
