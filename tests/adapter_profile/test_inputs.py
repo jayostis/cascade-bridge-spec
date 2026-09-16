@@ -34,3 +34,28 @@ def test_holds_a_package_to_nothing_when_the_schema_language_is_one_it_cannot_re
         "a JSON source schema is outside v1-draft: a gap in this lint, not a "
         "fault in the package"
     )
+
+
+def test_reports_a_schema_that_is_not_a_file_in_the_package(package):
+    crate = package.crate
+    schema = crate.graph.value(crate.root, BRIDGE.sourceSchema)
+    crate.file_at(schema).unlink()
+    assert "which is not a file in this package" in "\n".join(inputs.invalid(crate))
+
+
+def test_reports_a_schema_declared_in_a_media_type_it_cannot_validate_against(crate):
+    schemas = set(crate.graph.objects(crate.root, BRIDGE.sourceSchema)) | set(
+        crate.graph.objects(None, BRIDGE.documentSchema)
+    )
+    for schema in schemas:
+        crate.graph.set((schema, SCHEMA.encodingFormat, Literal("text/plain")))
+    assert "which this lint cannot validate against" in "\n".join(inputs.invalid(crate))
+
+
+def test_reports_a_schema_that_declares_no_media_type(crate):
+    schemas = set(crate.graph.objects(crate.root, BRIDGE.sourceSchema)) | set(
+        crate.graph.objects(None, BRIDGE.documentSchema)
+    )
+    for schema in schemas:
+        crate.graph.remove((schema, SCHEMA.encodingFormat, None))
+    assert "declares no encodingFormat" in "\n".join(inputs.invalid(crate))

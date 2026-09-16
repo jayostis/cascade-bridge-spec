@@ -55,20 +55,35 @@ def invalid(crate):
     compiled = {}
     unreadable = set()
 
-    def engine_for(schema_iri):
+    def engine_for(schema_iri, declared_by):
         """An lxml XMLSchema, or None with a message when there is a fault, or
-        None with nothing when this lint simply cannot read that schema."""
+        None with nothing for a schema declared JSON: v1-draft does not specify
+        one, so not reading it is a gap in this lint (adapter/validation.md)."""
         if schema_iri in compiled:
             return compiled[schema_iri], None
         if schema_iri in unreadable:
             return None, None
-        media_type = str(crate.graph.value(schema_iri, SCHEMA.encodingFormat) or "")
-        path = crate.file_at(schema_iri)
-        if path is None or media_type in JSON_SCHEMA_MEDIA_TYPES or (
-            media_type not in XSD_MEDIA_TYPES
-        ):
+        declared = crate.graph.value(schema_iri, SCHEMA.encodingFormat)
+        media_type = str(declared or "")
+        if media_type in JSON_SCHEMA_MEDIA_TYPES:
             unreadable.add(schema_iri)
             return None, None
+        path = crate.file_at(schema_iri)
+        if path is None:
+            return None, (
+                f"{declared_by} names {schema_iri}, which is not a file in "
+                "this package"
+            )
+        if declared is None:
+            return None, (
+                f"{path.name} declares no encodingFormat, so this lint cannot "
+                "tell which schema language to validate against"
+            )
+        if media_type not in XSD_MEDIA_TYPES:
+            return None, (
+                f"{path.name} is declared {media_type}, which this lint cannot "
+                "validate against"
+            )
         try:
             compiled[schema_iri] = etree.XMLSchema(etree.parse(str(path)))
         except etree.Error as error:
@@ -96,7 +111,7 @@ def invalid(crate):
                 "this package"
             )
             continue
-        engine, fault = engine_for(schema_iri)
+        engine, fault = engine_for(schema_iri, declared_by)
         if engine is None:
             if fault:
                 yield f"{name}: {fault}"
