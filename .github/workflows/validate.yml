@@ -28,7 +28,7 @@ permissions:
 
 jobs:
   spec:
-    name: Spec files (Turtle, SHACL, lift vectors)
+    name: This repo's spec files are valid (no tests)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -42,7 +42,7 @@ jobs:
           python3 -m pip install --upgrade pip
           python3 -m pip install --group validators
 
-      - name: Parse Turtle files
+      - name: Parse every Turtle file
         run: |
           python3 - <<'PY'
           from glob import glob
@@ -56,7 +56,7 @@ jobs:
               print(f"{path}: {len(graph)} triples")
           PY
 
-      - name: Check shapes are valid SHACL
+      - name: Check the SHACL shapes are valid SHACL
         run: |
           for shapes in shapes/bridge.shapes.ttl adapter/profile/must/*.ttl; do
             python3 -m pyshacl --metashacl --shacl "$shapes" "$shapes"
@@ -65,7 +65,7 @@ jobs:
       # Nothing else here judges the lift vectors: this repository runs no
       # Bridge, and parsing alone passes an entry naming a missing file, an
       # entry left out of mf:entries, and a vector no entry names.
-      - name: Check lift test manifest
+      - name: Check the lift test manifest lists every vector
         run: |
           python3 - <<'PY'
           import sys
@@ -106,36 +106,32 @@ jobs:
           sys.exit(1 if problems else 0)
           PY
 
-      - name: Validate adapter profile crate (RO-Crate 1.2)
+      - name: Validate the adapter profile crate against RO-Crate 1.2
         run: rocrate-validator validate adapter/profile/ --profile-identifier ro-crate-1.2 --no-paging
 
-  lint:
-    name: Adapter profile (validator + pytest)
+  pytest:
+    name: 'pytest: adapter profile checks, unit and end-to-end on a synthetic adapter'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      # The action, called by local path, so that what runs here is the file
-      # the starter hands over to rather than a copy of the command inside it.
-      - name: Validate synthetic adapter
-        uses: ./.github/actions/validate-adapter
+      - uses: actions/setup-python@v5
         with:
-          path: fixtures/synthetic-adapter
+          python-version: '3.12'
+
+      - name: Install test dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install --group dev
 
       - name: Run pytest
-        run: |
-          python3 -m pip install --group dev
-          python3 -m pytest
+        run: python3 -m pytest
 
-  compatibility:
-    name: Compatibility tooling (selftest + starter)
+  compatibility-selftest:
+    name: 'compatibility.py self-test: fake engine and throwaway repos (not pytest)'
     runs-on: ubuntu-latest
     steps:
-      # Under its own name, the way the starter lays siblings out: it hands
-      # over to this repository's actions at ./cascade-bridge-spec/.
       - uses: actions/checkout@v4
-        with:
-          path: cascade-bridge-spec
 
       - uses: actions/setup-python@v5
         with:
@@ -144,22 +140,39 @@ jobs:
       - name: Install validators
         run: |
           python3 -m pip install --upgrade pip
-          python3 -m pip install --group cascade-bridge-spec/pyproject.toml:validators
+          python3 -m pip install --group validators
 
       # Throwaway repositories named by file:// URLs, so no network: each case
       # breaks one rule, or exercises one, and asserts what the tool says.
-      - name: Run compatibility selftest
-        run: python3 cascade-bridge-spec/scripts/selftest-compatibility.py
+      - name: Run scripts/selftest-compatibility.py
+        run: python3 scripts/selftest-compatibility.py
+
+  actions:
+    name: Published GitHub Actions, run on a synthetic adapter (not pytest)
+    runs-on: ubuntu-latest
+    steps:
+      # Under its own name, the way the starter lays siblings out: it hands
+      # over to this repository's actions at ./cascade-bridge-spec/.
+      - uses: actions/checkout@v4
+        with:
+          path: cascade-bridge-spec
+
+      # Called by local path, so that what runs here is the file the starter
+      # hands over to rather than a copy of the command inside it.
+      - name: validate-adapter action on the synthetic adapter
+        uses: ./cascade-bridge-spec/.github/actions/validate-adapter
+        with:
+          path: cascade-bridge-spec/fixtures/synthetic-adapter
 
       # start-v1 does not exist until it is tagged, so the starter is called by
       # local path. It says so, and runs the tools from this checkout rather
       # than from the fixture's pin, whose revision predates them.
-      - name: Starter - validate synthetic adapter
+      - name: start action (lint) on the synthetic adapter
         uses: ./cascade-bridge-spec/.github/actions/start
         with:
           path: cascade-bridge-spec/fixtures/synthetic-adapter
 
-      - name: Starter - merge gate on synthetic adapter
+      - name: start action (merge gate) on the synthetic adapter
         uses: ./cascade-bridge-spec/.github/actions/start
         with:
           path: cascade-bridge-spec/fixtures/synthetic-adapter
