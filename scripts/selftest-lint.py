@@ -126,6 +126,10 @@ def pin_not_a_data_entity(package):
     )
 
 
+def identifier_not_a_format_id(package):
+    edit(package, CRATE, '"identifier": "synthetic-example",', '"identifier": "Synthetic_Example",')
+
+
 def expected_graph_not_turtle(package):
     edit(package, EXPECTED, "@prefix ex:", "@prefixx ex:")
     restate_digest(package, EXPECTED)
@@ -170,6 +174,12 @@ CASES = [
         "mutate": None,
         "exit": 0,
         "expect": [],
+    },
+    {
+        "name": "a Cascade shape unmet: an adapter identifier that is not a format id",
+        "mutate": identifier_not_a_format_id,
+        "exit": 1,
+        "expect": ["The adapter carries exactly one identifier, the format id"],
     },
     {
         "name": "a Cascade requirement unmet: an expected graph that is not Turtle",

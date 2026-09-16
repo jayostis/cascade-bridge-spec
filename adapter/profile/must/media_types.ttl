@@ -1,0 +1,27 @@
+@prefix sh:     <http://www.w3.org/ns/shacl#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix schema: <http://schema.org/> .
+@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+<#DescribedFile> a sh:NodeShape ;
+  sh:name "Media types" ;
+  sh:targetSubjectsOf schema:encodingFormat ;
+  sh:description "Any entity in an adapter's crate that declares a media type: a committed file, a referenced file, a referenced dataset." ;
+  sh:property [
+    sh:path schema:encodingFormat ;
+    sh:datatype xsd:string ;
+    sh:in (
+      "application/gzip"
+      "application/json"
+      "application/ld+json"
+      "application/sparql-query"
+      "application/xml"
+      "application/yaml"
+      "text/csv"
+      "text/markdown"
+      "text/plain"
+      "text/turtle"
+      "text/xml"
+    ) ;
+    sh:message "encodingFormat is one of the media types an adapter package may declare: application/gzip, application/json, application/ld+json, application/sparql-query, application/xml, application/yaml, text/csv, text/markdown, text/plain, text/turtle, text/xml. A media type outside that set is how a file that executes would enter a package that claims to be data (adapter/validation.md)."
+  ] .

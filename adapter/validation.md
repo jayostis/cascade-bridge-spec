@@ -38,8 +38,8 @@ test manifest, and it needs a Bridge ([`fixtures/manifest.md`](fixtures/manifest
 
 ## The media types an adapter package may declare
 
-The allowed set is the `sh:in` list on `<#DescribedFile>` in
-[`shapes/bridge.shapes.ttl`](../shapes/bridge.shapes.ttl), and a run that trips
+The allowed set is the `sh:in` list in
+[`profile/must/media_types.ttl`](profile/must/media_types.ttl), and a run that trips
 on it prints the whole set in the violation. That is the set; it is not copied
 here, because a copy is how a package comes to declare a media type the shapes
 reject.

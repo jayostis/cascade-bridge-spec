@@ -28,5 +28,5 @@ declare; nothing there changes what you write.
 
 The normative term definitions are [`../vocab/bridge.ttl`](../vocab/bridge.ttl)
 and the constraints your package is checked against are
-[`../shapes/bridge.shapes.ttl`](../shapes/bridge.shapes.ttl). Where a
+[`profile/`](profile/). Where a
 document here and those files disagree, the Turtle is right.

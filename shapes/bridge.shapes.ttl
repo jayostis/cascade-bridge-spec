@@ -1,18 +1,12 @@
-# SHACL shapes for an adapter's crate (ro-crate-metadata.json, parsed as
-# JSON-LD) and its test manifest (fixtures/manifest.ttl), validated as one
-# graph, each with its own file location as base, so the manifest's <../> is
-# the crate's root entity and its <in/...> is the crate's fixtures/in/...
-# entity. The adapter profile (adapter/profile/ro-crate-metadata.json) names this file
-# as its constraints resource. The lift vectors' manifest,
-# fixtures/lift/manifest.ttl, is validated against the same shapes on its own:
-# it tests a Bridge, names no adapter, and no crate describes it.
+# SHACL shapes for what one file cannot show on its own: an adapter's crate
+# (ro-crate-metadata.json, parsed as JSON-LD) and its test manifest
+# (fixtures/manifest.ttl) as one graph, each with its own file location as base,
+# so the manifest's <../> is the crate's root entity. What a crate carries on its
+# own is adapter/profile/must/. The lift vectors' manifest,
+# fixtures/lift/manifest.ttl, is validated against these shapes on its own: it
+# tests a Bridge, names no adapter, and no crate describes it.
 #
-# What the shapes require is below, and nowhere else: adapter/ gives the
-# reasoning and names the terms, and lists no cardinalities of its own. What
-# reading them does not tell you:
-#
-#   bridge:mapping, findingsQuery, detectQuery, input, graph, findings,
-#   sourceSchema and documentSchema carry sh:class schema:MediaObject, what the
+#   bridge:input, graph and findings carry sh:class schema:MediaObject, what the
 #   RO-Crate 1.2 context expands File to, because sh:nodeKind sh:IRI alone lets
 #   a typo through: an IRI naming no entity is still an IRI. The input and
 #   graph of a test that tests a Bridge carry sh:nodeKind sh:IRI alone, because
@@ -22,25 +16,14 @@
 #   Action and result nodes are closed. A property they do not declare is a
 #   mistake, not an extension.
 #
-#   The queries are asserted, not run: that an adapter names them, declared
-#   application/sparql-query, and requires bridge:sparql-1.1 is what the
-#   shapes can check without a Bridge. That each parses is the lint's check 7.
-#
-#   The allowed encodingFormat set, <#DescribedFile> below, is where "no code"
-#   is enforced: not by scanning a file for a language, but by refusing one
-#   whose media type says it executes. Its sh:message spells the set out,
-#   because a run that trips on it is the only place a reader is shown it.
-#
 #   The links between crate and manifest are sh:sparql, so the engine must
 #   support SHACL-SPARQL (pySHACL, Jena).
 #
 # A compatibility.json (compatibility.md) is validated against the same file on
 # its own, parsed as JSON-LD through vocab/compatibility.context.jsonld. Its
-# shapes, at the end, target only the compatibility terms, so nothing in a crate
-# or a manifest reaches them. Which of the file's two forms applies depends on
-# whether its directory holds an adapter's crate, which the file does not say:
-# the shapes accept either form, and scripts/compatibility.py holds the form to
-# the directory.
+# shapes, at the end, target only the compatibility terms. The shapes accept
+# either of its two forms, and scripts/compatibility.py holds the form to the
+# directory.
 
 @prefix sh:     <http://www.w3.org/ns/shacl#> .
 @prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
@@ -60,152 +43,11 @@
   sh:declare [ sh:prefix "schema" ; sh:namespace "http://schema.org/"^^xsd:anyURI ] .
 
 # ============================================================================
-# The adapter
+# The adapter and its test manifest
 # ============================================================================
 
-<#Adapter> a sh:NodeShape ;
+<#AdapterTestManifest> a sh:NodeShape ;
   sh:targetClass bridge:Adapter ;
-  sh:nodeKind sh:IRI ;
-  rdfs:comment "The root entity of the adapter's crate: what a Bridge reads first." ;
-  sh:property [
-    sh:path schema:identifier ;
-    sh:minCount 1 ;
-    sh:maxCount 1 ;
-    sh:datatype xsd:string ;
-    sh:pattern "^[a-z][a-z0-9-]*$" ;
-    sh:message "The adapter carries exactly one identifier, the format id a Bridge routes on: lowercase letters, digits and hyphens, starting with a letter."
-  ] ;
-  sh:property [
-    sh:path schema:name ;
-    sh:minCount 1 ;
-    sh:maxCount 1 ;
-    sh:datatype xsd:string ;
-    sh:message "The adapter carries exactly one name, the human name of the source format."
-  ] ;
-  sh:property [
-    sh:path schema:version ;
-    sh:minCount 1 ;
-    sh:maxCount 1 ;
-    sh:datatype xsd:string ;
-    sh:pattern "^\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z.-]+)?$" ;
-    sh:message "The adapter carries exactly one version, semantic versioning."
-  ] ;
-  sh:property [
-    sh:path schema:license ;
-    sh:minCount 1 ;
-    sh:maxCount 1 ;
-    sh:nodeKind sh:IRI ;
-    sh:message "The adapter carries exactly one license, by IRI (the SPDX licence entity)."
-  ] ;
-  sh:property [
-    sh:path <http://purl.org/dc/terms/conformsTo> ;
-    sh:minCount 1 ;
-    sh:nodeKind sh:IRI ;
-    sh:message "The adapter carries at least one conformsTo, by IRI: the Bridge specification it is written against."
-  ] ;
-  sh:property [
-    sh:path <http://purl.org/dc/terms/conformsTo> ;
-    sh:hasValue <https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/> ;
-    sh:severity sh:Warning ;
-    sh:message "The adapter does not name the Cascade Bridge Adapter profile, https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/, in conformsTo; that IRI on the crate root is how an adapter declares conformance to this specification (adapter/ro-crate-metadata.md)."
-  ] ;
-  sh:property [
-    sh:path bridge:profileRequired ;
-    sh:nodeKind sh:IRI ;
-    sh:class bridge:Profile ;
-    sh:message "Each bridge:profileRequired is a bridge:Profile by IRI."
-  ] ;
-  sh:property [
-    sh:path bridge:profileRequired ;
-    sh:hasValue bridge:sparql-1.1 ;
-    sh:message "The adapter requires bridge:sparql-1.1, the profile its queries run under; v1-draft specifies no other."
-  ] ;
-  sh:property [
-    sh:path bridge:mapping ;
-    sh:minCount 1 ;
-    sh:node <#Query> ;
-    sh:message "The adapter names at least one bridge:mapping, a SPARQL 1.1 CONSTRUCT a Bridge runs on each unit: a crate File entity (schema:MediaObject) by IRI, declared application/sparql-query."
-  ] ;
-  sh:property [
-    sh:path bridge:findingsQuery ;
-    sh:node <#Query> ;
-    sh:message "Each bridge:findingsQuery is a SPARQL 1.1 SELECT whose rows are a unit's findings: a crate File entity (schema:MediaObject) by IRI, declared application/sparql-query. Zero or more."
-  ] ;
-  sh:property [
-    sh:path bridge:specPin ;
-    sh:minCount 1 ;
-    sh:maxCount 1 ;
-    sh:nodeKind sh:IRI ;
-    sh:message "The adapter carries exactly one bridge:specPin, the pinned cascade-bridge-spec commit by IRI: a SoftwareSourceCode entity in the crate with codeRepository and version (the full SHA), the same shape as bridge:vocabularyPin."
-  ] ;
-  sh:property [
-    sh:path bridge:vocabularyPin ;
-    sh:minCount 1 ;
-    sh:maxCount 1 ;
-    sh:nodeKind sh:IRI ;
-    sh:message "The adapter carries exactly one bridge:vocabularyPin, the pinned spec commit by IRI."
-  ] ;
-  sh:property [
-    sh:path bridge:vocabulary ;
-    sh:minCount 1 ;
-    sh:nodeKind sh:IRI ;
-    sh:message "The adapter carries at least one bridge:vocabulary, a namespace IRI."
-  ] ;
-  sh:property [
-    sh:path bridge:sourceMediaType ;
-    sh:minCount 1 ;
-    sh:maxCount 1 ;
-    sh:datatype xsd:string ;
-    sh:message "The adapter carries exactly one bridge:sourceMediaType, an IANA media type."
-  ] ;
-  sh:property [
-    sh:path bridge:sourceSchema ;
-    sh:minCount 1 ;
-    sh:maxCount 1 ;
-    sh:nodeKind sh:IRI ;
-    sh:class schema:MediaObject ;
-    sh:message "The adapter carries exactly one bridge:sourceSchema, the pinned source-side schema, and it is a crate File entity (schema:MediaObject), not a bare IRI naming nothing."
-  ] ;
-  sh:property [
-    sh:path bridge:unit ;
-    sh:minCount 1 ;
-    sh:maxCount 1 ;
-    sh:datatype xsd:string ;
-    sh:message "The adapter carries exactly one bridge:unit, the element a Bridge splits on."
-  ] ;
-  sh:property [
-    sh:path bridge:envelope ;
-    sh:minCount 1 ;
-    sh:nodeKind sh:IRI ;
-    sh:class bridge:Envelope ;
-    sh:message "The adapter carries at least one bridge:envelope, a bridge:Envelope by IRI."
-  ] ;
-  sh:property [
-    sh:path bridge:detectQuery ;
-    sh:minCount 1 ;
-    sh:maxCount 1 ;
-    sh:node <#Query> ;
-    sh:message "The adapter names exactly one bridge:detectQuery, the SPARQL 1.1 ASK its router evaluates over a document's envelope skeleton: a crate File entity (schema:MediaObject) by IRI, declared application/sparql-query."
-  ] ;
-  sh:property [
-    sh:path bridge:table ;
-    sh:nodeKind sh:IRI ;
-    sh:node <#Table> ;
-    sh:message "Each bridge:table is a crate File by IRI that names where its rows came from (schema:isBasedOn). Zero or more."
-  ] ;
-  sh:property [
-    sh:path bridge:extensionVocabulary ;
-    sh:maxCount 1 ;
-    sh:nodeKind sh:IRI ;
-    sh:message "The adapter carries at most one bridge:extensionVocabulary, its own namespace for values with no Cascade term, by IRI."
-  ] ;
-  sh:property [
-    sh:path bridge:testManifest ;
-    sh:minCount 1 ;
-    sh:maxCount 1 ;
-    sh:nodeKind sh:IRI ;
-    sh:message "The adapter carries exactly one bridge:testManifest, the test manifest by IRI."
-  ] ;
   sh:sparql [
     sh:prefixes <> ;
     sh:message "The adapter's bridge:testManifest names a manifest whose bridge:adapter is this adapter." ;
@@ -215,100 +57,6 @@
         FILTER NOT EXISTS { ?value bridge:adapter $this }
       }
     """
-  ] .
-
-<#Table> a sh:NodeShape ;
-  rdfs:comment "A lookup table the mapping reads. Where its rows came from is recorded on the table's crate entity, and, where it differs from the package's, its licence." ;
-  sh:property [
-    sh:path schema:isBasedOn ;
-    sh:minCount 1 ;
-    sh:nodeKind sh:IRI ;
-    sh:message "A table names at least one schema:isBasedOn, by IRI: where its rows came from."
-  ] .
-
-<#Query> a sh:NodeShape ;
-  rdfs:comment "A query an adapter names: a crate File in the one language the sparql-1.1 profile runs." ;
-  sh:nodeKind sh:IRI ;
-  sh:class schema:MediaObject ;
-  sh:property [
-    sh:path schema:encodingFormat ;
-    sh:hasValue "application/sparql-query" ;
-    sh:message "A query is declared application/sparql-query."
-  ] .
-
-<#Envelope> a sh:NodeShape ;
-  sh:targetClass bridge:Envelope ;
-  rdfs:comment "A document root the source format arrives in." ;
-  sh:property [
-    sh:path schema:name ;
-    sh:minCount 1 ;
-    sh:maxCount 1 ;
-    sh:datatype xsd:string ;
-    sh:pattern "^[a-z][a-z0-9-]*$" ;
-    sh:message "An envelope carries exactly one name, its short id: lowercase letters, digits and hyphens, starting with a letter."
-  ] ;
-  sh:property [
-    sh:path bridge:rootElement ;
-    sh:minCount 1 ;
-    sh:maxCount 1 ;
-    sh:datatype xsd:string ;
-    sh:message "An envelope carries exactly one bridge:rootElement, the local name of its document element."
-  ] ;
-  sh:property [
-    sh:path bridge:documentSchema ;
-    sh:maxCount 1 ;
-    sh:nodeKind sh:IRI ;
-    sh:class schema:MediaObject ;
-    sh:message "An envelope carries at most one bridge:documentSchema, and it is a crate File entity (schema:MediaObject), not a bare IRI naming nothing."
-  ] .
-
-# ----------------------------------------------------------------------------
-# The media types an adapter package may declare
-# ----------------------------------------------------------------------------
-#
-# This is where "no code" stops being a claim and becomes a measured property.
-# The lint's file inventory (adapter/validation.md, check 3) asks of every
-# git-tracked file whether the crate describes it and whether it declares an
-# encodingFormat; this shape asks of every declared encodingFormat whether it
-# is a media type an adapter package may hold. Neither question is answered by
-# scanning a file for a language: a package is refused because it declares a
-# media type that executes, which is a statement its author wrote down.
-#
-# The set is the formats an adapter package may hold: the package's own
-# description (JSON-LD, Turtle, JSON, YAML, Markdown), the source-side schemas
-# and documents (XML, under both its media types), the query language
-# the sparql-1.1 profile runs (SPARQL), the lookup tables (Turtle for SKOS, CSV
-# where a table arrives as one), the plain
-# text a NOTICE or a checksum sidecar is, and the archive a referenced release
-# is published as. It is deliberately short. A format an adapter needs and this
-# set lacks is a pull request here, argued once, not a media type invented in
-# one adapter's crate.
-#
-# encodingFormat is a string here rather than a PRONOM IRI: RO-Crate 1.2 allows
-# either, every adapter written so far uses the media type, and a set of two
-# spellings is a set that can disagree with itself. An adapter that needs
-# PRONOM is the pull request that adds it.
-
-<#DescribedFile> a sh:NodeShape ;
-  sh:targetSubjectsOf schema:encodingFormat ;
-  rdfs:comment "Any entity in an adapter's crate that declares a media type: a committed file, a referenced file, a referenced dataset." ;
-  sh:property [
-    sh:path schema:encodingFormat ;
-    sh:datatype xsd:string ;
-    sh:in (
-      "application/gzip"
-      "application/json"
-      "application/ld+json"
-      "application/sparql-query"
-      "application/xml"
-      "application/yaml"
-      "text/csv"
-      "text/markdown"
-      "text/plain"
-      "text/turtle"
-      "text/xml"
-    ) ;
-    sh:message "encodingFormat is one of the media types an adapter package may declare: application/gzip, application/json, application/ld+json, application/sparql-query, application/xml, application/yaml, text/csv, text/markdown, text/plain, text/turtle, text/xml. A media type outside that set is how a file that executes would enter a package that claims to be data (adapter/validation.md)."
   ] .
 
 # ============================================================================

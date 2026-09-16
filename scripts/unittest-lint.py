@@ -37,12 +37,14 @@ import inputs  # noqa: E402
 import inventory  # noqa: E402
 import queries  # noqa: E402
 import shapes  # noqa: E402
-import spec_pin  # noqa: E402
 import _crate as crate_module  # noqa: E402
 from _terms import BRIDGE, SCHEMA  # noqa: E402
+from pyshacl import validate as shacl_validate  # noqa: E402
 from rdflib import Graph, Literal, URIRef  # noqa: E402
+from rdflib.namespace import RDF, SH  # noqa: E402
 
 PACKAGE = HERE.parent / "fixtures" / "synthetic-adapter"
+MUST = HERE.parent / "adapter" / "profile" / "must"
 
 INPUT_SET = "fixtures/in/example-0001.xml"
 INPUT_RECORD = "fixtures/in/example-0002.xml"
@@ -134,6 +136,21 @@ def said(messages):
     return "\n".join(messages)
 
 
+def native(crate, shapes_file):
+    """What a SHACL requirement under must/ reports for the crate."""
+    _, report, _ = shacl_validate(
+        crate.graph,
+        shacl_graph=Graph().parse(MUST / shapes_file, format="turtle"),
+        advanced=True,
+        allow_warnings=True,
+    )
+    return [
+        str(report.value(found, SH.resultMessage))
+        for found in report.subjects(RDF.type, SH.ValidationResult)
+        if report.value(found, SH.resultSeverity) == SH.Violation
+    ]
+
+
 # ===========================================================================
 # The crate and the test manifest conform to the shapes
 # ===========================================================================
@@ -143,22 +160,27 @@ def it_reports_nothing_for_a_crate_and_manifest_that_conform(pkg):
     assert not list(shapes.violations(pkg.crate))
 
 
+def it_reports_nothing_for_a_crate_that_conforms_on_its_own(pkg):
+    for shapes_file in ("adapter.ttl", "envelope.ttl", "media_types.ttl", "spec_pin.ttl"):
+        assert not native(pkg.crate, shapes_file), shapes_file
+
+
 def it_reports_a_crate_that_names_no_mapping(pkg):
     crate = pkg.crate
     crate.graph.remove((crate.root, BRIDGE.mapping, None))
-    assert "names at least one bridge:mapping" in said(shapes.violations(crate))
+    assert "names at least one bridge:mapping" in said(native(crate, "adapter.ttl"))
 
 
 def it_reports_a_crate_that_does_not_require_sparql_1_1(pkg):
     crate = pkg.crate
     crate.graph.remove((crate.root, BRIDGE.profileRequired, None))
-    assert "bridge:sparql-1.1" in said(shapes.violations(crate))
+    assert "bridge:sparql-1.1" in said(native(crate, "adapter.ttl"))
 
 
 def it_reports_a_missing_spec_pin_by_naming_the_term(pkg):
     crate = pkg.crate
     crate.graph.remove((crate.root, BRIDGE.specPin, None))
-    assert "bridge:specPin" in said(shapes.violations(crate)), (
+    assert "bridge:specPin" in said(native(crate, "adapter.ttl")), (
         "the one failure every adapter written before this specification will "
         "hit, and a generic message would send its author to the wrong file"
     )
@@ -347,7 +369,7 @@ def it_reports_nothing_when_the_adapter_names_no_query(pkg):
 
 
 def it_reports_nothing_for_a_pin_naming_a_commit_and_its_repository(pkg):
-    assert not list(spec_pin.faults(pkg.crate))
+    assert not native(pkg.crate, "spec_pin.ttl")
 
 
 def it_reports_a_spec_pin_that_names_no_repository(pkg):
@@ -355,7 +377,7 @@ def it_reports_a_spec_pin_that_names_no_repository(pkg):
     pin = next(crate.graph.objects(crate.root, BRIDGE.specPin))
     crate.graph.remove((pin, SCHEMA.codeRepository, None))
     assert "does not say which repository holds that commit" in said(
-        spec_pin.faults(crate)
+        native(crate, "spec_pin.ttl")
     )
 
 

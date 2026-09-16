@@ -1,0 +1,19 @@
+@prefix sh:     <http://www.w3.org/ns/shacl#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix schema: <http://schema.org/> .
+@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+<#SpecPin> a sh:NodeShape ;
+  sh:name "Specification pin" ;
+  sh:description "bridge:specPin names a commit and the repository that holds it." ;
+  sh:targetObjectsOf bridge:specPin ;
+  sh:property [
+    sh:path schema:version ;
+    sh:minCount 1 ;
+    sh:message "bridge:specPin carries no schema:version, so the pin names no commit."
+  ] ;
+  sh:property [
+    sh:path schema:codeRepository ;
+    sh:minCount 1 ;
+    sh:message "bridge:specPin carries no schema:codeRepository, so the pin does not say which repository holds that commit."
+  ] .

@@ -47,14 +47,18 @@ jobs:
           from rdflib import Graph
           lift = sorted(glob("fixtures/lift/*.ttl"))
           lift += sorted(glob("fixtures/lift/*.nt"))
-          for path in ["vocab/bridge.ttl", "shapes/bridge.shapes.ttl", *lift]:
+          shapes = sorted(glob("adapter/profile/must/*.ttl"))
+          for path in ["vocab/bridge.ttl", "shapes/bridge.shapes.ttl", *shapes, *lift]:
               graph = Graph()
               graph.parse(path, format="turtle")
               print(f"{path}: {len(graph)} triples")
           PY
 
       - name: the shapes are valid SHACL
-        run: python3 -m pyshacl --metashacl --shacl shapes/bridge.shapes.ttl shapes/bridge.shapes.ttl
+        run: |
+          for shapes in shapes/bridge.shapes.ttl adapter/profile/must/*.ttl; do
+            python3 -m pyshacl --metashacl --shacl "$shapes" "$shapes"
+          done
 
       # Nothing else here judges the lift vectors: this repository runs no
       # Bridge, and parsing alone passes an entry naming a missing file, an

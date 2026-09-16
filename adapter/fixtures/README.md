@@ -19,10 +19,10 @@ entity's `hasPart`, carrying at least:
 | `isBasedOn` | where the bytes came from: a URL, or a commit in another repository |
 | `description` | what the record is, and what is not known about it |
 
-No shape enforces that list — only `encodingFormat` is checked, by
-`<#DescribedFile>`. It is held up by check 3, which wants every tracked file
-described, and check 4, which recomputes the digests
-([`../validation.md`](../validation.md)).
+No shape enforces that list: only `encodingFormat` is checked
+([`../profile/must/media_types.ttl`](../profile/must/media_types.ttl)), and the
+rest is held up by `inventory.py` and `digests.py` in
+[`../profile/must/`](../profile/must/).
 
 `sha256` is the local claim: these bytes, here, now. Where the publisher also
 publishes a digest — NCBI publishes an `.md5` beside every ClinVar release and

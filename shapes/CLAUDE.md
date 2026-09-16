@@ -1,17 +1,9 @@
 # shapes — Agent Context
 
-`bridge.shapes.ttl` is what an adapter's crate (`ro-crate-metadata.json`, parsed
-as JSON-LD) and its test manifest are validated against **as one graph**, each
-with its own file location as base, so the manifest's `<../>` is the crate's root
-entity. The cross-file constraints — that a test's envelope is one the adapter
-lists, and that the manifest and adapter point at each other — are
-`sh:sparql`, so pySHACL must run with `advanced=True`.
+What `bridge.shapes.ttl` covers is its header. These rules hold for it and for
+the shapes in `../adapter/profile/must/`.
 
-Adding a media type to the allowed `encodingFormat` set is a change to the "no
-code" guarantee the file header describes, not housekeeping.
-
-- Shapes are valid SHACL:
-  `python3 -m pyshacl --metashacl --shacl shapes/bridge.shapes.ttl shapes/bridge.shapes.ttl`
+- Shapes are valid SHACL: the `spec` job in `../.github/workflows/validate.yml`.
 - **A changed shape is run against a real adapter checkout by hand**, and the
   commit says which adapter and at which commit. Not in CI: a job that cloned an
   adapter would go red for somebody else's missing property, and would grow a job

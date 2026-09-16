@@ -10,9 +10,8 @@ one graph, so that a reference is a link SHACL can check rather than a string
 that could disagree with the thing it names.
 
 The cost is stated rather than hidden: JSON-LD is less pleasant to hand-edit
-than YAML and has no field completion. The RO-Crate validator and the SHACL
-shapes in [`shapes/bridge.shapes.ttl`](../shapes/bridge.shapes.ttl) are the
-checks instead.
+than YAML and has no field completion. The profile, [`profile/`](profile/), is the
+check instead.
 
 ## The root entity is the adapter
 
@@ -23,12 +22,8 @@ query written with `schema:conformsTo` matches nothing), and the `bridge:`
 vocabulary carries what neither has.
 
 **What the root entity carries is `<#Adapter>` in
-[`shapes/bridge.shapes.ttl`](../shapes/bridge.shapes.ttl).** Every property it
-declares, with its cardinality, its value and the message a violation reports, is
-there; what each term means is its `rdfs:comment` in
-[`vocab/bridge.ttl`](../vocab/bridge.ttl). Read the properties from those two.
-There is no list of them here, because a list here would be a second contract
-with nothing keeping it honest.
+[`profile/must/adapter.ttl`](profile/must/adapter.ttl)**, and what each term means
+is its `rdfs:comment` in [`vocab/bridge.ttl`](../vocab/bridge.ttl).
 
 The rest of this document is what neither file has room for: why the crate is
 shaped this way, and the three parts of it — conformance, the detect query and
@@ -51,7 +46,7 @@ Two properties together:
 `https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/` says *which
 contract*; `bridge:specPin` says *which revision of it*. The profile IRI is
 described by [`adapter/profile/ro-crate-metadata.json`](profile/ro-crate-metadata.json),
-an RO-Crate Profile Crate whose constraints resource is the SHACL shapes. The
+an RO-Crate Profile Crate. The
 IRI does not dereference yet; until it does, the specification is read from this
 repository, and the IRI is an identifier rather than a location.
 
@@ -85,7 +80,7 @@ every key of a compacted descriptor to be present in the `@context`.
 
 An envelope is a document root the source format arrives in. A Bridge accepts
 any of the adapter's envelopes and splits each on the unit. What one carries is
-`<#Envelope>` in the shapes.
+`<#Envelope>` in [`profile/must/envelope.ttl`](profile/must/envelope.ttl).
 
 `bridge:documentSchema` is absent when the source schema declares the root
 directly, and present when it does not. In the pilot, NCBI's XSD declares the
