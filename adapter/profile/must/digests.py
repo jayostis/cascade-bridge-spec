@@ -5,7 +5,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from _held import held
-from _crate import from_context
 from _terms import DIGEST_ALGORITHMS, LOCAL_DIGEST, digest_of
 from rocrate_validator.models import ValidationContext
 from rocrate_validator.requirements.python import PyFunctionCheck, check, requirement
@@ -72,4 +71,4 @@ class Digests(PyFunctionCheck):
 
     @check(name="every digest matches its file")
     def run_check(self, context: ValidationContext) -> bool:
-        return held(self, context, mismatches(from_context(context)))
+        return held(self, context, mismatches)

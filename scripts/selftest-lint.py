@@ -131,6 +131,11 @@ def expected_graph_not_turtle(package):
     restate_digest(package, EXPECTED)
 
 
+def manifest_not_turtle(package):
+    edit(package, MANIFEST, "@prefix mf:", "@prefixx mf:")
+    restate_digest(package, MANIFEST)
+
+
 def no_expected_graphs(package):
     """The one conversion test becomes an input-only test, which judges nothing.
 
@@ -172,6 +177,12 @@ CASES = [
         "exit": 1,
         "expect": ["example-0001: example-0001.ttl does not parse as Turtle"],
         "forbid": ["sha256 is not this file's"],
+    },
+    {
+        "name": "a requirement that could not run is unmet: a manifest that is not Turtle",
+        "mutate": manifest_not_turtle,
+        "exit": 1,
+        "expect": ["could not be checked", "manifest.ttl"],
     },
     {
         "name": "nothing of its kind is not a failure: no expected graphs",

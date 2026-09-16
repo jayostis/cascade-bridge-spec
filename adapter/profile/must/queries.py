@@ -5,7 +5,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from _held import held
-from _crate import entity_name, from_context
+from _crate import entity_name
 from _terms import BRIDGE
 from rdflib.plugins.sparql import prepareQuery
 from rocrate_validator.models import ValidationContext
@@ -62,4 +62,4 @@ class Queries(PyFunctionCheck):
 
     @check(name="every query parses in its declared form")
     def run_check(self, context: ValidationContext) -> bool:
-        return held(self, context, malformed(from_context(context)))
+        return held(self, context, malformed)

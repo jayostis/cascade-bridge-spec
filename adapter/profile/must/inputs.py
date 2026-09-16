@@ -5,7 +5,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from _held import held
-from _crate import entity_name, from_context
+from _crate import entity_name
 from _terms import BRIDGE, JSON_SCHEMA_MEDIA_TYPES, MF, SCHEMA, XSD_MEDIA_TYPES
 from rocrate_validator.models import ValidationContext
 from rocrate_validator.requirements.python import PyFunctionCheck, check, requirement
@@ -122,4 +122,4 @@ class Inputs(PyFunctionCheck):
 
     @check(name="every input validates against the declared schema")
     def run_check(self, context: ValidationContext) -> bool:
-        return held(self, context, invalid(from_context(context)))
+        return held(self, context, invalid)

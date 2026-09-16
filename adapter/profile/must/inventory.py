@@ -7,7 +7,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import subprocess
 
 from _held import held
-from _crate import from_context
 from _terms import ALLOWLIST, SCHEMA
 from rdflib import URIRef
 from rocrate_validator.models import ValidationContext
@@ -58,4 +57,4 @@ class Inventory(PyFunctionCheck):
 
     @check(name="every git-tracked file is accounted for")
     def run_check(self, context: ValidationContext) -> bool:
-        return held(self, context, unaccounted(from_context(context)))
+        return held(self, context, unaccounted)

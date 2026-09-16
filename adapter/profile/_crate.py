@@ -78,26 +78,29 @@ def load(adapter):
 
     roots = list(graph.subjects(RDF.type, BRIDGE.Adapter))
     if len(roots) != 1:
-        raise SystemExit(
-            f"  FAIL  the crate declares {len(roots)} bridge:Adapter entities; "
+        raise ValueError(
+            f"the crate declares {len(roots)} bridge:Adapter entities; "
             "exactly one, the root entity, is expected"
         )
     root = roots[0]
 
     manifests = list(graph.objects(root, BRIDGE.testManifest))
     if len(manifests) != 1:
-        raise SystemExit(
-            f"  FAIL  the adapter names {len(manifests)} bridge:testManifest "
+        raise ValueError(
+            f"the adapter names {len(manifests)} bridge:testManifest "
             "values; exactly one is expected"
         )
     manifest_iri = manifests[0]
     manifest_file = Path(url2pathname(urlparse(str(manifest_iri)).path))
     if not manifest_file.is_file():
-        raise SystemExit(
-            f"  FAIL  the adapter's bridge:testManifest names {manifest_file}, "
+        raise ValueError(
+            f"the adapter's bridge:testManifest names {manifest_file}, "
             "which does not exist"
         )
-    graph.parse(manifest_file, format="turtle", publicID=str(manifest_iri))
+    try:
+        graph.parse(manifest_file, format="turtle", publicID=str(manifest_iri))
+    except Exception as error:
+        raise ValueError(f"{manifest_file.name} does not parse as Turtle: {error}") from error
 
     return Crate(adapter, graph, root, manifest_iri, manifest_file)
 

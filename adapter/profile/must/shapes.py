@@ -5,7 +5,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from _held import held
-from _crate import from_context
 from _terms import SHAPES
 from pyshacl import validate as shacl_validate
 from rdflib import Graph
@@ -38,4 +37,4 @@ class Shapes(PyFunctionCheck):
 
     @check(name="the crate and the test manifest conform to the shapes")
     def run_check(self, context: ValidationContext) -> bool:
-        return held(self, context, violations(from_context(context)))
+        return held(self, context, violations)

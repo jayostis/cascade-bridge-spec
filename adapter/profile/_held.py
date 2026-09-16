@@ -1,16 +1,17 @@
-"""The one thing every requirement does with what it found."""
-
-from __future__ import annotations
+from _crate import from_context
 
 
-def held(check, context, messages):
-    """Add an issue for each message, and say whether the requirement held.
+def held(check, context, find):
+    """Add an issue for each message `find` yields for the package, and say
+    whether the requirement held.
 
-    A requirement reports by yielding messages and nothing else, so what counts
-    as unmet is the same question for all of them: did it yield anything.
+    A requirement that raised is unmet: it never asked its question, and the
+    validator counts a check that raised as passed.
     """
-    unmet = False
+    try:
+        messages = list(find(from_context(context)))
+    except Exception as error:
+        messages = [f"could not be checked: {error}"]
     for message in messages:
         context.result.add_issue(message, check)
-        unmet = True
-    return not unmet
+    return not messages

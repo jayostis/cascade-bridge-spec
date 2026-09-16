@@ -5,7 +5,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from _held import held
-from _crate import from_context
 from _terms import BRIDGE, SCHEMA
 from rocrate_validator.models import ValidationContext
 from rocrate_validator.requirements.python import PyFunctionCheck, check, requirement
@@ -36,4 +35,4 @@ class SpecPin(PyFunctionCheck):
 
     @check(name="the specification pin names a commit and its repository")
     def run_check(self, context: ValidationContext) -> bool:
-        return held(self, context, faults(from_context(context)))
+        return held(self, context, faults)
