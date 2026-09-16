@@ -109,6 +109,7 @@ runs:
           commit) ref="${PIN_REF}" ;;
           tag) ref="refs/tags/${PIN_REF}" ;;
           branch) ref="refs/heads/${PIN_REF}" ;;
+          *) echo "::error::${PIN_REPOSITORY} pin kind '${PIN_KIND}' is not commit, tag or branch"; exit 1 ;;
         esac
         git init --quiet "${spec}"
         if ! git -C "${spec}" fetch --quiet --depth 1 "${PIN_REPOSITORY}" "${ref}"; then
