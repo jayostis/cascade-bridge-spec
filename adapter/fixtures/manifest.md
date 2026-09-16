@@ -74,14 +74,13 @@ Recommendation 2024) is how to decide it properly. The pilot's oracle compares
 deciding it.
 
 A multiset, not an ordered array, because no entry in a findings sidecar refers
-to a position, so the order carries no meaning. The pilot's oracles were sorted
-with `localeCompare`, which is ICU collation, in which `/` sorts before `@`
-although U+002F is above U+0040; across its four committed sidecars, 78, 56, 6
-and 1 adjacent pairs are out of code-point order.
-A harness comparing with Java's `String.compareTo`, or with JavaScript's `<`,
-puts the same correctly mapped entries in a different order and reports a false
-failure. Requiring the committed order would make every Bridge carry ICU, and
-pin a CLDR version nothing states, to compare a bookkeeping array.
+to a position, so the order carries no meaning. The order a sidecar arrives in is
+its author's sort, and JavaScript's `localeCompare` is ICU collation, in which
+`/` sorts before `@` although U+002F is above U+0040. A harness comparing with
+Java's `String.compareTo`, or with JavaScript's `<`, puts the same correctly
+mapped entries in a different order and reports a false failure. Requiring the
+committed order would make every Bridge carry ICU, and pin a CLDR version nothing
+states, to compare a bookkeeping array.
 
 Multiplicity **is** compared: entries do repeat, the repeats are identical whole
 objects, and a set comparison would silently lose them.

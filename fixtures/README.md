@@ -43,7 +43,7 @@ adapter.
 ## What is in it
 
 It is minimal, and every part of it earns its place by covering a branch of the
-seven checks in [`adapter/validation.md`](../adapter/validation.md) that a single
+checks in [`adapter/validation.md`](../adapter/validation.md) that a single
 real adapter would not cover at once: two envelopes for check 5's two ways of
 finding a schema, three digest arrangements for check 4's local and publisher's
 claims and for bytes that are not committed, one test of each type, and the three

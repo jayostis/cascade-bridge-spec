@@ -24,13 +24,21 @@ adapter or engine.
 - **Nothing mutates a tracked file.** Mutation happens on a copy, outside the
   repository.
 - **A check that is specified but not built says so in the output.** A package
-  that passed three checks must not read as though it passed seven.
+  that passed three checks must not read as though it passed every check.
 - A new check lands with `../adapter/validation.md` and a `selftest-lint.py` case in
   the same commit; a new rule in `compatibility.py` with `../compatibility.md` and
   a `selftest-compatibility.py` case.
 - **The selftests set their own temporary directory for each run**, so a record
   or a worktree a tool makes goes with the case, and never into a developer's
   directory.
+- **A selftest suite is fast enough to run on every edit**, because a suite
+  people stop running is worth nothing however many cases it has. Measure
+  before optimising it: here one case costs about 16 seconds and effectively all
+  of that is `rocrate-validator` loading RO-Crate's profiles before it looks at
+  the crate. So cases run concurrently rather than one after another, and a case
+  is selectable by name, so that changing four costs four and not all of them.
+  A filtered run says how many it skipped: a filtered PASS is not the suite
+  passing.
 
 ```bash
 python3 -m pip install pyshacl rdflib roc-validator lxml

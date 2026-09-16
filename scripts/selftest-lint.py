@@ -22,23 +22,33 @@ must refuse rather than walk.
 
 Two kinds of assertion are made about each case, and the second is the one that
 makes this more than an exit-code test: the run's exit status, and the word the
-summary gives each of the seven checks. `ok`, `FAIL`, `not run` and
-`nothing to check` are four different sentences, and a check that found nothing
-of its kind in a package must never be reported in the same word as a check
-that ran and passed.
+summary gives each check. `ok`, `FAIL`, `not run` and `nothing to check` are
+four different sentences, and a check that found nothing of its kind in a
+package must never be reported in the same word as a check that ran and passed.
 
-Run:  python3 scripts/selftest-lint.py
+Run:  python3 scripts/selftest-lint.py            every case
+      python3 scripts/selftest-lint.py check 4    the cases whose names hold
+                                                  both words
+A filtered run says how many it did not run, because a filtered PASS is not the
+suite passing.
 """
 
 from __future__ import annotations
 
 import hashlib
+import os
 import re
 import shutil
 import subprocess
 import sys
 import tempfile
+from concurrent import futures
 from pathlib import Path
+
+# Each case is waiting on a validator subprocess, not computing, so more
+# workers than cores still helps; the cap keeps a laptop usable and a CI
+# runner from thrashing on memory.
+WORKERS = min(16, (os.cpu_count() or 4) * 2)
 
 SPEC_ROOT = Path(__file__).resolve().parent.parent
 LINT = SPEC_ROOT / "scripts" / "validate-adapter.py"
@@ -56,6 +66,10 @@ DETECT_QUERY = "in/example-detect.rq"
 # The four words a check may earn, longest first so the summary line parser
 # does not stop at the "not run" inside a longer phrase.
 STATUS = ("nothing to check", "not run", "FAIL", "ok")
+SUMMARY_HEADER = re.compile(
+    r"^The (?P<count>\d+) checks of adapter/validation\.md, and how each ended:$"
+)
+
 SUMMARY_LINE = re.compile(
     r"^\s{2}(?P<number>\d)\s\s(?P<title>.+?)\s\s+"
     r"(?P<status>" + "|".join(STATUS) + r")\s\s+(?P<note>.*)$"
@@ -310,6 +324,53 @@ def mutate_finding_variables(package):
     restate_digest(package, FINDINGS_QUERY)
 
 
+def mutate_undeclared_context_key(package):
+    """Check 1: a bridge: key the @context does not declare.
+
+    RO-Crate 1.2's rule, not JSON-LD's: every key of a compacted descriptor
+    must be present in the @context. JSON-LD expands bridge:specPin from the
+    prefix alone, so the graph is unchanged and check 2 still passes -- which
+    is why this case asserts check 2 stays `ok`. Only the RO-Crate validator
+    sees it.
+    """
+    edit(package, CRATE, '      "bridge:specPin": "bridge:specPin",\n', "")
+
+
+def mutate_profile_not_an_entity(package):
+    """Check 1: what conformsTo names is not described as a Profile."""
+    edit(
+        package,
+        CRATE,
+        '      "@type": ["CreativeWork", "Profile"],',
+        '      "@type": "CreativeWork",',
+    )
+
+
+def mutate_pin_not_a_data_entity(package):
+    """Check 1: a pin typed SoftwareSourceCode and not File.
+
+    RO-Crate reads a SoftwareSourceCode as a script, and a script has to be a
+    data entity.
+    """
+    edit(
+        package,
+        CRATE,
+        '      "@type": ["SoftwareSourceCode", "File"],\n'
+        '      "name": "cascade-bridge-spec at 0af0fc9",',
+        '      "@type": "SoftwareSourceCode",\n'
+        '      "name": "cascade-bridge-spec at 0af0fc9",',
+    )
+
+
+def mutate_required_profile_untyped(package):
+    """Check 2: a required profile that is not a bridge:Profile in the crate.
+
+    The shapes look the type up in the crate's own graph, not in the
+    vocabulary, so an adapter naming a profile it does not describe fails.
+    """
+    edit(package, CRATE, '      "@type": "bridge:Profile",\n', "")
+
+
 # ---------------------------------------------------------------------------
 # The cases
 # ---------------------------------------------------------------------------
@@ -460,6 +521,43 @@ CASES = [
         ],
         "forbid": ["expected graph(s) parse as Turtle"],
     },
+    {
+        "name": "check 1: a bridge: key the @context does not declare",
+        "mutate": mutate_undeclared_context_key,
+        "exit": 1,
+        "statuses": {1: "FAIL", 2: "ok"},
+        "expect": [
+            'the JSON-LD key "bridge:specPin" is not allowed in the compacted '
+            "format because it is not present in the @context",
+        ],
+    },
+    {
+        "name": "check 1: what conformsTo names is not typed Profile",
+        "mutate": mutate_profile_not_an_entity,
+        "exit": 1,
+        "statuses": {1: "FAIL", 2: "ok"},
+        "expect": [
+            "its values MUST reference Profile entities",
+        ],
+    },
+    {
+        "name": "check 1: a pin typed SoftwareSourceCode and not File",
+        "mutate": mutate_pin_not_a_data_entity,
+        "exit": 1,
+        "statuses": {1: "FAIL", 2: "ok"},
+        "expect": [
+            "A Script MUST include `File` in its `@type`",
+        ],
+    },
+    {
+        "name": "check 2: a required profile the crate does not type",
+        "mutate": mutate_required_profile_untyped,
+        "exit": 1,
+        "statuses": {1: "FAIL", 2: "FAIL"},
+        "expect": [
+            "Each bridge:profileRequired is a bridge:Profile by IRI.",
+        ],
+    },
 ]
 
 
@@ -467,16 +565,31 @@ CASES = [
 
 
 def summary_statuses(output):
-    """The word the summary gave each of the seven checks."""
+    """The word the summary gave each check, and how many it said there were.
+
+    The count comes from the summary's own header rather than from a number
+    here, so that adding a check does not need this file edited to keep the
+    "every check is accounted for" assertion true.
+    """
     found = {}
+    declared = None
     for line in output.splitlines():
+        header = SUMMARY_HEADER.match(line)
+        if header:
+            declared = int(header.group("count"))
         match = SUMMARY_LINE.match(line)
         if match:
             found[int(match.group("number"))] = match.group("status")
-    return found
+    return found, declared
 
 
 def run_case(case):
+    """One case, in a directory of its own. Returns its failures and its output.
+
+    Nothing is printed here: cases run concurrently, and interleaved output is
+    output nobody can read. The caller prints, in the order the cases are
+    written.
+    """
     failures = []
     with tempfile.TemporaryDirectory() as directory:
         package = stage(directory)
@@ -493,10 +606,12 @@ def run_case(case):
             failures.append(
                 f"exit status {run.returncode}, {case['exit']} expected"
             )
-        statuses = summary_statuses(output)
-        if len(statuses) != 7:
+        statuses, declared = summary_statuses(output)
+        if declared is None:
+            failures.append("the run printed no summary")
+        elif len(statuses) != declared:
             failures.append(
-                f"the summary reported {len(statuses)} of the seven checks"
+                f"the summary reported {len(statuses)} of its {declared} checks"
             )
         for number, expected in case["statuses"].items():
             if statuses.get(number) != expected:
@@ -511,36 +626,64 @@ def run_case(case):
             if fragment in output:
                 failures.append(f"the run says what it must not: {fragment}")
 
-        if failures:
-            print(output)
-    return failures
+    return failures, output
 
 
-def main():
+def select(argv):
+    """The cases whose name contains every argument given, or all of them.
+
+    Editing four cases costs four runs, not all of them. CI passes no argument
+    and so runs everything; a partial run says so in its last line, because a
+    filtered PASS is not the suite passing.
+    """
+    chosen = [
+        case
+        for case in CASES
+        if all(term.lower() in case["name"].lower() for term in argv)
+    ]
+    if argv and not chosen:
+        raise SystemExit(
+            f"  FAIL  no case matches {' '.join(argv)}; "
+            f"the names are:\n" + "\n".join(f"        {c['name']}" for c in CASES)
+        )
+    return chosen
+
+
+def main(argv=()):
     if not PACKAGE.is_dir():
         raise SystemExit(f"  FAIL  {PACKAGE} is not there")
+    cases = select(list(argv))
     print(f"Lint:    {LINT}")
     print(f"Subject: {PACKAGE}")
     print()
 
+    # Every case pays for a full RO-Crate profile validation, which is
+    # seconds of loading before it looks at the crate, and they are
+    # independent: each mutates its own copy in its own directory and shares
+    # nothing. Run serially the suite costs that many times over, which is a
+    # suite people stop running. Threads, not processes, because each case is
+    # waiting on a subprocess rather than holding the GIL.
+    with futures.ThreadPoolExecutor(max_workers=WORKERS) as pool:
+        results = list(pool.map(run_case, cases))
+
     failed = 0
-    for case in CASES:
-        failures = run_case(case)
+    for case, (failures, output) in zip(cases, results):
         if failures:
             failed += 1
             print(f"  FAIL  {case['name']}")
             for failure in failures:
                 print(f"        {failure}")
+            print(output)
         else:
             print(f"  ok    {case['name']}")
 
     print()
-    print(
-        f"{len(CASES)} case(s): {len(CASES) - failed} as specified, {failed} not"
-    )
+    print(f"{len(cases)} case(s): {len(cases) - failed} as specified, {failed} not")
+    if len(cases) != len(CASES):
+        print(f"{len(CASES) - len(cases)} case(s) not run: this is a filtered run")
     print("PASS" if not failed else "FAIL")
     return 0 if not failed else 1
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(main(sys.argv[1:]))

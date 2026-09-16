@@ -65,7 +65,7 @@ building; its entry point names what it needs from the other.
 
 | you are building | start at | what it covers |
 |---|---|---|
-| **an adapter** — a data package for one source format | [`adapter/`](adapter/) | the crate, fixtures, the test manifest, and the seven checks your package must pass |
+| **an adapter** — a data package for one source format | [`adapter/`](adapter/) | the crate, fixtures, the test manifest, and the checks your package must pass |
 | **an engine** — a Bridge, the thing that runs adapters | [`engine/`](engine/) | the stages you run around a mapping, and how you execute an adapter's test manifest |
 
 Building either, you also need [`pinning.md`](pinning.md): how you name the
@@ -84,7 +84,7 @@ compatibility.md               compatibility.json: the counterparts a repository
 vocab/bridge.ttl               the bridge: vocabulary: adapter, test and compatibility terms
 vocab/compatibility.context.jsonld  the JSON-LD context a compatibility.json names
 shapes/bridge.shapes.ttl       SHACL shapes for an adapter's crate and its test manifest, as one graph
-scripts/validate-adapter.py    the adapter lint: the seven checks of adapter/validation.md
+scripts/validate-adapter.py    the adapter lint: the checks of adapter/validation.md
 scripts/selftest-lint.py       the mutation cases that show each check failing
 scripts/compatibility.py       validate, resolve, check out, run and judge a compatibility.json
 scripts/selftest-compatibility.py  its cases, against throwaway repositories

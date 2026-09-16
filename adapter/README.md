@@ -15,7 +15,7 @@ need is listed here, in this order.
    digests each carries, and the input / expected / findings triplet.
 4. [`fixtures/manifest.md`](fixtures/manifest.md) — declaring your cases, and how each
    one is judged.
-5. [`validation.md`](validation.md) — the seven checks your package must pass,
+5. [`validation.md`](validation.md) — the checks your package must pass,
    and how to run them locally and in your CI.
 
 Also relevant, and short: [`../pinning.md`](../pinning.md), for how your adapter

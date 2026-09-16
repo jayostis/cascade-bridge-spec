@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Validate a Cascade Bridge Adapter package against this specification.
 
-The seven checks adapter/validation.md names, in the order it names them, so
+The checks adapter/validation.md names, in the order it names them, so
 that the cheapest check that can fail comes first and each later check may
 assume the earlier ones held:
 
@@ -23,7 +23,7 @@ assume the earlier ones held:
 **Every check says whether it ran.** A check whose tool is absent, and a check
 that found nothing of its kind in the package, are each reported in their own
 words and never as a pass: a lint that silently checks nothing is worse than no
-lint. The summary at the end lists all seven with the word each earned.
+lint. The summary at the end lists every check with the word it earned.
 
 Nothing here runs a mapping or compares a graph, and nothing an adapter names
 is fetched: check 4 recomputes digests over the committed bytes. The tools it
@@ -150,7 +150,7 @@ NONE = "nothing to check"
 
 
 class Check:
-    """One of the seven, and whether it ran.
+    """One check, and whether it ran.
 
     `fails` is deliberately not the same question as `status != OK`. A check
     that found nothing of its kind in the package (NONE) has not failed: an
@@ -976,13 +976,15 @@ def check_spec_pin(graph, root):
 
 
 def summarise(checks, pin_ok, pin_note):
-    """All seven, each with the word it earned.
+    """Every check, each with the word it earned.
 
     The summary exists because the failure this lint is written against is a
     check that quietly did nothing. "ok" and "nothing to check" are different
     sentences and are printed as different sentences.
     """
-    print("The seven checks of adapter/validation.md, and how each ended:")
+    print(
+        f"The {len(checks)} checks of adapter/validation.md, and how each ended:"
+    )
     width = max(len(check.title) for check in checks)
     for check in checks:
         print(

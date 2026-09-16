@@ -62,22 +62,23 @@ is on this repository's default branch; [`pinning.md`](../pinning.md) says why.
 
 ### What RO-Crate 1.2 requires beyond the properties
 
-Four things no property of the adapter states, each of which fails check 1 or
-check 2 when missing. The lint's own test subject,
-[`fixtures/synthetic-adapter`](../fixtures/synthetic-adapter/ro-crate-metadata.json),
-is a crate that has them all.
+Several things no property of the adapter states — that every `bridge:` key
+appears in `@context` as well as behind the prefix, that what `conformsTo` names
+is described as a `Profile`, that a pin typed `SoftwareSourceCode` is also a
+`File` in `hasPart`, that a required profile is an entity the crate types.
 
-- **Every `bridge:` key is declared in `@context`**, each as itself
-  (`"bridge:specPin": "bridge:specPin"`), beside the `bridge` prefix. The prefix
-  alone does not declare a key.
-- **The profile IRI is an entity** typed `Profile`: RO-Crate requires what
-  `conformsTo` names to be described in the crate.
-- **Each pin is typed `["SoftwareSourceCode", "File"]` and listed in the root's
-  `hasPart`.** RO-Crate reads a `SoftwareSourceCode` as a script, and a script
-  must be a data entity.
-- **Each profile in `bridge:profileRequired` is an entity typed
-  `bridge:Profile`** in the crate: the shapes check the type in the crate's own
-  graph, not in the vocabulary.
+They are RO-Crate's rules and the shapes', not prose here, and each is a case in
+[`scripts/selftest-lint.py`](../scripts/selftest-lint.py): what the lint says
+when it is missing is recorded there, in the run's own words, and a rule that
+stopped holding would fail that case rather than quietly outlive a paragraph.
+[`fixtures/synthetic-adapter`](../fixtures/synthetic-adapter/ro-crate-metadata.json)
+is a crate that satisfies all of them.
+
+Worth knowing because it is counter-intuitive: the `@context` entries are
+RO-Crate's requirement, not JSON-LD's. JSON-LD expands `bridge:specPin` from the
+`bridge` prefix alone, so the graph is unaffected and the shapes still pass —
+it is check 1 that fails, because RO-Crate 1.2 requires every key of a compacted
+descriptor to be present in the `@context`.
 
 ## Envelope entities
 

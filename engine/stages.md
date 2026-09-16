@@ -6,78 +6,48 @@ the terms every integration engine, Apache Camel included, already documents.
 Nothing here is invented, and nothing here is a name a Bridge implementer has to
 learn twice.
 
-The division of labour the table states: **the Bridge owns the stages, the
-adapter contributes data to them.** The third column says what an adapter
-contributes to each, with the pilot adapter for ClinVar VCV XML as the worked
-example rather than as the subject.
+The division of labour: **the Bridge owns the stages, the adapter contributes
+data to them.** The third column names the terms it contributes through; what
+each one is, is its `rdfs:comment` in
+[`../vocab/bridge.ttl`](../vocab/bridge.ttl).
 
-| stage | Enterprise Integration Pattern | what an adapter contributes |
+| stage | Enterprise Integration Pattern | the adapter contributes |
 |---|---|---|
-| read and chunk | **Splitter** | the unit to split on: `bridge:unit` on the crate's root entity. ClinVar: `VariationArchive` |
-| detect and route | **Content-Based Router** | the detect rule, one SPARQL 1.1 ASK over the envelope skeleton: `bridge:detectQuery`. ClinVar: the document element is one of its two envelope roots and holds a `VariationArchive` |
-| transform | **Message Translator** | the mapping, SPARQL 1.1 CONSTRUCTs over each unit's lift: `bridge:mapping`. ClinVar: one query per record class |
-| Cascade RDF as target | **Canonical Data Model** | the vocabularies it writes and the revision they are pinned at: `bridge:vocabulary`, `bridge:vocabularyPin` |
-| link within the batch | **Aggregator** | the links between records of one unit, emitted by the mapping and resolved by the Bridge within one import. ClinVar: interpretation (RCV) and submitter-assertion (SCV) records point at their Variant |
-| stamp | **Message History** | nothing; it *receives* the stamp. The adapter names the stamp predicates its test manifest ignores when comparing (`bridge:ignorePredicate`) |
-| check, validate | **Message Validator**, findings to an **Invalid Message Channel** | the source-side schema every unit is validated against: `bridge:sourceSchema`, and a `bridge:documentSchema` per envelope where the source schema does not declare that root |
-| findings | **Dead Letter Channel** / **Invalid Message Channel** | its findings queries, `bridge:findingsQuery`, and the expected contents of that channel, as the findings sidecar beside each expected graph |
-| re-import as no-op | **Idempotent Receiver** | nothing beyond a guarantee: everything the adapter emits is a function of the input |
-| vendor quirks | **Normalizer** | a normalisation pass per vendor, where the format has vendors. ClinVar has one publisher and no vendor dialects, so the pilot has none and declares none |
+| read and chunk | **Splitter** | `bridge:unit` |
+| detect and route | **Content-Based Router** | `bridge:detectQuery` |
+| transform | **Message Translator** | `bridge:mapping`, `bridge:table` |
+| Cascade RDF as target | **Canonical Data Model** | `bridge:vocabulary`, `bridge:vocabularyPin` |
+| link within the batch | **Aggregator** | nothing; the mapping emits the links and the Bridge resolves them within one import |
+| stamp | **Message History** | `bridge:ignorePredicate`, and nothing else: it *receives* the stamp |
+| check, validate | **Message Validator**, findings to an **Invalid Message Channel** | `bridge:sourceSchema`, `bridge:documentSchema` |
+| findings | **Dead Letter Channel** / **Invalid Message Channel** | `bridge:findingsQuery`, and the sidecar beside each expected graph |
+| re-import as no-op | **Idempotent Receiver** | nothing beyond a guarantee |
+| vendor quirks | **Normalizer** | a normalising pass per vendor, where the format has vendors |
 
-## Notes on the mapping to patterns
+## Four the pattern name does not settle
 
-**Splitter.** A document is an envelope around one or more units. The Bridge
-opens the envelope, splits on the unit, and hands the mapping one unit at a time
-with its raw bytes preserved. Where the unit is a globally declared element in
-the source schema, a unit validates on its own, and the Bridge need not validate
-a multi-gigabyte release as a single document — which is what makes a dataset
-completion test ([`../adapter/fixtures/manifest.md`](../adapter/fixtures/manifest.md)) runnable at all.
-
-**Content-Based Router.** One SPARQL ASK over the envelope skeleton
-([`sparql.md`](sparql.md)), which empties every unit so that routing a release
-does not mean lifting it. An adapter declares only the roots its publisher
-publishes today; a document in another shape is routed elsewhere or reported,
-never guessed at. The pilot's rule is narrower than the existing converter's
-detector, which matches five roots — three belonging to older or different
-ClinVar shapes, one being the bare unit — and misses the release envelope
-entirely; narrowing it is a decision, and the adapter records which roots were
-dropped and why.
-
-**Message Translator and Canonical Data Model.** The mapping is the only
-format-specific thing that runs, and it runs inside an engine the Bridge already
-ships. What that engine is, is exactly what profiles are for: v1-draft specifies
-one, `sparql-1.1` ([`sparql.md`](sparql.md)), and what Core contains is not
-settled. The target is Cascade RDF in the pinned vocabularies, which is the
-canonical model every adapter writes to and nothing else reads from an adapter.
-
-**Aggregator.** One unit yields several records that point at each other. How the
-pointer is expressed — a blank node the Bridge resolves, or a minted name — is an
-identity question, not settled here, and the pattern is the same either way. An
-adapter's layout must not depend on the answer, and the pilot's does not.
-
-**Message History.** The stamp is the Bridge's, not the adapter's. This is why a
-test manifest declares `bridge:ignorePredicate`: an oracle produced by an
-existing converter carries that converter's stamps, a Bridge writes its own, and
-the comparison removes both sides' before judging. An adapter that stamped
-provenance itself would be doing the Bridge's job and would fail its own
-fixtures on a second Bridge.
-
-**Message Validator and Invalid Message Channel.** Validation reports; it never
-refuses and never destroys. A unit that fails its schema is a finding about the
-input, and the unit still goes through.
-An adapter can flag; it cannot reject. Findings from source validation, the
-mapping, the undeclared-predicate check and SHACL all land in the Bridge's one
-findings model, whose standard shape is still open
+**Validation reports; it never refuses and never destroys.** A unit that fails
+its schema is a finding about the input, and the unit still goes through. An
+adapter can flag; it cannot reject. Everything that produces a finding — source
+validation, the mapping, the undeclared-predicate check, SHACL — lands in one
+findings model, whose shape is still open
 ([`../adapter/fixtures/README.md`](../adapter/fixtures/README.md)).
 
-**Idempotent Receiver.** Importing the same document twice must change nothing.
-The adapter's obligation is only that everything it emits is a function of the
-input — which a declarative mapping guarantees by construction — and the naming
-rule that makes re-import a no-op belongs to the Bridge.
+**The stamp is the Bridge's, not the adapter's**, which is what
+`bridge:ignorePredicate` exists for: an oracle carries whatever produced it, a
+Bridge writes its own, and both sides' come off before judging. An adapter that
+stamped provenance itself would be doing the Bridge's job and would fail its own
+fixtures on a second Bridge.
 
-**Normalizer.** Formats with several publishers need a normalising pass per
-vendor before the translator: C-CDA from Epic and Cerner, say,
-and the runtime already carries such quirks as code today. A quirk profile is
-data in the package like everything else, and there are no vendor adapters — a
-format has one adapter, with vendor quirks on the source side. A format with one
-publisher declares none.
+**Re-import must change nothing.** The adapter owes only that everything it
+emits is a function of the input, which a declarative mapping gives by
+construction. The naming rule that makes re-import a no-op is the Bridge's.
+
+**A format has one adapter, with vendor quirks on the source side**, never one
+adapter per vendor. A quirk profile is data in the package like everything else,
+and a format with one publisher declares none.
+
+Two questions these stages raise are open, and nothing here answers them: what
+Core contains beneath the profiles an adapter requires, and how a record points
+at another record of the same unit — a blank node the Bridge resolves, or a
+minted name. An adapter's layout must not depend on the second.

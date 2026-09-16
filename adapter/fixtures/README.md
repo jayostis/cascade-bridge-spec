@@ -30,11 +30,10 @@ every XSD — that digest is recorded too, under its own term, as the *publisher
 claim about the file at its source. The two are different assertions and are not
 merged.
 
-**What is not known is recorded as not known.** The pilot's four oracle inputs
-were copied from another repository, and the date and method by which
-they were originally fetched from NCBI were never recorded; each of their crate
-entries says exactly that. A provenance record whose gaps are invisible is worse
-than one with none, because a reader cannot tell a fact from a silence.
+**What is not known is recorded as not known.** An input copied from somewhere
+that did not record when or how it was fetched gets a crate entry saying exactly
+that. A provenance record whose gaps are invisible is worse than one with none,
+because a reader cannot tell a fact from a silence.
 
 **Verbatim copies are never edited.** A file whose digest the crate records is a
 byte-for-byte copy. Changing one means replacing it from its source and updating
@@ -73,10 +72,9 @@ fixtures/findings/<name>.gaps.json  the findings it must produce
 The stem is the test's `mf:name` and its fragment IRI in the test manifest.
 
 Names are kept from the source they were copied from even when they are wrong,
-so that a copy stays traceable to its origin. Two of the pilot's four oracle
-file names do not describe the record inside — a BRCA1 variant named BRCA2, a
-VMA21 variant named MLH1. Renaming them would break the trace to their origin;
-the crate entry and the test's `rdfs:comment` state the actual record instead.
+so that a copy stays traceable to its origin. Where a name misdescribes the
+record inside it, the crate entry and the test's `rdfs:comment` state the actual
+record; renaming the file would break the trace and fix nothing.
 
 Each expected graph is linked to its input in the crate with `isBasedOn`, so a
 query can walk from a test through its result to the input the result was
@@ -95,30 +93,14 @@ both are `bridge:IsomorphicConversionTest`'s rule, and
 [`manifest.md`](manifest.md) is why it is that. It is why the copied sidecars are
 left in the ICU collation their authoring script produced.
 
-**It should not stay private.** One canonical findings model belongs inside the
-Bridge, into which source-side validation, the
-mapping, the undeclared-predicate check, SHACL and the honesty differential all
-land. Two published forms fit, split by what a finding is *about*:
+**It should not stay private, and this specification does not settle it.** One
+canonical findings model belongs inside the Bridge, and two published forms fit,
+split by what a finding is about: SHACL validation results for a finding about
+the produced graph, which the validate stage already emits, and the W3C Web
+Annotation Data Model for a finding about the source document, where an
+`oa:XPathSelector` is what `sourceField` already is in all but syntax.
 
-- A finding **about the produced graph** is a SHACL validation result:
-  `sh:focusNode`, `sh:resultPath`, `sh:resultMessage`, `sh:resultSeverity`. SHACL
-  already provides the model, and the validate stage already produces it.
-- A finding **about the source document** — which is what every one of the 1,306
-  entries across the pilot's four oracles is — fits the W3C **Web Annotation Data
-  Model**: an `oa:Annotation` whose target is the input file with an
-  `oa:XPathSelector` naming the field, whose body is the reason, and whose
-  motivation or a severity term carries `info` or `warning`. Today's
-  `sourceField` is already an XPath in all but syntax, so the selector is a
-  change of spelling rather than of content.
-
-**The constraint that keeps the question open.** The sidecars are asserted byte
-for byte against the existing converter's output, so an adapter whose oracles
-are those files must keep writing `gaps.json` and let the Bridge map it. The
-standard form is therefore a question to settle **before any second adapter
-writes findings** — because the moment two adapters have
-written findings in two shapes, the choice has been made by accident.
-
-Until it is settled, this specification says only what is true: the sidecar is
-the mapping's contribution to the Bridge's findings channel (the Enterprise
-Integration Patterns Invalid Message Channel, [`stages.md`](../../engine/stages.md)), it is
-compared exactly, and its shape is not yet standard.
+The choice cannot be made here, because existing oracles are asserted byte for
+byte and an adapter holding them must keep writing `gaps.json`. It has to be made
+**before a second adapter writes findings**: two shapes in the wild is the
+decision taken by accident.

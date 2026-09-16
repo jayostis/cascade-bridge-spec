@@ -4,7 +4,7 @@ What a conforming adapter package must pass, written as the list a lint
 implements. The list is ordered so that the cheapest check that can fail comes
 first and each later check can assume the earlier ones held.
 
-All seven run, in
+They all run, in
 [`scripts/validate-adapter.py`](../scripts/validate-adapter.py), which is what
 the published action
 ([`.github/actions/validate-adapter`](../.github/actions/validate-adapter/action.yml))
@@ -202,7 +202,7 @@ required status check. Bumping the pin is an edit to the crate and nothing else.
 What the starter reads, checks out and hands over to is
 [`../compatibility.md`](../compatibility.md).
 
-All seven checks run. The action ends by printing each of them with the word it
+Every check runs. The action ends by printing each of them with the word it
 earned, so a package is never reported as passing a check that did not happen.
 
 Two things the action keeps from the script, and must go on keeping:

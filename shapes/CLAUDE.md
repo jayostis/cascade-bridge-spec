@@ -16,9 +16,12 @@ code" guarantee the file header describes, not housekeeping.
   commit says which adapter and at which commit. Not in CI: a job that cloned an
   adapter would go red for somebody else's missing property, and would grow a job
   per adapter forever (`../pinning.md`).
-- **A shape meant to reject something is verified by mutation** — break the
-  adapter's copy, see it go red, restore it, see it go green. A constraint nobody
-  saw fail is a constraint nobody knows fires.
+- **A shape meant to reject something is verified by seeing it fail** — break a
+  copy, watch it go red, restore it. A constraint nobody saw fail is a
+  constraint nobody knows fires. Add the case to `selftest-lint.py`, which runs
+  its cases concurrently and takes a name to run one; keep it that way, because
+  a suite too slow to run on every edit stops being run at all
+  (`../scripts/CLAUDE.md`).
 - **Every constraint carries an `sh:message` that names what was wanted**, and
   the `sh:in` sets spell their members out. `../adapter/validation.md` and
   `../compatibility.md` send the reader here rather than copying, so a failing

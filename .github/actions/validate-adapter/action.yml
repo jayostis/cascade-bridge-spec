@@ -12,7 +12,7 @@
 # action from that checkout. The revision that runs is the one the crate pins,
 # by construction, so there is no second statement of the pin to compare.
 #
-# All seven checks of adapter/validation.md run, and the run ends by giving
+# Every check of adapter/validation.md runs, and the run ends by giving
 # each of them the word it earned: `ok`, `FAIL`, `nothing to check` or `not
 # run`. A check whose tool is absent, and a check that found nothing of its
 # kind in the package, are never reported in the same word as a check that ran
@@ -21,7 +21,7 @@
 name: Validate a Cascade Bridge Adapter
 description: >-
   Validate an adapter package against the Cascade Bridge Specification: all
-  seven checks of adapter/validation.md -- RO-Crate 1.2, the SHACL shapes over
+  checks of adapter/validation.md -- RO-Crate 1.2, the SHACL shapes over
   the crate and the test manifest as one graph, the file inventory, the digests,
   every input against the schema its envelope declares, every expected graph as
   Turtle, and every query as SPARQL 1.1. Each check reports whether it ran.
