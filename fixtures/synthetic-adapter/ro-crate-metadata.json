@@ -37,7 +37,7 @@
       "identifier": "synthetic-example",
       "name": "Synthetic Example Records",
       "version": "0.1.0",
-      "description": "A synthetic Cascade Bridge Adapter package, and the only package this repository holds. It exists so that the lint published from here is exercised by the thing it is published for, against a subject this repository owns: no real adapter is cloned, named or pinned, which is the rule fixtures/README.md and pinning.md state. Everything in it is invented. The format, its schemas, its records, its releases and its vocabulary are made up; every URL that is not this repository's own is under example.org, IANA's reserved example domain, and none of them resolves. Its queries are real SPARQL 1.1: a mapping and a findings query that produce the expected graph and findings from its input, and a detect query. Committed files carry a sha256 computed over the committed bytes; two of them additionally carry an md5 standing for the digest a publisher publishes beside the file at its source, so that check 4 of adapter/validation.md has both kinds of claim to recompute and can be seen telling them apart.",
+      "description": "A synthetic Cascade Bridge Adapter package, and the only package this repository holds. It exists so that the lint published from here is exercised by the thing it is published for, against a subject this repository owns: no real adapter is cloned, named or pinned. Everything in it is invented. The format, its schemas, its records, its releases and its vocabulary are made up; every URL that is not this repository's own is under example.org, IANA's reserved example domain, and none of them resolves. Its queries are real SPARQL 1.1: a mapping and a findings query that produce the expected graph and findings from its input, and a detect query. Committed files carry a sha256 computed over the committed bytes; two of them additionally carry an md5 standing for the digest a publisher publishes beside the file at its source.",
       "datePublished": "2026-09-06",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
@@ -142,14 +142,14 @@
       "bridge:documentSchema": {
         "@id": "schema/example-set.xsd"
       },
-      "description": "The envelope an invented service returns: many records under a set root the format's own schema does not declare, so this envelope names the wrapper schema this package adds. The arrangement that makes check 5 of adapter/validation.md prefer an envelope's bridge:documentSchema to the adapter's bridge:sourceSchema."
+      "description": "The envelope an invented service returns: many records under a set root the format's own schema does not declare, so this envelope names the wrapper schema this package adds."
     },
     {
       "@id": "#envelope-record",
       "@type": "bridge:Envelope",
       "name": "record",
       "bridge:rootElement": "ExampleRecord",
-      "description": "One bare record, the document root the format's own schema declares. It names no bridge:documentSchema, so an input arriving in it is validated against the adapter's bridge:sourceSchema: the fallback branch of check 5."
+      "description": "One bare record, the document root the format's own schema declares. It names no bridge:documentSchema."
     },
     {
       "@id": "https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/",
@@ -174,7 +174,7 @@
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       },
-      "description": "The one entity here that names something real: a tagged revision of the Cascade Bridge Specification, v0.2.0, and not one the package conforms to. The package conforms to the shapes in its own commit, and a package inside the repository it pins cannot pin a release that contains it, so its pin can only name an earlier tag (fixtures/README.md). A real adapter's CI runs the lint through the starter, from a checkout of the repository at exactly the commit its pin names; this package is validated from inside the repository the pin names, so the lint runs from the checkout it is in and reads the pin without comparing it with anything. A web-based data entity, referenced and not committed: the RO-Crate 1.2 validator reads every SoftwareSourceCode as a script that must be a File in hasPart."
+      "description": "The one entity here that names something real: a tagged revision of the Cascade Bridge Specification, v0.2.0, and not one the package conforms to. The package conforms to the shapes in its own commit, and a package inside the repository it pins cannot pin a release that contains it, so its pin can only name an earlier tag. A real adapter's CI runs the lint through the starter, from a checkout of the repository at exactly the commit its pin names; this package is validated from inside the repository the pin names, so the lint runs from the checkout it is in and reads the pin without comparing it with anything. A web-based data entity, referenced and not committed: the RO-Crate 1.2 validator reads every SoftwareSourceCode as a script that must be a File in hasPart."
     },
     {
       "@id": "https://example.org/synthetic-adapter/vocabulary/commit/0000000000000000000000000000000000000000",
@@ -234,24 +234,24 @@
       "@type": "File",
       "name": "Example record XSD, pinned copy",
       "encodingFormat": "application/xml",
-      "contentSize": "1291",
-      "sha256": "8faaaa9d339402ecb11014d732abae34fac93a7fd96d1d3874d7947436954695",
-      "md5": "cd3eca4e773d23a7c1ff3b2903484a28",
+      "contentSize": "733",
+      "sha256": "ad5bd6a6ca7c741f6020003cd8564fb49b1cc18d67d3d8001c782ca7354e62fe",
+      "md5": "53fc1630a7342b929c3909e882cf5a30",
       "isBasedOn": {
         "@id": "https://example.org/synthetic-adapter/schema/example-record.xsd"
       },
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       },
-      "description": "The adapter's bridge:sourceSchema: the schema that declares the unit, ExampleRecord. It stands in for a schema pinned byte for byte from a publisher, so it carries two digests that say different things. sha256 is the local claim, computed over the committed bytes. md5 stands for the digest the publisher publishes beside the file at its source; here the source is invented, so it is the md5 of these same bytes, which is what a copy that has not drifted looks like. Check 4 recomputes both and reports a mismatch in each differently."
+      "description": "The adapter's bridge:sourceSchema: the schema that declares the unit, ExampleRecord. It stands in for a schema pinned byte for byte from a publisher, so it carries two digests that say different things. sha256 is the local claim, computed over the committed bytes. md5 stands for the digest the publisher publishes beside the file at its source; here the source is invented, so it is the md5 of these same bytes, which is what a copy that has not drifted looks like."
     },
     {
       "@id": "schema/example-set.xsd",
       "@type": "File",
       "name": "Example set XSD, this package's wrapper",
       "encodingFormat": "application/xml",
-      "contentSize": "1135",
-      "sha256": "d709e695ae59ed63091ffc3756cadea62c10790559ac14ec8d5ecafce7c94665",
+      "contentSize": "552",
+      "sha256": "d35b5e40e91068ac06e8ada829e394df6a6b3b8d98cd0ef08e4e96752c56c8bc",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       },
@@ -272,8 +272,8 @@
       "@type": "File",
       "name": "Synthetic input, set envelope",
       "encodingFormat": "application/xml",
-      "contentSize": "651",
-      "sha256": "5d2b0d488302655b1ff53dc4449bc79dada5c37d776f69a9868f385a83d91edc",
+      "contentSize": "498",
+      "sha256": "c629f7429b18a24d9b1151563f40479bf761243195e4f51024162978c5cf9256",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       },
@@ -284,31 +284,31 @@
       "@type": "File",
       "name": "Synthetic input, record envelope",
       "encodingFormat": "application/xml",
-      "contentSize": "700",
-      "sha256": "9c9b8135937cfda195ae73e81b4e1ddec223423ce8c5c4678dae07713dd1ed9e",
-      "md5": "fac8e65fad28a744f4d94cfdbe72a25c",
+      "contentSize": "276",
+      "sha256": "cf2b36857004facf5e0c97fd9dfa83954b14688a1d106b761acfbe0aeb130baf",
+      "md5": "36d8e709256e46f2ea36cf7d209dd1f2",
       "isBasedOn": {
         "@id": "https://example.org/synthetic-adapter/records/example-0002.xml"
       },
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       },
-      "description": "One invented record, EX000003, in the record envelope, standing in for a document copied byte for byte from a publisher. sha256 is the local claim over the committed bytes; md5 stands for the publisher's, and matches because this copy has not drifted from a source that does not exist. The envelope declares no document schema, so check 5 validates this file against the adapter's bridge:sourceSchema."
+      "description": "One invented record, EX000003, in the record envelope, standing in for a document copied byte for byte from a publisher. sha256 is the local claim over the committed bytes; md5 stands for the publisher's, and matches because this copy has not drifted from a source that does not exist."
     },
     {
       "@id": "fixtures/expected/example-0001.ttl",
       "@type": "File",
       "name": "Expected graph for example-0001",
       "encodingFormat": "text/turtle",
-      "contentSize": "1090",
-      "sha256": "e493a7be8407fea13ede2d83fe7090f3a53acee9922f1cc4ac75b7e7dd489746",
+      "contentSize": "1021",
+      "sha256": "99a0739217b28a400893e1c6ef570ec39daed5a2a2205e2038755ba27724ae5f",
       "isBasedOn": {
         "@id": "fixtures/in/example-0001.xml"
       },
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       },
-      "description": "The graph the package's mapping produces from example-0001.xml, one ExampleRecord unit at a time. Written by hand. Check 6 parses it and stops there: comparing it with what the mapping produces is a Bridge's job."
+      "description": "The graph the package's mapping produces from example-0001.xml, one ExampleRecord unit at a time. Written by hand."
     },
     {
       "@id": "fixtures/findings/example-0001.gaps.json",
@@ -339,7 +339,7 @@
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       },
-      "description": "A referenced release that does not exist, under IANA's reserved example domain, so that this package holds one entity whose bytes are not committed. The lint never fetches it: check 4 records its digest without comparing it, and check 5 reports that the test naming it validates nothing here. Size and md5 are placeholders and are marked as such by being round numbers no real file would have."
+      "description": "A referenced release that does not exist, under IANA's reserved example domain, so that this package holds one entity whose bytes are not committed. The lint never fetches it. Size and md5 are placeholders and are marked as such by being round numbers no real file would have."
     }
   ]
 }

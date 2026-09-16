@@ -1,26 +1,18 @@
 # Compatibility between engines and adapters
 
-Every engine and every adapter pins one thing: this specification. Anything more
-is opt-in. A repository may commit a `compatibility.json` saying "also test me
-against this adapter" (in an engine) or "against this engine" (in an adapter).
-**Every entry is an assertion, and a failed assertion blocks the merge.** To stop
-an entry blocking, edit the file.
-
-[`pinning.md`](pinning.md) is why pins work this way. This document is the file,
-what each entry asserts, and the tooling that checks it.
+A repository may commit a `compatibility.json` at its root saying "also test me
+against this adapter" (an engine) or "against this engine" (an adapter). **Every
+entry is an assertion, and a failed assertion blocks the merge.** Why pins work
+this way is [`pinning.md`](pinning.md).
 
 ## The file
 
-`compatibility.json`, at the repository root. It is JSON that is also JSON-LD:
-its `@context` is the string
-`https://ns.cascadeprotocol.org/bridge/v1-draft/compatibility.jsonld`, which,
-like the profile IRI, does not dereference yet;
-[`vocab/compatibility.context.jsonld`](vocab/compatibility.context.jsonld) is the
-context it names. It is validated by SHACL, like a crate and a test manifest,
-against [`shapes/bridge.shapes.ttl`](shapes/bridge.shapes.ttl). The terms are in
-[`vocab/bridge.ttl`](vocab/bridge.ttl).
-
-An engine's file:
+JSON that is also JSON-LD, through
+[`vocab/compatibility.context.jsonld`](vocab/compatibility.context.jsonld), the
+list of keys there are. What each key means is its `bridge:` term's
+`rdfs:comment` in [`vocab/bridge.ttl`](vocab/bridge.ttl); what is checked is the
+shapes at the end of [`shapes/bridge.shapes.ttl`](shapes/bridge.shapes.ttl) and
+`validate` below.
 
 ```json
 {
@@ -32,177 +24,37 @@ An engine's file:
   "setup": ["npm", "ci"],
   "command": ["node", "packages/bridge-cli/src/cli.ts"],
   "testedWith": [
-    {
-      "codeRepository": "https://github.com/jayostis/cascade-bridge-adapter-clinvar",
-      "branch": "main"
-    }
+    { "codeRepository": "https://github.com/jayostis/cascade-bridge-adapter-clinvar", "branch": "main" }
   ]
 }
 ```
 
-An adapter's file, which has no `specification`, `setup` or `command`:
+An adapter's file has only `testedWith`: its spec pin stays in its crate, where a
+host loading the adapter reads it. A directory holding `ro-crate-metadata.json` is
+an adapter.
 
-```json
-{
-  "@context": "https://ns.cascadeprotocol.org/bridge/v1-draft/compatibility.jsonld",
-  "testedWith": [
-    {
-      "codeRepository": "https://github.com/jayostis/cascade-bridge-rs",
-      "commit": "54a30dcc743d6367723b7a365065d45271835740"
-    }
-  ]
-}
-```
-
-Each key is the `bridge:` term of the same name — `specification`, `setup`,
-`command`, `testedWith` — mapped by
-[`vocab/compatibility.context.jsonld`](vocab/compatibility.context.jsonld), which
-is the list of keys there are. What each means is its `rdfs:comment`; which form
-requires it, how many it takes and what it holds is the shape that checks it.
-
-Which form applies is decided by the directory, not by the file: a directory
-holding `ro-crate-metadata.json` is an adapter, and one without is an engine.
-The shapes accept either form; the tooling holds the form to the directory.
-
-- **An adapter's spec pin stays in its crate**, as `bridge:specPin`, because a
-  host loading an adapter reads the crate. An engine has no crate, so it states
-  its pin here.
-- **`setup` and `command` are argument vectors, run without a shell**, in the
-  engine's checkout, so one file works on Windows and on Linux CI. This
-  repository learns no language's build; the engine states its own.
-- **`command` receives `test <adapter directory> --earl <file>`**, the contract
-  every engine meets ([`engine/command.md`](engine/command.md)).
-- **Every key is one the context defines, and every value is the JSON type the
-  table gives.** JSON-LD drops a key its context does not define, and reads a
-  lone value and a one-element array alike, so a misspelt `testedwith` would
-  otherwise be a file asserting nothing, read as a file asserting something,
-  and a `testedWith` written as one object would get past the shapes. The
-  tooling refuses both.
-- **In an adapter, the crate lists `compatibility.json`** as a file like any
-  other, declared `application/ld+json`, so the lint's inventory accounts for it.
-
-## Pins
-
-A pin names a repository by `codeRepository`, its absolute URL, and exactly one
-of `commit`, `tag` or `branch`. What each resolves to is the `rdfs:comment` on
-`schema:version`, `bridge:tag` and `bridge:branch`.
-
-`commit` is `schema:version` rather than a `bridge:` term of its own because that
-is what the entity `bridge:specPin` names already carries for the SHA: one pin,
-one shape.
-
-**Every run records what each pin resolved to**: the commit, and a flag when the
-sibling's uncommitted edits were used. A result produced from uncommitted edits
-is feedback, never evidence.
-
-**What each kind guarantees.** A commit or tag pin is reproducible: a pull
-request green on it stays green once merged. A default-branch pin
-(`"branch": "main"`) means "keep me current, and block me when the other side
-breaks me": the other repository merging something can turn this one red with
-no change of its own, and the file records that choice.
-
-### At merge time
-
-The `ready-to-merge` check, meant to be a required status check, holds every pin
-— the specification pin, from the crate for an adapter and from this file for an
-engine, and every entry — to one rule:
-
-- a pin may be a commit or a tag on the counterpart's default branch, or the
-  counterpart's default branch itself;
-- a pin to any other branch is refused.
-
-So a pull request can pin the other side's feature branch while both are in
-flight, and cannot merge that way. A tag is accepted when the commit it names is
-on the default branch; there is no separate commit-only rule. The default branch
-is read from the counterpart (`git ls-remote --symref <url> HEAD`), never
-assumed to be `main`.
-
-## When an entry holds
-
-When an entry holds is `bridge:testedWith`'s `rdfs:comment`. Three readings of it
-the tooling had to settle, which are judging decisions rather than parts of the
-term:
-
-- **No report is not a pass.** A run that wrote no report, a report that does not
-  parse as Turtle, and a report recording no outcome at all do not hold. Nor
-  does an outcome that is not one of EARL's five. Nothing else is consulted, and
-  least of all the engine's exit code ([`engine/command.md`](engine/command.md)).
-- **A partial report is not a pass.** A report with no outcome for some entry of
-  the manifest does not hold, however many of the rest passed: an engine that
-  stopped part-way has not run the manifest.
-- **An entry is matched by its IRI from the adapter directory down**, since the
-  engine and the tooling may spell the directory's absolute path differently.
+**A commit or tag pin is reproducible**: green on a pull request stays green once
+merged. **A default-branch pin** means "keep me current, and block me when the
+other side breaks me", and the other side merging can turn this one red with no
+change of its own.
 
 ## Changing an entry
 
-- **Opt out** by deleting the entry, or by re-pinning it to a version that
-  passes. There is no "expected to fail" entry; git history and the pull request
-  carry the reason.
-- **Add a pairing after both sides have merged**, so that a new assertion cannot
+- **Opt out** by deleting the entry or re-pinning it. There is no "expected to
+  fail" entry; the pull request carries the reason.
+- **Add a pairing after both sides have merged**, so a new assertion cannot
   deadlock two open pull requests.
-- **A breaking change resolves in the open.** The engine's pull request removes
-  or re-pins the affected adapter entry and merges. The adapter follows in its
-  own pull request against the new engine. The engine re-adds the entry at the
-  adapter's new commit.
-
-## Sibling layout
-
-Every repository sits beside the others under one directory, named exactly as
-its repository: the last segment of its `codeRepository`, without `.git`. The
-tooling looks for a counterpart at `../<repository name>`. So no two entries of
-`testedWith` may share a name, a fork and its original or one URL with and
-without `.git`, nor two names differing only in case, which Windows and macOS
-fold into one directory; none may be named `cascade-bridge-spec`, where the
-starter checks the specification out; and none may be named as the repository
-under test, which already occupies its own directory.
-
-`validate` refuses all three, and the shapes do not: a name is the directory a
-clone is given, only the tooling sees the directory the file sits in, and one
-rule stated twice is two rules that can disagree.
-
-- **Locally**, a branch pin uses the sibling as it is, uncommitted edits
-  included, when the sibling is on that branch. A commit or tag pin runs from a
-  temporary `git worktree` of the sibling at that commit, under the system
-  temporary directory, and the sibling's working copy is left untouched.
-- **In CI**, each counterpart is cloned at its resolved commit beside the
-  repository under test, inside the workspace: GitHub's checkout cannot write
-  outside it, so the repository under test sits in its own named subdirectory
-  too.
-- **A missing sibling stops the run** with the `git clone` command that fixes
-  it. Nothing is cloned into a developer's directory unasked.
-- **A counterpart that cannot be reached** — private, renamed or deleted — stops
-  the run with a message naming the repository, not a raw git error.
+- **A breaking change resolves in the open**: the engine removes or re-pins the
+  adapter's entry and merges, the adapter follows, the engine re-adds the entry.
 
 ## The tooling
 
-[`scripts/compatibility.py`](scripts/compatibility.py) is one tool, and needs
-`git`, `rdflib` and `pyshacl`. It takes directories and reads files, which is how
-it meets [`pinning.md`](pinning.md)'s rule about what this repository may know.
+[`scripts/compatibility.py`](scripts/compatibility.py): its docstring lists the
+subcommands. A repository's CI calls only the starter,
+`.github/actions/start@start-v1`, a tag that never moves ([`adapter/validation.md`](adapter/validation.md) shows the
+workflow). The starter checks this repository out at the caller's spec pin and
+hands over to the actions beside it, so the spec pin is written in one place.
 
-| subcommand | does |
-|---|---|
-| `validate <dir>` | the directory's `compatibility.json` conforms to the shapes, and its form is the directory's |
-| `resolve <dir>` | every pin resolves to a commit, and the resolution is printed and recorded |
-| `checkout <dir>` | puts each counterpart beside the repository, as the layout above says |
-| `run <dir>` | in an engine, runs its own `setup` and `command` on each listed adapter; in an adapter, runs each listed engine's `setup` and `command` on itself. Collects every EARL report |
-| `judge [<dir>]` | applies the rule above to each report, one line per entry naming the resolved commit and any uncommitted-edits flag |
-| `ready <dir>` | the merge-time rule |
-
-Every subcommand reports in one of four words — `ok`, `FAIL`, `nothing to check`
-and `not run` — because a tool that silently did nothing must not read as one
-that passed. A repository with no `compatibility.json` has nothing to check
-rather than a pass, and a step that could not run says so and fails.
-
-Three actions under `.github/actions/` run it in CI, and a repository's CI calls
-only the first:
-
-- **`start`**, published at the reserved tag `start-v1`, which never moves; a
-  changed starter gets `start-v2`. It reads the repository's spec pin, checks
-  this repository out at exactly that commit as a sibling, and hands over to the
-  lint and the two actions below, run from that checkout. So the spec pin is
-  written in exactly one place, and bumping it never touches the workflow.
-- **`compatibility`**: `validate`, `checkout`, `run` and `judge`. The gating
-  check. The EARL reports are the run's artifacts; nothing stores them here.
-- **`ready-to-merge`**: `ready`. The starter runs it instead of the two above
-  when called `with: { check: ready-to-merge }`, in a job of its own, so that
-  it can be required on its own.
+Every counterpart is checked out beside the repository under test, in a
+directory named as its repository. A run records the commit each pin resolved
+to; a result from a sibling's uncommitted edits is feedback, never evidence.

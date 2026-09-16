@@ -1,15 +1,12 @@
 # The `sparql-1.1` profile
 
 What a Bridge offering `bridge:sparql-1.1` does: lift XML to RDF, and run an
-adapter's SPARQL 1.1 queries over the lift. In v1-draft it is the one profile,
-and every adapter requires it
-([`../adapter/ro-crate-metadata.md`](../adapter/ro-crate-metadata.md)).
+adapter's SPARQL 1.1 queries over the lift.
 
 Two Bridges produce the same graph from one adapter only if they produce the
 same lift, so the lift is specified exactly, and
 [`../fixtures/lift/`](../fixtures/lift/) holds the vectors a Bridge must
-reproduce — the lift by `bridge:LiftTest`, the envelope skeleton below by
-`bridge:SkeletonTest` ([`../vocab/bridge.ttl`](../vocab/bridge.ttl)).
+reproduce.
 
 ## The lift
 
@@ -52,15 +49,9 @@ that is the document element is lifted as an empty container too: the skeleton
 is then its type triples alone. A router can build it while streaming, so
 detecting a multi-gigabyte release does not mean lifting it.
 
-Both of those are vectors: `skeleton` and `skeleton-unit-root` in
-[`../fixtures/lift/`](../fixtures/lift/). A Bridge that lifts every unit
-correctly and empties one wrongly routes wrongly, on documents no adapter's own
-fixtures reach.
-
 ## Running an adapter
 
-`bridge:detectQuery`, an ASK over a document's envelope skeleton, is true when
-the adapter handles the document. For each unit of a document it handles, in
+For each unit of a document the adapter's `bridge:detectQuery` accepts, in
 document order, a Bridge:
 
 1. lifts the unit into the default graph of an empty dataset;
@@ -68,15 +59,8 @@ document order, a Bridge:
    graph. No other table format is specified in v1-draft;
 3. runs every `bridge:mapping`, a CONSTRUCT, over that dataset. The unit's
    graph is the union of their results;
-4. runs every `bridge:findingsQuery`, a SELECT projecting
-   `?sourceField ?reason ?severity ?context`, in any order and no other
-   variable, over the same dataset. Each row is one finding: a JSON object with
-   those four members, each a string, the lexical form of the term its variable
-   is bound to: an IRI's own characters, or a literal's lexical form without its
-   datatype or language tag. A row in which a variable is unbound, or bound to a
-   blank node, has no such string. It is an error in the findings query, and a
-   Bridge reports it rather than choosing a value for the member. The unit's
-   findings are the rows of every findings query, concatenated; rows are not
-   deduplicated.
-
-The stages around this are [`stages.md`](stages.md).
+4. runs every `bridge:findingsQuery` over the same dataset. Each member of a
+   finding is the lexical form of the term its variable is bound to: an IRI's
+   own characters, or a literal's lexical form without its datatype or language
+   tag. A variable unbound, or bound to a blank node, is an error in the findings
+   query, and a Bridge reports it rather than choosing a value.

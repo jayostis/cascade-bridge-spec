@@ -15,11 +15,11 @@ SPEC_ROOT = Path(__file__).resolve().parent.parent.parent
 SHAPES = SPEC_ROOT / "shapes" / "bridge.shapes.ttl"
 
 # The files a repository holding an adapter may carry without the crate
-# describing them: they describe the repository, not the package
-# (adapter/validation.md). Dotfiles and dot-directories are allowed
+# describing them: they describe the repository, not the package.
+# Dotfiles and dot-directories are allowed
 # wholesale, which covers .gitattributes, .editorconfig, .vscode/ and .github/.
 #
-# ro-crate-metadata.json is here for a different reason from the other four. It
+# ro-crate-metadata.json is here for a different reason from the others. It
 # is not undescribed: it is the crate's own metadata descriptor, the entity
 # every RO-Crate is required to carry and the one entity RO-Crate 1.2 forbids
 # from being a data entity in hasPart. It therefore has no encodingFormat and

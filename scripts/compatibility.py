@@ -23,9 +23,9 @@ the bug pinning.md is written against.
     spec-pin <dir>   the spec pin alone, which the starter checks this
                      repository out at
 
-**Every subcommand says whether it checked anything.** It reports in the words
-adapter/validation.md fixes -- ok, FAIL, nothing to check, not run -- and a
-repository with no compatibility.json has nothing to check, which is not a pass.
+**Every subcommand says whether it checked anything.** It reports ok, FAIL, nothing
+to check or not run, and a repository with no compatibility.json has nothing
+to check, which is not a pass.
 
 Pins are resolved where compatibility.md says. In CI (--mode ci, the default
 when the CI variable is "true"), a branch is its tip on the counterpart. Locally
@@ -50,7 +50,7 @@ Usage:
     python3 scripts/compatibility.py ready <dir>
 
 Exit status is 1 when the subcommand fails or did not run, and 0 otherwise.
-Nothing to check exits 0, because it fails nothing (adapter/validation.md),
+Nothing to check exits 0, because it fails nothing,
 but its last line says nothing to check, not PASS.
 
 Requires git. validate also needs pyshacl and rdflib, and judge rdflib (pip
@@ -144,7 +144,7 @@ def unreachable(url, run):
 
 def is_adapter(directory):
     """An adapter is a directory holding a crate; an engine has none
-    (compatibility.md). The same test the adapter lint begins with."""
+    (compatibility.md)."""
     return (directory / CRATE).is_file()
 
 
@@ -246,7 +246,7 @@ def spec_pin(directory, document):
 
     An adapter's is the crate's bridge:specPin. The crate is read as JSON rather
     than JSON-LD, so that reading a pin needs no RO-Crate context from the
-    network; the lint's check 2 is what holds the crate to its shape. An
+    network; the adapter profile is what holds the crate to its shape. An
     engine's is the specification in its compatibility.json.
     """
     if not is_adapter(directory):

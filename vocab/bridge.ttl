@@ -13,9 +13,9 @@
 #
 # Test terms: a small set on top of W3C's mf: test-manifest vocabulary, the way
 # the SHACL test suite adds sht:. An adapter's fixtures/manifest.ttl is an
-# mf:Manifest whose entries are typed with the three test classes below, and
-# the type carries the comparison rule. bridge:LiftTest, the fourth, tests a
-# Bridge's lift rather than an adapter; fixtures/lift/ holds its entries.
+# mf:Manifest whose entries are typed with the adapter test classes below, and
+# the type carries the comparison rule. bridge:LiftTest and bridge:SkeletonTest
+# test a Bridge rather than an adapter; fixtures/lift/ holds their entries.
 #
 # Compatibility terms: what an engine's or an adapter's compatibility.json
 # says, through the context vocab/compatibility.context.jsonld. A pin reuses

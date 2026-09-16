@@ -1,102 +1,33 @@
 # The adapter manifest
 
-An adapter package's manifest is an **RO-Crate 1.2** at the package root,
-`ro-crate-metadata.json`. There is no separate manifest file: the crate is both
-what the adapter says about itself and the provenance record for every file and
-remote dataset it names, in one JSON-LD graph.
+An adapter's manifest is an **RO-Crate 1.2**, `ro-crate-metadata.json` at the
+package root. There is no `adapter.yaml`: in one JSON-LD graph a reference is a
+link SHACL can check, not a string that can disagree with what it names. The
+cost is hand-editing JSON-LD; [`profile/`](profile/) is the check instead.
 
-There is no `adapter.yaml`. Everything an adapter says about itself belongs in
-one graph, so that a reference is a link SHACL can check rather than a string
-that could disagree with the thing it names.
+What the root entity carries is [`profile/must/adapter.ttl`](profile/must/adapter.ttl);
+what each term means is its `rdfs:comment` in
+[`../vocab/bridge.ttl`](../vocab/bridge.ttl).
+[`../fixtures/synthetic-adapter/ro-crate-metadata.json`](../fixtures/synthetic-adapter/ro-crate-metadata.json)
+is a crate that passes.
 
-The cost is stated rather than hidden: JSON-LD is less pleasant to hand-edit
-than YAML and has no field completion. The profile, [`profile/`](profile/), is the
-check instead.
+## What trips a first adapter
 
-## The root entity is the adapter
+- **`conformsTo` is Dublin Core, not schema.org.** The RO-Crate context expands it
+  to `dcterms:conformsTo`, so a query using `schema:conformsTo` matches nothing.
+- **Every `bridge:` key must also be in `@context`.** JSON-LD expands it from the
+  prefix alone, so the graph and the shapes are fine; RO-Crate 1.2's own
+  requirements are what fail.
+- **Envelopes and pins are entities, not strings**, so the shapes can check that
+  a reference resolves to the thing it names.
 
-The crate's root entity, `./`, is typed `["Dataset", "bridge:Adapter"]`.
-Schema.org carries what it can, Dublin Core carries `conformsTo` (the RO-Crate
-context expands that key to `dcterms:conformsTo`, not a schema.org term, so a
-query written with `schema:conformsTo` matches nothing), and the `bridge:`
-vocabulary carries what neither has.
+## Why the queries look like this
 
-**What the root entity carries is `<#Adapter>` in
-[`profile/must/adapter.ttl`](profile/must/adapter.ttl)**, and what each term means
-is its `rdfs:comment` in [`vocab/bridge.ttl`](../vocab/bridge.ttl).
-
-The rest of this document is what neither file has room for: why the crate is
-shaped this way, and the three parts of it — conformance, the detect query and
-the mapping — a first adapter gets wrong.
-
-### Declaring conformance
-
-Two properties together:
-
-```jsonc
-"conformsTo": [
-  { "@id": "https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/" }
-],
-"bridge:specPin": {
-  "@id": "https://github.com/jayostis/cascade-bridge-spec/commit/<full SHA>"
-}
-```
-
-`conformsTo` naming
-`https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/` says *which
-contract*; `bridge:specPin` says *which revision of it*. The profile IRI is
-described by [`adapter/profile/ro-crate-metadata.json`](profile/ro-crate-metadata.json),
-an RO-Crate Profile Crate. The
-IRI does not dereference yet; until it does, the specification is read from this
-repository, and the IRI is an identifier rather than a location.
-
-The pin is an entity, not a string: a `SoftwareSourceCode` in the crate with
-`codeRepository` and `version` (the full SHA), the same shape
-`bridge:vocabularyPin` uses. By the time the adapter merges, the commit it names
-is on this repository's default branch; [`pinning.md`](../pinning.md) says why.
-
-### What RO-Crate 1.2 requires beyond the properties
-
-Several things no property of the adapter states — that every `bridge:` key
-appears in `@context` as well as behind the prefix, that what `conformsTo` names
-is described as a `Profile`, that a pin typed `SoftwareSourceCode` is also a
-`File` in `hasPart`, that a required profile is an entity the crate types.
-
-They are RO-Crate's rules, not prose here, and each is a case in
-[`tests/adapter_profile/test_validator.py`](../tests/adapter_profile/test_validator.py).
-[`fixtures/synthetic-adapter`](../fixtures/synthetic-adapter/ro-crate-metadata.json)
-is a crate that satisfies all of them.
-
-Worth knowing because it is counter-intuitive: the `@context` entries are
-RO-Crate's requirement, not JSON-LD's. JSON-LD expands `bridge:specPin` from the
-`bridge` prefix alone, so the graph is unaffected and the shapes still pass — it
-is the inherited RO-Crate 1.2 requirements that fail, because RO-Crate requires
-every key of a compacted descriptor to be present in the `@context`.
-
-## Envelope entities
-
-An envelope is a document root the source format arrives in. A Bridge accepts
-any of the adapter's envelopes and splits each on the unit. What one carries is
-`<#Envelope>` in [`profile/must/envelope.ttl`](profile/must/envelope.ttl).
-
-`bridge:documentSchema` is absent when the source schema declares the root
-directly, and present when it does not. In the pilot, NCBI's XSD declares the
-release root `ClinVarVariationRelease` but not the efetch root
-`ClinVarResult-Set`, so the efetch envelope names a wrapper schema that includes
-NCBI's unchanged and adds that one element, and the release envelope names none.
-
-Envelopes are entities so that the test manifest can refer to one by IRI and the
-shapes can check the reference resolves to a `bridge:Envelope` the adapter
-lists. That check is the reason envelopes are not strings.
-
-## The detect query
-
-`bridge:detectQuery` is the rule a Bridge's content-based router applies to
-decide that this adapter handles an input: **one SPARQL 1.1 ASK**, evaluated
-over the document's envelope skeleton
-([`../engine/sparql.md`](../engine/sparql.md)), true when the adapter handles
-the document. For the pilot, that the document element is one of its two
-envelope roots and holds the unit:
+**One ASK for detection**, rather than a root-element field and a contains field:
+a detect rule is a predicate over a document, and SPARQL is the language the
+profile already runs. A two-field rule of this specification's own would be a
+second thing every Bridge implements. For example, a document element that is one
+of two envelope roots and holds the unit:
 
 ```sparql
 PREFIX fx:  <http://sparql.xyz/facade-x/ns/>
@@ -109,40 +40,9 @@ ASK {
 }
 ```
 
-One query rather than a root-element field and a contains field, because a
-detect rule is a predicate over a document and SPARQL is the language the
-profile already runs; a two-field rule of the specification's own invention
-would be a second thing to implement in every Bridge.
+**`bridge:mapping`, not Workflow RO-Crate's `mainEntity`**, because `mainEntity`
+names one entry point and SPARQL has no module system: a mapping in several
+queries is several files.
 
-Not specified: what a router does when two adapters' detect rules are both true
-for one document, and whether an adapter may declare a precedence. Nothing here
-answers it, and no adapter should be written to depend on
-an answer.
-
-## The mapping
-
-The mapping is one or more SPARQL 1.1 CONSTRUCTs: the crate `File`s the root's
-`bridge:mapping` names, each declared `application/sparql-query`, run under
-`bridge:sparql-1.1`, which every adapter therefore requires. A Bridge runs every
-one over each unit's lift, and the unit's graph is the union of their results;
-the SELECTs `bridge:findingsQuery` names produce the unit's findings. The lift
-and the invocation are [`../engine/sparql.md`](../engine/sparql.md). The term is
-`bridge:mapping` rather than Workflow RO-Crate's `mainEntity`, which names one
-entry point, because SPARQL has no module system: a mapping in several queries
-is several files. The lint checks that the queries are declared and parse, and
-never runs them. Import only; the export direction is not specified.
-
-Two properties are optional:
-
-- **Tables.** `bridge:table` names each lookup table the mapping reads, as a
-  crate `File` whose `schema:isBasedOn` says where its rows came from and whose
-  `schema:license` is stated where it differs from the package's. A table is
-  data a mapping reads, never a function it calls: one declared `text/turtle`
-  is loaded beside each unit's lift, and no other table format is specified.
-  Where a table is a mapping from source phrases to Cascade terms it is a
-  concept map, and SKOS in Turtle is the form to write it in: it joins the
-  unit's graph, and no CSV convention has to be invented.
-- **The extension vocabulary.** `bridge:extensionVocabulary` names the adapter's
-  own namespace for values that have no Cascade term, at most one, its file a
-  `File` in `hasPart`. Terms in it are the adapter's. No `cascade:` term is ever
-  minted in an adapter; those go through spec's own process.
+**A table is data a mapping reads, never a function it calls.** A table mapping
+source phrases to Cascade terms is a concept map; write it as SKOS in Turtle.

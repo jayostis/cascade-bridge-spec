@@ -12,8 +12,8 @@ What is where is each file's own docstring. The rules that are not:
   test subjects are synthetic.
 - **Nothing mutates a tracked file.** Mutation happens on a copy, outside the
   repository.
-- A new rule in `compatibility.py` lands with `../compatibility.md` and a
-  `selftest-compatibility.py` case, in the same commit.
+- A new rule in `compatibility.py` lands with a `selftest-compatibility.py`
+  case, in the same commit.
 - **The selftests set their own temporary directory for each run**, so a record
   or a worktree a tool makes goes with the case, and never into a developer's
   directory.

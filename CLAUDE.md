@@ -9,13 +9,10 @@ adapter.
 
 ## What is normative
 
-`vocab/bridge.ttl`, `vocab/compatibility.context.jsonld`,
-`shapes/bridge.shapes.ttl`, `pinning.md`, `compatibility.md`, `engine/sparql.md`,
-`engine/command.md`, and in `adapter/`: `profile/`,
-`ro-crate-metadata.md`, `fixtures/manifest.md`, `validation.md`. Changing any of
-them changes what every adapter and every Bridge must do, and needs its reasoning
-recorded in the same commit. The rest is explanatory, machinery, or the lint's
-own test subject: see each directory.
+`vocab/`, `shapes/`, `adapter/profile/`, `engine/sparql.md`, `engine/command.md`,
+`pinning.md` and `compatibility.md`. Changing any of them changes what every
+adapter and every Bridge must do, and needs its reasoning recorded in the same
+commit. The rest is explanatory, machinery, or a test subject.
 
 **The prose does not restate the Turtle, it links it.** A term's cardinality and
 meaning are its `rdfs:comment`; what is checked is the shape's `sh:message`. A

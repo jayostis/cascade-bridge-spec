@@ -220,7 +220,7 @@
 
 <#BridgeTest> a sh:NodeShape ;
   sh:targetClass bridge:LiftTest, bridge:SkeletonTest ;
-  rdfs:comment "What the two types that test a Bridge rather than an adapter share: one expected graph, nothing removed from either side, and a manifest that names no adapter." ;
+  rdfs:comment "What the types that test a Bridge rather than an adapter share: one expected graph, nothing removed from either side, and a manifest that names no adapter." ;
   sh:property [
     sh:path mf:result ;
     sh:minCount 1 ;

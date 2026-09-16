@@ -1,20 +1,14 @@
 # The test manifest
 
-An adapter declares its fixtures, and how each is judged, as **a W3C-style test
-manifest in Turtle**. The adapter's crate names it with `bridge:testManifest`;
-the pilot's is at `fixtures/manifest.ttl`. A Bridge's harness executes it.
-Nothing in an adapter package runs it, and nothing in an adapter package is a
-test runner.
+An adapter declares its cases as **a W3C test manifest (`mf:`) in Turtle**, named
+by the crate's `bridge:testManifest`. A Bridge's harness executes it
+([`../../engine/executing.md`](../../engine/executing.md)); nothing in an adapter
+package runs it.
 
-## One contract, not a menu
-
-An adapter does not choose among test conventions. Every convention an adapter
-may choose is a harness every Bridge must implement, and two adapters proving
-conformance by different rules prove different things. Profile-specific unit
-suites — tests of a mapping's individual queries, say — are optional, declared,
-and no part of the conformance claim.
-
-## The manifest
+What a manifest and its entries carry is `<#Manifest>` and the shapes below it in
+[`../../shapes/bridge.shapes.ttl`](../../shapes/bridge.shapes.ttl). How each entry
+type is judged is that type's `rdfs:comment` in
+[`../../vocab/bridge.ttl`](../../vocab/bridge.ttl).
 
 ```turtle
 <> a mf:Manifest ;
@@ -24,115 +18,22 @@ and no part of the conformance claim.
   mf:entries ( <#first> <#second> ) .
 ```
 
-What a manifest carries is `<#Manifest>` in
-[`../../shapes/bridge.shapes.ttl`](../../shapes/bridge.shapes.ttl), which also
-checks that `bridge:adapter` and the crate's `bridge:testManifest` point at each
-other.
+Relative IRIs resolve against the manifest's own location, so `<../>` is the
+crate's root entity.
 
-Relative IRIs resolve against the manifest's own location. In the pilot, from
-`fixtures/manifest.ttl`, `<>` is the crate's `fixtures/manifest.ttl` entity,
-`<../>` is the crate's root entity, `<in/X.xml>` is the crate's
-`fixtures/in/X.xml`, and `<../ro-crate-metadata.json#envelope-efetch>` is the
-envelope the crate declares. Load either file with the wrong base and every one
-of those links becomes two unrelated nodes, and the shapes then report nothing
-rather than reporting a mistake.
+## Why
 
-## The three test types
+**One contract, not a menu.** Every test convention an adapter may choose is a
+harness every Bridge must implement, and two adapters proving conformance by
+different rules prove different things.
 
-The type is the comparison rule. Each is an `mf:ManifestEntry` with exactly one
-`mf:name` (which is also its fragment IRI) and exactly one `mf:action`.
+**A comparison is insensitive to everything the format does not mean.** A rule
+stricter than the format's meaning catches no mapping errors; it only fails
+harnesses that are right. That is why graphs compare up to blank node labels,
+findings compare as a multiset, and stamps come off both sides.
 
-The vocabulary has two more, `bridge:LiftTest` and `bridge:SkeletonTest`, which
-test a Bridge rather than an adapter. An adapter's manifest lists neither: the
-shapes refuse both in a manifest that names a `bridge:adapter`.
+**Isomorphism is decided properly by RDF Dataset Canonicalization** (RDFC-1.0).
+Sorting N-Quads and comparing bytes assumes the answer rather than deciding it.
 
-### `bridge:IsomorphicConversionTest`
-
-A committed input with a committed expected graph and a committed expected
-findings sidecar.
-
-- `mf:action`: `bridge:input` (the committed source document, exactly one) and
-  `bridge:envelope` (exactly one, an envelope the adapter lists). Closed: a
-  property the shape does not declare is a mistake, not an extension.
-- `mf:result`: `bridge:graph` (the expected Turtle) and `bridge:findings` (the
-  expected sidecar), exactly one each. Also closed.
-
-**The comparison rule** is the `rdfs:comment` on `bridge:IsomorphicConversionTest`
-in [`../../vocab/bridge.ttl`](../../vocab/bridge.ttl): a graph compared up to
-relabelling, findings compared as a multiset, stamps off both sides first. That
-is the copy a harness implements and the only one that is normative. What follows
-is why it says that, which the vocabulary has no room for.
-
-Both halves of it are the same principle: **a comparison is insensitive to
-everything the format does not mean.** A stricter rule than the format's meaning
-does not catch more mapping errors; it only fails harnesses that are right.
-
-Isomorphism, not byte equality, because the Bridge's records are blank nodes and
-blank node labels are not stable. RDF Dataset Canonicalization (RDFC-1.0, W3C
-Recommendation 2024) is how to decide it properly. The pilot's oracle compares
-`riot --output=nq | sort` byte for byte, which assumes the same thing without
-deciding it.
-
-A multiset, not an ordered array, because no entry in a findings sidecar refers
-to a position, so the order carries no meaning. The order a sidecar arrives in is
-its author's sort, and JavaScript's `localeCompare` is ICU collation, in which
-`/` sorts before `@` although U+002F is above U+0040. A harness comparing with
-Java's `String.compareTo`, or with JavaScript's `<`, puts the same correctly
-mapped entries in a different order and reports a false failure. Requiring the
-committed order would make every Bridge carry ICU, and pin a CLDR version nothing
-states, to compare a bookkeeping array.
-
-Multiplicity **is** compared: entries do repeat, the repeats are identical whole
-objects, and a set comparison would silently lose them.
-
-The sort order the comment then recommends is file hygiene and never judgement,
-which is why a sidecar copied verbatim from elsewhere is not re-sorted to satisfy
-it.
-
-### `bridge:InputOnlyTest`
-
-A committed input with no expected output.
-
-The shape allows it no `mf:result` and no `bridge:ignorePredicate`, for one
-reason: a result that is not judged is not a result, and nothing being compared
-leaves nothing to exclude from a comparison.
-
-This type exists so that an input whose provenance is worth having can be
-committed and exercised before anyone has produced an expected graph for it. The
-pilot uses it for NCBI's own published sample, the one input whose provenance is
-unimpeachable.
-
-### `bridge:DatasetCompletionTest`
-
-A dataset too large to commit, streamed from where it is published.
-
-Absent, not empty: `bridge:records` and `bridge:outputDigest` are the two values
-nothing knows until the first run, and RDF has no null, so the first run writes
-them rather than the author carrying placeholders. A multi-gigabyte expected
-output that fits in one line is the whole point of the type.
-
-**The dataset must be fetchable.** `<#RunnableDataset>` in the shapes requires
-the named crate `Dataset` to carry exactly one `schema:contentUrl`. An entity
-that stands for a release but currently resolves to another file — a "latest"
-symlink, say — has no content of its own, and is not something a Bridge can be
-asked to run. Such a release joins the manifest when a dated file with its own
-crate entity exists.
-
-## Ignore predicates: stated once, inherited by every entry
-
-A stamp is a triple a Bridge adds *after* the mapping (the Enterprise
-Integration Patterns Message History): `cascade:dataProvenance`,
-`cascade:schemaVersion`, source identity, import time. The stamp set is a
-property of the Bridge's stamp stage, not of any one fixture.
-
-So `bridge:ignorePredicate` is stated **once, on the `mf:Manifest`**, and every
-entry inherits it. An entry that carries its own `bridge:ignorePredicate`
-**replaces** the manifest's set for that entry alone — an override, not an
-addition. Stated per entry, the set would repeat on every test and drift; a
-fact about the Bridge belongs where it is true once.
-
-## What a harness owes
-
-The other side of this document is [`../../engine/executing.md`](../../engine/executing.md):
-how a harness loads the two files as one graph, which rule it applies to each
-entry type, and the EARL report it produces.
+**A dataset completion test's result starts absent, not empty.** RDF has no null,
+so the first run records the values rather than the author carrying placeholders.
