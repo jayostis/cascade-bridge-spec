@@ -53,6 +53,7 @@ def invalid(crate):
         return
 
     compiled = {}
+    faults = {}
     unreadable = set()
 
     def engine_for(schema_iri, declared_by):
@@ -61,6 +62,8 @@ def invalid(crate):
         one, so not reading it is a gap in this lint (adapter/validation.md)."""
         if schema_iri in compiled:
             return compiled[schema_iri], None
+        if schema_iri in faults:
+            return None, faults[schema_iri]
         if schema_iri in unreadable:
             return None, None
         declared = crate.graph.value(schema_iri, SCHEMA.encodingFormat)
@@ -87,11 +90,11 @@ def invalid(crate):
         try:
             compiled[schema_iri] = etree.XMLSchema(etree.parse(str(path)))
         except etree.Error as error:
-            unreadable.add(schema_iri)
-            return None, (
+            faults[schema_iri] = (
                 f"{path.name} is declared XML and does not compile as an XSD "
                 f"1.0 schema: {error}"
             )
+            return None, faults[schema_iri]
         return compiled[schema_iri], None
 
     for test, source, envelope in inputs:

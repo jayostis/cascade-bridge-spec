@@ -120,7 +120,7 @@ def from_context(context):
             continue
         text = str(candidate)
         if text.startswith("file://"):
-            text = text.removeprefix("file://").lstrip("/")
+            text = url2pathname(urlparse(text).path)
         path = Path(text)
         if path.is_dir():
             path = path.resolve()
