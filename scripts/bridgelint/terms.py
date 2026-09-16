@@ -20,7 +20,7 @@ SHAPES = SPEC_ROOT / "shapes" / "bridge.shapes.ttl"
 
 # The files a repository holding an adapter may carry without the crate
 # describing them: they describe the repository, not the package
-# (adapter/validation.md, check 3). Dotfiles and dot-directories are allowed
+# (adapter/validation.md). Dotfiles and dot-directories are allowed
 # wholesale, which covers .gitattributes, .editorconfig, .vscode/ and .github/.
 #
 # ro-crate-metadata.json is here for a different reason from the other four. It
@@ -37,7 +37,7 @@ ALLOWLIST = {
     "ro-crate-metadata.json",
 }
 
-# Check 4. The local claim is schema:sha256 -- "sha256" in the RO-Crate 1.2
+# The local claim is schema:sha256 -- "sha256" in the RO-Crate 1.2
 # context. Every other digest property is the publisher's claim about the file
 # at its source, in whatever namespace it is written.
 DIGEST_ALGORITHMS = {
@@ -49,17 +49,9 @@ DIGEST_ALGORITHMS = {
 }
 LOCAL_DIGEST = SCHEMA.sha256
 
-# Check 5. XSD 1.0 by lxml is the only engine: v1-draft specifies XML sources.
+# XSD 1.0 by lxml is the only engine: v1-draft specifies XML sources.
 XSD_MEDIA_TYPES = {"application/xml", "text/xml"}
 JSON_SCHEMA_MEDIA_TYPES = {"application/json", "application/schema+json"}
-
-# The one sentence an adapter written before this specification existed will
-# hit, and the reason it is named rather than reported as a missing property:
-# a generic message sends its author looking in the wrong file.
-SPEC_PIN_ONLY = (
-    "the crate is valid and the manifest conforms except for the "
-    "missing bridge:specPin"
-)
 
 
 def digest_of(path, algorithm):

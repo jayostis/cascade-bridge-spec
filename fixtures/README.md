@@ -68,16 +68,6 @@ the checkout it is in rather than from the pinned commit. The merge gate does
 run against the pin in CI, and holds, because the commit is on this
 repository's default branch.
 
-## Seeing the lint fail
-
-`scripts/unittest-lint.py` asserts what each requirement decides, calling it
-directly; `scripts/selftest-lint.py` breaks one property per case and runs the
-whole lint, for what only a whole run shows. Read the cases there rather than a
-census here, which would be stale on the next one anyone adds.
-
-Nothing tracked is mutated, and no mutated copy is ever written inside the
-repository.
-
 ## Changing it
 
 A change to the shapes, the vocabulary or the media-type set changes what this

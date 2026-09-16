@@ -1,8 +1,7 @@
-"""The adapter lint, one module per check.
+"""What the cascade-bridge-adapter profile's requirements share.
 
-adapter/validation.md is the contract; this implements it. Each module under
-`checks/` exposes `run(...)` returning a `Result` and prints nothing, so a
-check's verdict can be asserted in a test that takes microseconds rather than
-by running the whole lint and reading its output. `report.py` is the only
-module that knows what any of it looks like on a terminal.
+`crate.py` loads an adapter's crate and its test manifest as one graph, which is
+the one thing nothing else does for us, and `terms.py` holds the namespaces and
+the constants. The requirements themselves are the profile, under
+`scripts/profiles/cascade-bridge-adapter/must/`, one file each.
 """

@@ -73,33 +73,6 @@ revision of this specification you are built against, and why the specification
 names no adapter and no engine. To assert that a particular adapter and a
 particular engine pass together, [`compatibility.md`](compatibility.md).
 
-## Layout
-
-```
-adapter/                       building an adapter: its crate, fixtures, test manifest, validation
-adapter/profile/               the RO-Crate 1.2 Profile Crate an adapter names in conformsTo
-engine/                        building an engine: stages, the sparql-1.1 profile, test manifests
-pinning.md                     how adapters and engines name the revisions they were built against
-compatibility.md               compatibility.json: the counterparts a repository asserts it passes with
-vocab/bridge.ttl               the bridge: vocabulary: adapter, test and compatibility terms
-vocab/compatibility.context.jsonld  the JSON-LD context a compatibility.json names
-shapes/bridge.shapes.ttl       SHACL shapes for an adapter's crate and its test manifest, as one graph
-scripts/profiles/               the cascade-bridge-adapter RO-Crate profile: the requirements of adapter/validation.md
-scripts/bridgelint/            what those requirements call, one module each
-scripts/validate-adapter.py    the adapter lint: runs the profile and prints what it found
-scripts/unittest-lint.py       what each requirement decides, asserted directly
-scripts/selftest-lint.py       the cases that show the whole lint failing
-scripts/compatibility.py       validate, resolve, check out, run and judge a compatibility.json
-scripts/selftest-compatibility.py  its cases, against throwaway repositories
-fixtures/synthetic-adapter/    a synthetic adapter package: the lint's own test subject
-fixtures/lift/                 the lift and envelope-skeleton vectors a sparql-1.1 Bridge must reproduce
-.github/actions/start/         the starter, which every adapter's and engine's CI calls at start-v1
-.github/actions/validate-adapter/  the lint published as an action, which the starter calls
-.github/actions/compatibility/ compatibility.json's entries, checked out, run and judged
-.github/actions/ready-to-merge/  the merge gate, meant to be a required status check
-.github/workflows/validate.yml CI: this repository's own files, and nothing else's
-```
-
 ## Licence
 
 Apache-2.0.

@@ -104,3 +104,28 @@ def load(adapter):
     graph.parse(manifest_file, format="turtle", publicID=str(manifest_iri))
 
     return Crate(adapter, graph, root, manifest_iri, manifest_file)
+
+
+_loaded: dict[Path, Crate] = {}
+
+
+def from_context(context):
+    """The crate for the package a requirement is being run against.
+
+    Parsed once per package per run: every requirement asks for it, and the
+    parse is the expensive part.
+    """
+    uri = context.settings.rocrate_uri
+    for candidate in (getattr(uri, "path", None), str(uri)):
+        if not candidate:
+            continue
+        text = str(candidate)
+        if text.startswith("file://"):
+            text = text.removeprefix("file://").lstrip("/")
+        path = Path(text)
+        if path.is_dir():
+            path = path.resolve()
+            if path not in _loaded:
+                _loaded[path] = load(path)
+            return _loaded[path]
+    raise FileNotFoundError(f"cannot read {uri} as a directory")

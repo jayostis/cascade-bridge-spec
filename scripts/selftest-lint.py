@@ -3,9 +3,9 @@
 
 What only a whole run can show: that the profile loads at all, that the
 requirements this specification adds run beside the ones RO-Crate 1.2 brings,
-that the report renders, and that the exit status is right. Everything about
-what a single check *decides* is in unittest-lint.py, which asserts on the
-Result each check returns and takes a fraction of the time.
+that the issues reach the reader, and that the exit status is right. Everything about
+what a single requirement *decides* is in unittest-lint.py, which calls its
+generator and takes a fraction of the time.
 
 The subject is fixtures/synthetic-adapter, copied into a temporary directory
 and broken there. **Nothing here mutates a tracked file**, no mutated copy is
@@ -172,10 +172,7 @@ CASES = [
         "mutate": None,
         "exit": 0,
         "expect": [
-            "ok    Cascade Bridge shapes",
-            "ok    Digests",
-            "ok    Queries",
-            "inherited requirement(s), 0 unmet",
+            "40 of 40 requirements met",
             "PASS",
         ],
     },
@@ -184,40 +181,38 @@ CASES = [
         "mutate": expected_graph_not_turtle,
         "exit": 1,
         "expect": [
-            "FAIL  Expected graphs",
-            "example-0001.ttl does not parse as Turtle",
+            "REQUIRED  example-0001: example-0001.ttl does not parse as Turtle",
             "FAIL",
         ],
-        "forbid": ["FAIL  Digests"],
+        "forbid": ["sha256 is not this file's"],
     },
     {
         "name": "nothing of its kind is not a failure: no expected graphs",
         "mutate": no_expected_graphs,
         "exit": 0,
-        "expect": ["ok    Expected graphs", "PASS"],
+        "expect": ["requirements met", "PASS"],
     },
     {
         "name": "rocrate: a bridge: key the @context does not declare",
         "mutate": undeclared_context_key,
         "exit": 1,
         "expect": [
-            "FAIL  RO-Crate 1.2",
             "is not allowed in the compacted format because it is not present "
             "in the @context",
         ],
-        "forbid": ["FAIL  Cascade Bridge shapes"],
+        "forbid": ["conform to the shapes"],
     },
     {
         "name": "rocrate: what conformsTo names is not typed Profile",
         "mutate": profile_not_an_entity,
         "exit": 1,
-        "expect": ["FAIL  RO-Crate 1.2", "MUST reference Profile entities"],
+        "expect": ["MUST reference Profile entities"],
     },
     {
         "name": "rocrate: a pin typed SoftwareSourceCode and not File",
         "mutate": pin_not_a_data_entity,
         "exit": 1,
-        "expect": ["FAIL  RO-Crate 1.2", "MUST include `File` in its `@type`"],
+        "expect": ["MUST include `File` in its `@type`"],
     },
 ]
 

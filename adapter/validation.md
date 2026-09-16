@@ -42,112 +42,24 @@ RO-Crate 1.2 conformance comes first, inherited: an adapter package is an
 RO-Crate before it is anything else, and the profile says so rather than this
 list repeating it.
 
-1. **The crate and the test manifest conform to the shapes.** The crate parsed
-   as JSON-LD with `ro-crate-metadata.json`'s own location as base, the test
-   manifest parsed as Turtle with its own, loaded as **one graph**, validated
-   against [`shapes/bridge.shapes.ttl`](../shapes/bridge.shapes.ttl) with a SHACL
-   engine that supports SHACL-SPARQL (pySHACL, Jena). Both bases matter: with the
-   wrong one, every link between the two files becomes two unrelated nodes and
-   the shapes report nothing rather than reporting a mistake.
+Each is one file under
+[`scripts/profiles/cascade-bridge-adapter/must/`](../scripts/profiles/cascade-bridge-adapter/must/),
+whose docstring is why the requirement exists and whose generator is what it
+reports. That file is the requirement; it is not described twice.
 
-   The shapes carry the cross-file constraints as `sh:sparql`: the manifest's
-   `bridge:adapter` and the adapter's `bridge:testManifest` point at each other,
-   and every `bridge:envelope` a test action names is one the adapter lists.
+| requirement | what it holds the package to |
+|---|---|
+| `shapes.py` | the crate and the test manifest, as one graph with their own base IRIs, conform to [`shapes/bridge.shapes.ttl`](../shapes/bridge.shapes.ttl) |
+| `inventory.py` | every git-tracked file is a crate entity with a declared media type, or one of the documents that describe the repository |
+| `digests.py` | every digest is recomputed over the committed bytes, the local claim and the publisher's claim reported as the different assertions they are |
+| `inputs.py` | every committed input validates against the schema its envelope declares, or the adapter's source schema where the envelope declares none |
+| `expected_graphs.py` | every graph a test names as its expected result parses as Turtle. Parsing, not conforming |
+| `queries.py` | every query parses as SPARQL 1.1 and is the form the property naming it declares |
+| `spec_pin.py` | `bridge:specPin` names a commit and the repository that holds it |
 
-   They also carry the two constraints that make an IRI naming a file mean
-   something. `bridge:input`, `bridge:graph` and `bridge:findings` in the
-   manifest, and `bridge:mapping`, `bridge:findingsQuery`, `bridge:detectQuery`,
-   `bridge:sourceSchema` and `bridge:documentSchema` in the crate, are
-   `sh:class schema:MediaObject`, what the RO-Crate 1.2 context expands `File`
-   to, so a mistyped name fails: an IRI naming no entity is still an IRI. And
-   every declared `encodingFormat` is one of the media types below.
-
-   And they carry what can be asserted about queries the lint does not run: the
-   adapter names at least one `bridge:mapping` and exactly one
-   `bridge:detectQuery`, every query it names is declared
-   `application/sparql-query`, and it requires `bridge:sparql-1.1`.
-
-2. **Every git-tracked file is accounted for.** Each file in the repository is
-   either a crate entity carrying a declared `encodingFormat`, or is in a short
-   allowlist: `README.md`, `LICENSE`, `CHANGELOG.md`, `CLAUDE.md`,
-   `ro-crate-metadata.json`, and dotfiles (`.gitattributes`, `.editorconfig`,
-   `.vscode/`, `.github/`).
-
-   `ro-crate-metadata.json` is in the allowlist for a different reason from the
-   other four. It is not undescribed: it is the crate's own metadata descriptor,
-   the entity every RO-Crate must carry and the one entity RO-Crate 1.2 forbids
-   from being a data entity in `hasPart`. It therefore has no `encodingFormat`
-   and cannot be given one.
-
-   The inventory is taken with `git ls-files`, not a directory walk: a walk sees
-   build output, a virtual environment and whatever the last run left behind, and
-   an inventory that counts those is an inventory nobody can keep green.
-
-   This is the check that makes "an adapter is data" a measured property rather
-   than a claim. A file nobody described is a file nobody reviewed, and the
-   allowed set of `encodingFormat` values is where "no code" is actually
-   enforced — not by scanning for a language, but by refusing to accept a file
-   whose media type says it executes.
-
-3. **Every digest matches its file.** A crate records two kinds of claim about
-   a file's bytes, and they are not the same assertion
-   ([`fixtures/README.md`](fixtures/README.md)). Both are
-   recomputed over the committed bytes; **a mismatch in each is a different
-   finding and is reported in different words.**
-
-   - `sha256` — what the RO-Crate 1.2 context expands `sha256` to — is the
-     **local claim**: these bytes, here, now. A mismatch says *the crate's
-     record is wrong about the file beside it*: one of the two was changed and
-     the other was not.
-   - Every other digest property on the same entity — an `md5` copied out of
-     the `.md5` a publisher publishes beside its file, in whatever namespace
-     the crate writes it — is the **publisher's claim** about the file at its
-     source. Recomputing it over the committed bytes asks a different question,
-     and a mismatch says *this copy has drifted from the source it claims to be
-     a byte-for-byte copy of*. The realistic shape of it: the publisher
-     republished, someone copied the new digest and did not re-fetch the bytes.
-     Sending that author to check the crate would send them to the wrong file.
-
-   The publisher's file is **not fetched**: its digest is already recorded in
-   the crate, which is the point of recording it. A digest on an entity whose
-   bytes are not committed — a referenced release, a pinned commit — is
-   recorded, counted and not compared, and the run says how many.
-
-4. **Every input validates against the declared schema.** For each test in the
-   test manifest, the committed `bridge:input` of its action against the
-   `bridge:documentSchema` of the envelope that test names, or against the
-   adapter's `bridge:sourceSchema` where that envelope declares none. An
-   envelope declares a document schema exactly when its document root is not
-   the one the source schema declares, so the fallback is the ordinary case
-   and not an error path.
-
-   XSD 1.0 is the engine, by `lxml`. Three outcomes are not failures of the
-   package and are reported as themselves rather than as passes: a test whose
-   action names a `bridge:dataset` has no committed bytes here, and the Bridge
-   that streams them validates them; a schema entity that is referenced rather
-   than committed is not fetched; and a **source schema declared JSON** is
-   outside v1-draft, which specifies XML sources, so the lint says it could not
-   read it and holds the package to nothing. A schema declared XML that does not
-   compile as an XSD is a different matter and fails.
-
-5. **Every expected graph parses.** Each `bridge:graph` as Turtle. Parsing, not
-   conforming: an expected graph is what a mapping must produce, and judging it
-   against Cascade's shapes is the Bridge's validate stage, not the lint's job
-   — a lint that judged a fixture against them would report it as wrong for
-   recording something Cascade has no term for yet, which is exactly what the
-   findings sidecar beside it is for. The lint says so in its own output, so
-   that a pass here is never read as more than "this file is Turtle".
-
-6. **Every query parses as SPARQL 1.1, in the form its property declares.**
-   Each file `bridge:mapping`, `bridge:findingsQuery` and `bridge:detectQuery`
-   names, parsed by rdflib: a mapping is a CONSTRUCT, a findings query a SELECT
-   projecting `?sourceField ?reason ?severity ?context`, in any order and no
-   other variable, and the detect query an ASK.
-
-A package that meets every requirement above, and RO-Crate 1.2's own, is a
-conforming adapter package. None of them runs a mapping or compares a graph:
-that is the test manifest, and it needs a Bridge ([`fixtures/manifest.md`](fixtures/manifest.md)).
-
+A package that meets all of them, and RO-Crate 1.2's own, is a conforming
+adapter package. None of them runs a mapping or compares a graph: that is the
+test manifest, and it needs a Bridge ([`fixtures/manifest.md`](fixtures/manifest.md)).
 ## The media types an adapter package may declare
 
 The allowed set is the `sh:in` list on `<#DescribedFile>` in
@@ -164,15 +76,10 @@ set that can disagree with itself.
 
 ## The specification pin
 
-An adapter states the revision of this specification it is written against
-once, as `bridge:specPin` in its crate. The lint reads it and reports the commit
-and the repository it names, and compares it with nothing: the starter checks
-this repository out at exactly that commit before the lint runs, so the revision
-running is the pinned one by construction. A pin that names no `version` or no
-`codeRepository` fails the run.
-
-Whether the pinned commit is on this repository's default branch is a
-merge-time question, and the merge gate asks it: `ready`, in
+The pin is read and compared with nothing: the starter checks this repository
+out at exactly the commit it names before the lint runs, so the revision running
+is the pinned one by construction. Whether that commit is on this repository's
+default branch is a merge-time question, and the merge gate asks it: `ready`, in
 [`../compatibility.md`](../compatibility.md).
 
 ## The lint as a reusable action
