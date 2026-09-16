@@ -98,15 +98,15 @@ def write_file(directory, document):
     )
 
 
-def engine_file(world, tested_with, canned="passed", **overrides):
+def engine_file(world, must_pass_with, canned="passed", **overrides):
     document = {
-        "specification": {
+        "specPin": {
             "codeRepository": world.url("specification"),
             "commit": world.commits["specification"],
         },
         "setup": [sys.executable, "-c", "pass"],
         "command": [sys.executable, "engine.py", "--canned", canned],
-        "testedWith": tested_with,
+        "mustPassWith": must_pass_with,
     }
     document.update(overrides)
     return {key: value for key, value in document.items() if value is not None}
@@ -125,7 +125,7 @@ def engine_on_main(world):
 def adapter_naming_engine(world):
     adapter = world.clone("adapter")
     write_file(adapter, {
-        "testedWith": [{"codeRepository": world.url("engine"), "branch": "main"}]
+        "mustPassWith": [{"codeRepository": world.url("engine"), "branch": "main"}]
     })
     return adapter
 
@@ -136,16 +136,22 @@ def two_pin_kinds(world):
     return engine
 
 
+def engine_carrying_only_spec_pin(world):
+    engine = world.clone("engine")
+    write_file(engine, engine_file(world, None, setup=None, command=None))
+    return engine
+
+
 def engine_without_command(world):
     engine = world.clone("engine")
     write_file(engine, engine_file(world, adapter_pin(world, branch="main"), command=None))
     return engine
 
 
-def adapter_carrying_specification(world):
+def adapter_carrying_spec_pin(world):
     adapter = adapter_naming_engine(world)
     document = json.loads((adapter / "compatibility.json").read_text(encoding="utf-8"))
-    document["specification"] = engine_file(world, [])["specification"]
+    document["specPin"] = engine_file(world, [])["specPin"]
     write_file(adapter, {k: v for k, v in document.items() if k != "@context"})
     return adapter
 
@@ -159,7 +165,7 @@ def engine_form_in_adapter(world):
 def misspelt_key(world):
     engine = engine_on_main(world)
     document = json.loads((engine / "compatibility.json").read_text(encoding="utf-8"))
-    document["testedwith"] = document.pop("testedWith")
+    document["mustpasswith"] = document.pop("mustPassWith")
     write_file(engine, {k: v for k, v in document.items() if k != "@context"})
     return engine
 
@@ -170,16 +176,16 @@ def string_vector(world):
     return engine
 
 
-def tested_with_object(world):
+def must_pass_with_object(world):
     engine = world.clone("engine")
     write_file(engine, engine_file(world, adapter_pin(world, branch="main")[0]))
     return engine
 
 
-def specification_array(world):
+def spec_pin_array(world):
     engine = world.clone("engine")
     document = engine_file(world, [])
-    write_file(engine, dict(document, specification=[document["specification"]]))
+    write_file(engine, dict(document, specPin=[document["specPin"]]))
     return engine
 
 
@@ -268,7 +274,7 @@ def sibling_state(path):
 def adapter_on_engine_commit(world):
     adapter = world.clone("adapter")
     write_file(adapter, {
-        "testedWith": [{"codeRepository": world.url("engine"), "commit": world.commits["engine"]}]
+        "mustPassWith": [{"codeRepository": world.url("engine"), "commit": world.commits["engine"]}]
     })
     engine = world.clone("engine")
     (engine / "work-in-progress.txt").write_text("not committed\n", encoding="utf-8")
@@ -300,7 +306,7 @@ def cloned_at_commit(world, subject, temporary):
 
 
 VALIDATE_ERROR = (
-    "A compatibility.json is an engine's, carrying exactly one specification, "
+    "A compatibility.json is an engine's, carrying exactly one specPin, "
     "one setup and one command, or an adapter's, carrying none of the three."
 )
 
@@ -344,8 +350,14 @@ CASES = [
         "expect": [VALIDATE_ERROR],
     },
     {
-        "name": "validate fails an adapter's file carrying specification",
-        "build": adapter_carrying_specification,
+        "name": "validate fails an engine's file carrying only specPin",
+        "build": engine_carrying_only_spec_pin,
+        "steps": [("validate", 1)],
+        "expect": [VALIDATE_ERROR],
+    },
+    {
+        "name": "validate fails an adapter's file carrying specPin",
+        "build": adapter_carrying_spec_pin,
         "steps": [("validate", 1)],
         "expect": [VALIDATE_ERROR],
     },
@@ -355,14 +367,14 @@ CASES = [
         "steps": [("validate", 1)],
         "expect": [
             "so it is an adapter, and an adapter's compatibility.json carries "
-            "no specification, setup, command"
+            "no specPin, setup, command"
         ],
     },
     {
         "name": "validate fails a key the context does not define",
         "build": misspelt_key,
         "steps": [("validate", 1)],
-        "expect": ["testedwith is not a key the context defines"],
+        "expect": ["mustpasswith is not a key the context defines"],
     },
     {
         "name": "validate fails an argument vector written as a string",
@@ -371,47 +383,47 @@ CASES = [
         "expect": ["setup is an argument vector, written as a JSON array of strings"],
     },
     {
-        "name": "validate fails testedWith written as one object",
-        "build": tested_with_object,
+        "name": "validate fails mustPassWith written as one object",
+        "build": must_pass_with_object,
         "steps": [("validate", 1)],
-        "expect": ["testedWith is a list of pins, written as a JSON array"],
+        "expect": ["mustPassWith is a list of pins, written as a JSON array"],
     },
     {
-        "name": "validate fails specification written as an array",
-        "build": specification_array,
+        "name": "validate fails specPin written as an array",
+        "build": spec_pin_array,
         "steps": [("validate", 1)],
-        "expect": ["specification is one pin, written as a JSON object"],
+        "expect": ["specPin is one pin, written as a JSON object"],
     },
     {
-        "name": "checkout stops in a sentence, not a traceback, on testedWith written as one object",
-        "build": tested_with_object,
+        "name": "checkout stops in a sentence, not a traceback, on mustPassWith written as one object",
+        "build": must_pass_with_object,
         "steps": [("checkout", 1)],
-        "expect": ["testedWith is not a pin; run validate first"],
+        "expect": ["mustPassWith is not a pin; run validate first"],
         "forbid": ["Traceback"],
     },
     {
         "name": "validate fails two counterparts whose names differ only in case",
         "build": two_of_one_name(lambda world: (world.origins / "fork" / "Adapter").as_uri()),
         "steps": [("validate", 1)],
-        "expect": ["Each repository name appears in testedWith at most once"],
+        "expect": ["Each repository name appears in mustPassWith at most once"],
     },
     {
         "name": "validate fails one counterpart listed with and without .git",
         "build": two_of_one_name(lambda world: world.url("adapter") + ".git"),
         "steps": [("validate", 1)],
-        "expect": ["Each repository name appears in testedWith at most once"],
+        "expect": ["Each repository name appears in mustPassWith at most once"],
     },
     {
         "name": "validate fails a counterpart named cascade-bridge-spec",
         "build": named_as_specification,
         "steps": [("validate", 1)],
-        "expect": ["No repository in testedWith is named cascade-bridge-spec"],
+        "expect": ["No repository in mustPassWith is named cascade-bridge-spec"],
     },
     {
         "name": "validate fails a counterpart named as the repository under test",
         "build": named_as_self,
         "steps": [("validate", 1)],
-        "expect": ["No repository in testedWith is named engine"],
+        "expect": ["No repository in mustPassWith is named engine"],
     },
     {
         "name": "resolve uses a branch pin's sibling with its uncommitted edits, and flags them",
@@ -446,8 +458,8 @@ CASES = [
         "build": tag_on_main,
         "steps": [("ready", 0)],
         "expect": [
-            "testedWith: {url adapter} tag v1: {adapter} is on main",
-            "specification: {url specification} commit {specification}: "
+            "mustPassWith: {url adapter} tag v1: {adapter} is on main",
+            "specPin: {url specification} commit {specification}: "
             "{specification} is on main",
         ],
     },
@@ -458,10 +470,10 @@ CASES = [
         "expect": ["branch main: the default branch"],
     },
     {
-        "name": "spec-pin reads an engine's specification",
+        "name": "spec-pin reads an engine's specPin",
         "build": engine_on_main,
         "steps": [("spec-pin", 0)],
-        "expect": ["specification: {url specification} commit {specification}"],
+        "expect": ["specPin: {url specification} commit {specification}"],
     },
     {
         "name": "spec-pin reads an adapter's bridge:specPin from its crate",

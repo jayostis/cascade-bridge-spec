@@ -67,8 +67,8 @@ def no_expected_graphs(package):
     package.edit(
         MANIFEST,
         "  ] ;\n  mf:result [\n"
-        "    bridge:graph <expected/example-0001.ttl> ;\n"
-        "    bridge:findings <findings/example-0001.gaps.json>\n"
+        "    bridge:expectedGraph <expected/example-0001.ttl> ;\n"
+        "    bridge:expectedFindings <findings/example-0001.gaps.json>\n"
         "  ] .",
         "  ] .",
     )
