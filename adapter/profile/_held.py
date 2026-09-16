@@ -5,8 +5,9 @@ def held(check, context, find):
     """Add an issue for each message `find` yields for the package, and say
     whether the requirement held.
 
-    A requirement that raised is unmet: it never asked its question, and the
-    validator counts a check that raised as passed.
+    A requirement that raised is unmet: it never asked its question, and
+    rocrate-validator counts a check that raised as passed
+    (https://github.com/crs4/rocrate-validator/issues/199).
     """
     try:
         messages = list(find(from_context(context)))
