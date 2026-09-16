@@ -1,14 +1,6 @@
-"""Every git-tracked file is a crate entity with a declared media type, or one
-of the documents that describe the repository rather than the package.
-
-This is the requirement that makes "an adapter is data" a measured property
-rather than a claim: a file nobody described is a file nobody reviewed, and the
-allowed set of media types, which the shapes hold, is where "no code" is
-enforced.
-"""
-
 import subprocess
 
+from bridgelint.requirement import held
 from bridgelint.crate import from_context
 from bridgelint.terms import ALLOWLIST, SCHEMA
 from rdflib import URIRef
@@ -56,13 +48,8 @@ def unaccounted(crate):
 
 @requirement(name="File inventory")
 class Inventory(PyFunctionCheck):
-    """Every git-tracked file is described by the crate, or is one of the
-    documents that describe the repository rather than the package."""
+    """Every git-tracked file is described by the crate, or describes the repository."""
 
     @check(name="every git-tracked file is accounted for")
     def run_check(self, context: ValidationContext) -> bool:
-        found = False
-        for message in unaccounted(from_context(context)):
-            context.result.add_issue(message, self)
-            found = True
-        return not found
+        return held(self, context, unaccounted(from_context(context)))

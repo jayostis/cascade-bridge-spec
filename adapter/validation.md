@@ -43,23 +43,12 @@ RO-Crate before it is anything else, and the profile says so rather than this
 list repeating it.
 
 Each is one file under
-[`scripts/profiles/cascade-bridge-adapter/must/`](../scripts/profiles/cascade-bridge-adapter/must/),
-whose docstring is why the requirement exists and whose generator is what it
-reports. That file is the requirement; it is not described twice.
-
-| requirement | what it holds the package to |
-|---|---|
-| `shapes.py` | the crate and the test manifest, as one graph with their own base IRIs, conform to [`shapes/bridge.shapes.ttl`](../shapes/bridge.shapes.ttl) |
-| `inventory.py` | every git-tracked file is a crate entity with a declared media type, or one of the documents that describe the repository |
-| `digests.py` | every digest is recomputed over the committed bytes, the local claim and the publisher's claim reported as the different assertions they are |
-| `inputs.py` | every committed input validates against the schema its envelope declares, or the adapter's source schema where the envelope declares none |
-| `expected_graphs.py` | every graph a test names as its expected result parses as Turtle. Parsing, not conforming |
-| `queries.py` | every query parses as SPARQL 1.1 and is the form the property naming it declares |
-| `spec_pin.py` | `bridge:specPin` names a commit and the repository that holds it |
+[`scripts/profiles/cascade-bridge-adapter/must/`](../scripts/profiles/cascade-bridge-adapter/must/).
 
 A package that meets all of them, and RO-Crate 1.2's own, is a conforming
 adapter package. None of them runs a mapping or compares a graph: that is the
 test manifest, and it needs a Bridge ([`fixtures/manifest.md`](fixtures/manifest.md)).
+
 ## The media types an adapter package may declare
 
 The allowed set is the `sh:in` list on `<#DescribedFile>` in
@@ -107,9 +96,6 @@ That is the whole of it: two jobs, the second the merge gate, meant to be a
 required status check. Bumping the pin is an edit to the crate and nothing else.
 What the starter reads, checks out and hands over to is
 [`../compatibility.md`](../compatibility.md).
-
-The run ends by listing every requirement with the word it earned, so a package
-is never reported as meeting one that was never checked.
 
 ## Running it
 

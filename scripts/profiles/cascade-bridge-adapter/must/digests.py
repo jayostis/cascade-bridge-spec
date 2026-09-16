@@ -1,22 +1,4 @@
-"""Every digest the crate records matches the file beside it.
-
-A crate records two kinds of claim and they are not the same assertion
-(adapter/fixtures/README.md):
-
-  * schema:sha256 is the *local* claim -- these bytes, here, now. A mismatch
-    says the crate's record is wrong about the file beside it: one of the two
-    was changed and the other was not.
-  * any other digest property carries the *publisher's* claim about the file at
-    its source. Recomputing it over the committed bytes asks a different
-    question, and a mismatch says the local copy has drifted from the source it
-    claims to be a byte-for-byte copy of.
-
-Both are recomputed the same way and reported in their own words. Nothing is
-fetched: the publisher's digest is already in the crate, which is the point of
-recording it, and a digest on bytes that are not committed here is recorded and
-not compared.
-"""
-
+from bridgelint.requirement import held
 from bridgelint.crate import from_context
 from bridgelint.terms import DIGEST_ALGORITHMS, LOCAL_DIGEST, digest_of
 from rocrate_validator.models import ValidationContext
@@ -80,14 +62,8 @@ def mismatches(crate):
 
 @requirement(name="Digests")
 class Digests(PyFunctionCheck):
-    """Every digest the crate records is recomputed over the committed bytes,
-    the local claim and the publisher's claim reported as the different
-    assertions they are."""
+    """Every digest the crate records matches the file beside it."""
 
     @check(name="every digest matches its file")
     def run_check(self, context: ValidationContext) -> bool:
-        found = False
-        for message in mismatches(from_context(context)):
-            context.result.add_issue(message, self)
-            found = True
-        return not found
+        return held(self, context, mismatches(from_context(context)))

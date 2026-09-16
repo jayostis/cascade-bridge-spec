@@ -1,17 +1,4 @@
-"""Every committed input validates against the schema its envelope declares.
-
-XSD 1.0 by lxml: v1-draft specifies XML sources. Three outcomes are not faults
-in the package and yield nothing: a test naming a dataset has no committed bytes
-here, and the Bridge that streams them validates them; a schema referenced
-rather than committed is not fetched; and a source schema declared JSON is
-outside v1-draft, which is a gap in this lint rather than something the package
-did wrong.
-
-lxml being absent is a different matter. The requirement then has not been met
-by anything, and saying so is the point: a lint that silently checks nothing is
-worse than no lint.
-"""
-
+from bridgelint.requirement import held
 from bridgelint.crate import entity_name, from_context
 from bridgelint.terms import BRIDGE, JSON_SCHEMA_MEDIA_TYPES, MF, SCHEMA, XSD_MEDIA_TYPES
 from rocrate_validator.models import ValidationContext
@@ -125,14 +112,8 @@ def invalid(crate):
 
 @requirement(name="Inputs against the declared schema")
 class Inputs(PyFunctionCheck):
-    """Every committed input validates against the schema its envelope
-    declares, or the adapter's source schema where the envelope declares
-    none."""
+    """Every committed input validates against the schema its envelope declares."""
 
     @check(name="every input validates against the declared schema")
     def run_check(self, context: ValidationContext) -> bool:
-        found = False
-        for message in invalid(from_context(context)):
-            context.result.add_issue(message, self)
-            found = True
-        return not found
+        return held(self, context, invalid(from_context(context)))

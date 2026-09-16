@@ -1,10 +1,4 @@
-"""Every query the adapter names parses as SPARQL 1.1 and has the form its
-property declares.
-
-Parsing, not running: whether a mapping produces its expected graph is the test
-manifest's question, and it needs a Bridge.
-"""
-
+from bridgelint.requirement import held
 from bridgelint.crate import entity_name, from_context
 from bridgelint.terms import BRIDGE
 from rdflib.plugins.sparql import prepareQuery
@@ -58,13 +52,8 @@ def malformed(crate):
 
 @requirement(name="Queries")
 class Queries(PyFunctionCheck):
-    """Every query the adapter names parses as SPARQL 1.1, in the form the
-    property that names it declares."""
+    """Every query parses as SPARQL 1.1, in the form the property naming it declares."""
 
     @check(name="every query parses in its declared form")
     def run_check(self, context: ValidationContext) -> bool:
-        found = False
-        for message in malformed(from_context(context)):
-            context.result.add_issue(message, self)
-            found = True
-        return not found
+        return held(self, context, malformed(from_context(context)))

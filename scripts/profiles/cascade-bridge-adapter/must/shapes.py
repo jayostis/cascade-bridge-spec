@@ -1,13 +1,4 @@
-"""The crate and its test manifest, as one graph, conform to the Cascade Bridge
-shapes.
-
-What the shapes require is shapes/bridge.shapes.ttl and nowhere else. The two
-files are one graph, each parsed with its own location as base, which is what
-makes the manifest's <../> the crate's root entity: load either with the wrong
-base and every link between them silently becomes two unrelated nodes, and the
-shapes report nothing rather than reporting a mistake.
-"""
-
+from bridgelint.requirement import held
 from bridgelint.crate import from_context
 from bridgelint.terms import SHAPES
 from pyshacl import validate as shacl_validate
@@ -37,13 +28,8 @@ def violations(crate):
 
 @requirement(name="Cascade Bridge shapes")
 class Shapes(PyFunctionCheck):
-    """The crate and the test manifest, loaded as one graph with their own base
-    IRIs, conform to shapes/bridge.shapes.ttl."""
+    """The crate and the test manifest, as one graph, conform to the shapes."""
 
     @check(name="the crate and the test manifest conform to the shapes")
     def run_check(self, context: ValidationContext) -> bool:
-        found = False
-        for message in violations(from_context(context)):
-            context.result.add_issue(message, self)
-            found = True
-        return not found
+        return held(self, context, violations(from_context(context)))
