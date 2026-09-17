@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   spec:
-    name: This repo's spec files are valid (no tests)
+    name: "RO-Crate 1.2: the adapter profile's own crate"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -25,72 +25,11 @@ jobs:
           python3 -m pip install --upgrade pip
           python3 -m pip install --group validators
 
-      - name: Parse every Turtle file
-        run: |
-          python3 - <<'PY'
-          from glob import glob
-          from rdflib import Graph
-          lift = sorted(glob("fixtures/lift/*.ttl"))
-          lift += sorted(glob("fixtures/lift/*.nt"))
-          shapes = sorted(glob("adapter/profile/must/*.ttl"))
-          for path in ["vocab/bridge.ttl", "shapes/bridge.shapes.ttl", *shapes, *lift]:
-              graph = Graph()
-              graph.parse(path, format="turtle")
-              print(f"{path}: {len(graph)} triples")
-          PY
-
-      - name: Check the SHACL shapes are valid SHACL
-        run: |
-          for shapes in shapes/bridge.shapes.ttl adapter/profile/must/*.ttl; do
-            python3 -m pyshacl --metashacl --shacl "$shapes" "$shapes"
-          done
-
-      - name: Check the lift test manifest lists every vector
-        run: |
-          python3 - <<'PY'
-          import sys
-          from pathlib import Path
-          from pyshacl import validate
-          from rdflib import Graph, Namespace, RDF, URIRef
-
-          MF = Namespace("http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#")
-          BRIDGE = Namespace("https://ns.cascadeprotocol.org/bridge/v1-draft#")
-          lift = Path("fixtures/lift").resolve()
-          manifest = lift / "manifest.ttl"
-          base = lift.as_uri() + "/"
-
-          graph = Graph().parse(manifest, format="turtle", publicID=manifest.as_uri())
-          shapes = Graph().parse("shapes/bridge.shapes.ttl", format="turtle")
-          conforms, _, text = validate(graph, shacl_graph=shapes, advanced=True)
-          problems = [] if conforms else [text]
-
-          listed = set(graph.items(graph.value(URIRef(manifest.as_uri()), MF.entries)))
-          named = set()
-          tests = {s for t in (BRIDGE.LiftTest, BRIDGE.SkeletonTest)
-                     for s in graph.subjects(RDF.type, t)}
-          for entry in sorted(tests):
-              if entry not in listed:
-                  problems.append(f"{entry} is not in mf:entries")
-              for step, term in ((MF.action, BRIDGE.input), (MF.result, BRIDGE.expectedGraph)):
-                  for node in graph.objects(entry, step):
-                      for iri in graph.objects(node, term):
-                          name = str(iri).removeprefix(base)
-                          named.add(name)
-                          if "/" in name or not (lift / name).is_file():
-                              problems.append(f"{entry} names {iri}, not a file in fixtures/lift")
-          for path in sorted(lift.iterdir()):
-              if path.suffix in (".xml", ".nt") and path.name not in named:
-                  problems.append(f"{path.name} is a vector no entry names")
-
-          print("\n".join(problems) or f"{len(listed)} lift test(s), every vector named")
-          sys.exit(1 if problems else 0)
-          PY
-
       - name: Validate the adapter profile crate against RO-Crate 1.2
         run: rocrate-validator validate adapter/profile/ --profile-identifier ro-crate-1.2 --no-paging
 
   pytest:
-    name: 'pytest: adapter profile checks and the compatibility tool, on a synthetic adapter and throwaway repos'
+    name: "pytest: the specification's files, the adapter profile and the compatibility tool"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
