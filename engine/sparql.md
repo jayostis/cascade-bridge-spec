@@ -31,27 +31,28 @@ How a non-ASCII name is written in an IRI is not specified.
 
 ## What is lifted
 
-**A mapping and a findings query** run over one unit at a time, lifted with the
-unit element as the lift root: nothing outside the unit is lifted. A unit is an
-element whose local name is the adapter's `bridge:unit`; a unit's namespace,
-and a unit inside another, are not specified.
+**A mapping and a findings query** run over one source record at a time, lifted
+with the record's element as the lift root: nothing outside the record is lifted.
+A record is an element whose local name is the adapter's
+`bridge:elementNameOfEachRecord`; a record's namespace, and a record inside
+another, are not specified.
 
 **The detect query** runs over the document's *envelope skeleton*: the lift of
 the whole document, with the document element as the lift root, except that
-every unit is lifted as an empty container — its type triples and its place
-among its parent's children, without its attributes or its children. A unit
+every record is lifted as an empty container — its type triples and its place
+among its parent's children, without its attributes or its children. A record
 that is the document element is lifted as an empty container too: the skeleton
 is then its type triples alone.
 
 ## Running an adapter
 
-For each unit of a document the adapter's `bridge:detectQuery` accepts, in
-document order, a Bridge:
+For each source record of a document the adapter's `bridge:detectQuery`
+accepts, in document order, a Bridge:
 
-1. lifts the unit into the default graph of an empty dataset;
+1. lifts the record into the default graph of an empty dataset;
 2. loads every `bridge:table` declared `text/turtle` into the same default
    graph. No other table format is specified;
-3. runs every `bridge:mapping`, a CONSTRUCT, over that dataset. The unit's
+3. runs every `bridge:mapping`, a CONSTRUCT, over that dataset. The record's
    graph is the union of their results;
 4. runs every `bridge:findingsQuery` over the same dataset. Each member of a
    finding is the lexical form of the term its variable is bound to: an IRI's

@@ -71,7 +71,7 @@ jobs:
           for entry in sorted(tests):
               if entry not in listed:
                   problems.append(f"{entry} is not in mf:entries")
-              for step, term in ((MF.action, BRIDGE.input), (MF.result, BRIDGE.graph)):
+              for step, term in ((MF.action, BRIDGE.input), (MF.result, BRIDGE.expectedGraph)):
                   for node in graph.objects(entry, step):
                       for iri in graph.objects(node, term):
                           name = str(iri).removeprefix(base)

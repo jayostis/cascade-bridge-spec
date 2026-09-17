@@ -15,14 +15,14 @@ def unparsable(crate):
         result = crate.graph.value(test, MF.result)
         if result is None:
             continue
-        turtle = crate.graph.value(result, BRIDGE.graph)
+        turtle = crate.graph.value(result, BRIDGE.expectedGraph)
         if turtle is None:
             continue
         name = crate.name_of(test)
         path = crate.file_at(turtle)
         if path is None:
             yield (
-                f"{name}: bridge:graph names {turtle}, which is not a file in "
+                f"{name}: bridge:expectedGraph names {turtle}, which is not a file in "
                 "this package"
             )
             continue

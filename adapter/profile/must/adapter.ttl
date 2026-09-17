@@ -43,13 +43,13 @@
     sh:message "The adapter names the Cascade Bridge Adapter profile, https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/, in conformsTo."
   ] ;
   sh:property [
-    sh:path bridge:profileRequired ;
+    sh:path bridge:requiresProfile ;
     sh:nodeKind sh:IRI ;
     sh:class bridge:Profile ;
-    sh:message "Each bridge:profileRequired is a bridge:Profile by IRI."
+    sh:message "Each bridge:requiresProfile is a bridge:Profile by IRI."
   ] ;
   sh:property [
-    sh:path bridge:profileRequired ;
+    sh:path bridge:requiresProfile ;
     sh:hasValue bridge:sparql-1.1 ;
     sh:message "The adapter requires bridge:sparql-1.1."
   ] ;
@@ -57,12 +57,12 @@
     sh:path bridge:mapping ;
     sh:minCount 1 ;
     sh:node <#Query> ;
-    sh:message "The adapter names at least one bridge:mapping, a SPARQL 1.1 CONSTRUCT a Bridge runs on each unit: a crate File entity (schema:MediaObject) by IRI, declared application/sparql-query."
+    sh:message "The adapter names at least one bridge:mapping, a SPARQL 1.1 CONSTRUCT a Bridge runs on each record: a crate File entity (schema:MediaObject) by IRI, declared application/sparql-query."
   ] ;
   sh:property [
     sh:path bridge:findingsQuery ;
     sh:node <#Query> ;
-    sh:message "Each bridge:findingsQuery is a SPARQL 1.1 SELECT whose rows are a unit's findings: a crate File entity (schema:MediaObject) by IRI, declared application/sparql-query."
+    sh:message "Each bridge:findingsQuery is a SPARQL 1.1 SELECT whose rows are a record's findings: a crate File entity (schema:MediaObject) by IRI, declared application/sparql-query."
   ] ;
   sh:property [
     sh:path bridge:specPin ;
@@ -72,11 +72,11 @@
     sh:message "The adapter carries exactly one bridge:specPin, the pinned cascade-bridge-spec commit by IRI."
   ] ;
   sh:property [
-    sh:path bridge:vocabularyPin ;
+    sh:path bridge:cascadeVocabularyPin ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:nodeKind sh:IRI ;
-    sh:message "The adapter carries exactly one bridge:vocabularyPin, the pinned spec commit by IRI."
+    sh:message "The adapter carries exactly one bridge:cascadeVocabularyPin, the pinned spec commit by IRI."
   ] ;
   sh:property [
     sh:path bridge:vocabulary ;
@@ -100,11 +100,11 @@
     sh:message "The adapter carries exactly one bridge:sourceSchema, the pinned source-side schema, and it is a crate File entity (schema:MediaObject), not a bare IRI naming nothing."
   ] ;
   sh:property [
-    sh:path bridge:unit ;
+    sh:path bridge:elementNameOfEachRecord ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:datatype xsd:string ;
-    sh:message "The adapter carries exactly one bridge:unit, the element a Bridge splits on."
+    sh:message "The adapter carries exactly one bridge:elementNameOfEachRecord."
   ] ;
   sh:property [
     sh:path bridge:envelope ;

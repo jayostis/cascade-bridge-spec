@@ -13,59 +13,59 @@
     <#namespaces>
     <#no-break-space>
     <#skeleton>
-    <#skeleton-unit-root>
+    <#skeleton-record-root>
   ) .
 
 <#attributes> a bridge:LiftTest ;
   mf:name "attributes" ;
   rdfs:comment "Each attribute is a plain string literal on its element's node." ;
   mf:action [ bridge:input <attributes.xml> ] ;
-  mf:result [ bridge:graph <attributes.nt> ] .
+  mf:result [ bridge:expectedGraph <attributes.nt> ] .
 
 <#mixed-content> a bridge:LiftTest ;
   mf:name "mixed-content" ;
   rdfs:comment "Text and element children share one numbering, in document order, and text keeps its spaces." ;
   mf:action [ bridge:input <mixed-content.xml> ] ;
-  mf:result [ bridge:graph <mixed-content.nt> ] .
+  mf:result [ bridge:expectedGraph <mixed-content.nt> ] .
 
 <#whitespace> a bridge:LiftTest ;
   mf:name "whitespace" ;
   rdfs:comment "Whitespace-only text is dropped and takes no number; text with any other character is kept verbatim, spaces included." ;
   mf:action [ bridge:input <whitespace.xml> ] ;
-  mf:result [ bridge:graph <whitespace.nt> ] .
+  mf:result [ bridge:expectedGraph <whitespace.nt> ] .
 
 <#cdata> a bridge:LiftTest ;
   mf:name "cdata" ;
   rdfs:comment "Character data and a CDATA section beside it are one text child." ;
   mf:action [ bridge:input <cdata.xml> ] ;
-  mf:result [ bridge:graph <cdata.nt> ] .
+  mf:result [ bridge:expectedGraph <cdata.nt> ] .
 
 <#dropped> a bridge:LiftTest ;
   mf:name "dropped" ;
   rdfs:comment "The XML declaration, the document type declaration, comments and processing instructions are dropped, and text on either side of a dropped comment is one text child." ;
   mf:action [ bridge:input <dropped.xml> ] ;
-  mf:result [ bridge:graph <dropped.nt> ] .
+  mf:result [ bridge:expectedGraph <dropped.nt> ] .
 
 <#namespaces> a bridge:LiftTest ;
   mf:name "namespaces" ;
   rdfs:comment "A namespaced element or attribute is named by its namespace IRI and local name; an unnamespaced one under the Facade-X data namespace. The namespace declaration is not an attribute." ;
   mf:action [ bridge:input <namespaces.xml> ] ;
-  mf:result [ bridge:graph <namespaces.nt> ] .
+  mf:result [ bridge:expectedGraph <namespaces.nt> ] .
 
 <#no-break-space> a bridge:LiftTest ;
   mf:name "no-break-space" ;
   rdfs:comment "Whitespace is XML's S production, space, tab, CR and LF. A no-break space is not whitespace: alone it is a text child, beside spaces the text is kept verbatim, and a text of only a line feed is dropped." ;
   mf:action [ bridge:input <no-break-space.xml> ] ;
-  mf:result [ bridge:graph <no-break-space.nt> ] .
+  mf:result [ bridge:expectedGraph <no-break-space.nt> ] .
 
 <#skeleton> a bridge:SkeletonTest ;
   mf:name "skeleton" ;
-  rdfs:comment "A unit keeps its type triples and its number among its parent's children, and loses its attributes and its children. A sibling that is not a unit is lifted whole, and the numbering counts the emptied units." ;
-  mf:action [ bridge:input <skeleton.xml> ; bridge:unit "Unit" ] ;
-  mf:result [ bridge:graph <skeleton.nt> ] .
+  rdfs:comment "A record keeps its type triples and its number among its parent's children, and loses its attributes and its children. A sibling that is not a record is lifted whole, and the numbering counts the emptied records." ;
+  mf:action [ bridge:input <skeleton.xml> ; bridge:elementNameOfEachRecord "Unit" ] ;
+  mf:result [ bridge:expectedGraph <skeleton.nt> ] .
 
-<#skeleton-unit-root> a bridge:SkeletonTest ;
-  mf:name "skeleton-unit-root" ;
-  rdfs:comment "A unit that is the document element is emptied like any other, so the skeleton is its type triples alone: the lift root type and its own. A Bridge that special-cases the root instead routes on a document it has lifted entirely." ;
-  mf:action [ bridge:input <skeleton-unit-root.xml> ; bridge:unit "Unit" ] ;
-  mf:result [ bridge:graph <skeleton-unit-root.nt> ] .
+<#skeleton-record-root> a bridge:SkeletonTest ;
+  mf:name "skeleton-record-root" ;
+  rdfs:comment "A record that is the document element is emptied like any other, so the skeleton is its type triples alone: the lift root type and its own. A Bridge that special-cases the root instead routes on a document it has lifted entirely." ;
+  mf:action [ bridge:input <skeleton-record-root.xml> ; bridge:elementNameOfEachRecord "Unit" ] ;
+  mf:result [ bridge:expectedGraph <skeleton-record-root.nt> ] .

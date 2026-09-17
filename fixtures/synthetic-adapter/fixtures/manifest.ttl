@@ -18,8 +18,8 @@
     bridge:envelope <../ro-crate-metadata.json#envelope-set>
   ] ;
   mf:result [
-    bridge:graph <expected/example-0001.ttl> ;
-    bridge:findings <findings/example-0001.gaps.json>
+    bridge:expectedGraph <expected/example-0001.ttl> ;
+    bridge:expectedFindings <findings/example-0001.gaps.json>
   ] .
 
 <#example-0002> a bridge:InputOnlyTest ;

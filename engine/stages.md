@@ -6,22 +6,22 @@ adapter contributes data to them through these terms.
 
 | stage | Enterprise Integration Pattern | the adapter contributes |
 |---|---|---|
-| read and chunk | **Splitter** | `bridge:unit` |
+| read and chunk | **Splitter** | `bridge:elementNameOfEachRecord` |
 | detect and route | **Content-Based Router** | `bridge:detectQuery` |
 | transform | **Message Translator** | `bridge:mapping`, `bridge:table` |
-| Cascade RDF as target | **Canonical Data Model** | `bridge:vocabulary`, `bridge:vocabularyPin` |
+| Cascade RDF as target | **Canonical Data Model** | `bridge:vocabulary`, `bridge:cascadeVocabularyPin` |
 | link within the batch | **Aggregator** | nothing: the mapping emits the links, the Bridge resolves them |
-| stamp | **Message History** | `bridge:ignorePredicate`; it receives the stamp |
+| stamp | **Message History** | `bridge:stampPredicate`; it receives the stamp |
 | check, validate | **Message Validator** | `bridge:sourceSchema`, `bridge:documentSchema` |
 | findings | **Invalid Message Channel** | `bridge:findingsQuery` |
 | re-import as no-op | **Idempotent Receiver** | nothing beyond a guarantee |
 | vendor quirks | **Normalizer** | a normalising pass per vendor, where the format has vendors |
 
-- **Validation reports; it never refuses.** A unit that fails its schema is a
-  finding, and the unit still goes through.
+- **Validation reports; it never refuses.** A source record that fails its
+  schema is a finding, and the record still goes through.
 - **The stamp is the Bridge's**, never the adapter's.
 - **Re-import changes nothing**: an adapter's output is a function of its input.
 - **A format has one adapter**, with vendor quirks as data, never one adapter per vendor.
 
-Not settled: what Core contains, and whether a record points at another record of
-the same unit by a blank node the Bridge resolves or by a minted name.
+Not settled: what Core contains, and whether an output record points at another
+output record of the same source record by a blank node the Bridge resolves or by a minted name.
