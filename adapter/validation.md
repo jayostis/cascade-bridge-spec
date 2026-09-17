@@ -18,6 +18,17 @@ a pull request here, not one invented in an adapter.
 ## In CI
 
 ```yaml
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   adapter:
     runs-on: ubuntu-latest
@@ -31,4 +42,7 @@ jobs:
           check: ready-to-merge
 ```
 
-Make both jobs required status checks.
+Make both jobs required status checks. `edited` is what starts a run when a
+description's `Depends-On:` lines change, and `pull-requests: write` is what
+posts the table; on a pull request from a fork the token is read-only whatever
+the workflow asks for, and the run says so rather than failing.

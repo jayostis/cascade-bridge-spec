@@ -1,5 +1,6 @@
 import os
 import subprocess
+from pathlib import Path
 
 from compatibility_tool.console import Stop, first_line
 
@@ -89,3 +90,8 @@ def merge(path, commit, name):
         git("merge", "--abort", cwd=path)
         return f"{name} conflicts with what is already merged into {path.name}"
     return None
+
+
+def toplevel(path):
+    run = git("rev-parse", "--show-toplevel", cwd=path)
+    return Path(run.stdout.strip()) if run.returncode == 0 else None

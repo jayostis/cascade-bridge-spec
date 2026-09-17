@@ -71,15 +71,23 @@ class Api:
                 **({"Content-Type": "application/json"} if body is not None else {}),
             },
         )
-        with urllib.request.urlopen(request) as answer:
-            return json.loads(answer.read().decode("utf-8") or "{}")
+        try:
+            with urllib.request.urlopen(request) as answer:
+                return json.loads(answer.read().decode("utf-8") or "{}")
+        except urllib.error.URLError as error:
+            if isinstance(error, urllib.error.HTTPError):
+                raise
+            raise Stop(f"{self.url} could not be reached: {error.reason}") from error
 
-    def pull_request(self, named):
+    def pull_request(self, named, refuse=True):
+        """None where the run reads a pull request it uses nothing from and cannot."""
         if named not in self.pulls:
             try:
                 self.pulls[named] = self.request("GET", f"repos/{named.path}/pulls/{named.number}")
             except urllib.error.HTTPError as error:
-                raise Stop(f"{named.label} could not be read: {error.code} {error.reason}") from error
+                if refuse:
+                    raise Stop(f"{named.label} could not be read: {error.code} {error.reason}") from error
+                self.pulls[named] = None
         return self.pulls[named]
 
     def comment(self, path, number, body):
@@ -99,14 +107,20 @@ class Event:
         return Named(self.repository, self.number) if self.number else None
 
 
-def event():
+def event(api):
+    """The pull request's number from the event that started the run; its branch from the API, read now."""
     repository = os.environ.get("GITHUB_REPOSITORY", "")
     branch = os.environ.get("GITHUB_REF_NAME", "")
     path = os.environ.get("GITHUB_EVENT_PATH")
     payload = {}
     if path and os.path.isfile(path):
-        with open(path, encoding="utf-8") as handle:
-            payload = json.load(handle)
-    pull_request = payload.get("pull_request") or {}
-    number = pull_request.get("number")
-    return Event(repository, number, pull_request.get("base", {}).get("ref") or branch)
+        try:
+            with open(path, encoding="utf-8") as handle:
+                payload = json.load(handle)
+        except ValueError as error:
+            raise Stop(f"{path}, the event the run started from, is not JSON: {error}") from error
+    number = (payload.get("pull_request") or {}).get("number")
+    if not number:
+        return Event(repository, None, branch)
+    pull = api.pull_request(Named(repository, number))
+    return Event(repository, number, pull.get("base", {}).get("ref") or branch)

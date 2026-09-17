@@ -19,9 +19,7 @@ def test_a_cycle_between_two_named_pull_requests_fails_the_check(world):
     """Both are reached from the pull request under test, and the cycle is the edge between them."""
     world.pull_request("adapter", 7, body=depends_on("cascade-bridge-spec", 3))
     world.pull_request("cascade-bridge-spec", 3, body=depends_on("adapter", 7))
-    engine, event = engine_under_test(
-        world, body=depends_on("cascade-bridge-spec", 3) + depends_on("adapter", 7)
-    )
+    engine, event = engine_under_test(world, body=depends_on("cascade-bridge-spec", 3) + depends_on("adapter", 7))
 
     said = world.tool(engine, 1, **world.ci(event=event))
 

@@ -12,10 +12,15 @@ from compatibility_tool.github import Named, named_in
 class Reached:
     named: Named
     pull: dict
+    used: bool = True
 
     @property
     def base(self):
         return self.pull.get("base", {}).get("ref")
+
+    @property
+    def open(self):
+        return not self.pull.get("merged") and self.pull.get("state") == "open"
 
 
 @dataclass
@@ -27,36 +32,41 @@ class Choice:
     merging: list[Reached] = field(default_factory=list)
 
 
-def follow(api, under_test):
-    """Every open pull request reached by Depends-On:, in the order reached."""
+def follow(api, under_test, checked_out):
+    """Every pull request reached by Depends-On:, in the order reached.
+
+    One in a repository the run checks nothing out from is followed for its own
+    lines and listed, and nothing about it fails the check.
+    """
     if under_test is None:
         return []
-    reached = []
-    seen = {under_test}
-    walking = [(under_test, api.pull_request(under_test), [under_test])]
+    reached = {}
+    walking = [(api.pull_request(under_test), [under_test])]
     while walking:
-        _, pull, path = walking.pop(0)
+        pull, path = walking.pop(0)
         for named in named_in(pull.get("body")):
             if named in path:
                 raise Stop(
-                    f"{named.label} is named by a cycle of pull requests: {' -> '.join(step.label for step in path)} -> {named.label}"
+                    f"{' -> '.join(step.label for step in path)} -> {named.label} is a cycle of pull requests, "
+                    "and a Depends-On: line goes one way"
                 )
-            if named in seen:
-                continue
-            seen.add(named)
-            found = api.pull_request(named)
-            if found.get("merged"):
-                reached.append(Reached(named, found))
-                continue
-            if found.get("state") != "open":
-                raise Stop(f"{named.label} is closed without merging, so nothing names a version of {named.path}")
-            reached.append(Reached(named, found))
-            walking.append((named, found, [*path, named]))
-    return reached
+            used = named.path in checked_out
+            if named not in reached:
+                found = api.pull_request(named, refuse=used)
+                if found is None:
+                    reached[named] = Reached(named, {"number": named.number, "state": "unread"}, used=False)
+                    continue
+                if used and not found.get("merged") and found.get("state") != "open":
+                    raise Stop(f"{named.label} is closed without merging, so nothing names a version of {named.path}")
+                reached[named] = Reached(named, found, used=used)
+            entry = reached[named]
+            if entry.open:
+                walking.append((entry.pull, [*path, named]))
+    return list(reached.values())
 
 
 def merging(reached, path):
-    return [entry for entry in reached if entry.named.path == path and not entry.pull.get("merged")]
+    return [entry for entry in reached if entry.used and entry.open and entry.named.path == path]
 
 
 def choose(url, path, reached, running_on, on_a_pull_request):
@@ -80,11 +90,12 @@ def choose(url, path, reached, running_on, on_a_pull_request):
 
 
 def remove(path):
-    def writable(function, name, _):  # git's objects are read-only, and Windows refuses to unlink those
-        os.chmod(name, stat.S_IWRITE)
-        function(name)
-
-    shutil.rmtree(path, onexc=writable) if path.exists() else None
+    if not path.exists():
+        return
+    for root, _, files in os.walk(path):  # git's objects are read-only, and Windows refuses to unlink those
+        for name in files:
+            os.chmod(os.path.join(root, name), stat.S_IWRITE)
+    shutil.rmtree(path)
 
 
 def place(url, path, choice, into):

@@ -7,7 +7,7 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
-from compatibility_tool import github, picking, placing
+from compatibility_tool import git, github, picking, placing
 from compatibility_tool.console import Status, Stop, report
 from compatibility_tool.document import SPEC_ROOT, counterparts, read_file
 from compatibility_tool.record import Record, Role, Used
@@ -62,7 +62,7 @@ def own_url(repository):
     return f"{server}/{repository}"
 
 
-def specification(directory, options, event, reached, results):
+def specification(directory, options, event, reached):
     if options.spec_picked:
         return Used.from_json(SPECIFICATION, json.loads(options.spec_picked.read_text(encoding="utf-8")))
     if options.mode == "local":
@@ -70,11 +70,12 @@ def specification(directory, options, event, reached, results):
     if not options.spec_repository:
         raise Stop(f"the check was not told which repository is {SPECIFICATION}; start passes --spec-repository")
     if github.repository_path(options.spec_repository) == event.repository:
-        entry = placing.on_disk(SPECIFICATION, options.spec_repository, SPEC_ROOT, Role.SPECIFICATION)
+        # The repository under test is this one: its checkout is the version, whatever the caller bootstrapped.
+        checkout = git.toplevel(directory) or SPEC_ROOT
+        entry = placing.on_disk(SPECIFICATION, options.spec_repository, checkout, Role.SPECIFICATION)
         entry.how = under_test(directory, options, event).how
         return entry
-    workspace = Path(os.environ.get("GITHUB_WORKSPACE", directory.parent))
-    into = workspace / SPECIFICATION
+    into = directory.parent / SPECIFICATION
     return placing.in_ci(options.spec_repository, reached, event.branch, bool(event.number), into, Role.SPECIFICATION)
 
 
@@ -94,7 +95,10 @@ def run_from_the_picked_specification(spec, directory, options):
         str(picked),
     ]
     print(f"  note  the specification is {spec.commit} ({spec.how}); the checks run from {spec.path}")
-    return subprocess.run(argv).returncode
+    status = subprocess.run(argv).returncode
+    if status not in (0, 1):
+        report(False, f"{argv[1]} did not run the check: it exited {status}")
+    return status
 
 
 def ours(spec):
@@ -110,8 +114,11 @@ def compatibility(directory, options, event, api):
     for problem in problems:
         report(False, problem)
 
-    reached = picking.follow(api, event.under_test) if options.mode == "ci" else []
-    spec = specification(directory, options, event, reached, options.results)
+    checked_out = {event.repository, *(github.repository_path(url) for url in listed)}
+    if options.spec_repository:
+        checked_out.add(github.repository_path(options.spec_repository))
+    reached = picking.follow(api, event.under_test, checked_out) if options.mode == "ci" else []
+    spec = specification(directory, options, event, reached)
     if options.mode == "ci" and not options.spec_picked and not ours(spec):
         return Status.FAIL if run_from_the_picked_specification(spec, directory, options) else Status.OK
 
@@ -127,7 +134,7 @@ def compatibility(directory, options, event, api):
             into = directory.parent / github.repository_name(url)
             used.append(placing.in_ci(url, reached, event.branch, bool(event.number), into, Role.COUNTERPART))
     for entry in reached:
-        if entry.named.path not in {github.repository_path(url) for url in [*listed, spec.repository]}:
+        if not entry.used:
             used.append(
                 Used(
                     name=entry.named.path.split("/")[-1],
@@ -153,7 +160,7 @@ def compatibility(directory, options, event, api):
     return judged
 
 
-def ready_to_merge(options, event, api):
+def ready_to_merge(event, api):
     from compatibility_tool import ready
 
     return ready.check(event, api)
@@ -179,14 +186,14 @@ def main(usage, argv=None):
         spec_repository=args.spec_repository,
         spec_picked=args.spec_picked,
     )
-    event = github.event()
     api = github.Api()
     print(f"Repository: {directory}")
     print(f"Check:      {args.check} ({options.mode})")
     print()
     try:
+        event = github.event(api) if options.mode == "ci" else github.Event("", None, "")
         if args.check == "ready-to-merge":
-            status = ready_to_merge(options, event, api)
+            status = ready_to_merge(event, api)
         else:
             status = compatibility(directory, options, event, api)
     except Stop as stop:

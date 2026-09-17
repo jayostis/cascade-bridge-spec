@@ -97,8 +97,8 @@ runs:
           --results "${RESULTS}" \
           --spec-repository "${SPEC_REPOSITORY}"
 
-    # Matrix legs share github.job, and a job may start both checks; the check
-    # run id and the check keep their artifacts apart.
+    # An upload refuses a name another leg has taken: matrix legs share
+    # github.job, and one job may start both checks.
     - name: name the results for this leg
       id: artifact
       if: always()
@@ -106,8 +106,7 @@ runs:
       env:
         JOB: ${{ github.job }}
         CHECK: ${{ inputs.check }}
-        CHECK_RUN: ${{ job.check_run_id }}
-      run: echo "name=${CHECK}-${JOB}-${CHECK_RUN:-${RANDOM}${RANDOM}}" >> "$GITHUB_OUTPUT"
+      run: echo "name=${CHECK}-${JOB}-${RANDOM}${RANDOM}" >> "$GITHUB_OUTPUT"
 
     - name: keep the record and the EARL reports
       if: always()

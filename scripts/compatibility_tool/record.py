@@ -82,12 +82,18 @@ class Record:
     def counterparts(self):
         return [entry for entry in self.used if entry.role is Role.COUNTERPART]
 
+    def key(self, entry):
+        """A name, or owner/name where two repositories share one."""
+        if sum(other.name == entry.name for other in self.used) == 1:
+            return entry.name
+        return "/".join(entry.repository.rstrip("/").rsplit("/", 2)[-2:])
+
     def save(self, results):
         results.mkdir(parents=True, exist_ok=True)
         body = {
             "directory": str(self.directory),
             "mode": self.mode,
-            "repositories": {entry.name: entry.to_json() for entry in self.used},
+            "repositories": {self.key(entry): entry.to_json() for entry in self.used},
         }
         (results / RECORD).write_text(json.dumps(body, indent=2) + "\n", encoding="utf-8")
 
