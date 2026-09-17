@@ -31,5 +31,5 @@ jobs:
           check: ready-to-merge
 ```
 
-Make `ready-to-merge` a required status check. Bumping the spec pin is an edit
+Make both jobs required status checks. Bumping the spec pin is an edit
 to the crate alone.
