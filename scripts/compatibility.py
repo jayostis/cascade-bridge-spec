@@ -5,7 +5,7 @@
     python3 scripts/compatibility.py resolve  <dir> [--mode ci|local] [--results <dir>]
     python3 scripts/compatibility.py checkout <dir> [--mode ci|local] [--results <dir>]
     python3 scripts/compatibility.py run      <dir> [--results <dir>]
-    python3 scripts/compatibility.py judge   [<dir>] [--results <dir>]
+    python3 scripts/compatibility.py judge   [<dir>] [--results <dir>] [--summary <file>]
     python3 scripts/compatibility.py ready    <dir>
     python3 scripts/compatibility.py spec-pin <dir> [--output <file>]
 
