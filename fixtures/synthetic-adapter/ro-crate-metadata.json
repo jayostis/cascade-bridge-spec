@@ -5,7 +5,6 @@
       "md5": "https://w3id.org/ro/terms/workflow-run#md5",
       "bridge": "https://ns.cascadeprotocol.org/bridge/v1-draft#",
       "bridge:requiresProfile": "bridge:requiresProfile",
-      "bridge:specPin": "bridge:specPin",
       "bridge:cascadeVocabularyPin": "bridge:cascadeVocabularyPin",
       "bridge:vocabulary": "bridge:vocabulary",
       "bridge:sourceMediaType": "bridge:sourceMediaType",
@@ -52,9 +51,6 @@
           "@id": "https://ns.cascadeprotocol.org/bridge/v1-draft#sparql-1.1"
         }
       ],
-      "bridge:specPin": {
-        "@id": "https://github.com/jayostis/cascade-bridge-spec/commit/0af0fc970f75360d4f84acc2203c26b5fd9d6d23"
-      },
       "bridge:cascadeVocabularyPin": {
         "@id": "https://example.org/synthetic-adapter/vocabulary/commit/0000000000000000000000000000000000000000"
       },
@@ -127,9 +123,6 @@
           "@id": "https://example.org/synthetic-adapter/releases/example-release-2026-01.xml.gz"
         },
         {
-          "@id": "https://github.com/jayostis/cascade-bridge-spec/commit/0af0fc970f75360d4f84acc2203c26b5fd9d6d23"
-        },
-        {
           "@id": "https://example.org/synthetic-adapter/vocabulary/commit/0000000000000000000000000000000000000000"
         }
       ]
@@ -158,18 +151,6 @@
       "@id": "https://ns.cascadeprotocol.org/bridge/v1-draft#sparql-1.1",
       "@type": "bridge:Profile",
       "name": "sparql-1.1"
-    },
-    {
-      "@id": "https://github.com/jayostis/cascade-bridge-spec/commit/0af0fc970f75360d4f84acc2203c26b5fd9d6d23",
-      "@type": ["SoftwareSourceCode", "File"],
-      "name": "cascade-bridge-spec at 0af0fc9",
-      "codeRepository": {
-        "@id": "https://github.com/jayostis/cascade-bridge-spec"
-      },
-      "version": "0af0fc970f75360d4f84acc2203c26b5fd9d6d23",
-      "license": {
-        "@id": "https://spdx.org/licenses/Apache-2.0"
-      }
     },
     {
       "@id": "https://example.org/synthetic-adapter/vocabulary/commit/0000000000000000000000000000000000000000",

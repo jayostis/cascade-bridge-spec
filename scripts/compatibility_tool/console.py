@@ -8,7 +8,6 @@ class Stop(Exception):
 class Status(Enum):
     OK = ("ok", "PASS", 0)
     FAIL = ("FAIL", "FAIL", 1)
-    NOT_RUN = ("not run", "FAIL", 1)
     NOTHING_TO_CHECK = ("nothing to check", "nothing to check", 0)
 
     def __init__(self, word, verdict, exit_code):

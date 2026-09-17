@@ -1,16 +1,20 @@
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from rdflib import Graph, URIRef
-
-from compatibility_tool.console import Status, Stop, first_line, note, report
+from compatibility_tool import packages
+from compatibility_tool.console import Status, Stop, first_line, note, report, warn
 from compatibility_tool.document import CRATE, crate_root, referenced_id
-from compatibility_tool.record import Record
+from compatibility_tool.record import Role
 
 EARL = "http://www.w3.org/ns/earl#"
 MF = "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#"
 OUTCOMES = {"passed", "failed", "cantTell", "inapplicable", "untested"}
 NOT_HOLDING = {"failed", "inapplicable"}
+
+
+def graph_of(path, **arguments):
+    return packages.installed("rdflib").Graph().parse(path, **arguments)
 
 
 @dataclass
@@ -50,25 +54,29 @@ class Verdict:
 
 
 def manifest_entries_relative_to_adapter(adapter):
+    URIRef = packages.installed("rdflib").URIRef
     adapter = adapter.resolve()
     _, root = crate_root(adapter)
     named = referenced_id(root, "bridge:testManifest")
     if not named:
         raise Stop(f"{adapter / CRATE} names no bridge:testManifest")
     path = adapter / named
-    graph = Graph().parse(path, format="turtle", publicID=path.as_uri())
+    graph = graph_of(path, format="turtle", publicID=path.as_uri())
     listed = graph.value(URIRef(path.as_uri()), URIRef(MF + "entries"))
     prefix = adapter.as_uri() + "/"
     return [str(entry).removeprefix(prefix) for entry in graph.items(listed)] if listed else []
 
 
 def judge_report(path, adapter):
+    URIRef = packages.installed("rdflib").URIRef
     if path is None:
         return Verdict(unjudged="it was not run")
     if not path.is_file():
         return Verdict(unjudged="it wrote no report")
     try:
-        graph = Graph().parse(path, format="turtle")
+        graph = graph_of(path, format="turtle")
+    except Stop:
+        raise
     except Exception as error:
         return Verdict(unjudged=f"its report does not parse as Turtle: {first_line(str(error))}")
     tally = {}
@@ -90,51 +98,73 @@ def judge_report(path, adapter):
     return Verdict(tally=tally, expected=expected, missing=missing)
 
 
+def judge(record, options):
+    print("Each counterpart, judged by its EARL report")
+    counterparts = record.counterparts
+    if not counterparts:
+        report(True, f"{record.directory} lists no counterpart: nothing to check")
+        return Status.NOTHING_TO_CHECK
+    held = 0
+    for entry in counterparts:
+        verdict = judge_report(entry.report, entry.adapter)
+        entry.holds = verdict.holds
+        entry.result = verdict.describe()
+        held += verdict.holds
+        report(
+            verdict.holds,
+            f"{entry.describe()}: {'holds' if verdict.holds else 'does not hold'}; {verdict.describe()}",
+        )
+    if any(entry.uncommitted_edits for entry in counterparts):
+        note("a result produced from uncommitted edits is feedback, never evidence")
+    count = len(counterparts)
+    print(f"  {count} counterpart{'' if count == 1 else 's'}: {held} hold, {count - held} do not")
+    return Status.OK if held == count else Status.FAIL
+
+
 def linked(text, url):
     return f"[{text}]({url})" if url.startswith("https://") else text
 
 
-def table_row(entry, verdict):
-    repository = entry.pin.repository.removesuffix(".git")
-    commit = linked(f"`{entry.commit[:7]}`", f"{repository}/commit/{entry.commit}")
-    result = f"{'✅ holds' if verdict.holds else '❌ does not hold'}: {verdict.describe()}".replace("|", "\\|")
-    return f"| {linked(entry.pin.name, repository)} | {entry.pin.kind} {entry.pin.value} | {commit} | {result} |"
+def result_cell(entry):
+    if entry.role is Role.NOT_USED:
+        return "not used"
+    if entry.holds is None:
+        return "—"
+    return f"{'✅ holds' if entry.holds else '❌ does not hold'}: {entry.result}".replace("|", "\\|")
 
 
-def append_summary(path, directory, rows):
-    lines = [f"### Compatibility of {directory.name}", ""]
-    if rows:
-        lines += ["| must pass with | pin | commit | result |", "|---|---|---|---|", *rows]
-    else:
-        lines.append(f"{directory.name} lists no counterpart: nothing to check.")
-    with Path(path).open("a", encoding="utf-8") as summary:
-        summary.write("\n".join(lines) + "\n\n")
+def table(record):
+    lines = [
+        f"### Compatibility of {record.directory.name}",
+        "",
+        "| repository | version | commit | result |",
+        "|---|---|---|---|",
+    ]
+    for entry in record.used:
+        repository = entry.repository.removesuffix(".git")
+        commit = entry.commit or "—"
+        shown = linked(f"`{commit[:7]}`", f"{repository}/commit/{commit}") if entry.commit else "—"
+        edits = ", with uncommitted edits" if entry.uncommitted_edits else ""
+        lines.append(f"| [{entry.name}]({repository}) | {entry.how}{edits} | {shown} | {result_cell(entry)} |")
+    if any(entry.from_named_pull_requests for entry in record.used):
+        lines += [
+            "",
+            "This pass is as fresh as this run: rerun it once the pull requests above have merged, and before merging.",
+        ]
+    return "\n".join(lines) + "\n"
 
 
-def judge_command(directory, options):
-    counterparts = Record.load_checked_out(options.results).counterparts
-    print("Each entry, judged by its EARL report")
-    if not counterparts:
-        if options.summary:
-            append_summary(options.summary, directory, [])
-        report(True, "no entry: nothing to check")
-        return Status.NOTHING_TO_CHECK
-    held = 0
-    rows = []
-    for entry in counterparts:
-        verdict = judge_report(entry.report, entry.adapter)
-        held += verdict.holds
-        rows.append(table_row(entry, verdict))
-        flag = ", with uncommitted edits" if entry.uncommitted_edits else ""
-        report(
-            verdict.holds,
-            f"{entry.pin.repository} at {entry.commit} ({entry.pin.kind} {entry.pin.value}{flag}): "
-            f"{'holds' if verdict.holds else 'does not hold'}; {verdict.describe()}",
-        )
-    if options.summary:
-        append_summary(options.summary, directory, rows)
-    if any(entry.uncommitted_edits for entry in counterparts):
-        note("a result produced from uncommitted edits is feedback, never evidence")
-    count = len(counterparts)
-    print(f"  {count} entr{'y' if count == 1 else 'ies'}: {held} hold, {count - held} do not")
-    return Status.OK if held == count else Status.FAIL
+def write_table(record, options, api, event):
+    if options.mode != "ci":
+        return
+    written = table(record)
+    summary = os.environ.get("GITHUB_STEP_SUMMARY")
+    if summary:
+        with Path(summary).open("a", encoding="utf-8") as handle:
+            handle.write(written + "\n")
+    if not event.number:
+        return
+    try:
+        api.comment(event.repository, event.number, written)
+    except Exception as error:
+        warn(f"no comment was posted on {event.repository}#{event.number}: {first_line(str(error))}")

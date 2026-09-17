@@ -76,7 +76,25 @@ def no_expected_graphs(package):
 
 
 def undeclared_context_key(package):
-    package.edit(CRATE, '      "bridge:specPin": "bridge:specPin",\n', "")
+    package.edit(CRATE, '      "bridge:cascadeVocabularyPin": "bridge:cascadeVocabularyPin",\n', "")
+
+
+def spec_pin_still_carried(package):
+    package.edit(
+        CRATE,
+        '      "bridge:cascadeVocabularyPin": "bridge:cascadeVocabularyPin",\n',
+        '      "bridge:specPin": "bridge:specPin",\n'
+        '      "bridge:cascadeVocabularyPin": "bridge:cascadeVocabularyPin",\n',
+    )
+    package.edit(
+        CRATE,
+        '      "bridge:cascadeVocabularyPin": {\n',
+        '      "bridge:specPin": {\n'
+        '        "@id": "https://example.org/synthetic-adapter/vocabulary/commit/'
+        '0000000000000000000000000000000000000000"\n'
+        "      },\n"
+        '      "bridge:cascadeVocabularyPin": {\n',
+    )
 
 
 def profile_not_an_entity(package):
@@ -86,8 +104,8 @@ def profile_not_an_entity(package):
 def pin_not_a_data_entity(package):
     package.edit(
         CRATE,
-        '      "@type": ["SoftwareSourceCode", "File"],\n      "name": "cascade-bridge-spec at 0af0fc9",',
-        '      "@type": "SoftwareSourceCode",\n      "name": "cascade-bridge-spec at 0af0fc9",',
+        '      "@type": ["SoftwareSourceCode", "File"],\n      "name": "synthetic vocabulary at the null commit",',
+        '      "@type": "SoftwareSourceCode",\n      "name": "synthetic vocabulary at the null commit",',
     )
 
 
@@ -136,6 +154,13 @@ def pin_not_a_data_entity(package):
             ["is not allowed in the compacted format because it is not present in the @context"],
             [],
             id="RO-Crate 1.2 is inherited: a key the @context does not declare",
+        ),
+        pytest.param(
+            spec_pin_still_carried,
+            False,
+            ["bridge:specPin was removed"],
+            [],
+            id="a crate that still carries bridge:specPin fails",
         ),
         pytest.param(
             profile_not_an_entity,

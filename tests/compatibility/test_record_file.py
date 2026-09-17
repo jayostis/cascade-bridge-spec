@@ -1,35 +1,46 @@
+from pathlib import Path
+
 import pytest
 
 from compatibility_tool.console import Stop
-from compatibility_tool.document import Pin
-from compatibility_tool.record import Record, ResolvedPin, Source
+from compatibility_tool.record import Record, Role, Row
 
 
-def test_a_record_reads_back_as_it_was_saved(tmp_path):
-    pins = [
-        ResolvedPin(Pin("specPin", "https://example.org/spec", "commit", "a" * 40), "a" * 40, Source.COMMIT),
-        ResolvedPin(
-            Pin("mustPassWith", "https://example.org/adapter.git", "branch", "main"),
+def used(tmp_path):
+    return [
+        Row("engine", "https://example.org/engine", "a" * 40, "pull request #1 merged into main", Role.UNDER_TEST),
+        Row(
+            "adapter",
+            "https://example.org/adapter.git",
             "b" * 40,
-            Source.WORKING_TREE,
+            "the sibling's working tree, on feat/next",
+            Role.COUNTERPART,
             uncommitted_edits=True,
             path=tmp_path / "adapter",
             adapter=tmp_path / "adapter",
             report=tmp_path / "earl" / "adapter.ttl",
         ),
     ]
-    record = Record(tmp_path / "engine", "local", pins, checked_out=True)
+
+
+def test_a_record_reads_back_as_it_was_saved(tmp_path):
+    record = Record(tmp_path / "engine", "local", used(tmp_path))
     record.save(tmp_path)
     assert Record.load(tmp_path) == record
-    assert [entry.pin.name for entry in Record.load(tmp_path).counterparts] == ["adapter"]
 
 
-def test_a_record_without_a_checkout_is_refused_to_run_and_judge(tmp_path):
-    Record(tmp_path, "local").save(tmp_path)
-    with pytest.raises(Stop, match="the record holds no checkout: run checkout first"):
-        Record.load_checked_out(tmp_path)
+def test_a_records_counterparts_are_the_repositories_run_and_judged(tmp_path):
+    record = Record(tmp_path / "engine", "local", used(tmp_path))
+    assert [entry.name for entry in record.counterparts] == ["adapter"]
 
 
-def test_a_missing_record_says_to_resolve_or_check_out_first(tmp_path):
-    with pytest.raises(Stop, match="run resolve or checkout first"):
-        Record.load(tmp_path)
+def test_a_missing_record_says_the_run_wrote_none(tmp_path):
+    with pytest.raises(Stop, match="no record"):
+        Record.load(Path(tmp_path) / "elsewhere")
+
+
+def test_a_record_written_by_an_older_tooling_reads_back(tmp_path):
+    """The version a caller fetched writes the handover; the version picked reads it."""
+    written = used(tmp_path)[0].to_json()
+    del written["fromNamedPullRequests"]
+    assert Row.from_json("engine", written).from_named_pull_requests is False

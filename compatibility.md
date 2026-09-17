@@ -1,8 +1,8 @@
 # Compatibility between engines and adapters
 
-A repository may commit a `compatibility.json` at its root naming the adapters
-(in an engine) or engines (in an adapter) it must pass with. **Every entry that
-does not hold blocks the merge.**
+An engine commits a `compatibility.json` at its root, and an adapter may, naming
+the adapters (in an engine) or engines (in an adapter) it must pass with.
+**Every entry that does not hold blocks the merge.**
 
 Its keys are [`vocab/compatibility.context.jsonld`](vocab/compatibility.context.jsonld),
 each a `bridge:` term in [`vocab/bridge.ttl`](vocab/bridge.ttl), checked by the
@@ -12,33 +12,82 @@ An engine's file:
 ```json
 {
   "@context": "https://ns.cascadeprotocol.org/bridge/v1-draft/compatibility.jsonld",
-  "specPin": {
-    "codeRepository": "https://github.com/jayostis/cascade-bridge-spec",
-    "commit": "7a614179c4856a3f6e1a4b5a6c90a183b0c7c99a"
-  },
   "setup": ["npm", "ci"],
   "command": ["node", "packages/bridge-cli/src/cli.ts"],
-  "mustPassWith": [
-    { "codeRepository": "https://github.com/jayostis/cascade-bridge-adapter-clinvar", "branch": "main" }
-  ]
+  "mustPassWith": ["https://github.com/example-org/example-adapter"]
 }
 ```
 
-An adapter's file has only `mustPassWith`; its spec pin is `bridge:specPin` in its crate.
+An adapter's file has only `mustPassWith`.
 
-A commit or tag pin is reproducible. A default-branch pin can turn red when the
-other side merges, with no change of its own.
+## Which version of each repository a run uses
 
-## Changing an entry
+Picked when the run starts, as Zuul checks out a job's required projects
+([project gating](https://zuul-ci.org/docs/zuul/latest/gating.html),
+[job configuration](https://zuul-ci.org/docs/zuul/latest/config/job.html)):
 
-- **Opt out** by deleting the entry or re-pinning it. There is no "expected to
-  fail" entry.
-- **Add a pairing after both sides have merged.**
-- **A breaking change**: the engine removes or re-pins the adapter's entry and
-  merges, the adapter follows, the engine re-adds the entry.
+- the open pull requests reached by `Depends-On:` lines, from the description of
+  the pull request under test and then from each named pull request's own, each
+  merged into the branch it targets;
+- otherwise the branch named like the branch the run is on: the branch the pull
+  request under test targets, or the one a push, manual or scheduled run is on;
+- otherwise the default branch.
+
+A local run uses every sibling checkout as it is on disk, uncommitted edits
+included.
+
+A pull request merges only once every pull request it names directly has merged.
+
+**A `Depends-On:` line goes one way**, as in Zuul without
+[circular dependencies](https://zuul-ci.org/docs/zuul/latest/config/queue.html).
+
+## Where this departs from Zuul
+
+GitHub Actions cannot reproduce these, so a person or an agent does it by hand:
+
+- **A named pull request changing retests nothing.** Rerun the dependent pull
+  request's workflow: `gh run rerun`.
+- **There is no gate queue**, so a pass is as fresh as its last run and the
+  branches under it can move after it. Rerun `compatibility` and
+  `ready-to-merge` before merging; a run says so when it used a named pull
+  request.
+- **A repository's state is not frozen across a run's jobs**, so two checks of
+  one pull request can read different descriptions and branches. Rerun both
+  rather than trusting a mixed pair.
+- **A cycle is refused rather than merged as one unit.** Split the change into
+  backward-compatible steps, each leaving every default branch green.
+
+These are chosen, and could be otherwise:
+
+- **A named pull request's specification runs**, rather than being read as data:
+  the entry point hands the run to the version it picked, which is how a change
+  here is tried before it merges, and is how Zuul treats an
+  [untrusted project's](https://zuul-ci.org/docs/zuul/latest/concepts.html) job
+  content rather than a config project's. Review a pull request here as code
+  that will run in every repository whose pull request names it, with the token
+  that repository's workflow grants.
+- **Nothing here starts a run anywhere else**, because this repository knows of
+  no adapter and no engine. A change to what an adapter or a Bridge must do is
+  tried from a no-op pull request in one, naming this one on a `Depends-On:`
+  line, before it merges.
+- **The merge gate reads the pull requests named directly**, and each of those
+  is held by its own repository's gate, so a chain merges from its end.
+- **A named pull request closed without merging fails the check** rather than
+  taking the dependent out of the queue. Cut the `Depends-On:` line; editing the
+  description starts a run.
+- **A counterpart is named by the repository under test**, not by a tenant, and
+  not transitively: what a counterpart itself must pass with is its own run's
+  business.
+- **A run is aimed at no version.** There is no `override-checkout`; to try a
+  branch, cut one of the same name in each repository.
 
 ## The tooling
 
 [`scripts/compatibility.py`](scripts/compatibility.py); its docstring is the
-usage. A repository's CI calls only `.github/actions/start@start-v1`
-([`adapter/validation.md`](adapter/validation.md) shows the workflow).
+usage. A repository's CI calls only `.github/actions/start@main`
+([`adapter/validation.md`](adapter/validation.md) shows the workflow). A pull
+request here that changes the tooling is tried first from a no-op engine or
+adapter pull request naming it on a `Depends-On:` line. A caller depends on no
+more than the entry point's path, its arguments and the results directory: those
+names reach a caller only once they have merged, and everything else the run
+does comes from the version it picked.

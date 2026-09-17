@@ -13,6 +13,12 @@ Normative: [`vocab/`](vocab/), [`shapes/`](shapes/),
 [`engine/command.md`](engine/command.md), [`pinning.md`](pinning.md) and
 [`compatibility.md`](compatibility.md).
 
+Nothing here pins an adapter or an engine, and nothing pins this repository. A
+run picks which version of each repository it uses when it starts, following
+[OpenStack's Zuul model](https://zuul-ci.org/docs/zuul/latest/gating.html) as
+closely as practical, departing from it only where
+[`compatibility.md`](compatibility.md) says so.
+
 Not settled: what Core contains, the canonical findings model
 ([`adapter/fixtures/README.md`](adapter/fixtures/README.md)), router precedence
 when two adapters' detect queries match one document, and the export direction.

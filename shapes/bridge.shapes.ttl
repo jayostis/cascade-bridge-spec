@@ -333,27 +333,15 @@
 
 <#Compatibility> a sh:NodeShape ;
   sh:targetSubjectsOf bridge:setup, bridge:command, bridge:mustPassWith ;
-  sh:target [
-    a sh:SPARQLTarget ;
-    sh:prefixes <> ;
-    sh:select "SELECT ?this WHERE { ?this bridge:specPin ?pin . FILTER NOT EXISTS { ?this a bridge:Adapter } }"
-  ] ;
   sh:xone ( <#EngineCompatibility> <#AdapterCompatibility> ) ;
-  sh:message "A compatibility.json is an engine's, carrying exactly one specPin, one setup and one command, or an adapter's, carrying none of the three." ;
+  sh:message "A compatibility.json is an engine's, carrying exactly one setup and one command, or an adapter's, carrying neither." ;
   sh:property [
     sh:path bridge:mustPassWith ;
-    sh:nodeKind sh:BlankNodeOrIRI ;
-    sh:node <#Pin> ;
-    sh:message "Each mustPassWith entry is a pin: a codeRepository and exactly one of commit, tag or branch."
+    sh:nodeKind sh:IRI ;
+    sh:message "Each mustPassWith entry is a repository URL; which version of it the pairing uses is picked when the check runs."
   ] .
 
 <#EngineCompatibility> a sh:NodeShape ;
-  sh:property [
-    sh:path bridge:specPin ;
-    sh:minCount 1 ;
-    sh:maxCount 1 ;
-    sh:node <#Pin>
-  ] ;
   sh:property [
     sh:path bridge:setup ;
     sh:minCount 1 ;
@@ -376,48 +364,5 @@
   ] .
 
 <#AdapterCompatibility> a sh:NodeShape ;
-  sh:property [ sh:path bridge:specPin ; sh:maxCount 0 ] ;
   sh:property [ sh:path bridge:setup ; sh:maxCount 0 ] ;
   sh:property [ sh:path bridge:command ; sh:maxCount 0 ] .
-
-<#Pin> a sh:NodeShape ;
-  sh:targetObjectsOf bridge:mustPassWith ;
-  sh:target [
-    a sh:SPARQLTarget ;
-    sh:prefixes <> ;
-    sh:select "SELECT ?this WHERE { ?compatibility bridge:specPin ?this . FILTER NOT EXISTS { ?compatibility a bridge:Adapter } }"
-  ] ;
-  sh:property [
-    sh:path schema:codeRepository ;
-    sh:minCount 1 ;
-    sh:maxCount 1 ;
-    sh:nodeKind sh:IRI ;
-    sh:message "A pin names exactly one codeRepository, the repository's absolute URL."
-  ] ;
-  sh:xone (
-    [ sh:path schema:version ; sh:minCount 1 ]
-    [ sh:path bridge:tag ; sh:minCount 1 ]
-    [ sh:path bridge:branch ; sh:minCount 1 ]
-  ) ;
-  sh:message "A pin names exactly one of commit, tag or branch." ;
-  sh:property [
-    sh:path schema:version ;
-    sh:maxCount 1 ;
-    sh:datatype xsd:string ;
-    sh:pattern "^[0-9a-f]{40}$" ;
-    sh:message "A commit is a full 40-character lowercase SHA."
-  ] ;
-  sh:property [
-    sh:path bridge:tag ;
-    sh:maxCount 1 ;
-    sh:datatype xsd:string ;
-    sh:minLength 1 ;
-    sh:message "A tag is one non-empty name."
-  ] ;
-  sh:property [
-    sh:path bridge:branch ;
-    sh:maxCount 1 ;
-    sh:datatype xsd:string ;
-    sh:minLength 1 ;
-    sh:message "A branch is one non-empty name."
-  ] .

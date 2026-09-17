@@ -38,9 +38,16 @@ So:
 - **Tiers are not specified**, and when they are they are measured, never declared.
 - **Standards, not inventions**: RO-Crate 1.2 and its profiles, W3C `mf:`,
   SHACL, EARL, SKOS, Enterprise Integration Patterns.
+- **Which versions run together is OpenStack's Zuul model**
+  ([gating](https://zuul-ci.org/docs/zuul/latest/gating.html),
+  [job configuration](https://zuul-ci.org/docs/zuul/latest/config/job.html),
+  [queues](https://zuul-ci.org/docs/zuul/latest/config/queue.html)), followed as
+  closely as practical. A departure from it, forced or chosen, is named in
+  [`compatibility.md`](compatibility.md) with what someone must do by hand
+  instead, or it is not taken.
 - **The pilot is evidence, not authority**, and is never modified here.
-- **A pin to this repository names, at merge time, a commit or tag on its
-  default branch, or that branch.** This repository pins nothing.
+- **Nothing pins this repository**; a caller names `start@main`, as a Zuul
+  tenant loads shared job definitions from a branch.
 
 ## Layout
 

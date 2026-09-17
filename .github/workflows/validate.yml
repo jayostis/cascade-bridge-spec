@@ -4,10 +4,12 @@ on:
   push:
     branches: [main]
   pull_request:
+    types: [opened, synchronize, reopened, edited]
   workflow_dispatch:
 
 permissions:
   contents: read
+  pull-requests: write
 
 jobs:
   spec:
@@ -56,18 +58,12 @@ jobs:
     name: Published GitHub Actions, run on a synthetic adapter (not pytest)
     runs-on: ubuntu-latest
     steps:
-      # The starter expects the specification at ./cascade-bridge-spec/.
       - uses: actions/checkout@v7
         with:
           path: cascade-bridge-spec
 
-      - name: validate-adapter action on the synthetic adapter
-        uses: ./cascade-bridge-spec/.github/actions/validate-adapter
-        with:
-          path: cascade-bridge-spec/fixtures/synthetic-adapter
-
-      # By local path: the start action in this commit, not start-v1.
-      - name: start action (lint) on the synthetic adapter
+      # By local path: the start action in this commit, not the default branch.
+      - name: start action (compatibility) on the synthetic adapter
         uses: ./cascade-bridge-spec/.github/actions/start
         with:
           path: cascade-bridge-spec/fixtures/synthetic-adapter
