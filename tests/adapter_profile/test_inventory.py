@@ -19,5 +19,10 @@ def test_allowlists_the_repository_documents_and_dotfiles(package):
     assert not list(inventory.unaccounted(package.crate))
 
 
+def test_allowlists_an_adapters_compatibility_json(package):
+    package.write("compatibility.json", '{"mustPassWith": []}')
+    assert not list(inventory.unaccounted(package.crate))
+
+
 def test_reports_a_package_that_is_not_a_git_checkout(loose):
     assert "is not a git checkout" in "\n".join(inventory.unaccounted(loose.crate))
