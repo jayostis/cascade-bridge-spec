@@ -12,7 +12,14 @@ from rocrate_validator.requirements.python import PyFunctionCheck, check, requir
 from _findings import report_findings
 from _terms import SCHEMA
 
-FILES_THE_CRATE_NEED_NOT_DESCRIBE = ("README.md", "LICENSE", "CHANGELOG.md", "CLAUDE.md", "ro-crate-metadata.json")
+FILES_THE_CRATE_NEED_NOT_DESCRIBE = (
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "CLAUDE.md",
+    "ro-crate-metadata.json",
+    "compatibility.json",
+)
 
 
 def git_tracked_files(adapter):

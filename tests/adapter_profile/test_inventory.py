@@ -10,7 +10,10 @@ def test_reports_a_tracked_file_the_crate_describes_nowhere(package):
     found = "\n".join(inventory.unaccounted(package.crate))
     assert "undescribed.xml" in found
     assert "no crate entity with a declared encodingFormat" in found
-    assert "not one of README.md, LICENSE, CHANGELOG.md, CLAUDE.md, ro-crate-metadata.json or a dotfile" in found
+    assert (
+        "not one of README.md, LICENSE, CHANGELOG.md, CLAUDE.md, ro-crate-metadata.json, compatibility.json or a dotfile"
+        in found
+    )
 
 
 def test_allowlists_the_repository_documents_and_dotfiles(package):
