@@ -12,11 +12,11 @@ CONSTRUCT {
     rdfs:label ?label .
 }
 WHERE {
-  ?record a fx:root, xyz:ExampleRecord ;
+  ?exampleRecord a fx:root, xyz:ExampleRecord ;
     xyz:Accession ?accession ;
     xyz:Version ?number .
   BIND(IRI(CONCAT("https://example.org/synthetic-adapter/record/",
                   ?accession)) AS ?record)
   BIND(STRDT(?number, xsd:integer) AS ?version)
-  OPTIONAL { ?record ?slot ?element . ?element a xyz:Label ; rdf:_1 ?label }
+  OPTIONAL { ?exampleRecord ?slot ?element . ?element a xyz:Label ; rdf:_1 ?label }
 }

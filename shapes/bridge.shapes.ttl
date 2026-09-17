@@ -382,6 +382,11 @@
 
 <#Pin> a sh:NodeShape ;
   sh:targetObjectsOf bridge:mustPassWith ;
+  sh:target [
+    a sh:SPARQLTarget ;
+    sh:prefixes <> ;
+    sh:select "SELECT ?this WHERE { ?compatibility bridge:specPin ?this . FILTER NOT EXISTS { ?compatibility a bridge:Adapter } }"
+  ] ;
   sh:property [
     sh:path schema:codeRepository ;
     sh:minCount 1 ;

@@ -136,6 +136,21 @@ def two_pin_kinds(world):
     return engine
 
 
+def spec_pin_naming_two_pin_kinds(world):
+    engine = world.clone("engine")
+    document = engine_file(world, [])
+    write_file(engine, dict(document, specPin=dict(document["specPin"], branch="main")))
+    return engine
+
+
+def spec_pin_without_code_repository(world):
+    engine = world.clone("engine")
+    document = engine_file(world, [])
+    pin = {k: v for k, v in document["specPin"].items() if k != "codeRepository"}
+    write_file(engine, dict(document, specPin=pin))
+    return engine
+
+
 def engine_carrying_only_spec_pin(world):
     engine = world.clone("engine")
     write_file(engine, engine_file(world, None, setup=None, command=None))
@@ -342,6 +357,18 @@ CASES = [
         "build": two_pin_kinds,
         "steps": [("validate", 1)],
         "expect": ["A pin names exactly one of commit, tag or branch."],
+    },
+    {
+        "name": "validate fails an engine's specPin naming two of commit, tag and branch",
+        "build": spec_pin_naming_two_pin_kinds,
+        "steps": [("validate", 1)],
+        "expect": ["A pin names exactly one of commit, tag or branch."],
+    },
+    {
+        "name": "validate fails an engine's specPin without codeRepository",
+        "build": spec_pin_without_code_repository,
+        "steps": [("validate", 1)],
+        "expect": ["A pin names exactly one codeRepository, the repository's absolute URL."],
     },
     {
         "name": "validate fails an engine's file without command",
