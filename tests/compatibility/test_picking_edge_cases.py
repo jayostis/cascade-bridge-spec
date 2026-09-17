@@ -67,3 +67,24 @@ def test_two_repositories_of_one_name_each_keep_their_row(world):
 
     repositories = world.record()["repositories"]
     assert len([name for name in repositories if name.endswith("adapter")]) == 2
+
+
+def test_an_unreadable_pull_request_in_a_counterpart_repository_fails_the_check(world):
+    """A typo or a deleted pull request names a version the run cannot have."""
+    engine, event = engine_under_test(world, body=depends_on("adapter", 404))
+
+    said = world.tool(engine, 1, **world.ci(event=event))
+
+    assert "adapter/pull/404 could not be read" in said
+
+
+def test_a_named_specification_pull_request_is_used_rather_than_listed_as_not_used(world):
+    world.pull_request("cascade-bridge-spec", 3)
+    engine, event = engine_under_test(world, body=depends_on("cascade-bridge-spec", 3))
+
+    world.tool(engine, **world.ci(event=event))
+
+    specification = world.record()["repositories"]["cascade-bridge-spec"]
+    assert specification["role"] == "specification"
+    assert specification["how"] == "pull request #3 merged into main"
+    assert "not used" not in world.table()

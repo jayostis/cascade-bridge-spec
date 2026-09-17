@@ -250,7 +250,6 @@ class World:
             "GITHUB_TOKEN": "a token the stub does not check",
             "GITHUB_WORKSPACE": str(self.workspace),
             "GITHUB_SERVER_URL": str(self.origins.as_uri()),
-            "CASCADE_SPEC_REPOSITORY": self.url("cascade-bridge-spec"),
             "GITHUB_STEP_SUMMARY": str(self.summary),
             "GITHUB_REF_NAME": branch,
         }
@@ -262,6 +261,8 @@ class World:
         argv = [*interpreter, str(TOOL), str(subject), "--results", str(self.results), *arguments]
         if check:
             argv += ["--check", check]
+        if variables.get("CI") == "true":  # start passes it as an argument, and sets no variable
+            argv += ["--spec-repository", self.url("cascade-bridge-spec")]
         run = subprocess.run(
             argv, capture_output=True, encoding="utf-8", errors="replace", env=self.environment(**variables)
         )

@@ -74,7 +74,8 @@ class Row:
             report=optional_path(data["report"]),
             result=data["result"],
             holds=data["holds"],
-            from_named_pull_requests=data["fromNamedPullRequests"],
+            # A record is handed from the version a caller fetched to the version picked, which may know more fields.
+            from_named_pull_requests=data.get("fromNamedPullRequests", False),
         )
 
 
@@ -90,7 +91,7 @@ class Record:
 
     def key(self, entry):
         """A name, or owner/name where two repositories share one."""
-        if sum(other.name == entry.name for other in self.used) == 1:
+        if sum(other.name == entry.name for other in self.used) == 1 or not entry.repository:
             return entry.name
         return repository_path(entry.repository)
 

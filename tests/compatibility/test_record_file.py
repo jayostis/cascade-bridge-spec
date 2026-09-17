@@ -37,3 +37,10 @@ def test_a_records_counterparts_are_the_repositories_run_and_judged(tmp_path):
 def test_a_missing_record_says_the_run_wrote_none(tmp_path):
     with pytest.raises(Stop, match="no record"):
         Record.load(Path(tmp_path) / "elsewhere")
+
+
+def test_a_record_written_by_an_older_tooling_reads_back(tmp_path):
+    """The version a caller fetched writes the handover; the version picked reads it."""
+    written = used(tmp_path)[0].to_json()
+    del written["fromNamedPullRequests"]
+    assert Row.from_json("engine", written).from_named_pull_requests is False

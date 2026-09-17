@@ -52,9 +52,9 @@ def hop(spec, directory, options):
     options.results.mkdir(parents=True, exist_ok=True)
     handover.write_text(json.dumps(spec.to_json()), encoding="utf-8")
     entry_point = spec.path.joinpath(*ENTRY_POINT)
-    note(f"the specification is {spec.commit} ({spec.how}); the checks run from {entry_point}")
     if not entry_point.is_file():
         raise Stop(f"{spec.repository} at {spec.commit} holds no {'/'.join(ENTRY_POINT)} to run the checks from")
+    note(f"the specification is {spec.commit} ({spec.how}); the checks run from {entry_point}")
     argv = [
         sys.executable,
         str(entry_point),
@@ -63,6 +63,8 @@ def hop(spec, directory, options):
         options.check,
         "--results",
         str(options.results),
+        "--spec-repository",
+        options.spec_repository,
         "--spec-picked",
         str(handover),
     ]

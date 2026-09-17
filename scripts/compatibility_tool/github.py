@@ -57,6 +57,11 @@ def named_in(description):
     return named
 
 
+@dataclass(frozen=True)
+class Unreadable:
+    said: str
+
+
 class Api:
     def __init__(self, url=None, token=None):
         self.url = (url or os.environ.get("GITHUB_API_URL") or "https://api.github.com").rstrip("/")
@@ -89,10 +94,13 @@ class Api:
             try:
                 self.pulls[named] = self.request("GET", f"repos/{named.path}/pulls/{named.number}")
             except urllib.error.HTTPError as error:
-                if refuse:
-                    raise Stop(f"{named.label} could not be read: {error.code} {error.reason}") from error
-                self.pulls[named] = None
-        return self.pulls[named]
+                self.pulls[named] = Unreadable(f"{error.code} {error.reason}")
+        found = self.pulls[named]
+        if isinstance(found, Unreadable):
+            if refuse:  # a later reader may want what an earlier one could do without
+                raise Stop(f"{named.label} could not be read: {found.said}")
+            return None
+        return found
 
     def comment(self, path, number, body):
         self.request("POST", f"repos/{path}/issues/{number}/comments", {"body": body})
