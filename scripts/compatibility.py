@@ -293,7 +293,8 @@ def cmd_validate(directory, _args):
     elif conforms:
         report(True, f"the form is {kind}'s, as the directory is")
 
-    count = len(document.get("mustPassWith") or [])
+    listed = document.get("mustPassWith")
+    count = len(listed) if isinstance(listed, list) else 0
     if not problems and conforms:
         note(f"{count} mustPassWith entr{'y' if count == 1 else 'ies'}")
     return OK if conforms and not problems else FAIL
@@ -560,14 +561,17 @@ def ci_checkout(directory, resolved):
 def cmd_checkout(directory, args):
     print(f"Counterparts, checked out in {args.mode} mode beside {directory.name}")
     results = results_directory(directory, args)
+    record = {"directory": str(directory), "mode": args.mode, "pins": [], "checkedOut": False}
+    write_record(results, record)
     pins = entries(read_file(directory))
     resolved, ok = resolve_all(directory, args, pins)
-    record = {"directory": str(directory), "mode": args.mode, "pins": resolved, "checkedOut": ok}
+    record["pins"] = resolved
     if ok:
         place = ci_checkout if args.mode == "ci" else local_checkout
         for entry in resolved:
             entry["path"] = str(place(directory, entry))
             report(True, f"{entry['codeRepository']} is at {entry['path']}")
+        record["checkedOut"] = True
     write_record(results, record)
     if not pins:
         report(True, f"{directory} lists no counterpart: nothing to check")
@@ -725,7 +729,10 @@ def judge_report(path, adapter):
 
 def cmd_judge(directory, args):
     results = results_directory(directory, args)
-    pins = [entry for entry in read_record(results)["pins"] if entry["label"] == "mustPassWith"]
+    record = read_record(results)
+    if not record.get("checkedOut"):
+        raise Stop("the record holds no checkout: run checkout first")
+    pins = [entry for entry in record["pins"] if entry["label"] == "mustPassWith"]
     print("Each entry, judged by its EARL report")
     if not pins:
         report(True, "no entry: nothing to check")

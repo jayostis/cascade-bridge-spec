@@ -197,6 +197,12 @@ def must_pass_with_object(world):
     return engine
 
 
+def must_pass_with_number(world):
+    engine = world.clone("engine")
+    write_file(engine, engine_file(world, 5))
+    return engine
+
+
 def spec_pin_array(world):
     engine = world.clone("engine")
     document = engine_file(world, [])
@@ -269,6 +275,12 @@ def tag_on_main(world):
     return engine
 
 
+def tag_on_main_with_sibling(world):
+    engine = tag_on_main(world)
+    world.clone("adapter")
+    return engine
+
+
 def engine_and_adapter(canned):
     def build(world):
         engine = world.clone("engine")
@@ -295,6 +307,22 @@ def adapter_on_engine_commit(world):
     (engine / "work-in-progress.txt").write_text("not committed\n", encoding="utf-8")
     world.before = sibling_state(engine)
     return adapter
+
+
+def adapter_commit_not_in_sibling(world, subject):
+    origin = world.origins / "adapter"
+    (origin / "LATER").write_text("committed after the sibling was cloned\n", encoding="utf-8")
+    git("add", "-A", cwd=origin)
+    git("commit", "-q", "-m", "feat: later", cwd=origin)
+    write_file(subject, engine_file(
+        world, adapter_pin(world, commit=git("rev-parse", "HEAD", cwd=origin))
+    ))
+
+
+def counterpart_without_sibling(world, subject):
+    write_file(subject, engine_file(
+        world, [{"codeRepository": world.url("specification"), "branch": "main"}]
+    ))
 
 
 def record_of(subject, temporary):
@@ -414,6 +442,13 @@ CASES = [
         "build": must_pass_with_object,
         "steps": [("validate", 1)],
         "expect": ["mustPassWith is a list of pins, written as a JSON array"],
+    },
+    {
+        "name": "validate fails mustPassWith written as a number, in a sentence not a traceback",
+        "build": must_pass_with_number,
+        "steps": [("validate", 1)],
+        "expect": ["mustPassWith is a list of pins, written as a JSON array", "validate: FAIL"],
+        "forbid": ["Traceback"],
     },
     {
         "name": "validate fails specPin written as an array",
@@ -570,6 +605,32 @@ CASES = [
         "check": sibling_untouched,
     },
     {
+        "name": "run and judge refuse an earlier checkout once a later one fails to place its counterpart",
+        "build": tag_on_main_with_sibling,
+        "steps": [
+            ("checkout", 0), ("run", 0), adapter_commit_not_in_sibling,
+            ("checkout", 1), ("run", 1), ("judge", 1),
+        ],
+        "expect": [
+            "does not hold ",
+            "the record holds no checkout: run checkout first",
+        ],
+        "forbid": ["holds;"],
+    },
+    {
+        "name": "run and judge refuse an earlier checkout once a later one fails to resolve its counterpart",
+        "build": tag_on_main_with_sibling,
+        "steps": [
+            ("checkout", 0), ("run", 0), counterpart_without_sibling,
+            ("checkout", 1), ("run", 1), ("judge", 1),
+        ],
+        "expect": [
+            "has no clone beside engine",
+            "the record holds no checkout: run checkout first",
+        ],
+        "forbid": ["holds;"],
+    },
+    {
         "name": "checkout in CI clones the counterpart at the resolved commit",
         "build": tag_on_main,
         "mode": "ci",
@@ -599,7 +660,11 @@ def run_case(case):
         env.pop("CI", None)
 
         output = ""
-        for step, expected in case["steps"]:
+        for step in case["steps"]:
+            if callable(step):
+                step(world, subject)
+                continue
+            step, expected = step
             run = subprocess.run(
                 [sys.executable, str(TOOL), step, str(subject), "--mode", case.get("mode", "local")],
                 capture_output=True,
