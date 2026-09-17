@@ -90,7 +90,7 @@ jobs:
         run: rocrate-validator validate adapter/profile/ --profile-identifier ro-crate-1.2 --no-paging
 
   pytest:
-    name: 'pytest: adapter profile checks, unit and end-to-end on a synthetic adapter'
+    name: 'pytest: adapter profile checks and the compatibility tool, on a synthetic adapter and throwaway repos'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -106,24 +106,6 @@ jobs:
 
       - name: Run pytest
         run: python3 -m pytest
-
-  compatibility-selftest:
-    name: 'compatibility.py self-test: fake engine and throwaway repos (not pytest)'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Install validators
-        run: |
-          python3 -m pip install --upgrade pip
-          python3 -m pip install --group validators
-
-      - name: Run scripts/selftest-compatibility.py
-        run: python3 scripts/selftest-compatibility.py
 
   actions:
     name: Published GitHub Actions, run on a synthetic adapter (not pytest)

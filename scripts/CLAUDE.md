@@ -11,5 +11,5 @@ at their spec pin.
 
 ```bash
 python3 -m pip install --group dev
-python3 scripts/selftest-compatibility.py
+python3 -m pytest tests/compatibility
 ```
