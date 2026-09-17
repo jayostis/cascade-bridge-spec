@@ -87,7 +87,9 @@ runs:
         CHECK: ${{ inputs.check }}
         ENTRY_POINT: ${{ steps.specification.outputs.entry-point }}
         SPEC_REPOSITORY: ${{ steps.specification.outputs.repository }}
-        RESULTS: ${{ runner.temp }}/compatibility
+        RESULTS: ${{ runner.temp }}/compatibility-${{ inputs.check }}
+        # A composite action's steps inherit no token; the table is commented with this one.
+        GITHUB_TOKEN: ${{ github.token }}
       run: |
         set -euo pipefail
         python3 "${ENTRY_POINT}" "${REPOSITORY_PATH}" \
@@ -95,20 +97,22 @@ runs:
           --results "${RESULTS}" \
           --spec-repository "${SPEC_REPOSITORY}"
 
-    # Matrix legs share github.job; the check run id keeps their artifacts apart.
+    # Matrix legs share github.job, and a job may start both checks; the check
+    # run id and the check keep their artifacts apart.
     - name: name the results for this leg
       id: artifact
       if: always()
       shell: bash
       env:
         JOB: ${{ github.job }}
+        CHECK: ${{ inputs.check }}
         CHECK_RUN: ${{ job.check_run_id }}
-      run: echo "name=compatibility-${JOB}-${CHECK_RUN:-${RANDOM}${RANDOM}}" >> "$GITHUB_OUTPUT"
+      run: echo "name=${CHECK}-${JOB}-${CHECK_RUN:-${RANDOM}${RANDOM}}" >> "$GITHUB_OUTPUT"
 
     - name: keep the record and the EARL reports
       if: always()
       uses: actions/upload-artifact@v7
       with:
         name: ${{ steps.artifact.outputs.name }}
-        path: ${{ runner.temp }}/compatibility
+        path: ${{ runner.temp }}/compatibility-${{ inputs.check }}
         if-no-files-found: ignore
