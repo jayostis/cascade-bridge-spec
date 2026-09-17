@@ -4,5 +4,5 @@ dev = [{include-group = "validators"}, "pytest", "pytest-xdist"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["adapter/profile", "adapter/profile/must"]
+pythonpath = ["adapter/profile", "adapter/profile/must", "scripts"]
 addopts = "-n auto"
