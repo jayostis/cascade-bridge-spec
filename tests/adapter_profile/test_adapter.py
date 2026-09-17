@@ -25,9 +25,14 @@ def test_reports_a_crate_that_does_not_require_sparql_1_1(crate, shape_file_mess
     assert "bridge:sparql-1.1" in shape_file_messages(crate, "adapter.ttl")
 
 
-def test_reports_a_missing_spec_pin_by_naming_the_term(crate, shape_file_messages):
-    crate.graph.remove((crate.root, BRIDGE.specPin, None))
-    assert "bridge:specPin" in shape_file_messages(crate, "adapter.ttl")
+def test_reports_nothing_for_an_adapter_that_carries_no_spec_pin(crate, shape_file_messages):
+    assert not list(crate.graph.objects(crate.root, BRIDGE.specPin))
+    assert not shape_file_messages(crate, "adapter.ttl")
+
+
+def test_reports_an_adapter_that_still_carries_a_spec_pin(crate, shape_file_messages):
+    crate.graph.add((crate.root, BRIDGE.specPin, URIRef("https://github.com/jayostis/cascade-bridge-spec")))
+    assert "bridge:specPin was removed" in shape_file_messages(crate, "adapter.ttl")
 
 
 def test_reports_a_crate_that_names_no_element_name_of_each_record(crate, shape_file_messages):

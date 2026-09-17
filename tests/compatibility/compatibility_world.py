@@ -3,6 +3,8 @@ import os
 import shutil
 import subprocess
 import sys
+import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -10,6 +12,7 @@ TOOL = ROOT / "scripts" / "compatibility.py"
 SYNTHETIC_ADAPTER = ROOT / "fixtures" / "synthetic-adapter"
 FAKE_ENGINE = ROOT / "fixtures" / "fake-engine"
 CONTEXT_IRI = "https://ns.cascadeprotocol.org/bridge/v1-draft/compatibility.jsonld"
+OWNER = "jayostis"
 
 SETTINGS = (
     "user.name=compatibility tests",
@@ -27,39 +30,32 @@ def git(*args, cwd=None):
 
 
 def publish(origins, name, fill):
-    path = origins / name
-    path.mkdir()
+    path = origins / OWNER / name
+    path.mkdir(parents=True)
     fill(path)
     git("init", "-q", "-b", "main", str(path))
     git("add", "-A", cwd=path)
     git("commit", "-q", "-m", f"{name}: first", cwd=path)
+    git("config", "uploadpack.allowAnySHA1InWant", "true", cwd=path)
     return git("rev-parse", "HEAD", cwd=path)
+
+
+def specification(path):
+    shutil.copytree(ROOT / "scripts", path / "scripts")
+    shutil.copy(ROOT / "pyproject.toml", path / "pyproject.toml")
 
 
 def publish_origins(origins):
     origins.mkdir(parents=True)
     commits = {}
-    commits["specification"] = publish(
-        origins,
-        "specification",
-        lambda path: (path / "README.md").write_text("a stand-in for the specification\n", encoding="utf-8"),
-    )
+    commits["cascade-bridge-spec"] = publish(origins, "cascade-bridge-spec", specification)
     commits["adapter"] = publish(
         origins, "adapter", lambda path: shutil.copytree(SYNTHETIC_ADAPTER, path, dirs_exist_ok=True)
     )
-    adapter = origins / "adapter"
-    git("tag", "-a", "v1", "-m", "v1", cwd=adapter)
-    git("checkout", "-q", "-b", "feat/next", cwd=adapter)
-    (adapter / "NOTICE").write_text("next\n", encoding="utf-8")
-    git("add", "-A", cwd=adapter)
-    git("commit", "-q", "-m", "feat: next", cwd=adapter)
-    commits["adapter feat/next"] = git("rev-parse", "HEAD", cwd=adapter)
-    git("checkout", "-q", "main", cwd=adapter)
 
     def engine(path):
         shutil.copytree(FAKE_ENGINE, path, dirs_exist_ok=True)
-        specification = {"codeRepository": (origins / "specification").as_uri(), "commit": commits["specification"]}
-        write_compatibility(path, engine_document(specification, []))
+        write_compatibility(path, engine_document([]))
 
     commits["engine"] = publish(origins, "engine", engine)
     return commits
@@ -76,9 +72,8 @@ def read_compatibility(directory):
     return document
 
 
-def engine_document(spec_pin, must_pass_with, canned="passed", **overrides):
+def engine_document(must_pass_with, canned="passed", **overrides):
     document = {
-        "specPin": spec_pin,
         "setup": [sys.executable, "-c", "pass"],
         "command": [sys.executable, "engine.py", "--canned", canned],
         "mustPassWith": must_pass_with,
@@ -87,15 +82,92 @@ def engine_document(spec_pin, must_pass_with, canned="passed", **overrides):
     return {key: value for key, value in document.items() if value is not None}
 
 
+class PullRequests:
+    """The fields the tooling reads from GitHub, served from memory over HTTP."""
+
+    def __init__(self):
+        self.by_repository = {}
+        self.comments = []
+        self.refuse_comments = False
+
+    def open(self, repository, number, body="", base="main", head=None, state="open", merged=False):
+        pull = {
+            "number": number,
+            "body": body,
+            "state": state,
+            "merged": merged,
+            "base": {"ref": base},
+            "head": {"sha": head or ""},
+            "html_url": f"https://github.com/{OWNER}/{repository}/pull/{number}",
+        }
+        self.by_repository.setdefault(repository, {})[number] = pull
+        return pull
+
+    def get(self, repository, number):
+        return self.by_repository.get(repository, {}).get(number)
+
+
+class Handler(BaseHTTPRequestHandler):
+    def log_message(self, *arguments):
+        pass
+
+    def answer(self, status, body):
+        payload = json.dumps(body).encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(payload)))
+        self.end_headers()
+        self.wfile.write(payload)
+
+    def parts(self):
+        return self.path.strip("/").split("/")
+
+    def do_GET(self):
+        parts = self.parts()
+        if len(parts) == 5 and parts[0] == "repos" and parts[3] == "pulls":
+            pull = self.server.pull_requests.get(parts[2], int(parts[4]))
+            return self.answer(200 if pull else 404, pull or {"message": "Not Found"})
+        return self.answer(404, {"message": "Not Found"})
+
+    def do_POST(self):
+        parts = self.parts()
+        body = self.rfile.read(int(self.headers.get("Content-Length", 0))).decode("utf-8")
+        if self.server.pull_requests.refuse_comments:
+            return self.answer(403, {"message": "Resource not accessible by integration"})
+        if len(parts) == 6 and parts[3] == "issues" and parts[5] == "comments":
+            self.server.pull_requests.comments.append((parts[2], int(parts[4]), json.loads(body)["body"]))
+            return self.answer(201, {"id": len(self.server.pull_requests.comments)})
+        return self.answer(404, {"message": "Not Found"})
+
+
+class Api:
+    def __init__(self, pull_requests):
+        self.server = HTTPServer(("127.0.0.1", 0), Handler)
+        self.server.pull_requests = pull_requests
+        threading.Thread(target=self.server.serve_forever, daemon=True).start()
+
+    @property
+    def url(self):
+        return f"http://127.0.0.1:{self.server.server_address[1]}"
+
+    def stop(self):
+        self.server.shutdown()
+        self.server.server_close()
+
+
 class World:
-    def __init__(self, root, origins, commits):
+    def __init__(self, root, origins, commits, pull_requests, api_url):
         self.root = root
         self.origins = origins
         self.commits = dict(commits)
+        self.pull_requests = pull_requests
+        self.api_url = api_url
         self.workspace = root / "workspace"
         self.temporary = root / "tmp"
+        self.results = root / "results"
         self.workspace.mkdir()
         self.temporary.mkdir()
+        self.summary = root / "summary.md"
 
     def own_origins(self):
         copy = self.root / "origins"
@@ -104,51 +176,86 @@ class World:
         return self
 
     def url(self, name):
-        return (self.origins / name).as_uri()
+        return (self.origins / OWNER / name).as_uri()
+
+    def origin(self, name):
+        return self.origins / OWNER / name
 
     def clone(self, name):
         path = self.workspace / name
         git("clone", "-q", self.url(name), str(path))
         return path
 
-    def spec_pin(self):
-        return {"codeRepository": self.url("specification"), "commit": self.commits["specification"]}
+    def branch(self, name, branch, fill=None):
+        """A branch on an origin, as a pull request's head or a matching branch."""
+        origin = self.origin(name)
+        git("checkout", "-q", "-b", branch, cwd=origin)
+        if fill:
+            fill(origin)
+            git("add", "-A", cwd=origin)
+            git("commit", "-q", "-m", f"{branch}: a change", cwd=origin)
+        head = git("rev-parse", "HEAD", cwd=origin)
+        git("checkout", "-q", "main", cwd=origin)
+        return head
 
-    def engine_file(self, must_pass_with, canned="passed", **overrides):
-        return engine_document(self.spec_pin(), must_pass_with, canned, **overrides)
-
-    def adapter_pin(self, **pin):
-        return [{"codeRepository": self.url("adapter"), **pin}]
+    def pull_request(self, name, number, body="", base="main", fill=None, state="open", merged=False):
+        head = self.branch(name, f"pull/{number}", fill)
+        git("update-ref", f"refs/pull/{number}/head", head, cwd=self.origin(name))
+        self.pull_requests.open(name, number, body=body, base=base, head=head, state=state, merged=merged)
+        return head
 
     def engine(self, must_pass_with, canned="passed", **overrides):
         engine = self.clone("engine")
-        write_compatibility(engine, self.engine_file(must_pass_with, canned, **overrides))
+        write_compatibility(engine, engine_document(must_pass_with, canned, **overrides))
         return engine
 
-    @property
-    def environment(self):
+    def event(self, number):
+        path = self.root / "event.json"
+        body = {"pull_request": {"number": number, "base": {"ref": self.pull_requests.get("engine", number)["base"]["ref"]}}}
+        path.write_text(json.dumps(body), encoding="utf-8")
+        return path
+
+    def environment(self, **extra):
         temporary = str(self.temporary)
         environment = dict(os.environ, TMPDIR=temporary, TEMP=temporary, TMP=temporary, PYTHONIOENCODING="utf-8")
         environment.pop("CI", None)
+        for name in ("GITHUB_REPOSITORY", "GITHUB_EVENT_PATH", "GITHUB_REF_NAME", "GITHUB_STEP_SUMMARY"):
+            environment.pop(name, None)
+        environment.update({key: str(value) for key, value in extra.items()})
         return environment
 
-    def tool(self, subject, *steps, mode="local", interpreter=(sys.executable,), arguments=()):
-        output = ""
-        for command, expected in steps:
-            run = subprocess.run(
-                [*interpreter, str(TOOL), command, str(subject), "--mode", mode, *arguments],
-                capture_output=True,
-                encoding="utf-8",
-                errors="replace",
-                env=self.environment,
-            )
-            output += run.stdout + run.stderr
-            assert run.returncode == expected, f"{command} exited {run.returncode}, {expected} expected\n{output}"
-        return output
+    def ci(self, repository="engine", event=None, branch="main"):
+        """The variables a workflow run gives the tooling."""
+        variables = {
+            "CI": "true",
+            "GITHUB_REPOSITORY": f"{OWNER}/{repository}",
+            "GITHUB_API_URL": self.api_url,
+            "GITHUB_TOKEN": "a token the stub does not check",
+            "GITHUB_WORKSPACE": str(self.workspace),
+            "GITHUB_SERVER_URL": str(self.origins.as_uri()),
+            "GITHUB_STEP_SUMMARY": str(self.summary),
+            "GITHUB_REF_NAME": branch,
+        }
+        if event is not None:
+            variables["GITHUB_EVENT_PATH"] = str(event)
+        return variables
 
-    def record(self, subject):
-        path = self.temporary / "cascade-compatibility" / subject.name / "record.json"
-        return json.loads(path.read_text(encoding="utf-8"))
+    def tool(self, subject, expected=0, check=None, interpreter=(sys.executable,), arguments=(), **variables):
+        argv = [*interpreter, str(TOOL), str(subject), "--results", str(self.results), *arguments]
+        if check:
+            argv += ["--check", check]
+        run = subprocess.run(
+            argv, capture_output=True, encoding="utf-8", errors="replace", env=self.environment(**variables)
+        )
+        said = run.stdout + run.stderr
+        assert run.returncode == expected, f"exited {run.returncode}, {expected} expected\n{said}"
+        return said
+
+    def record(self):
+        return json.loads((self.results / "record.json").read_text(encoding="utf-8"))
+
+    def table(self):
+        return self.summary.read_text(encoding="utf-8") if self.summary.exists() else ""
 
 
 def sibling_state(path):

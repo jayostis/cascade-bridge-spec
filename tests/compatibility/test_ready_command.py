@@ -1,21 +1,47 @@
-def test_ready_fails_a_pin_to_a_feature_branch(world):
-    said = world.tool(world.engine(world.adapter_pin(branch="feat/next")), ("ready", 1))
-    assert "branch feat/next: not the default branch, main" in said
+"""The merge gate: a pull request merges only after the pull requests it names have merged."""
+
+from test_picking_versions import depends_on, engine_under_test
 
 
-def test_ready_fails_a_commit_not_on_the_default_branch(world):
-    feature = world.commits["adapter feat/next"]
-    said = world.tool(world.engine(world.adapter_pin(commit=feature)), ("ready", 1))
-    assert f"{feature} is not on main, the default branch" in said
+def test_ready_to_merge_fails_while_a_named_pull_request_is_open_naming_it(world):
+    world.pull_request("adapter", 7)
+    engine, event = engine_under_test(world, body=depends_on("adapter", 7))
+
+    said = world.tool(engine, 1, check="ready-to-merge", **world.ci(event=event))
+
+    assert "adapter/pull/7" in said
+    assert "has not merged" in said
 
 
-def test_ready_passes_a_tag_on_the_default_branch_and_the_spec_pin(world):
-    said = world.tool(world.engine(world.adapter_pin(tag="v1")), ("ready", 0))
-    adapter, specification = world.commits["adapter"], world.commits["specification"]
-    assert f"mustPassWith: {world.url('adapter')} tag v1: {adapter} is on main" in said
-    assert f"specPin: {world.url('specification')} commit {specification}: {specification} is on main" in said
+def test_ready_to_merge_passes_once_the_named_pull_request_has_merged(world):
+    world.pull_request("adapter", 7, state="closed", merged=True)
+    engine, event = engine_under_test(world, body=depends_on("adapter", 7))
+
+    said = world.tool(engine, check="ready-to-merge", **world.ci(event=event))
+
+    assert "adapter/pull/7" in said
+    assert "has merged" in said
 
 
-def test_ready_passes_a_pin_to_the_default_branch(world):
-    said = world.tool(world.engine(world.adapter_pin(branch="main")), ("ready", 0))
-    assert "branch main: the default branch" in said
+def test_ready_to_merge_passes_a_pull_request_naming_nothing(world):
+    engine, event = engine_under_test(world)
+
+    said = world.tool(engine, check="ready-to-merge", **world.ci(event=event))
+
+    assert "names no pull request" in said
+
+
+def test_ready_to_merge_passes_a_push(world):
+    said = world.tool(world.engine([world.url("adapter")]), check="ready-to-merge", **world.ci())
+
+    assert "no pull request is under test" in said
+
+
+def test_ready_to_merge_reads_only_the_pull_requests_named_directly(world):
+    world.pull_request("cascade-bridge-spec", 3)
+    world.pull_request("adapter", 7, body=depends_on("cascade-bridge-spec", 3), state="closed", merged=True)
+    engine, event = engine_under_test(world, body=depends_on("adapter", 7))
+
+    said = world.tool(engine, check="ready-to-merge", **world.ci(event=event))
+
+    assert "cascade-bridge-spec/pull/3" not in said
