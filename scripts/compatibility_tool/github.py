@@ -15,7 +15,6 @@ PULL_REQUEST_URL = re.compile(
 
 
 def repository_path(url):
-    """owner/repository, the two last segments of a repository URL."""
     segments = [segment for segment in urlparse(url).path.split("/") if segment]
     if len(segments) < 2:
         raise Stop(f"{url} names no owner and repository")
@@ -25,6 +24,11 @@ def repository_path(url):
 
 def repository_name(url):
     return repository_path(url).split("/")[-1]
+
+
+def url_on_this_server(path):
+    server = os.environ.get("GITHUB_SERVER_URL", "https://github.com").rstrip("/")
+    return f"{server}/{path}"
 
 
 @dataclass(frozen=True)
@@ -96,8 +100,6 @@ class Api:
 
 @dataclass(frozen=True)
 class Event:
-    """What the workflow run says it is running on."""
-
     repository: str
     number: int | None
     branch: str

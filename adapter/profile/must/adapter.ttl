@@ -74,7 +74,7 @@
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:nodeKind sh:IRI ;
-    sh:message "The adapter carries exactly one bridge:cascadeVocabularyPin, the pinned spec commit by IRI."
+    sh:message "The adapter carries exactly one bridge:cascadeVocabularyPin, the pinned commit of the-cascade-protocol/spec, by IRI."
   ] ;
   sh:property [
     sh:path bridge:vocabulary ;

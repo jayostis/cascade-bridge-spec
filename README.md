@@ -16,8 +16,7 @@ Normative: [`vocab/`](vocab/), [`shapes/`](shapes/),
 Nothing here pins an adapter or an engine, and nothing pins this repository. A
 run picks which version of each repository it uses when it starts, following
 [OpenStack's Zuul model](https://zuul-ci.org/docs/zuul/latest/gating.html) as
-closely as GitHub Actions allows; [`compatibility.md`](compatibility.md) states
-it, and names every departure from it and what someone must do by hand instead.
+closely as GitHub Actions allows ([`compatibility.md`](compatibility.md)).
 
 Not settled: what Core contains, the canonical findings model
 ([`adapter/fixtures/README.md`](adapter/fixtures/README.md)), router precedence

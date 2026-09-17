@@ -78,12 +78,6 @@ def fetch(url, ref, path):
     return git("rev-parse", "FETCH_HEAD", cwd=path).stdout.strip()
 
 
-def checkout_detached(path, commit):
-    run = git("checkout", "--quiet", "--detach", commit, cwd=path)
-    if run.returncode != 0:
-        raise Stop(f"{path} does not hold {commit}: {first_line(run.stderr)}")
-
-
 def merge(path, commit, name):
     run = git("merge", "--no-edit", "--quiet", commit, cwd=path)
     if run.returncode != 0:

@@ -3,13 +3,13 @@ from pathlib import Path
 import pytest
 
 from compatibility_tool.console import Stop
-from compatibility_tool.record import Record, Role, Used
+from compatibility_tool.record import Record, Role, Row
 
 
 def used(tmp_path):
     return [
-        Used("engine", "https://example.org/engine", "a" * 40, "pull request #1 merged into main", Role.UNDER_TEST),
-        Used(
+        Row("engine", "https://example.org/engine", "a" * 40, "pull request #1 merged into main", Role.UNDER_TEST),
+        Row(
             "adapter",
             "https://example.org/adapter.git",
             "b" * 40,

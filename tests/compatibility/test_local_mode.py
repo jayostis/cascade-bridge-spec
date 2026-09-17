@@ -1,6 +1,6 @@
 """A local run uses every sibling as it is on disk, fetching nothing."""
 
-from compatibility_world import git, sibling_state, write_compatibility
+from compatibility_world import current_branch, git, write_compatibility
 
 
 def nowhere(world):
@@ -20,7 +20,7 @@ def test_a_sibling_on_another_branch_with_uncommitted_edits_is_used_as_it_is(wor
 
     assert "feat/next" in said
     assert "uncommitted edits" in said
-    assert sibling_state(adapter)[1] == "feat/next"
+    assert current_branch(adapter) == "feat/next"
     assert world.record()["repositories"]["adapter"]["how"] == "the sibling's working tree, on feat/next"
 
 
@@ -31,7 +31,8 @@ def test_a_local_run_judges_the_sibling_it_used(world):
 
     said = world.tool(engine)
 
-    assert "holds" in said
+    assert "does not hold" not in said
+    assert "1 counterpart: 1 hold" in said
     assert "a result produced from uncommitted edits is feedback, never evidence" not in said
 
 
@@ -62,4 +63,4 @@ def test_an_adapter_is_run_by_the_engine_beside_it(world):
     said = world.tool(adapter)
 
     assert "fake engine: testing" in said
-    assert "holds" in said
+    assert "1 counterpart: 1 hold" in said

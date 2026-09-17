@@ -1,72 +1,14 @@
 import json
-import os
-import shutil
 import subprocess
-import sys
 
-from compatibility_tool.console import Status, Stop, detail, report
-from compatibility_tool.document import (
-    CONTEXT_IRI,
-    CRATE,
-    FILE,
-    SPEC_ROOT,
-    counterparts,
-    form_problem,
-    is_adapter,
-    name_clashes,
-    problems_json_ld_hides_from_shacl,
-)
-
-VALIDATOR = "rocrate-validator"
-BY_HAND = "python3 -m pip install --group <cascade-bridge-spec>/pyproject.toml:validators"
-
-
-def install():
-    """The picked specification's own pins, installed once the version is known."""
-    if os.environ.get("CI") != "true":
-        return
-    subprocess.run(
-        [sys.executable, "-m", "pip", "install", "--quiet", "--group", f"{SPEC_ROOT / 'pyproject.toml'}:validators"],
-        check=False,
-    )
-
-
-def installed(name):
-    try:
-        return __import__(name)
-    except ImportError:
-        install()
-    try:
-        return __import__(name)
-    except ImportError as error:
-        raise Stop(f"{name} is not installed, and the checks read the shapes with it: {BY_HAND}") from error
-
-
-def validator():
-    found = shutil.which(VALIDATOR)
-    if found is None:
-        install()
-        found = shutil.which(VALIDATOR)
-    if found is None:
-        raise Stop(f"{VALIDATOR} is not installed, and it is what lints an adapter's crate: {BY_HAND}")
-    return found
-
-
-def form_problems(directory, document):
-    """What the context hides from SHACL, read with the standard library alone."""
-    if document is None:
-        return []
-    if not isinstance(document, dict) or document.get("@context") != CONTEXT_IRI:
-        found = document.get("@context") if isinstance(document, dict) else document
-        return [f"its @context is {found!r}, where a {FILE} names {CONTEXT_IRI}"]
-    problems = problems_json_ld_hides_from_shacl(document) + name_clashes(directory, counterparts(document))
-    form = form_problem(directory, document)
-    return [*problems, form] if form else problems
+from compatibility_tool import packages
+from compatibility_tool.console import Status, detail, report
+from compatibility_tool.document import CRATE, FILE, is_adapter
 
 
 def shape_violations(directory, document, spec):
-    rdflib = installed("rdflib")
-    pyshacl = installed("pyshacl")
+    rdflib = packages.installed("rdflib")
+    pyshacl = packages.installed("pyshacl")
     context = json.loads((spec / "vocab" / "compatibility.context.jsonld").read_text(encoding="utf-8"))["@context"]
     data = dict(document, **{"@context": context})
     graph = rdflib.Graph().parse(data=json.dumps(data), format="json-ld", base=(directory / FILE).resolve().as_uri())
@@ -86,7 +28,7 @@ def shape_violations(directory, document, spec):
 
 def lint_adapter(directory, spec):
     argv = [
-        validator(),
+        packages.validator(),
         "validate",
         str(directory),
         "--extra-profiles-path",

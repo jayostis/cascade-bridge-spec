@@ -58,13 +58,11 @@ jobs:
     name: Published GitHub Actions, run on a synthetic adapter (not pytest)
     runs-on: ubuntu-latest
     steps:
-      # The entry point expects the repository under test beside its counterparts.
       - uses: actions/checkout@v7
         with:
           path: cascade-bridge-spec
 
       # By local path: the start action in this commit, not the default branch.
-      # Reading this pull request through the API is exercised here too.
       - name: start action (compatibility) on the synthetic adapter
         uses: ./cascade-bridge-spec/.github/actions/start
         with:

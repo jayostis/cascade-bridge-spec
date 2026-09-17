@@ -43,7 +43,7 @@ def publish(origins, name, fill):
 
 def specification(path):
     """What a run fetches and runs the checks from: this working tree, uncommitted edits included."""
-    for directory in ("scripts", "vocab", "shapes", "adapter"):
+    for directory in ("scripts", "vocab", "shapes", "adapter", "fixtures"):
         shutil.copytree(ROOT / directory, path / directory, ignore=shutil.ignore_patterns("__pycache__"))
     shutil.copy(ROOT / "pyproject.toml", path / "pyproject.toml")
 
@@ -67,12 +67,6 @@ def publish_origins(origins):
 def write_compatibility(directory, document):
     body = {"@context": CONTEXT_IRI, **document}
     (directory / "compatibility.json").write_text(json.dumps(body, indent=2) + "\n", encoding="utf-8", newline="")
-
-
-def read_compatibility(directory):
-    document = json.loads((directory / "compatibility.json").read_text(encoding="utf-8"))
-    document.pop("@context")
-    return document
 
 
 def engine_document(must_pass_with, canned="passed", **overrides):
@@ -101,7 +95,6 @@ class PullRequests:
             "merged": merged,
             "base": {"ref": base},
             "head": {"sha": head or ""},
-            "html_url": f"https://github.com/{OWNER}/{repository}/pull/{number}",
         }
         self.by_repository.setdefault(repository, {})[number] = pull
         return pull
@@ -283,9 +276,5 @@ class World:
         return self.summary.read_text(encoding="utf-8") if self.summary.exists() else ""
 
 
-def sibling_state(path):
-    return (
-        git("rev-parse", "HEAD", cwd=path),
-        git("symbolic-ref", "--short", "HEAD", cwd=path),
-        git("status", "--porcelain", cwd=path),
-    )
+def current_branch(path):
+    return git("symbolic-ref", "--short", "HEAD", cwd=path)

@@ -5,18 +5,22 @@ from dataclasses import dataclass, field
 
 from compatibility_tool import git
 from compatibility_tool.console import Stop
-from compatibility_tool.github import Named, named_in
+from compatibility_tool.github import Named, named_in, repository_path
 
 
 @dataclass
 class Reached:
     named: Named
     pull: dict
-    used: bool = True
+    checked_out: bool = True
 
     @property
     def base(self):
         return self.pull.get("base", {}).get("ref")
+
+    @property
+    def head(self):
+        return self.pull.get("head", {}).get("sha")
 
     @property
     def open(self):
@@ -32,14 +36,18 @@ class Choice:
     merging: list[Reached] = field(default_factory=list)
 
 
-def follow(api, under_test, checked_out):
+def follow(api, event, counterparts, specification):
     """Every pull request reached by Depends-On:, in the order reached.
 
     One in a repository the run checks nothing out from is followed for its own
     lines and listed, and nothing about it fails the check.
     """
-    if under_test is None:
+    if event.under_test is None:
         return []
+    checked_out = {event.repository, *(repository_path(url) for url in counterparts)}
+    if specification:
+        checked_out.add(repository_path(specification))
+    under_test = event.under_test
     reached = {}
     walking = [(api.pull_request(under_test), [under_test])]
     while walking:
@@ -50,15 +58,15 @@ def follow(api, under_test, checked_out):
                     f"{' -> '.join(step.label for step in path)} -> {named.label} is a cycle of pull requests, "
                     "and a Depends-On: line goes one way"
                 )
-            used = named.path in checked_out
+            wanted = named.path in checked_out
             if named not in reached:
-                found = api.pull_request(named, refuse=used)
+                found = api.pull_request(named, refuse=wanted)
                 if found is None:
-                    reached[named] = Reached(named, {"number": named.number, "state": "unread"}, used=False)
+                    reached[named] = Reached(named, {}, checked_out=False)
                     continue
-                if used and not found.get("merged") and found.get("state") != "open":
+                if wanted and not found.get("merged") and found.get("state") != "open":
                     raise Stop(f"{named.label} is closed without merging, so nothing names a version of {named.path}")
-                reached[named] = Reached(named, found, used=used)
+                reached[named] = Reached(named, found, checked_out=wanted)
             entry = reached[named]
             if entry.open:
                 walking.append((entry.pull, [*path, named]))
@@ -66,10 +74,10 @@ def follow(api, under_test, checked_out):
 
 
 def merging(reached, path):
-    return [entry for entry in reached if entry.used and entry.open and entry.named.path == path]
+    return [entry for entry in reached if entry.checked_out and entry.open and entry.named.path == path]
 
 
-def choose(url, path, reached, running_on, on_a_pull_request):
+def choose(url, path, reached, event):
     named = merging(reached, path)
     if named:
         bases = {entry.base for entry in named}
@@ -82,8 +90,9 @@ def choose(url, path, reached, running_on, on_a_pull_request):
         numbers = [f"#{entry.named.number}" for entry in named]
         said = numbers[0] if len(numbers) == 1 else " and ".join((", ".join(numbers[:-1]), numbers[-1]))
         return Choice(base, f"pull request{'s' if len(numbers) > 1 else ''} {said} merged into {base}", named)
+    running_on = event.branch
     if running_on and git.remote_branch(url, running_on):
-        matching = "the branch matching the pull request's target" if on_a_pull_request else "the branch this run is on"
+        matching = "the branch matching the pull request's target" if event.number else "the branch this run is on"
         return Choice(running_on, f"{running_on}, {matching}")
     default = git.default_branch(url)
     return Choice(default, f"{default}, the default branch")
@@ -98,7 +107,7 @@ def remove(path):
     shutil.rmtree(path)
 
 
-def place(url, path, choice, into):
+def place(url, choice, into):
     """The repository at its chosen branch, with every named pull request merged in."""
     remove(into)  # an earlier run's checkout is not this run's version
     git.clone_branch(url, into, choice.branch)

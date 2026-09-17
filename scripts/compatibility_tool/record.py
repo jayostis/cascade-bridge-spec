@@ -4,6 +4,7 @@ from enum import Enum
 from pathlib import Path
 
 from compatibility_tool.console import Stop
+from compatibility_tool.github import repository_path
 
 RECORD = "record.json"
 
@@ -24,7 +25,9 @@ def optional_text(value):
 
 
 @dataclass
-class Used:
+class Row:
+    """A repository the run recorded, and what it did with it."""
+
     name: str
     repository: str
     commit: str | None
@@ -36,6 +39,7 @@ class Used:
     report: Path | None = None
     result: str | None = None
     holds: bool | None = None
+    from_named_pull_requests: bool = False
 
     def describe(self):
         flag = ", with uncommitted edits" if self.uncommitted_edits else ""
@@ -53,6 +57,7 @@ class Used:
             "report": optional_text(self.report),
             "result": self.result,
             "holds": self.holds,
+            "fromNamedPullRequests": self.from_named_pull_requests,
         }
 
     @classmethod
@@ -69,6 +74,7 @@ class Used:
             report=optional_path(data["report"]),
             result=data["result"],
             holds=data["holds"],
+            from_named_pull_requests=data["fromNamedPullRequests"],
         )
 
 
@@ -76,7 +82,7 @@ class Used:
 class Record:
     directory: Path
     mode: str
-    used: list[Used] = field(default_factory=list)
+    used: list[Row] = field(default_factory=list)
 
     @property
     def counterparts(self):
@@ -86,7 +92,7 @@ class Record:
         """A name, or owner/name where two repositories share one."""
         if sum(other.name == entry.name for other in self.used) == 1:
             return entry.name
-        return "/".join(entry.repository.rstrip("/").rsplit("/", 2)[-2:])
+        return repository_path(entry.repository)
 
     def save(self, results):
         results.mkdir(parents=True, exist_ok=True)
@@ -106,5 +112,5 @@ class Record:
         return cls(
             directory=Path(data["directory"]),
             mode=data["mode"],
-            used=[Used.from_json(name, entry) for name, entry in data["repositories"].items()],
+            used=[Row.from_json(name, entry) for name, entry in data["repositories"].items()],
         )

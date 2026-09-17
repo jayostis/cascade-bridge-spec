@@ -207,5 +207,4 @@ bridge:command a owl:ObjectProperty ;
 
 bridge:mustPassWith a owl:ObjectProperty ;
   rdfs:label "must pass with"@en ;
-  rdfs:comment "A counterpart whose pairing blocks this repository's merge unless it passes."@en ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .

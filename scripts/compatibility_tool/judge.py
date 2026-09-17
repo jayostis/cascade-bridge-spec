@@ -2,6 +2,7 @@ import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from compatibility_tool import packages
 from compatibility_tool.console import Status, Stop, first_line, note, report, warn
 from compatibility_tool.document import CRATE, crate_root, referenced_id
 from compatibility_tool.record import Role
@@ -13,9 +14,7 @@ NOT_HOLDING = {"failed", "inapplicable"}
 
 
 def graph_of(path, **arguments):
-    from compatibility_tool.validate import installed
-
-    return installed("rdflib").Graph().parse(path, **arguments)
+    return packages.installed("rdflib").Graph().parse(path, **arguments)
 
 
 @dataclass
@@ -55,9 +54,7 @@ class Verdict:
 
 
 def manifest_entries_relative_to_adapter(adapter):
-    from compatibility_tool.validate import installed
-
-    URIRef = installed("rdflib").URIRef
+    URIRef = packages.installed("rdflib").URIRef
     adapter = adapter.resolve()
     _, root = crate_root(adapter)
     named = referenced_id(root, "bridge:testManifest")
@@ -71,9 +68,7 @@ def manifest_entries_relative_to_adapter(adapter):
 
 
 def judge_report(path, adapter):
-    from compatibility_tool.validate import installed
-
-    URIRef = installed("rdflib").URIRef
+    URIRef = packages.installed("rdflib").URIRef
     if path is None:
         return Verdict(unjudged="it was not run")
     if not path.is_file():
@@ -115,11 +110,9 @@ def judge(record, options):
         entry.holds = verdict.holds
         entry.result = verdict.describe()
         held += verdict.holds
-        flag = ", with uncommitted edits" if entry.uncommitted_edits else ""
         report(
             verdict.holds,
-            f"{entry.repository} at {entry.commit} ({entry.how}{flag}): "
-            f"{'holds' if verdict.holds else 'does not hold'}; {verdict.describe()}",
+            f"{entry.describe()}: {'holds' if verdict.holds else 'does not hold'}; {verdict.describe()}",
         )
     if any(entry.uncommitted_edits for entry in counterparts):
         note("a result produced from uncommitted edits is feedback, never evidence")
@@ -153,7 +146,7 @@ def table(record):
         shown = linked(f"`{commit[:7]}`", f"{repository}/commit/{commit}") if entry.commit else "—"
         edits = ", with uncommitted edits" if entry.uncommitted_edits else ""
         lines.append(f"| [{entry.name}]({repository}) | {entry.how}{edits} | {shown} | {result_cell(entry)} |")
-    if any(entry.role is not Role.UNDER_TEST and entry.how.startswith("pull request") for entry in record.used):
+    if any(entry.from_named_pull_requests for entry in record.used):
         lines += [
             "",
             "This pass is as fresh as this run: rerun it once the pull requests above have merged, and before merging.",

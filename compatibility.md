@@ -1,8 +1,8 @@
 # Compatibility between engines and adapters
 
-A repository may commit a `compatibility.json` at its root naming the adapters
-(in an engine) or engines (in an adapter) it must pass with. **Every entry that
-does not hold blocks the merge.**
+An engine commits a `compatibility.json` at its root, and an adapter may, naming
+the adapters (in an engine) or engines (in an adapter) it must pass with.
+**Every entry that does not hold blocks the merge.**
 
 Its keys are [`vocab/compatibility.context.jsonld`](vocab/compatibility.context.jsonld),
 each a `bridge:` term in [`vocab/bridge.ttl`](vocab/bridge.ttl), checked by the
@@ -14,7 +14,7 @@ An engine's file:
   "@context": "https://ns.cascadeprotocol.org/bridge/v1-draft/compatibility.jsonld",
   "setup": ["npm", "ci"],
   "command": ["node", "packages/bridge-cli/src/cli.ts"],
-  "mustPassWith": ["https://github.com/jayostis/cascade-bridge-adapter-clinvar"]
+  "mustPassWith": ["https://github.com/example-org/example-adapter"]
 }
 ```
 
@@ -29,18 +29,17 @@ Picked when the run starts, as Zuul checks out a job's required projects
 - the open pull requests reached by `Depends-On:` lines, from the description of
   the pull request under test and then from each named pull request's own, each
   merged into the branch it targets;
-- otherwise the branch named like the branch the pull request under test targets;
+- otherwise the branch named like the branch the run is on: the branch the pull
+  request under test targets, or the one a push, manual or scheduled run is on;
 - otherwise the default branch.
 
 A local run uses every sibling checkout as it is on disk, uncommitted edits
 included.
 
-A pull request merges only once every pull request it names has merged.
+A pull request merges only once every pull request it names directly has merged.
 
-**A `Depends-On:` line goes one way.** A cycle fails, as in Zuul without
+**A `Depends-On:` line goes one way**, as in Zuul without
 [circular dependencies](https://zuul-ci.org/docs/zuul/latest/config/queue.html).
-A change an engine and an adapter must both follow goes in backward-compatible
-steps, each leaving every default branch green.
 
 Where GitHub Actions cannot reproduce Zuul, a person or an agent does it by
 hand:
@@ -63,4 +62,7 @@ usage. A repository's CI calls only `.github/actions/start@main`
 ([`adapter/validation.md`](adapter/validation.md) shows the workflow). A pull
 request here that changes the tooling is tried first from a no-op engine or
 adapter pull request naming it on a `Depends-On:` line, as a change to Zuul's
-shared jobs is.
+shared jobs is. A caller depends on no more than the entry point's path, its
+arguments and the results directory, and a change to one of those merges before
+it reaches anyone, as Zuul refuses to run a trusted project's content
+speculatively.

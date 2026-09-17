@@ -17,12 +17,12 @@ def adapter_naming_engine(world):
 def test_an_engines_file_naming_its_counterpart_by_repository_url_passes(world):
     world.clone("adapter")
     said = world.tool(world.engine([world.url("adapter")]))
-    assert "does not hold" not in said
+    assert "1 counterpart: 1 hold" in said
 
 
 def test_an_adapters_file_naming_its_counterpart_by_repository_url_passes(world):
     said = world.tool(adapter_naming_engine(world))
-    assert "does not hold" not in said
+    assert "1 counterpart: 1 hold" in said
 
 
 def test_an_adapter_with_no_compatibility_json_is_nothing_to_check_not_a_pass(world):
@@ -80,4 +80,4 @@ def test_two_counterparts_whose_repositories_share_a_name_are_refused(world):
 
 def test_a_counterpart_named_cascade_bridge_spec_is_refused(world):
     said = world.tool(world.engine([world.url("cascade-bridge-spec")]), 1)
-    assert "cascade-bridge-spec" in said
+    assert "No repository in mustPassWith is named cascade-bridge-spec" in said

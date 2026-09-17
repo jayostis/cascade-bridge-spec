@@ -1,10 +1,7 @@
 import json
-from pathlib import Path
 
 from compatibility_tool.console import Stop
 from compatibility_tool.github import repository_name
-
-SPEC_ROOT = Path(__file__).resolve().parents[2]
 
 FILE = "compatibility.json"
 CRATE = "ro-crate-metadata.json"
@@ -70,28 +67,24 @@ def problems_json_ld_hides_from_shacl(document):
 
 
 def name_clashes(directory, urls):
-    problems = []
-    seen = {}
-    for url in urls:
-        name = repository_name(url)
-        if name.casefold() in seen:
-            problems.append(
-                "Each repository name appears in mustPassWith at most once, "
-                f"compared without case: {seen[name.casefold()]} and {url} "
-                f"would both be checked out at ../{name}"
-            )
-        seen[name.casefold()] = url
     reserved = {
         "cascade-bridge-spec": "that is where the check checks the specification out beside this repository",
         directory.resolve().name.casefold(): "that is this repository's own directory",
     }
+    clashes = []
+    seen = {}
     for url in urls:
         name = repository_name(url)
-        if name.casefold() in reserved:
-            problems.append(
-                f"No repository in mustPassWith is named {name}, compared without case: {reserved[name.casefold()]}"
+        folded = name.casefold()
+        if folded in seen:
+            clashes.append(
+                "Each repository name appears in mustPassWith at most once, "
+                f"compared without case: {seen[folded]} and {url} would both be checked out at ../{name}"
             )
-    return problems
+        if folded in reserved:
+            clashes.append(f"No repository in mustPassWith is named {name}, compared without case: {reserved[folded]}")
+        seen[folded] = url
+    return clashes
 
 
 def form_problem(directory, document):
@@ -104,3 +97,15 @@ def form_problem(directory, document):
     if not is_adapter(directory) and len(carried) != len(ENGINE_KEYS):
         return f"{directory} holds no {CRATE}, so it is an engine, and an engine's {FILE} carries setup and command"
     return None
+
+
+def problems(directory, document):
+    """What the JSON-LD context hides from SHACL, read with the standard library alone."""
+    if document is None:
+        return []
+    if not isinstance(document, dict) or document.get("@context") != CONTEXT_IRI:
+        found = document.get("@context") if isinstance(document, dict) else document
+        return [f"its @context is {found!r}, where a {FILE} names {CONTEXT_IRI}"]
+    found = problems_json_ld_hides_from_shacl(document) + name_clashes(directory, counterparts(document))
+    form = form_problem(directory, document)
+    return [*found, form] if form else found
