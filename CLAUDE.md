@@ -42,7 +42,7 @@ So:
   ([gating](https://zuul-ci.org/docs/zuul/latest/gating.html),
   [job configuration](https://zuul-ci.org/docs/zuul/latest/config/job.html),
   [queues](https://zuul-ci.org/docs/zuul/latest/config/queue.html)), followed as
-  closely as GitHub Actions allows. A departure from it is named in
+  closely as practical. A departure from it, forced or chosen, is named in
   [`compatibility.md`](compatibility.md) with what someone must do by hand
   instead, or it is not taken.
 - **The pilot is evidence, not authority**, and is never modified here.

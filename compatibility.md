@@ -41,19 +41,45 @@ A pull request merges only once every pull request it names directly has merged.
 **A `Depends-On:` line goes one way**, as in Zuul without
 [circular dependencies](https://zuul-ci.org/docs/zuul/latest/config/queue.html).
 
-Where GitHub Actions cannot reproduce Zuul, a person or an agent does it by
-hand:
+## Where this departs from Zuul
+
+GitHub Actions cannot reproduce these, so a person or an agent does it by hand:
 
 - **A named pull request changing retests nothing.** Rerun the dependent pull
   request's workflow: `gh run rerun`.
-- **There is no gate queue**, so a pass is as fresh as its last run. Once a
-  named pull request has merged, rerun `compatibility` and `ready-to-merge`
-  before merging; a run says so when it used one.
+- **There is no gate queue**, so a pass is as fresh as its last run and the
+  branches under it can move after it. Rerun `compatibility` and
+  `ready-to-merge` before merging; a run says so when it used a named pull
+  request.
 - **A repository's state is not frozen across a run's jobs**, so two checks of
   one pull request can read different descriptions and branches. Rerun both
   rather than trusting a mixed pair.
 - **A cycle is refused rather than merged as one unit.** Split the change into
   backward-compatible steps, each leaving every default branch green.
+
+These are chosen, and could be otherwise:
+
+- **A named pull request's specification runs**, rather than being read as data:
+  the entry point hands the run to the version it picked, which is how a change
+  here is tried before it merges, and is how Zuul treats an
+  [untrusted project's](https://zuul-ci.org/docs/zuul/latest/concepts.html) job
+  content rather than a config project's. Review a pull request here as code
+  that will run in every repository whose pull request names it, with the token
+  that repository's workflow grants.
+- **Nothing here starts a run anywhere else**, because this repository knows of
+  no adapter and no engine. A change to what an adapter or a Bridge must do is
+  tried from a no-op pull request in one, naming this one on a `Depends-On:`
+  line, before it merges.
+- **The merge gate reads the pull requests named directly**, and each of those
+  is held by its own repository's gate, so a chain merges from its end.
+- **A named pull request closed without merging fails the check** rather than
+  taking the dependent out of the queue. Cut the `Depends-On:` line; editing the
+  description starts a run.
+- **A counterpart is named by the repository under test**, not by a tenant, and
+  not transitively: what a counterpart itself must pass with is its own run's
+  business.
+- **A run is aimed at no version.** There is no `override-checkout`; to try a
+  branch, cut one of the same name in each repository.
 
 ## The tooling
 
@@ -61,8 +87,7 @@ hand:
 usage. A repository's CI calls only `.github/actions/start@main`
 ([`adapter/validation.md`](adapter/validation.md) shows the workflow). A pull
 request here that changes the tooling is tried first from a no-op engine or
-adapter pull request naming it on a `Depends-On:` line, as a change to Zuul's
-shared jobs is. A caller depends on no more than the entry point's path, its
-arguments and the results directory, and a change to one of those merges before
-it reaches anyone, as Zuul refuses to run a trusted project's content
-speculatively.
+adapter pull request naming it on a `Depends-On:` line. A caller depends on no
+more than the entry point's path, its arguments and the results directory: those
+names reach a caller only once they have merged, and everything else the run
+does comes from the version it picked.
