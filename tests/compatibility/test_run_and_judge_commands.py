@@ -77,3 +77,35 @@ def test_judge_holds_an_entry_run_on_a_siblings_uncommitted_edits_and_flags_it(w
     said = world.tool(engine, ("checkout", 0), ("run", 0), ("judge", 0))
     assert "(branch main, with uncommitted edits): holds" in said
     assert "a result produced from uncommitted edits is feedback, never evidence" in said
+
+
+def test_judge_appends_a_table_of_every_entry_to_a_summary_file(world, tmp_path):
+    summary = tmp_path / "summary.md"
+    summary.write_text("earlier steps\n", encoding="utf-8")
+    engine = engine_beside_adapter(world)
+    world.tool(engine, ("checkout", 0), ("run", 0))
+    world.tool(engine, ("judge", 0), arguments=("--summary", str(summary)))
+    written = summary.read_text(encoding="utf-8")
+    assert written.startswith("earlier steps\n")
+    assert "| must pass with | pin | commit | result |" in written
+    assert "| adapter | branch main |" in written
+    assert "| ✅ holds: 1 cantTell, 1 passed, 1 untested, covering all 3 of the manifest's tests |" in written
+
+
+def test_judge_writes_an_entry_that_does_not_hold_to_the_summary_as_failing(world, tmp_path):
+    summary = tmp_path / "summary.md"
+    engine = engine_beside_adapter(world, "failed")
+    world.tool(engine, ("checkout", 0), ("run", 0))
+    world.tool(engine, ("judge", 1), arguments=("--summary", str(summary)))
+    assert (
+        "| ❌ does not hold: 1 cantTell, 1 failed, 1 untested, covering all 3 of the manifest's tests |"
+        in summary.read_text(encoding="utf-8")
+    )
+
+
+def test_judge_says_in_the_summary_when_there_is_nothing_to_check(world, tmp_path):
+    summary = tmp_path / "summary.md"
+    engine = world.engine([])
+    world.tool(engine, ("checkout", 0))
+    world.tool(engine, ("judge", 0), arguments=("--summary", str(summary)))
+    assert "lists no counterpart" in summary.read_text(encoding="utf-8")

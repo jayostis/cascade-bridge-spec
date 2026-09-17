@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from pathlib import Path
 
 from rdflib import Graph, URIRef
 
@@ -89,22 +90,49 @@ def judge_report(path, adapter):
     return Verdict(tally=tally, expected=expected, missing=missing)
 
 
+def linked(text, url):
+    return f"[{text}]({url})" if url.startswith("https://") else text
+
+
+def table_row(entry, verdict):
+    repository = entry.pin.repository.removesuffix(".git")
+    commit = linked(f"`{entry.commit[:7]}`", f"{repository}/commit/{entry.commit}")
+    result = f"{'✅ holds' if verdict.holds else '❌ does not hold'}: {verdict.describe()}".replace("|", "\\|")
+    return f"| {linked(entry.pin.name, repository)} | {entry.pin.kind} {entry.pin.value} | {commit} | {result} |"
+
+
+def append_summary(path, directory, rows):
+    lines = [f"### Compatibility of {directory.name}", ""]
+    if rows:
+        lines += ["| must pass with | pin | commit | result |", "|---|---|---|---|", *rows]
+    else:
+        lines.append(f"{directory.name} lists no counterpart: nothing to check.")
+    with Path(path).open("a", encoding="utf-8") as summary:
+        summary.write("\n".join(lines) + "\n\n")
+
+
 def judge_command(directory, options):
     counterparts = Record.load_checked_out(options.results).counterparts
     print("Each entry, judged by its EARL report")
     if not counterparts:
+        if options.summary:
+            append_summary(options.summary, directory, [])
         report(True, "no entry: nothing to check")
         return Status.NOTHING_TO_CHECK
     held = 0
+    rows = []
     for entry in counterparts:
         verdict = judge_report(entry.report, entry.adapter)
         held += verdict.holds
+        rows.append(table_row(entry, verdict))
         flag = ", with uncommitted edits" if entry.uncommitted_edits else ""
         report(
             verdict.holds,
             f"{entry.pin.repository} at {entry.commit} ({entry.pin.kind} {entry.pin.value}{flag}): "
             f"{'holds' if verdict.holds else 'does not hold'}; {verdict.describe()}",
         )
+    if options.summary:
+        append_summary(options.summary, directory, rows)
     if any(entry.uncommitted_edits for entry in counterparts):
         note("a result produced from uncommitted edits is feedback, never evidence")
     count = len(counterparts)

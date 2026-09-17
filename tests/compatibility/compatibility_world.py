@@ -132,11 +132,11 @@ class World:
         environment.pop("CI", None)
         return environment
 
-    def tool(self, subject, *steps, mode="local", interpreter=(sys.executable,)):
+    def tool(self, subject, *steps, mode="local", interpreter=(sys.executable,), arguments=()):
         output = ""
         for command, expected in steps:
             run = subprocess.run(
-                [*interpreter, str(TOOL), command, str(subject), "--mode", mode],
+                [*interpreter, str(TOOL), command, str(subject), "--mode", mode, *arguments],
                 capture_output=True,
                 encoding="utf-8",
                 errors="replace",

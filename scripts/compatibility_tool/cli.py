@@ -26,6 +26,7 @@ class Options:
     worktrees: Path
     temporary: Path
     output: str | None
+    summary: str | None
 
 
 def parse(usage, argv):
@@ -51,6 +52,9 @@ def parse(usage, argv):
         "named for the repository under the system temporary directory",
     )
     parser.add_argument("--output", default=None, help="spec-pin only: a file to append repository=, kind= and ref= to")
+    parser.add_argument(
+        "--summary", default=None, help="judge only: a Markdown file to append a table of every entry to"
+    )
     return parser.parse_args(argv)
 
 
@@ -68,6 +72,7 @@ def main(usage, argv=None):
         worktrees=temporary / "cascade-compatibility" / "worktrees",
         temporary=temporary,
         output=args.output,
+        summary=args.summary,
     )
     print(f"Repository: {directory}")
     print(f"Spec:       {SPEC_ROOT}")
