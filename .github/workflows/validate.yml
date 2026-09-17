@@ -14,9 +14,9 @@ jobs:
     name: "RO-Crate 1.2: the adapter profile's own crate"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
 
@@ -32,9 +32,9 @@ jobs:
     name: "ruff and pytest: the specification's files, the adapter profile and the compatibility tool"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
 
@@ -57,7 +57,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # The starter expects the specification at ./cascade-bridge-spec/.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           path: cascade-bridge-spec
 

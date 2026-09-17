@@ -43,11 +43,11 @@ runs:
         if [ -d "${REPOSITORY_PATH}" ]; then echo "present=true"; else echo "present=false"; fi >> "$GITHUB_OUTPUT"
 
     - if: steps.present.outputs.present != 'true'
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
       with:
         path: ${{ inputs.path }}
 
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v7
       with:
         python-version: ${{ inputs.python-version }}
 
