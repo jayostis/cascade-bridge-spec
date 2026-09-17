@@ -3,7 +3,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from _held import held
+from _findings import report_findings
 from _terms import BRIDGE, MF
 from rdflib import Graph
 from rocrate_validator.models import ValidationContext
@@ -38,4 +38,4 @@ class ExpectedGraphs(PyFunctionCheck):
 
     @check(name="every expected graph parses as Turtle")
     def run_check(self, context: ValidationContext) -> bool:
-        return held(self, context, unparsable)
+        return report_findings(self, context, unparsable)

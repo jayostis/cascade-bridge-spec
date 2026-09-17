@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urlparse
@@ -9,6 +7,14 @@ from rdflib import Graph, URIRef
 from rdflib.namespace import RDF
 
 from _terms import BRIDGE, MF
+
+
+def path_of(iri):
+    return Path(url2pathname(urlparse(str(iri)).path))
+
+
+def file_name_of(iri):
+    return path_of(iri).name or str(iri)
 
 
 @dataclass(frozen=True)
@@ -21,9 +27,7 @@ class Crate:
 
     def path_in_package(self, iri):
         prefix = self.adapter.resolve().as_uri().rstrip("/") + "/"
-        if not str(iri).startswith(prefix):
-            return None
-        return Path(url2pathname(urlparse(str(iri)).path))
+        return path_of(iri) if str(iri).startswith(prefix) else None
 
     def file_at(self, iri):
         path = self.path_in_package(iri)
@@ -32,20 +36,10 @@ class Crate:
     @property
     def entries(self):
         head = self.graph.value(self.manifest_iri, MF.entries)
-        found = []
-        while head is not None and head != RDF.nil:
-            member = self.graph.value(head, RDF.first)
-            if member is not None:
-                found.append(member)
-            head = self.graph.value(head, RDF.rest)
-        return found
+        return [] if head is None else list(self.graph.items(head))
 
     def name_of(self, test):
         return str(self.graph.value(test, MF.name) or test)
-
-
-def file_name_of(iri):
-    return Path(url2pathname(urlparse(str(iri)).path)).name or str(iri)
 
 
 def load(adapter):
@@ -56,24 +50,17 @@ def load(adapter):
     roots = list(graph.subjects(RDF.type, BRIDGE.Adapter))
     if len(roots) != 1:
         raise ValueError(
-            f"the crate declares {len(roots)} bridge:Adapter entities; "
-            "exactly one, the root entity, is expected"
+            f"the crate declares {len(roots)} bridge:Adapter entities; exactly one, the root entity, is expected"
         )
     root = roots[0]
 
     manifests = list(graph.objects(root, BRIDGE.testManifest))
     if len(manifests) != 1:
-        raise ValueError(
-            f"the adapter names {len(manifests)} bridge:testManifest "
-            "values; exactly one is expected"
-        )
+        raise ValueError(f"the adapter names {len(manifests)} bridge:testManifest values; exactly one is expected")
     manifest_iri = manifests[0]
-    manifest_file = Path(url2pathname(urlparse(str(manifest_iri)).path))
+    manifest_file = path_of(manifest_iri)
     if not manifest_file.is_file():
-        raise ValueError(
-            f"the adapter's bridge:testManifest names {manifest_file}, "
-            "which does not exist"
-        )
+        raise ValueError(f"the adapter's bridge:testManifest names {manifest_file}, which does not exist")
     try:
         graph.parse(manifest_file, format="turtle", publicID=str(manifest_iri))
     except Exception as error:
@@ -91,9 +78,7 @@ def from_context(context):
         if not candidate:
             continue
         text = str(candidate)
-        if text.startswith("file://"):
-            text = url2pathname(urlparse(text).path)
-        path = Path(text)
+        path = path_of(text) if text.startswith("file://") else Path(text)
         if path.is_dir():
             path = path.resolve()
             if path not in _parsed_crates:

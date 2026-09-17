@@ -3,7 +3,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from _held import held
+from _findings import report_findings
 from _crate import file_name_of
 from _terms import BRIDGE
 from rdflib.plugins.sparql import prepareQuery
@@ -57,4 +57,4 @@ class Queries(PyFunctionCheck):
 
     @check(name="every query parses in its declared form")
     def run_check(self, context: ValidationContext) -> bool:
-        return held(self, context, malformed)
+        return report_findings(self, context, malformed)
