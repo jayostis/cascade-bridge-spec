@@ -32,7 +32,10 @@ def parse(usage, argv):
     parser = argparse.ArgumentParser(description=usage, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("command", choices=sorted(COMMANDS))
     parser.add_argument(
-        "directory", type=Path, nargs="?", default=Path("."),
+        "directory",
+        type=Path,
+        nargs="?",
+        default=Path("."),
         help="the repository under test; the current directory when omitted",
     )
     parser.add_argument(
@@ -47,9 +50,7 @@ def parse(usage, argv):
         help="where the record and the EARL reports go; by default a directory "
         "named for the repository under the system temporary directory",
     )
-    parser.add_argument(
-        "--output", default=None, help="spec-pin only: a file to append repository=, kind= and ref= to"
-    )
+    parser.add_argument("--output", default=None, help="spec-pin only: a file to append repository=, kind= and ref= to")
     return parser.parse_args(argv)
 
 

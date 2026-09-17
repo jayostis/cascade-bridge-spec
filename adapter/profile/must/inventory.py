@@ -5,11 +5,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import subprocess
 
-from _findings import report_findings
-from _terms import SCHEMA
 from rdflib import URIRef
 from rocrate_validator.models import ValidationContext
 from rocrate_validator.requirements.python import PyFunctionCheck, check, requirement
+
+from _findings import report_findings
+from _terms import SCHEMA
 
 FILES_THE_CRATE_NEED_NOT_DESCRIBE = ("README.md", "LICENSE", "CHANGELOG.md", "CLAUDE.md", "ro-crate-metadata.json")
 

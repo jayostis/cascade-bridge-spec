@@ -104,7 +104,9 @@ def problems_json_ld_hides_from_shacl(document):
         value = document.get(label)
         for pin in value if isinstance(value, list) else [value]:
             if isinstance(pin, dict):
-                problems += [f"{key}, in {label}, is not a key the context defines" for key in pin if key not in PIN_KEYS]
+                problems += [
+                    f"{key}, in {label}, is not a key the context defines" for key in pin if key not in PIN_KEYS
+                ]
     return problems
 
 

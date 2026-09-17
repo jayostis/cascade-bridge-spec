@@ -29,7 +29,7 @@ jobs:
         run: rocrate-validator validate adapter/profile/ --profile-identifier ro-crate-1.2 --no-paging
 
   pytest:
-    name: "pytest: the specification's files, the adapter profile and the compatibility tool"
+    name: "ruff and pytest: the specification's files, the adapter profile and the compatibility tool"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -42,6 +42,12 @@ jobs:
         run: |
           python3 -m pip install --upgrade pip
           python3 -m pip install --group dev
+
+      - name: Lint with ruff
+        run: python3 -m ruff check .
+
+      - name: Check ruff formatting
+        run: python3 -m ruff format --check .
 
       - name: Run pytest
         run: python3 -m pytest

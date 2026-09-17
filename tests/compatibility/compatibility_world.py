@@ -11,18 +11,17 @@ SYNTHETIC_ADAPTER = ROOT / "fixtures" / "synthetic-adapter"
 FAKE_ENGINE = ROOT / "fixtures" / "fake-engine"
 CONTEXT_IRI = "https://ns.cascadeprotocol.org/bridge/v1-draft/compatibility.jsonld"
 
-IDENTITY = [
-    "-c", "user.name=compatibility tests",
-    "-c", "user.email=tests@example.org",
-    "-c", "commit.gpgsign=false",
-    "-c", "tag.gpgsign=false",
-]
+SETTINGS = (
+    "user.name=compatibility tests",
+    "user.email=tests@example.org",
+    "commit.gpgsign=false",
+    "tag.gpgsign=false",
+)
+IDENTITY = [argument for setting in SETTINGS for argument in ("-c", setting)]
 
 
 def git(*args, cwd=None):
-    run = subprocess.run(
-        ["git", *IDENTITY, *args], cwd=cwd, capture_output=True, encoding="utf-8"
-    )
+    run = subprocess.run(["git", *IDENTITY, *args], cwd=cwd, capture_output=True, encoding="utf-8")
     assert run.returncode == 0, f"git {' '.join(args)}: {run.stderr.strip()}"
     return run.stdout.strip()
 
@@ -41,7 +40,8 @@ def publish_origins(origins):
     origins.mkdir(parents=True)
     commits = {}
     commits["specification"] = publish(
-        origins, "specification",
+        origins,
+        "specification",
         lambda path: (path / "README.md").write_text("a stand-in for the specification\n", encoding="utf-8"),
     )
     commits["adapter"] = publish(

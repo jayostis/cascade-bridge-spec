@@ -47,8 +47,7 @@ def main():
         return 0
     manifest = (adapter / "fixtures" / "manifest.ttl").as_uri()
     body = EARL + "".join(
-        ASSERTION.format(manifest=manifest, test=test, outcome=outcome)
-        for test, outcome in CANNED[args.canned].items()
+        ASSERTION.format(manifest=manifest, test=test, outcome=outcome) for test, outcome in CANNED[args.canned].items()
     )
     args.earl.write_text(body, encoding="utf-8")
     return 0

@@ -1,6 +1,7 @@
-from _terms import BRIDGE
 from rdflib import URIRef
 from rdflib.namespace import DCTERMS
+
+from _terms import BRIDGE
 
 PROFILE = URIRef("https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/")
 

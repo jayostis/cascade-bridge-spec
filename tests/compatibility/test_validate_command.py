@@ -1,4 +1,5 @@
 import pytest
+
 from compatibility_world import read_compatibility, write_compatibility
 
 A_FILE_OF_NEITHER_FORM = (
@@ -110,11 +111,13 @@ def counterpart_at(*parts):
     "build, says",
     [
         pytest.param(
-            two_pin_kinds, "A pin names exactly one of commit, tag or branch.",
+            two_pin_kinds,
+            "A pin names exactly one of commit, tag or branch.",
             id="validate fails a pin naming two of commit, tag and branch",
         ),
         pytest.param(
-            spec_pin_naming_two_pin_kinds, "A pin names exactly one of commit, tag or branch.",
+            spec_pin_naming_two_pin_kinds,
+            "A pin names exactly one of commit, tag or branch.",
             id="validate fails an engine's specPin naming two of commit, tag and branch",
         ),
         pytest.param(
@@ -123,15 +126,18 @@ def counterpart_at(*parts):
             id="validate fails an engine's specPin without codeRepository",
         ),
         pytest.param(
-            engine_without_command, A_FILE_OF_NEITHER_FORM,
+            engine_without_command,
+            A_FILE_OF_NEITHER_FORM,
             id="validate fails an engine's file without command",
         ),
         pytest.param(
-            engine_carrying_only_spec_pin, A_FILE_OF_NEITHER_FORM,
+            engine_carrying_only_spec_pin,
+            A_FILE_OF_NEITHER_FORM,
             id="validate fails an engine's file carrying only specPin",
         ),
         pytest.param(
-            adapter_carrying_spec_pin, A_FILE_OF_NEITHER_FORM,
+            adapter_carrying_spec_pin,
+            A_FILE_OF_NEITHER_FORM,
             id="validate fails an adapter's file carrying specPin",
         ),
         pytest.param(
@@ -140,23 +146,28 @@ def counterpart_at(*parts):
             id="validate fails an engine's file in an adapter's directory",
         ),
         pytest.param(
-            misspelt_key, "mustpasswith is not a key the context defines",
+            misspelt_key,
+            "mustpasswith is not a key the context defines",
             id="validate fails a key the context does not define",
         ),
         pytest.param(
-            string_vector, "setup is an argument vector, written as a JSON array of strings",
+            string_vector,
+            "setup is an argument vector, written as a JSON array of strings",
             id="validate fails an argument vector written as a string",
         ),
         pytest.param(
-            must_pass_with_object, "mustPassWith is a list of pins, written as a JSON array",
+            must_pass_with_object,
+            "mustPassWith is a list of pins, written as a JSON array",
             id="validate fails mustPassWith written as one object",
         ),
         pytest.param(
-            must_pass_with_number, "mustPassWith is a list of pins, written as a JSON array",
+            must_pass_with_number,
+            "mustPassWith is a list of pins, written as a JSON array",
             id="validate fails mustPassWith written as a number, in a sentence not a traceback",
         ),
         pytest.param(
-            spec_pin_array, "specPin is one pin, written as a JSON object",
+            spec_pin_array,
+            "specPin is one pin, written as a JSON object",
             id="validate fails specPin written as an array",
         ),
         pytest.param(

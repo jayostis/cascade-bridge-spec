@@ -5,10 +5,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import hashlib
 
-from _findings import report_findings
-from _terms import SCHEMA
 from rocrate_validator.models import ValidationContext
 from rocrate_validator.requirements.python import PyFunctionCheck, check, requirement
+
+from _findings import report_findings
+from _terms import SCHEMA
 
 ALGORITHMS = {
     "md5": hashlib.md5,
@@ -54,10 +55,7 @@ def mismatches(crate):
     for path, algorithm, declared, is_local in claims(crate):
         whose = "crate's" if is_local else "publisher's"
         if not path.is_file():
-            yield (
-                f"{path.name}: the crate records a {whose} {algorithm} for a "
-                "file that is not there"
-            )
+            yield (f"{path.name}: the crate records a {whose} {algorithm} for a file that is not there")
             continue
         actual = digest_of(path, algorithm)
         if actual == declared:

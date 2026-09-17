@@ -1,6 +1,7 @@
+from rdflib import Literal, URIRef
+
 import digests
 from _terms import SCHEMA
-from rdflib import Literal, URIRef
 
 INPUT_SET = "fixtures/in/example-0001.xml"
 INPUT_RECORD = "fixtures/in/example-0002.xml"

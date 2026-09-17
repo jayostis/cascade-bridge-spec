@@ -26,9 +26,7 @@ def test_resolve_uses_a_branch_pins_sibling_with_its_uncommitted_edits_and_flags
     engine = world.engine(world.adapter_pin(branch="main"))
     (world.clone("adapter") / "README.md").write_text("an uncommitted edit\n", encoding="utf-8")
     said = world.tool(engine, ("resolve", 0))
-    assert (
-        f"branch main is {world.commits['adapter']} (the sibling's working tree, with uncommitted edits)" in said
-    )
+    assert f"branch main is {world.commits['adapter']} (the sibling's working tree, with uncommitted edits)" in said
     assert "a result produced from uncommitted edits is feedback, never evidence" in said
 
 

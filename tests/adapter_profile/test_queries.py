@@ -13,9 +13,7 @@ def test_reports_a_mapping_that_is_not_sparql(package):
 
 def test_reports_a_detect_query_that_is_not_an_ask(package):
     package.edit("in/example-detect.rq", "ASK {", "SELECT * WHERE {")
-    assert "where bridge:detectQuery requires ASK" in "\n".join(
-        queries.malformed(package.crate)
-    )
+    assert "where bridge:detectQuery requires ASK" in "\n".join(queries.malformed(package.crate))
 
 
 def test_reports_a_findings_query_projecting_other_than_the_four_variables(package):
@@ -24,9 +22,7 @@ def test_reports_a_findings_query_projecting_other_than_the_four_variables(packa
         "SELECT ?sourceField ?reason ?severity ?context",
         "SELECT ?sourceField ?reason ?severity",
     )
-    assert "?sourceField ?reason ?severity ?context" in "\n".join(
-        queries.malformed(package.crate)
-    )
+    assert "?sourceField ?reason ?severity ?context" in "\n".join(queries.malformed(package.crate))
 
 
 def test_reports_nothing_when_the_adapter_names_no_query(crate):

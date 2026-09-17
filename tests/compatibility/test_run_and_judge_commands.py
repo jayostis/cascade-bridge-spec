@@ -21,15 +21,18 @@ def test_judge_holds_an_entry_whose_engine_passes_its_adapter(world):
     "canned, says",
     [
         pytest.param(
-            "failed", ["does not hold; 1 cantTell, 1 failed, 1 untested"],
+            "failed",
+            ["does not hold; 1 cantTell, 1 failed, 1 untested"],
             id="judge fails an entry whose report has a failure, though the engine exits 0",
         ),
         pytest.param(
-            "none", ["it wrote no report", "does not hold; it wrote no report"],
+            "none",
+            ["it wrote no report", "does not hold; it wrote no report"],
             id="judge fails an entry whose run wrote no report",
         ),
         pytest.param(
-            "garbled", ["does not hold; its report does not parse as Turtle"],
+            "garbled",
+            ["does not hold; its report does not parse as Turtle"],
             id="judge fails an entry whose report is not Turtle",
         ),
         pytest.param(

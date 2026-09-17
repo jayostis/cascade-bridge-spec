@@ -98,7 +98,10 @@ class Ancestry:
             repository = self.scratch / f"counterpart-{len(self.fetched)}"
             git("init", "--quiet", "--bare", str(repository))
             run = git(
-                "fetch", "--quiet", "--filter=blob:none", url,
+                "fetch",
+                "--quiet",
+                "--filter=blob:none",
+                url,
                 f"+refs/heads/{branch}:refs/heads/{branch}",
                 cwd=repository,
             )

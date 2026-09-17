@@ -3,11 +3,12 @@ import shutil
 import subprocess
 from pathlib import Path
 
-import _crate
 import pytest
 from pyshacl import validate
 from rdflib import Graph
 from rdflib.namespace import RDF, SH
+
+import _crate
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURE = ROOT / "fixtures" / "synthetic-adapter"
@@ -24,9 +25,7 @@ class Package:
             self._git("add", "-A")
 
     def _git(self, *args):
-        subprocess.run(
-            ["git", "-C", str(self.path), *args], check=True, capture_output=True
-        )
+        subprocess.run(["git", "-C", str(self.path), *args], check=True, capture_output=True)
 
     def edit(self, relative, old, new):
         target = self.path / relative
@@ -77,8 +76,7 @@ def shape_file_messages():
             advanced=True,
         )
         return "\n".join(
-            str(report.value(result, SH.resultMessage))
-            for result in report.subjects(RDF.type, SH.ValidationResult)
+            str(report.value(result, SH.resultMessage)) for result in report.subjects(RDF.type, SH.ValidationResult)
         )
 
     return run

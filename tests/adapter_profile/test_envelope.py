@@ -1,5 +1,6 @@
-from _terms import BRIDGE, SCHEMA
 from rdflib import Literal
+
+from _terms import BRIDGE, SCHEMA
 
 
 def test_reports_nothing_for_envelopes_that_conform(crate, shape_file_messages):

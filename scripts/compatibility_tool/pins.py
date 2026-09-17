@@ -9,7 +9,9 @@ from compatibility_tool.record import RECORD, Record, ResolvedPin, Source
 def sibling(directory, pin):
     path = directory.parent / pin.name
     if not (path / ".git").exists():
-        raise Stop(f"{pin.repository} has no clone beside {directory.name}; clone it with: git clone {pin.repository} {path}")
+        raise Stop(
+            f"{pin.repository} has no clone beside {directory.name}; clone it with: git clone {pin.repository} {path}"
+        )
     return path
 
 
@@ -31,9 +33,7 @@ def resolve(directory, pin, mode):
         or git.local_commit(path, f"refs/remotes/origin/{pin.value}")
         or git.remote_branch(pin.repository, pin.value)
     )
-    warning = (
-        f"the sibling at {path} is on {current or 'a detached HEAD'}, not {pin.value}, so the branch's last commit is used"
-    )
+    warning = f"the sibling at {path} is on {current or 'a detached HEAD'}, not {pin.value}, so the branch's last commit is used"
     return ResolvedPin(pin, commit, Source.BRANCH_LAST_COMMIT, warning=warning)
 
 

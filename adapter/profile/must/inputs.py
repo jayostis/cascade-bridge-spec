@@ -3,11 +3,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from rocrate_validator.models import ValidationContext
+from rocrate_validator.requirements.python import PyFunctionCheck, check, requirement
+
 from _crate import file_name_of
 from _findings import report_findings
 from _terms import BRIDGE, MF, SCHEMA
-from rocrate_validator.models import ValidationContext
-from rocrate_validator.requirements.python import PyFunctionCheck, check, requirement
 
 XSD_MEDIA_TYPES = {"application/xml", "text/xml"}
 JSON_SCHEMA_MEDIA_TYPES = {"application/json", "application/schema+json"}

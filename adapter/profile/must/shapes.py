@@ -3,12 +3,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from _findings import report_findings
 from pyshacl import validate as shacl_validate
 from rdflib import Graph
 from rdflib.namespace import RDF, SH
 from rocrate_validator.models import ValidationContext
 from rocrate_validator.requirements.python import PyFunctionCheck, check, requirement
+
+from _findings import report_findings
 
 SHAPES = Path(__file__).resolve().parents[3] / "shapes" / "bridge.shapes.ttl"
 

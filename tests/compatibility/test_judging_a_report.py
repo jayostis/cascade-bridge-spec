@@ -1,4 +1,5 @@
 import pytest
+
 from compatibility_tool.judge import judge_report
 from compatibility_world import SYNTHETIC_ADAPTER
 
@@ -18,7 +19,7 @@ def earl(tmp_path, outcomes):
 
 
 def test_a_report_with_every_test_passed_or_undecided_holds(tmp_path):
-    report = earl(tmp_path, dict(zip(EVERY_TEST, ("passed", "cantTell", "untested"))))
+    report = earl(tmp_path, dict(zip(EVERY_TEST, ("passed", "cantTell", "untested"), strict=True)))
     verdict = judge_report(report, SYNTHETIC_ADAPTER)
     assert verdict.holds
     assert verdict.tally == {"passed": 1, "cantTell": 1, "untested": 1}
@@ -27,12 +28,12 @@ def test_a_report_with_every_test_passed_or_undecided_holds(tmp_path):
 
 @pytest.mark.parametrize("outcome", ["failed", "inapplicable"])
 def test_a_report_with_a_failing_outcome_does_not_hold(tmp_path, outcome):
-    report = earl(tmp_path, dict(zip(EVERY_TEST, (outcome, "passed", "passed"))))
+    report = earl(tmp_path, dict(zip(EVERY_TEST, (outcome, "passed", "passed"), strict=True)))
     assert not judge_report(report, SYNTHETIC_ADAPTER).holds
 
 
 def test_an_outcome_outside_earls_five_does_not_hold(tmp_path):
-    report = earl(tmp_path, dict(zip(EVERY_TEST, ("passed", "passed", "sortOf"))))
+    report = earl(tmp_path, dict(zip(EVERY_TEST, ("passed", "passed", "sortOf"), strict=True)))
     verdict = judge_report(report, SYNTHETIC_ADAPTER)
     assert not verdict.holds
     assert verdict.unknown == ["sortOf"]

@@ -1,4 +1,5 @@
 import pytest
+
 from compatibility_tool.console import Stop
 from compatibility_tool.document import Pin
 from compatibility_tool.record import Record, ResolvedPin, Source
