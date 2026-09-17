@@ -153,6 +153,11 @@ def table(record):
         shown = linked(f"`{commit[:7]}`", f"{repository}/commit/{commit}") if entry.commit else "—"
         edits = ", with uncommitted edits" if entry.uncommitted_edits else ""
         lines.append(f"| [{entry.name}]({repository}) | {entry.how}{edits} | {shown} | {result_cell(entry)} |")
+    if any(entry.role is not Role.UNDER_TEST and entry.how.startswith("pull request") for entry in record.used):
+        lines += [
+            "",
+            "This pass is as fresh as this run: rerun it once the pull requests above have merged, and before merging.",
+        ]
     return "\n".join(lines) + "\n"
 
 

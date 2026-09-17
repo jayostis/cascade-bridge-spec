@@ -1,6 +1,6 @@
-# start-v2 holds no rule: it fetches this repository's default branch and runs
-# the entry point there. Only the names it relies on are frozen -- the entry
-# point's path, its arguments, and the directory it keeps as artifacts.
+# This holds no rule: it fetches this repository's default branch and runs the
+# entry point there. Callers name @main, as a Zuul tenant loads shared job
+# definitions from a branch.
 name: Cascade Bridge start
 description: >-
   Run the Cascade Bridge Specification's checks on the repository: the adapter

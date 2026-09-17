@@ -35,6 +35,27 @@ def test_the_table_is_posted_as_a_new_comment_on_the_pull_request(world):
     assert "| adapter |" in body or "[adapter]" in body
 
 
+def test_a_run_that_used_a_named_pull_request_says_the_pass_is_as_fresh_as_it_is(world):
+    """There is no gate queue: whoever merges has to rerun once the named one has merged."""
+    from test_picking_versions import depends_on
+
+    world.pull_request("adapter", 7)
+    engine, event = engine_under_test(world, body=depends_on("adapter", 7))
+
+    world.tool(engine, **world.ci(event=event))
+
+    assert "rerun" in world.table()
+    assert "before merging" in world.table()
+
+
+def test_a_run_that_used_no_named_pull_request_says_nothing_about_rerunning(world):
+    engine, event = engine_under_test(world)
+
+    world.tool(engine, **world.ci(event=event))
+
+    assert "rerun" not in world.table()
+
+
 def test_a_comment_the_api_refuses_is_said_and_leaves_the_exit_status_unchanged(world):
     engine, event = engine_under_test(world)
     world.pull_requests.refuse_comments = True

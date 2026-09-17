@@ -42,16 +42,24 @@ A pull request merges only once every pull request it names has merged.
 A change an engine and an adapter must both follow goes in backward-compatible
 steps, each leaving every default branch green.
 
-Where GitHub Actions cannot reproduce Zuul:
+Where GitHub Actions cannot reproduce Zuul, a person or an agent does it by
+hand:
 
-- Editing a named pull request retests nothing; rerun the workflow.
-- There is no gate queue, so a pass is as fresh as its last run.
-- A repository's state is not frozen across a run's jobs.
+- **A named pull request changing retests nothing.** Rerun the dependent pull
+  request's workflow: `gh run rerun`.
+- **There is no gate queue**, so a pass is as fresh as its last run. Once a
+  named pull request has merged, rerun `compatibility` and `ready-to-merge`
+  before merging; a run says so when it used one.
+- **A repository's state is not frozen across a run's jobs**, so two checks of
+  one pull request can read different descriptions and branches. Rerun both
+  rather than trusting a mixed pair.
+- **A cycle is refused rather than merged as one unit.** Split the change into
+  backward-compatible steps, each leaving every default branch green.
 
 ## The tooling
 
 [`scripts/compatibility.py`](scripts/compatibility.py); its docstring is the
-usage. A repository's CI calls only `.github/actions/start@start-v2`
+usage. A repository's CI calls only `.github/actions/start@main`
 ([`adapter/validation.md`](adapter/validation.md) shows the workflow). A pull
 request here that changes the tooling is tried first from a no-op engine or
 adapter pull request naming it on a `Depends-On:` line, as a change to Zuul's

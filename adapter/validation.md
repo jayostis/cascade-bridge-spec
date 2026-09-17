@@ -33,11 +33,11 @@ jobs:
   adapter:
     runs-on: ubuntu-latest
     steps:
-      - uses: jayostis/cascade-bridge-spec/.github/actions/start@start-v2
+      - uses: jayostis/cascade-bridge-spec/.github/actions/start@main
   ready-to-merge:
     runs-on: ubuntu-latest
     steps:
-      - uses: jayostis/cascade-bridge-spec/.github/actions/start@start-v2
+      - uses: jayostis/cascade-bridge-spec/.github/actions/start@main
         with:
           check: ready-to-merge
 ```
