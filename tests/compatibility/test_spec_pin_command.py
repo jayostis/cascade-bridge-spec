@@ -1,3 +1,6 @@
+import json
+
+
 def test_spec_pin_reads_an_engines_spec_pin(world):
     said = world.tool(world.engine(world.adapter_pin(branch="main")), ("spec-pin", 0))
     assert f"specPin: {world.url('specification')} commit {world.commits['specification']}" in said
@@ -15,3 +18,14 @@ def test_spec_pin_stops_in_a_sentence_not_a_traceback_on_an_adapter_whose_crate_
     assert "ro-crate-metadata.json is not JSON" in said
     assert "spec-pin: FAIL" in said
     assert "Traceback" not in said
+
+
+def test_spec_pin_reads_an_adapters_bridge_spec_pin_written_as_a_one_element_array(world):
+    adapter = world.clone("adapter")
+    crate_path = adapter / "ro-crate-metadata.json"
+    crate = json.loads(crate_path.read_text(encoding="utf-8"))
+    root = next(node for node in crate["@graph"] if node["@id"] == "./")
+    root["bridge:specPin"] = [root["bridge:specPin"]]
+    crate_path.write_text(json.dumps(crate), encoding="utf-8")
+    said = world.tool(adapter, ("spec-pin", 0))
+    assert "bridge:specPin: https://github.com/jayostis/cascade-bridge-spec commit " in said

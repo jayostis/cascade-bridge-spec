@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from rdflib import Graph, URIRef
 
 from compatibility_tool.console import Status, Stop, first_line, note, report
-from compatibility_tool.document import CRATE, crate_root
+from compatibility_tool.document import CRATE, crate_root, referenced_id
 from compatibility_tool.record import Record
 
 EARL = "http://www.w3.org/ns/earl#"
@@ -51,10 +51,10 @@ class Verdict:
 def manifest_entries_relative_to_adapter(adapter):
     adapter = adapter.resolve()
     _, root = crate_root(adapter)
-    named = root.get("bridge:testManifest")
-    if not isinstance(named, dict) or not named.get("@id"):
+    named = referenced_id(root, "bridge:testManifest")
+    if not named:
         raise Stop(f"{adapter / CRATE} names no bridge:testManifest")
-    path = adapter / named["@id"]
+    path = adapter / named
     graph = Graph().parse(path, format="turtle", publicID=path.as_uri())
     listed = graph.value(URIRef(path.as_uri()), URIRef(MF + "entries"))
     prefix = adapter.as_uri() + "/"

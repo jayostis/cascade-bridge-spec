@@ -39,6 +39,13 @@ def crate_root(directory):
     return nodes, nodes.get("./") or {}
 
 
+def referenced_id(node, key):
+    value = node.get(key)
+    if isinstance(value, list) and len(value) == 1:
+        value = value[0]
+    return value.get("@id") if isinstance(value, dict) else None
+
+
 def repository_name(url):
     name = urlparse(url).path.rstrip("/").rsplit("/", 1)[-1]
     return name.removesuffix(".git")
@@ -79,15 +86,15 @@ def spec_pin(directory, document):
             )
         return pin_from("specPin", document["specPin"])
     nodes, root = crate_root(directory)
-    pin = root.get("bridge:specPin")
-    entity = nodes.get(pin.get("@id")) if isinstance(pin, dict) else None
+    pin = referenced_id(root, "bridge:specPin")
+    entity = nodes.get(pin) if pin else None
     if not entity:
         raise Stop(f"{directory / CRATE} names no bridge:specPin entity")
     repository = entity.get("codeRepository")
     if isinstance(repository, dict):
         repository = repository.get("@id")
     if not repository or not entity.get("version"):
-        raise Stop(f"the crate's bridge:specPin, {pin['@id']}, carries no codeRepository and version to pin")
+        raise Stop(f"the crate's bridge:specPin, {pin}, carries no codeRepository and version to pin")
     return Pin("bridge:specPin", repository, "commit", entity["version"])
 
 

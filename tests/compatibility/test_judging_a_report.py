@@ -1,3 +1,6 @@
+import json
+import shutil
+
 import pytest
 
 from compatibility_tool.judge import judge_report
@@ -61,3 +64,15 @@ def test_a_report_that_cannot_be_judged_does_not_hold(tmp_path, write, says):
     verdict = judge_report(path, SYNTHETIC_ADAPTER)
     assert not verdict.holds
     assert verdict.describe().startswith(says)
+
+
+def test_a_crate_naming_its_test_manifest_in_a_one_element_array_is_judged_by_that_manifest(tmp_path):
+    adapter = tmp_path / "adapter"
+    shutil.copytree(SYNTHETIC_ADAPTER, adapter)
+    crate_path = adapter / "ro-crate-metadata.json"
+    crate = json.loads(crate_path.read_text(encoding="utf-8"))
+    root = next(node for node in crate["@graph"] if node["@id"] == "./")
+    root["bridge:testManifest"] = [root["bridge:testManifest"]]
+    crate_path.write_text(json.dumps(crate), encoding="utf-8")
+    verdict = judge_report(earl(tmp_path, dict.fromkeys(EVERY_TEST, "passed")), adapter)
+    assert verdict.holds, verdict.describe()
