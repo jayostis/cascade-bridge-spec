@@ -1,5 +1,3 @@
-# Text files are stored and checked out with LF line endings on every platform,
-# so the bytes a Linux CI runner reads are the bytes a Windows editor wrote.
 * text=auto eol=lf
 *.md     text eol=lf
 *.ttl    text eol=lf
@@ -13,11 +11,3 @@
 *.csv    text eol=lf
 *.sparql text eol=lf
 *.rq     text eol=lf
-
-# The files under fixtures/synthetic-adapter/ are held to digests recorded in
-# that package's crate, and the rules above are what makes those digests
-# reproducible: LF on every platform means the bytes a Linux CI runner hashes are
-# the bytes a Windows editor wrote. An adapter package that carries a byte-for-
-# byte copy of a publisher's file needs a stricter section than this one, marking
-# those paths so nothing normalises them at all; adapter/fixtures/README.md
-# says why, and the pilot adapter's .gitattributes is the worked example.

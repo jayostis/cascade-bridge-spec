@@ -1,0 +1,8 @@
+[dependency-groups]
+validators = ["roc-validator==0.11.4", "pyshacl==0.40.1", "rdflib==7.6.0", "lxml==6.1.3"]
+dev = [{include-group = "validators"}, "pytest", "pytest-xdist"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["adapter/profile", "adapter/profile/must"]
+addopts = "-n auto"

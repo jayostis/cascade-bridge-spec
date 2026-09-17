@@ -1,0 +1,160 @@
+@prefix sh:     <http://www.w3.org/ns/shacl#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix schema: <http://schema.org/> .
+@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+<#Adapter> a sh:NodeShape ;
+  sh:name "Adapter" ;
+  sh:targetClass bridge:Adapter ;
+  sh:nodeKind sh:IRI ;
+  sh:property [
+    sh:path schema:identifier ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:pattern "^[a-z][a-z0-9-]*$" ;
+    sh:message "The adapter carries exactly one identifier, the format id a Bridge routes on: lowercase letters, digits and hyphens, starting with a letter."
+  ] ;
+  sh:property [
+    sh:path schema:name ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "The adapter carries exactly one name, the human name of the source format."
+  ] ;
+  sh:property [
+    sh:path schema:version ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:pattern "^\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z.-]+)?$" ;
+    sh:message "The adapter carries exactly one version, semantic versioning."
+  ] ;
+  sh:property [
+    sh:path schema:license ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "The adapter carries exactly one license, by IRI (the SPDX licence entity)."
+  ] ;
+  sh:property [
+    sh:path <http://purl.org/dc/terms/conformsTo> ;
+    sh:hasValue <https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/> ;
+    sh:message "The adapter names the Cascade Bridge Adapter profile, https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/, in conformsTo."
+  ] ;
+  sh:property [
+    sh:path bridge:requiresProfile ;
+    sh:nodeKind sh:IRI ;
+    sh:class bridge:Profile ;
+    sh:message "Each bridge:requiresProfile is a bridge:Profile by IRI."
+  ] ;
+  sh:property [
+    sh:path bridge:requiresProfile ;
+    sh:hasValue bridge:sparql-1.1 ;
+    sh:message "The adapter requires bridge:sparql-1.1."
+  ] ;
+  sh:property [
+    sh:path bridge:mapping ;
+    sh:minCount 1 ;
+    sh:node <#Query> ;
+    sh:message "The adapter names at least one bridge:mapping, a SPARQL 1.1 CONSTRUCT a Bridge runs on each record: a crate File entity (schema:MediaObject) by IRI, declared application/sparql-query."
+  ] ;
+  sh:property [
+    sh:path bridge:findingsQuery ;
+    sh:node <#Query> ;
+    sh:message "Each bridge:findingsQuery is a SPARQL 1.1 SELECT whose rows are a record's findings: a crate File entity (schema:MediaObject) by IRI, declared application/sparql-query."
+  ] ;
+  sh:property [
+    sh:path bridge:specPin ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "The adapter carries exactly one bridge:specPin, the pinned cascade-bridge-spec commit by IRI."
+  ] ;
+  sh:property [
+    sh:path bridge:cascadeVocabularyPin ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "The adapter carries exactly one bridge:cascadeVocabularyPin, the pinned spec commit by IRI."
+  ] ;
+  sh:property [
+    sh:path bridge:vocabulary ;
+    sh:minCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "The adapter carries at least one bridge:vocabulary, a namespace IRI."
+  ] ;
+  sh:property [
+    sh:path bridge:sourceMediaType ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "The adapter carries exactly one bridge:sourceMediaType, an IANA media type."
+  ] ;
+  sh:property [
+    sh:path bridge:sourceSchema ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:class schema:MediaObject ;
+    sh:message "The adapter carries exactly one bridge:sourceSchema, the pinned source-side schema, and it is a crate File entity (schema:MediaObject), not a bare IRI naming nothing."
+  ] ;
+  sh:property [
+    sh:path bridge:elementNameOfEachRecord ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "The adapter carries exactly one bridge:elementNameOfEachRecord."
+  ] ;
+  sh:property [
+    sh:path bridge:envelope ;
+    sh:minCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:class bridge:Envelope ;
+    sh:message "The adapter carries at least one bridge:envelope, a bridge:Envelope by IRI."
+  ] ;
+  sh:property [
+    sh:path bridge:detectQuery ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:node <#Query> ;
+    sh:message "The adapter names exactly one bridge:detectQuery, the SPARQL 1.1 ASK its router evaluates over a document's envelope skeleton: a crate File entity (schema:MediaObject) by IRI, declared application/sparql-query."
+  ] ;
+  sh:property [
+    sh:path bridge:table ;
+    sh:nodeKind sh:IRI ;
+    sh:node <#Table> ;
+    sh:message "Each bridge:table is a crate File by IRI that names where its rows came from (schema:isBasedOn)."
+  ] ;
+  sh:property [
+    sh:path bridge:extensionVocabulary ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "The adapter carries at most one bridge:extensionVocabulary, its own namespace for values with no Cascade term, by IRI."
+  ] ;
+  sh:property [
+    sh:path bridge:testManifest ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "The adapter carries exactly one bridge:testManifest, the test manifest by IRI."
+  ] .
+
+<#Table> a sh:NodeShape ;
+  sh:name "Table" ;
+  sh:property [
+    sh:path schema:isBasedOn ;
+    sh:minCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "A table names at least one schema:isBasedOn, by IRI: where its rows came from."
+  ] .
+
+<#Query> a sh:NodeShape ;
+  sh:name "Query" ;
+  sh:nodeKind sh:IRI ;
+  sh:class schema:MediaObject ;
+  sh:property [
+    sh:path schema:encodingFormat ;
+    sh:hasValue "application/sparql-query" ;
+    sh:message "A query is declared application/sparql-query."
+  ] .

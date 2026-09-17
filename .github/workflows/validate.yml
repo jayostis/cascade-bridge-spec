@@ -1,21 +1,4 @@
-# This repository's own CI, and all of it. Everything adapter/validation.md and
-# CLAUDE.md say can be checked without a Bridge, run on every change.
-#
-# It validates no real adapter and runs no real engine, and that is deliberate.
-# A specification that clones the adapters it knows about goes red because of a
-# property missing from somebody else's repository, and grows a job per adapter
-# for as long as adapters keep being written. The checks are published from
-# here instead, as actions, and each adapter's and engine's own CI calls the
-# starter at a tag that never moves: the arrow runs towards the specification,
-# and this repository never learns that any particular adapter or engine
-# exists (pinning.md).
-#
-# The tools still have to be exercised, or they are published untested. The
-# jobs below run them against subjects this repository wrote and owns --
-# fixtures/synthetic-adapter, fixtures/fake-engine and throwaway repositories
-# -- and run the cases that show each check failing. A subject this repository
-# owns is the one way to test a published tool without knowing an adapter.
-name: validate
+name: CI
 
 on:
   push:
@@ -28,7 +11,7 @@ permissions:
 
 jobs:
   spec:
-    name: the specification's own files
+    name: This repo's spec files are valid (no tests)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -37,29 +20,32 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: install
-        run: python3 -m pip install --upgrade pip pyshacl rdflib roc-validator
+      - name: Install validators
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install --group validators
 
-      - name: every Turtle file parses
+      - name: Parse every Turtle file
         run: |
           python3 - <<'PY'
           from glob import glob
           from rdflib import Graph
           lift = sorted(glob("fixtures/lift/*.ttl"))
           lift += sorted(glob("fixtures/lift/*.nt"))
-          for path in ["vocab/bridge.ttl", "shapes/bridge.shapes.ttl", *lift]:
+          shapes = sorted(glob("adapter/profile/must/*.ttl"))
+          for path in ["vocab/bridge.ttl", "shapes/bridge.shapes.ttl", *shapes, *lift]:
               graph = Graph()
               graph.parse(path, format="turtle")
               print(f"{path}: {len(graph)} triples")
           PY
 
-      - name: the shapes are valid SHACL
-        run: python3 -m pyshacl --metashacl --shacl shapes/bridge.shapes.ttl shapes/bridge.shapes.ttl
+      - name: Check the SHACL shapes are valid SHACL
+        run: |
+          for shapes in shapes/bridge.shapes.ttl adapter/profile/must/*.ttl; do
+            python3 -m pyshacl --metashacl --shacl "$shapes" "$shapes"
+          done
 
-      # Nothing else here judges the lift vectors: this repository runs no
-      # Bridge, and parsing alone passes an entry naming a missing file, an
-      # entry left out of mf:entries, and a vector no entry names.
-      - name: the lift manifest conforms to the shapes and names every vector
+      - name: Check the lift test manifest lists every vector
         run: |
           python3 - <<'PY'
           import sys
@@ -80,10 +66,12 @@ jobs:
 
           listed = set(graph.items(graph.value(URIRef(manifest.as_uri()), MF.entries)))
           named = set()
-          for entry in sorted(graph.subjects(RDF.type, BRIDGE.LiftTest)):
+          tests = {s for t in (BRIDGE.LiftTest, BRIDGE.SkeletonTest)
+                     for s in graph.subjects(RDF.type, t)}
+          for entry in sorted(tests):
               if entry not in listed:
                   problems.append(f"{entry} is not in mf:entries")
-              for step, term in ((MF.action, BRIDGE.input), (MF.result, BRIDGE.graph)):
+              for step, term in ((MF.action, BRIDGE.input), (MF.result, BRIDGE.expectedGraph)):
                   for node in graph.objects(entry, step):
                       for iri in graph.objects(node, term):
                           name = str(iri).removeprefix(base)
@@ -98,79 +86,66 @@ jobs:
           sys.exit(1 if problems else 0)
           PY
 
-      - name: the profile crate is a valid RO-Crate 1.2
+      - name: Validate the adapter profile crate against RO-Crate 1.2
         run: rocrate-validator validate adapter/profile/ --profile-identifier ro-crate-1.2 --no-paging
 
-  lint:
-    name: the published lint, on a package of its own
+  pytest:
+    name: 'pytest: adapter profile checks, unit and end-to-end on a synthetic adapter'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      # The action, called by local path, so that what runs here is the file
-      # the starter hands over to rather than a copy of the command inside it.
-      - name: the action validates the fixture package
-        uses: ./.github/actions/validate-adapter
-        with:
-          path: fixtures/synthetic-adapter
-
-      # The step above installed python3, pyshacl, rdflib, roc-validator and
-      # lxml; the two below reuse them.
-      #
-      # A lint nobody has seen fail is a lint nobody should trust. Each case
-      # copies the fixture package into a temporary directory, breaks exactly
-      # one property, and asserts that the lint says so in the words
-      # adapter/validation.md fixes -- and that a check which found nothing of its
-      # kind is never reported in the same word as one that ran and passed.
-      # Nothing tracked is mutated and no mutated copy is written inside the
-      # repository.
-      - name: the lint can be seen failing
-        run: python3 scripts/selftest-lint.py
-
-      # The cheapest negative of all: a directory that is not an adapter
-      # package at all. It names no format, no repository and no real package.
-      - name: the lint refuses a directory that is not an adapter package
-        run: |
-          set -euo pipefail
-          mkdir -p not-an-adapter
-          printf '%s\n' 'not a crate' > not-an-adapter/README.md
-          if python3 scripts/validate-adapter.py not-an-adapter; then
-            echo "the lint accepted a directory holding no ro-crate-metadata.json"
-            exit 1
-          fi
-          echo "the lint refused it, as it must"
-
-  compatibility:
-    name: the compatibility tooling, and the starter by local path
-    runs-on: ubuntu-latest
-    steps:
-      # Under its own name, the way the starter lays siblings out: it hands
-      # over to this repository's actions at ./cascade-bridge-spec/.
-      - uses: actions/checkout@v4
-        with:
-          path: cascade-bridge-spec
 
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
-      - name: install
-        run: python3 -m pip install --upgrade pip pyshacl rdflib
+      - name: Install test dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install --group dev
 
-      # Throwaway repositories named by file:// URLs, so no network: each case
-      # breaks one rule, or exercises one, and asserts what the tool says.
-      - name: the tooling can be seen failing
-        run: python3 cascade-bridge-spec/scripts/selftest-compatibility.py
+      - name: Run pytest
+        run: python3 -m pytest
 
-      # start-v1 does not exist until it is tagged, so the starter is called by
-      # local path. It says so, and runs the tools from this checkout rather
-      # than from the fixture's pin, whose revision predates them.
-      - name: the starter runs the lint on the fixture package
+  compatibility-selftest:
+    name: 'compatibility.py self-test: fake engine and throwaway repos (not pytest)'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install validators
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install --group validators
+
+      - name: Run scripts/selftest-compatibility.py
+        run: python3 scripts/selftest-compatibility.py
+
+  actions:
+    name: Published GitHub Actions, run on a synthetic adapter (not pytest)
+    runs-on: ubuntu-latest
+    steps:
+      # The starter expects the specification at ./cascade-bridge-spec/.
+      - uses: actions/checkout@v4
+        with:
+          path: cascade-bridge-spec
+
+      - name: validate-adapter action on the synthetic adapter
+        uses: ./cascade-bridge-spec/.github/actions/validate-adapter
+        with:
+          path: cascade-bridge-spec/fixtures/synthetic-adapter
+
+      # By local path: start-v1 is not tagged yet.
+      - name: start action (lint) on the synthetic adapter
         uses: ./cascade-bridge-spec/.github/actions/start
         with:
           path: cascade-bridge-spec/fixtures/synthetic-adapter
 
-      - name: the starter runs the merge gate on the fixture package
+      - name: start action (merge gate) on the synthetic adapter
         uses: ./cascade-bridge-spec/.github/actions/start
         with:
           path: cascade-bridge-spec/fixtures/synthetic-adapter

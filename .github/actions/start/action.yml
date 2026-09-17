@@ -1,22 +1,4 @@
-# The one action every engine's and every adapter's CI calls, at the reserved tag
-# start-v1, which never moves; a changed starter is start-v2. Its whole job:
-#
-#   1. read the repository's spec pin: the crate's bridge:specPin for an
-#      adapter, compatibility.json's specification for an engine;
-#   2. check this repository out at that pin as a sibling of the repository
-#      under test, at <workspace>/cascade-bridge-spec;
-#   3. hand over to the lint, the compatibility check or the merge gate, run
-#      from that checkout.
-#
-# So the spec pin is written in exactly one place, and bumping it never touches
-# the caller's workflow. The starter reads the pin with its own revision's
-# tooling, because the checkout the pin names does not exist yet; everything
-# after that runs from the pinned revision. It stays this small so that it
-# almost never needs a new tag.
-#
-# Called by local path, as this repository's own CI calls it, there is no
-# pinned revision to fetch that could run this repository's current tools: the
-# starter says so and runs the tools from the checkout it is in.
+# start-v1 never moves: a change here needs a new tag and an edit in every caller.
 name: Cascade Bridge start
 description: >-
   Check the Cascade Bridge Specification out at the repository's own spec pin,

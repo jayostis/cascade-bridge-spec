@@ -1,61 +1,16 @@
 #!/usr/bin/env python3
-"""Check the entries of a compatibility.json, locally and in CI.
-
-compatibility.md is the contract; this is the one tool that implements it. Every
-subcommand takes the directory of the repository under test and reads the files
-in it. It names no adapter and no engine, and learns every counterpart from the
-file it is handed: a specification that knew which adapters or engines exist is
-the bug pinning.md is written against.
-
-    validate <dir>   the file conforms to the shapes, in the form its directory
-                     needs: an adapter's, when the directory holds
-                     ro-crate-metadata.json, and an engine's when it does not
-    resolve <dir>    every pin resolves to a commit, printed and recorded
-    checkout <dir>   each counterpart beside the repository: in CI a clone at
-                     the resolved commit, locally the sibling as it is for a
-                     branch pin and a temporary worktree of it otherwise
-    run <dir>        each engine's setup and command on each adapter, as
-                     argument vectors without a shell, collecting the reports
-    judge [<dir>]    each EARL report against the rule compatibility.md
-                     states, one line per entry
-    ready <dir>      the merge-time rule: every pin names the counterpart's
-                     default branch, or a commit or tag on it
-    spec-pin <dir>   the spec pin alone, which the starter checks this
-                     repository out at
-
-**Every subcommand says whether it checked anything.** It reports in the words
-adapter/validation.md fixes -- ok, FAIL, nothing to check, not run -- and a
-repository with no compatibility.json has nothing to check, which is not a pass.
-
-Pins are resolved where compatibility.md says. In CI (--mode ci, the default
-when the CI variable is "true"), a branch is its tip on the counterpart. Locally
-(--mode local), a branch is the sibling clone's working tree when the sibling is
-on that branch, and a result produced from its uncommitted edits is recorded as
-such: feedback, never evidence. The record is written under --results, by
-default a directory named for the repository under the system temporary
-directory, so that the subcommands after resolve read what it resolved rather
-than resolving again.
-
-A counterpart that cannot be reached stops the run with a message naming it,
-and a missing sibling stops it with the git clone command that fixes it.
-Nothing is cloned into a developer's directory unasked.
-
-Usage:
+"""Usage:
 
     python3 scripts/compatibility.py validate <dir>
-    python3 scripts/compatibility.py resolve <dir> [--mode ci|local] [--results <dir>]
+    python3 scripts/compatibility.py resolve  <dir> [--mode ci|local] [--results <dir>]
     python3 scripts/compatibility.py checkout <dir> [--mode ci|local] [--results <dir>]
-    python3 scripts/compatibility.py run <dir> [--results <dir>]
-    python3 scripts/compatibility.py judge [<dir>] [--results <dir>]
-    python3 scripts/compatibility.py ready <dir>
+    python3 scripts/compatibility.py run      <dir> [--results <dir>]
+    python3 scripts/compatibility.py judge   [<dir>] [--results <dir>]
+    python3 scripts/compatibility.py ready    <dir>
+    python3 scripts/compatibility.py spec-pin <dir> [--output <file>]
 
-Exit status is 1 when the subcommand fails or did not run, and 0 otherwise.
-Nothing to check exits 0, because it fails nothing (adapter/validation.md),
-but its last line says nothing to check, not PASS.
-
-Requires git. validate also needs pyshacl and rdflib, and judge rdflib (pip
-install pyshacl rdflib), imported only there, so that the rest runs on a bare
-interpreter.
+Exit status is 1 when the subcommand fails or did not run, 0 otherwise.
+Requires git; validate also needs pyshacl and rdflib, and judge rdflib.
 """
 
 import argparse
@@ -73,16 +28,13 @@ SPEC_ROOT = Path(__file__).resolve().parent.parent
 SHAPES = SPEC_ROOT / "shapes" / "bridge.shapes.ttl"
 CONTEXT_FILE = SPEC_ROOT / "vocab" / "compatibility.context.jsonld"
 
-# The IRI a compatibility.json names as its @context. It does not dereference
-# yet, so the file above is read in its place; a file naming any other context
-# is not one this tool can read, and is refused rather than fetched.
 CONTEXT_IRI = "https://ns.cascadeprotocol.org/bridge/v1-draft/compatibility.jsonld"
 
 FILE = "compatibility.json"
 CRATE = "ro-crate-metadata.json"
 
-ENGINE_KEYS = ("specification", "setup", "command")
-TOP_KEYS = {"@context", "testedWith", *ENGINE_KEYS}
+ENGINE_KEYS = ("specPin", "setup", "command")
+TOP_KEYS = {"@context", "mustPassWith", *ENGINE_KEYS}
 PIN_KINDS = ("commit", "tag", "branch")
 PIN_KEYS = {"codeRepository", *PIN_KINDS}
 SHA = re.compile(r"^[0-9a-f]{40}$")
@@ -94,7 +46,7 @@ NONE = "nothing to check"
 
 
 class Stop(Exception):
-    """A condition that ends the run: said in a sentence, never a traceback."""
+    pass
 
 
 def report(ok, line):
@@ -110,8 +62,6 @@ def warn(line):
 
 
 def git(*args, cwd=None):
-    """git, never prompting: a prompt in CI hangs, and locally it hides the
-    unreachable-counterpart message behind a credential dialog."""
     env = dict(os.environ, GIT_TERMINAL_PROMPT="0", GCM_INTERACTIVE="never")
     return subprocess.run(
         ["git", *args],
@@ -128,28 +78,17 @@ def first_line(text):
 
 
 def unreachable(url, run):
-    """A stop, not a failure of one pin: nothing about the counterpart can be
-    checked. Said in a sentence naming it, with git's own line after for
-    whoever has to diagnose it."""
     return Stop(
         f"{url} could not be reached: it may be private, renamed or deleted, "
         f"or the network refused (git: {first_line(run.stderr)})"
     )
 
 
-# ============================================================================
-# The repository under test, and its pins
-# ============================================================================
-
-
 def is_adapter(directory):
-    """An adapter is a directory holding a crate; an engine has none
-    (compatibility.md). The same test the adapter lint begins with."""
     return (directory / CRATE).is_file()
 
 
 def read_file(directory):
-    """compatibility.json as JSON, or None when the directory has none."""
     path = directory / FILE
     if not path.is_file():
         return None
@@ -160,22 +99,12 @@ def read_file(directory):
 
 
 def repository_name(url):
-    """The directory a counterpart's clone sits in: the last segment of its
-    URL, without .git, which is its repository's name (compatibility.md)."""
     name = urlparse(url).path.rstrip("/").rsplit("/", 1)[-1]
     return name[: -len(".git")] if name.endswith(".git") else name
 
 
 def name_clashes(directory, document):
-    """Counterparts whose clones would need one directory that is already
-    taken: another entry's, the specification's, or this repository's own.
-
-    The rule is here rather than in the shapes because only the tooling sees
-    the directory the file sits in, and it is this function that names the
-    clone's directory. File names fold case on Windows and macOS, so the
-    comparison does too.
-    """
-    listed = document.get("testedWith")
+    listed = document.get("mustPassWith")
     urls = [
         pin["codeRepository"]
         for pin in (listed if isinstance(listed, list) else [])
@@ -187,7 +116,7 @@ def name_clashes(directory, document):
         name = repository_name(url)
         if name.casefold() in seen:
             problems.append(
-                "Each repository name appears in testedWith at most once, "
+                "Each repository name appears in mustPassWith at most once, "
                 f"compared without case: {seen[name.casefold()]} and {url} "
                 f"would both be checked out at ../{name}"
             )
@@ -202,15 +131,13 @@ def name_clashes(directory, document):
         name = repository_name(url)
         if name.casefold() in reserved:
             problems.append(
-                f"No repository in testedWith is named {name}, compared "
+                f"No repository in mustPassWith is named {name}, compared "
                 f"without case: {reserved[name.casefold()]}"
             )
     return problems
 
 
 class Pin:
-    """A repository at a revision, and where the pin was read."""
-
     def __init__(self, label, repository, kind, value):
         self.label = label
         self.repository = repository
@@ -236,26 +163,19 @@ def pin_from(label, entry):
 
 def entries(document):
     return [
-        pin_from("testedWith", entry)
-        for entry in (document or {}).get("testedWith", [])
+        pin_from("mustPassWith", entry)
+        for entry in (document or {}).get("mustPassWith", [])
     ]
 
 
 def spec_pin(directory, document):
-    """The one pin every repository carries.
-
-    An adapter's is the crate's bridge:specPin. The crate is read as JSON rather
-    than JSON-LD, so that reading a pin needs no RO-Crate context from the
-    network; the lint's check 2 is what holds the crate to its shape. An
-    engine's is the specification in its compatibility.json.
-    """
     if not is_adapter(directory):
-        if not document or "specification" not in document:
+        if not document or "specPin" not in document:
             raise Stop(
                 f"{directory} holds no {CRATE}, so it is an engine, and an "
-                f"engine states its spec pin as specification in {FILE}"
+                f"engine states its spec pin as specPin in {FILE}"
             )
-        return pin_from("specification", document["specification"])
+        return pin_from("specPin", document["specPin"])
     crate = json.loads((directory / CRATE).read_text(encoding="utf-8"))
     nodes = {node.get("@id"): node for node in crate.get("@graph", [])}
     pin = (nodes.get("./") or {}).get("bridge:specPin")
@@ -273,28 +193,17 @@ def spec_pin(directory, document):
     return Pin("bridge:specPin", repository, "commit", entity["version"])
 
 
-# ============================================================================
-# validate
-# ============================================================================
-
-
-def unknown_keys(document):
-    """Keys the context does not define, and values not written in the JSON
-    type their key takes. JSON-LD drops the first silently and reads a lone
-    value and a one-element array alike, so SHACL never sees either: a
-    misspelt testedWith would be a file asserting nothing, "npm ci" would be
-    one argument, run without a shell, and a testedWith written as one object
-    would be read by the other subcommands as a list of its keys."""
+def problems_json_ld_hides_from_shacl(document):
     problems = [f"{key} is not a key the context defines" for key in document if key not in TOP_KEYS]
     for key in ("setup", "command"):
         if key in document and not isinstance(document[key], list):
             problems.append(f"{key} is an argument vector, written as a JSON array of strings")
-    if "testedWith" in document and not isinstance(document["testedWith"], list):
-        problems.append("testedWith is a list of pins, written as a JSON array, even of one")
-    if "specification" in document and not isinstance(document["specification"], dict):
-        problems.append("specification is one pin, written as a JSON object")
+    if "mustPassWith" in document and not isinstance(document["mustPassWith"], list):
+        problems.append("mustPassWith is a list of pins, written as a JSON array, even of one")
+    if "specPin" in document and not isinstance(document["specPin"], dict):
+        problems.append("specPin is one pin, written as a JSON object")
     pins = []
-    for label in ("specification", "testedWith"):
+    for label in ("specPin", "mustPassWith"):
         value = document.get(label)
         pins += [(label, pin) for pin in (value if isinstance(value, list) else [value])]
     for label, pin in pins:
@@ -308,7 +217,6 @@ def unknown_keys(document):
 
 
 def conform(directory, document):
-    """SHACL, with this repository's context read in place of its IRI."""
     from pyshacl import validate as shacl_validate
     from rdflib import Graph
     from rdflib.namespace import RDF, SH
@@ -323,7 +231,7 @@ def conform(directory, document):
     conforms, results, _ = shacl_validate(
         graph,
         shacl_graph=Graph().parse(SHAPES, format="turtle"),
-        advanced=True,  # the shapes use sh:sparql constraints
+        advanced=True,
         inplace=False,
     )
     messages = sorted(
@@ -354,7 +262,7 @@ def cmd_validate(directory, _args):
         report(False, f"its @context is {found!r}, where a {FILE} names {CONTEXT_IRI}")
         return FAIL
 
-    problems = unknown_keys(document) + name_clashes(directory, document)
+    problems = problems_json_ld_hides_from_shacl(document) + name_clashes(directory, document)
     for problem in problems:
         report(False, problem)
 
@@ -380,25 +288,18 @@ def cmd_validate(directory, _args):
         report(
             False,
             f"{directory} holds no {CRATE}, so it is an engine, and an engine's "
-            f"{FILE} carries specification, setup and command",
+            f"{FILE} carries specPin, setup and command",
         )
     elif conforms:
         report(True, f"the form is {kind}'s, as the directory is")
 
-    count = len(document.get("testedWith") or [])
+    count = len(document.get("mustPassWith") or [])
     if not problems and conforms:
-        note(f"{count} testedWith entr{'y' if count == 1 else 'ies'}")
+        note(f"{count} mustPassWith entr{'y' if count == 1 else 'ies'}")
     return OK if conforms and not problems else FAIL
 
 
-# ============================================================================
-# Resolving a pin
-# ============================================================================
-
-
 def ls_remote(url, *patterns):
-    """Refs of a counterpart, by name. Unreachable is a stop, not a failure of
-    one pin: nothing about the counterpart can be checked."""
     run = git("ls-remote", url, *patterns)
     if run.returncode != 0:
         raise unreachable(url, run)
@@ -409,9 +310,7 @@ def ls_remote(url, *patterns):
     return refs
 
 
-def remote_tag(url, tag):
-    """The commit a tag names. An annotated tag's own object is listed first
-    and the commit under ^{}; the commit is what a pin means."""
+def remote_tag_commit(url, tag):
     refs = ls_remote(url, f"refs/tags/{tag}", f"refs/tags/{tag}^{{}}")
     return refs.get(f"refs/tags/{tag}^{{}}") or refs.get(f"refs/tags/{tag}")
 
@@ -421,7 +320,6 @@ def remote_branch(url, branch):
 
 
 def default_branch(url):
-    """Read from the counterpart, never assumed to be main."""
     run = git("ls-remote", "--symref", url, "HEAD")
     if run.returncode != 0:
         raise unreachable(url, run)
@@ -432,8 +330,6 @@ def default_branch(url):
 
 
 def sibling(directory, pin):
-    """The counterpart's clone beside the repository under test, or a stop
-    with the command that puts it there."""
     path = directory.parent / pin.name
     if not (path / ".git").exists():
         raise Stop(
@@ -449,8 +345,6 @@ def local_commit(path, ref):
 
 
 def resolve(directory, pin, mode):
-    """What a pin names now, as a record entry. `commit` is None when it names
-    nothing, which fails that pin and leaves the others to be resolved."""
     resolved = {
         "label": pin.label,
         "codeRepository": pin.repository,
@@ -465,7 +359,7 @@ def resolve(directory, pin, mode):
     if pin.kind == "commit":
         resolved.update(commit=pin.value, source="the commit pinned")
     elif pin.kind == "tag":
-        resolved.update(commit=remote_tag(pin.repository, pin.value), source="the tag")
+        resolved.update(commit=remote_tag_commit(pin.repository, pin.value), source="the tag")
     elif mode == "ci":
         resolved.update(
             commit=remote_branch(pin.repository, pin.value), source="the branch's tip"
@@ -498,7 +392,6 @@ def resolve(directory, pin, mode):
 
 
 def describe(resolved):
-    """One line naming the resolved commit and any uncommitted-edits flag."""
     flag = ", with uncommitted edits" if resolved["uncommittedEdits"] else ""
     return (
         f"{resolved['label']}: {resolved['codeRepository']} "
@@ -528,8 +421,6 @@ def read_record(results):
 
 
 def resolve_all(directory, args, pins):
-    """Resolve and print each pin; the record's entries, and whether all
-    resolved."""
     resolved_all, ok = [], True
     for pin in pins:
         resolved = resolve(directory, pin, args.mode)
@@ -544,7 +435,7 @@ def resolve_all(directory, args, pins):
     if any(resolved["uncommittedEdits"] for resolved in resolved_all):
         note(
             "a result produced from uncommitted edits is feedback, never "
-            "evidence (compatibility.md)"
+            "evidence"
         )
     return resolved_all, ok
 
@@ -563,19 +454,7 @@ def cmd_resolve(directory, args):
     return OK if ok else FAIL
 
 
-# ============================================================================
-# ready
-# ============================================================================
-
-
 class Ancestry:
-    """Whether a commit is on a counterpart's default branch.
-
-    That branch is fetched without blobs into a scratch repository, once per
-    counterpart, and asked with git merge-base --is-ancestor: the history is
-    what is being asked about, and the files are not.
-    """
-
     def __init__(self, scratch):
         self.scratch = Path(scratch)
         self.fetched = {}
@@ -618,7 +497,7 @@ def cmd_ready(directory, _args):
                         "and cannot merge that way",
                     )
                 continue
-            commit = pin.value if pin.kind == "commit" else remote_tag(pin.repository, pin.value)
+            commit = pin.value if pin.kind == "commit" else remote_tag_commit(pin.repository, pin.value)
             if commit is None:
                 failed += 1
                 report(False, f"{pin}: names nothing in {pin.repository}")
@@ -634,17 +513,7 @@ def cmd_ready(directory, _args):
     return FAIL if failed else OK
 
 
-# ============================================================================
-
-# checkout
-# ============================================================================
-
-
 def local_checkout(directory, resolved):
-    """A counterpart on this machine. A branch pin whose sibling is on that
-    branch is the sibling itself, edits and all; anything else is a worktree
-    of the sibling at the commit, under the system temporary directory, so the
-    sibling's working copy is never touched."""
     pin = Pin(resolved["label"], resolved["codeRepository"], resolved["kind"], resolved["value"])
     path = sibling(directory, pin)
     if resolved["source"] == "the sibling's working tree":
@@ -670,8 +539,6 @@ def local_checkout(directory, resolved):
 
 
 def ci_checkout(directory, resolved):
-    """A clone at the resolved commit, beside the repository under test and
-    inside the workspace, which is all GitHub's runner lets a job write to."""
     path = directory.parent / resolved["name"]
     commit = resolved["commit"]
     if path.exists():
@@ -709,25 +576,15 @@ def cmd_checkout(directory, args):
     return OK if ok else FAIL
 
 
-# ============================================================================
-# run
-# ============================================================================
-
-
 def executable(argv, cwd):
-    """The vector as the platform runs it without a shell. A first argument
-    that is a path is taken from the checkout; a bare name is looked up on
-    PATH, which on Windows is also how npm is found as npm.cmd."""
     first = argv[0]
     if "/" in first or "\\" in first:
         candidate = Path(cwd, first)
         return [str(candidate) if candidate.exists() else first, *argv[1:]]
-    return [shutil.which(first) or first, *argv[1:]]
+    return [shutil.which(first) or first, *argv[1:]]  # so Windows finds npm.cmd
 
 
 def execute(argv, cwd):
-    """Run one vector and print what it said, indented. Its exit status, or
-    None when it could not be started."""
     try:
         run = subprocess.run(
             executable(argv, cwd), cwd=cwd, capture_output=True,
@@ -750,8 +607,6 @@ def vectors(engine):
 
 
 def cmd_run(directory, args):
-    """Every report from an earlier run is removed first: a stale one standing
-    in for a run that wrote nothing is exactly the pass nobody earned."""
     results = results_directory(directory, args)
     record = read_record(results)
     if not record.get("checkedOut"):
@@ -759,7 +614,7 @@ def cmd_run(directory, args):
     reports = results / "earl"
     shutil.rmtree(reports, ignore_errors=True)
     reports.mkdir(parents=True)
-    pins = [entry for entry in record["pins"] if entry["label"] == "testedWith"]
+    pins = [entry for entry in record["pins"] if entry["label"] == "mustPassWith"]
     print("Each engine on each adapter")
     if not pins:
         report(True, "no counterpart to run: nothing to check")
@@ -804,21 +659,13 @@ def cmd_run(directory, args):
     return NOT_RUN if not_run else OK
 
 
-# ============================================================================
-# judge
-# ============================================================================
-
 EARL = "http://www.w3.org/ns/earl#"
 MF = "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#"
 OUTCOMES = {"passed", "failed", "cantTell", "inapplicable", "untested"}
 NOT_HOLDING = {"failed", "inapplicable"}
 
 
-def manifest_entries(adapter):
-    """The entries of the test manifest the adapter's crate names, each as its
-    IRI below the adapter directory. Below it the IRI is the manifest's own;
-    above it, the engine and this tool may spell one directory differently, a
-    symlink resolved or a drive letter cased, so that part is not compared."""
+def manifest_entries_relative_to_adapter(adapter):
     from rdflib import Graph, URIRef
 
     adapter = adapter.resolve()
@@ -835,17 +682,13 @@ def manifest_entries(adapter):
 
 
 def judge_report(path, adapter):
-    """Whether one report holds, and what it says. The engine's exit code is
-    never read: the report is the result. It is held to the adapter's
-    manifest as well as to its own outcomes, because an engine that stopped
-    part-way leaves a report in which nothing failed."""
     from rdflib import Graph, URIRef
 
     if not path.is_file():
         return False, "it wrote no report"
     try:
         graph = Graph().parse(path, format="turtle")
-    except Exception as error:  # rdflib raises several unrelated parser types
+    except Exception as error:
         return False, f"its report does not parse as Turtle: {first_line(str(error))}"
     tally = {}
     for outcome in graph.objects(None, URIRef(EARL + "outcome")):
@@ -859,8 +702,8 @@ def judge_report(path, adapter):
         said += f"; {', '.join(unknown)} is not one of EARL's five outcomes"
 
     try:
-        expected = manifest_entries(adapter)
-    except Exception as error:  # the crate's JSON, the file, or rdflib's parser
+        expected = manifest_entries_relative_to_adapter(adapter)
+    except Exception as error:
         return False, f"{said}; the adapter's test manifest could not be read: {first_line(str(error))}"
     tested = set()
     for assertion, result in graph.subject_objects(URIRef(EARL + "result")):
@@ -882,7 +725,7 @@ def judge_report(path, adapter):
 
 def cmd_judge(directory, args):
     results = results_directory(directory, args)
-    pins = [entry for entry in read_record(results)["pins"] if entry["label"] == "testedWith"]
+    pins = [entry for entry in read_record(results)["pins"] if entry["label"] == "mustPassWith"]
     print("Each entry, judged by its EARL report")
     if not pins:
         report(True, "no entry: nothing to check")
@@ -906,13 +749,7 @@ def cmd_judge(directory, args):
     return OK if held == len(pins) else FAIL
 
 
-# ============================================================================
-
 def cmd_spec_pin(directory, args):
-    """The pin the starter checks this repository out at, before any checkout
-    of it exists: so it runs from the starter's own revision, on a bare
-    interpreter. With --output, appended as repository=, kind= and ref= lines,
-    the form GitHub reads step outputs in."""
     print("The specification pin")
     pin = spec_pin(directory, read_file(directory))
     report(True, str(pin))
@@ -935,8 +772,7 @@ COMMANDS = {
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Check the entries of a compatibility.json against the "
-        "Cascade Bridge Specification (compatibility.md)."
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
     parser.add_argument("command", choices=sorted(COMMANDS))
     parser.add_argument(

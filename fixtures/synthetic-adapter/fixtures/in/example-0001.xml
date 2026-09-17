@@ -1,9 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-  A synthetic input in the set envelope. Two records, invented; no such
-  accession exists anywhere. Validated against schema/example-set.xsd, the
-  envelope's bridge:documentSchema (adapter/validation.md, check 5).
--->
 <ExampleRecordSet>
   <ExampleRecord Accession="EX000001" Version="3">
     <Label>first synthetic record</Label>

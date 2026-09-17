@@ -1,13 +1,3 @@
-# The gating check of compatibility.md. Every entry of a repository's
-# compatibility.json is an assertion, and this is where it is held to it: the
-# file is validated, each counterpart is cloned beside the repository at the
-# commit its pin resolves to, each engine runs each adapter's test manifest, and
-# every EARL report is judged. An entry that does not hold fails the run.
-#
-# The starter hands over to this action from a checkout of this repository at
-# the caller's spec pin. It takes a directory, names no adapter and no engine,
-# and learns every counterpart from the file. The engine's toolchain -- what its
-# setup and command name -- is the calling job's to provide.
 name: Cascade Bridge compatibility
 description: >-
   Validate the repository's compatibility.json, clone each counterpart beside
@@ -36,11 +26,11 @@ runs:
 
     - name: install the validators
       shell: bash
-      run: python3 -m pip install --upgrade pip pyshacl rdflib
+      run: |
+        python3 -m pip install --upgrade pip
+        python3 -m pip install --group "${{ github.action_path }}/../../../pyproject.toml:validators"
 
-    # run exits non-zero when an entry could not be run at all. Such an entry
-    # has no report, and judge fails it with the reason, so run's status is
-    # not the one that decides.
+    # judge decides: an entry run could not run has no report, and judge fails it.
     - name: validate, check out, run and judge
       shell: bash
       env:
@@ -54,10 +44,7 @@ runs:
         python3 "${tool}" run "${REPOSITORY_PATH}" --results "${RESULTS}" || true
         python3 "${tool}" judge "${REPOSITORY_PATH}" --results "${RESULTS}"
 
-    # Every leg of a matrix shares the job's id, so the id alone would have
-    # each leg's reports replace the last's. The check run is one per leg and
-    # per attempt; a runner that does not report it still gets a name no other
-    # leg has.
+    # Matrix legs share github.job; the check run id keeps their artifacts apart.
     - name: name the reports for this leg
       id: artifact
       if: always()
@@ -67,8 +54,6 @@ runs:
         CHECK_RUN: ${{ job.check_run_id }}
       run: echo "name=compatibility-earl-${JOB}-${CHECK_RUN:-${RANDOM}${RANDOM}}" >> "$GITHUB_OUTPUT"
 
-    # The reports are the run's evidence, and a run's artifacts are where they
-    # live: nothing stores a result in any repository.
     - name: keep the EARL reports
       if: always()
       uses: actions/upload-artifact@v4

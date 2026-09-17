@@ -1,0 +1,30 @@
+@prefix sh:     <http://www.w3.org/ns/shacl#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix schema: <http://schema.org/> .
+@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+<#Envelope> a sh:NodeShape ;
+  sh:name "Envelope" ;
+  sh:targetClass bridge:Envelope ;
+  sh:property [
+    sh:path schema:name ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:pattern "^[a-z][a-z0-9-]*$" ;
+    sh:message "An envelope carries exactly one name, its short id: lowercase letters, digits and hyphens, starting with a letter."
+  ] ;
+  sh:property [
+    sh:path bridge:docRootElementName ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "An envelope carries exactly one bridge:docRootElementName, the local name of its document element."
+  ] ;
+  sh:property [
+    sh:path bridge:documentSchema ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:class schema:MediaObject ;
+    sh:message "An envelope carries at most one bridge:documentSchema, and it is a crate File entity (schema:MediaObject), not a bare IRI naming nothing."
+  ] .

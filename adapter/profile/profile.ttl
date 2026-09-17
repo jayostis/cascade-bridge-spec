@@ -1,0 +1,11 @@
+@prefix dct:  <http://purl.org/dc/terms/> .
+@prefix prof: <http://www.w3.org/ns/dx/prof/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+<https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/>
+    a prof:Profile ;
+    rdfs:label "Cascade Bridge Adapter" ;
+    prof:hasToken "cascade-bridge-adapter" ;
+    dct:publisher <https://github.com/jayostis/cascade-bridge-spec> ;
+    prof:isProfileOf <https://w3id.org/ro/crate/1.2> ;
+    prof:isTransitiveProfileOf <https://w3id.org/ro/crate/1.2> .
