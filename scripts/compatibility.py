@@ -88,14 +88,16 @@ def is_adapter(directory):
     return (directory / CRATE).is_file()
 
 
-def read_file(directory):
-    path = directory / FILE
-    if not path.is_file():
-        return None
+def read_json(path):
     try:
         return json.loads(path.read_text(encoding="utf-8"))
     except ValueError as error:
         raise Stop(f"{path} is not JSON: {error}") from error
+
+
+def read_file(directory):
+    path = directory / FILE
+    return read_json(path) if path.is_file() else None
 
 
 def repository_name(url):
@@ -176,7 +178,7 @@ def spec_pin(directory, document):
                 f"engine states its spec pin as specPin in {FILE}"
             )
         return pin_from("specPin", document["specPin"])
-    crate = json.loads((directory / CRATE).read_text(encoding="utf-8"))
+    crate = read_json(directory / CRATE)
     nodes = {node.get("@id"): node for node in crate.get("@graph", [])}
     pin = (nodes.get("./") or {}).get("bridge:specPin")
     entity = nodes.get(pin.get("@id")) if isinstance(pin, dict) else None
@@ -631,7 +633,6 @@ def cmd_run(directory, args):
         counterpart = Path(entry["path"])
         engine, adapter = (counterpart, directory) if adapter_side else (directory, counterpart)
         entry["adapter"] = str(adapter)
-        entry["report"] = str(reports / f"{entry['name']}.ttl")
         found = vectors(engine)
         if found is None:
             not_run += 1
@@ -647,17 +648,19 @@ def cmd_run(directory, args):
             not_run += 1
             report(False, f"{entry['name']} was not run: its engine's setup failed")
             continue
-        argv = [*command, "test", str(adapter), "--earl", entry["report"]]
+        earl = str(reports / f"{entry['name']}.ttl")
+        argv = [*command, "test", str(adapter), "--earl", earl]
         print(f"  run   {' '.join(argv)}   (in {engine})")
         status = execute(argv, engine)
         if status is None:
             not_run += 1
             continue
-        wrote = Path(entry["report"]).is_file()
+        entry["report"] = earl
+        wrote = Path(earl).is_file()
         report(
             True,
             f"{entry['name']} ran, exit status {status}, which nothing relies on; "
-            + ("its report is " + entry["report"] if wrote else "it wrote no report"),
+            + ("its report is " + earl if wrote else "it wrote no report"),
         )
     write_record(results, record)
     return NOT_RUN if not_run else OK
@@ -673,7 +676,7 @@ def manifest_entries_relative_to_adapter(adapter):
     from rdflib import Graph, URIRef
 
     adapter = adapter.resolve()
-    crate = json.loads((adapter / CRATE).read_text(encoding="utf-8"))
+    crate = read_json(adapter / CRATE)
     nodes = {node.get("@id"): node for node in crate.get("@graph", [])}
     named = (nodes.get("./") or {}).get("bridge:testManifest")
     if not isinstance(named, dict) or not named.get("@id"):

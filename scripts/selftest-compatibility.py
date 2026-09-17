@@ -163,6 +163,28 @@ def engine_without_command(world):
     return engine
 
 
+def adapter_whose_crate_is_not_json(world):
+    adapter = world.clone("adapter")
+    (adapter / "ro-crate-metadata.json").write_text("{ not json", encoding="utf-8")
+    return adapter
+
+
+def engine_whose_setup_fails(world):
+    engine = world.clone("engine")
+    write_file(engine, engine_file(
+        world, adapter_pin(world, branch="main"),
+        setup=[sys.executable, "-c", "raise SystemExit(1)"],
+    ))
+    world.clone("adapter")
+    return engine
+
+
+def engine_without_command_beside_adapter(world):
+    engine = engine_without_command(world)
+    world.clone("adapter")
+    return engine
+
+
 def adapter_carrying_spec_pin(world):
     adapter = adapter_naming_engine(world)
     document = json.loads((adapter / "compatibility.json").read_text(encoding="utf-8"))
@@ -544,6 +566,13 @@ CASES = [
         "expect": ["bridge:specPin: https://github.com/jayostis/cascade-bridge-spec commit "],
     },
     {
+        "name": "spec-pin stops in a sentence, not a traceback, on an adapter whose crate is not JSON",
+        "build": adapter_whose_crate_is_not_json,
+        "steps": [("spec-pin", 1)],
+        "expect": ["ro-crate-metadata.json is not JSON", "spec-pin: FAIL"],
+        "forbid": ["Traceback"],
+    },
+    {
         "name": "judge holds an entry whose engine passes its adapter",
         "build": engine_and_adapter("passed"),
         "steps": [("checkout", 0), ("run", 0), ("judge", 0)],
@@ -565,6 +594,20 @@ CASES = [
         "build": engine_and_adapter("none"),
         "steps": [("checkout", 0), ("run", 0), ("judge", 1)],
         "expect": ["it wrote no report", "does not hold; it wrote no report"],
+    },
+    {
+        "name": "judge says an entry whose engine states no command was not run, not that it wrote no report",
+        "build": engine_without_command_beside_adapter,
+        "steps": [("checkout", 0), ("run", 1), ("judge", 1)],
+        "expect": ["does not hold; it was not run"],
+        "forbid": ["it wrote no report"],
+    },
+    {
+        "name": "judge says an entry whose engine's setup failed was not run, not that it wrote no report",
+        "build": engine_whose_setup_fails,
+        "steps": [("checkout", 0), ("run", 1), ("judge", 1)],
+        "expect": ["does not hold; it was not run"],
+        "forbid": ["it wrote no report"],
     },
     {
         "name": "judge fails an entry whose report is not Turtle",
