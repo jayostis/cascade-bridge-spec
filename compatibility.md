@@ -12,33 +12,47 @@ An engine's file:
 ```json
 {
   "@context": "https://ns.cascadeprotocol.org/bridge/v1-draft/compatibility.jsonld",
-  "specPin": {
-    "codeRepository": "https://github.com/jayostis/cascade-bridge-spec",
-    "commit": "7a614179c4856a3f6e1a4b5a6c90a183b0c7c99a"
-  },
   "setup": ["npm", "ci"],
   "command": ["node", "packages/bridge-cli/src/cli.ts"],
-  "mustPassWith": [
-    { "codeRepository": "https://github.com/jayostis/cascade-bridge-adapter-clinvar", "branch": "main" }
-  ]
+  "mustPassWith": ["https://github.com/jayostis/cascade-bridge-adapter-clinvar"]
 }
 ```
 
-An adapter's file has only `mustPassWith`; its spec pin is `bridge:specPin` in its crate.
+An adapter's file has only `mustPassWith`.
 
-A commit or tag pin is reproducible. A default-branch pin can turn red when the
-other side merges, with no change of its own.
+## Which version of each repository a run uses
 
-## Changing an entry
+Picked when the run starts, as Zuul checks out a job's required projects
+([project gating](https://zuul-ci.org/docs/zuul/latest/gating.html),
+[job configuration](https://zuul-ci.org/docs/zuul/latest/config/job.html)):
 
-- **Opt out** by deleting the entry or re-pinning it. There is no "expected to
-  fail" entry.
-- **Add a pairing after both sides have merged.**
-- **A breaking change**: the engine removes or re-pins the adapter's entry and
-  merges, the adapter follows, the engine re-adds the entry.
+- the open pull requests reached by `Depends-On:` lines, from the description of
+  the pull request under test and then from each named pull request's own, each
+  merged into the branch it targets;
+- otherwise the branch named like the branch the pull request under test targets;
+- otherwise the default branch.
+
+A local run uses every sibling checkout as it is on disk, uncommitted edits
+included.
+
+A pull request merges only once every pull request it names has merged.
+
+**A `Depends-On:` line goes one way.** A cycle fails, as in Zuul without
+[circular dependencies](https://zuul-ci.org/docs/zuul/latest/config/queue.html).
+A change an engine and an adapter must both follow goes in backward-compatible
+steps, each leaving every default branch green.
+
+Where GitHub Actions cannot reproduce Zuul:
+
+- Editing a named pull request retests nothing; rerun the workflow.
+- There is no gate queue, so a pass is as fresh as its last run.
+- A repository's state is not frozen across a run's jobs.
 
 ## The tooling
 
 [`scripts/compatibility.py`](scripts/compatibility.py); its docstring is the
-usage. A repository's CI calls only `.github/actions/start@start-v1`
-([`adapter/validation.md`](adapter/validation.md) shows the workflow).
+usage. A repository's CI calls only `.github/actions/start@start-v2`
+([`adapter/validation.md`](adapter/validation.md) shows the workflow). A pull
+request here that changes the tooling is tried first from a no-op engine or
+adapter pull request naming it on a `Depends-On:` line, as a change to Zuul's
+shared jobs is.

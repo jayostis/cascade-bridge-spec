@@ -1,7 +1,7 @@
 # scripts — Agent Context
 
 Published machinery: it runs in every adapter's and engine's CI from a checkout
-at their spec pin.
+of this repository's default branch.
 
 - **Nothing here learns an adapter's or an engine's name.** A tool takes a directory.
 - **Nothing mutates a tracked file.** Mutation happens on a copy.

@@ -66,10 +66,8 @@
   ] ;
   sh:property [
     sh:path bridge:specPin ;
-    sh:minCount 1 ;
-    sh:maxCount 1 ;
-    sh:nodeKind sh:IRI ;
-    sh:message "The adapter carries exactly one bridge:specPin, the pinned cascade-bridge-spec commit by IRI."
+    sh:maxCount 0 ;
+    sh:message "bridge:specPin was removed: the version of cascade-bridge-spec an adapter is checked against is picked when the check runs."
   ] ;
   sh:property [
     sh:path bridge:cascadeVocabularyPin ;

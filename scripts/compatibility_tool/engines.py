@@ -2,9 +2,8 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from compatibility_tool.console import Status, report
+from compatibility_tool.console import report
 from compatibility_tool.document import is_adapter, read_file
-from compatibility_tool.record import Record
 
 
 def executable(argv, cwd):
@@ -34,27 +33,19 @@ def vectors(engine):
     return None
 
 
-def run_command(directory, options):
-    record = Record.load_checked_out(options.results)
+def run(directory, record, options):
     reports = options.results / "earl"
     shutil.rmtree(reports, ignore_errors=True)
     reports.mkdir(parents=True)
-    counterparts = record.counterparts
     print("Each engine on each adapter")
-    if not counterparts:
-        report(True, "no counterpart to run: nothing to check")
-        return Status.NOTHING_TO_CHECK
-
     adapter_side = is_adapter(directory)
     set_up = {}
-    not_run = 0
-    for entry in counterparts:
+    for entry in record.counterparts:
         engine, adapter = (entry.path, directory) if adapter_side else (directory, entry.path)
         entry.adapter = adapter
         found = vectors(engine)
         if found is None:
-            not_run += 1
-            report(False, f"{engine} states no setup and command, so {entry.pin.name} was not run")
+            report(False, f"{engine} states no setup and command, so {entry.name} was not run")
             continue
         setup, command = found
         if engine not in set_up:
@@ -63,18 +54,14 @@ def run_command(directory, options):
             if not set_up[engine]:
                 report(False, f"the setup failed in {engine}")
         if not set_up[engine]:
-            not_run += 1
-            report(False, f"{entry.pin.name} was not run: its engine's setup failed")
+            report(False, f"{entry.name} was not run: its engine's setup failed")
             continue
-        earl = reports / f"{entry.pin.name}.ttl"
+        earl = reports / f"{entry.name}.ttl"
         argv = [*command, "test", str(adapter), "--earl", str(earl)]
         print(f"  run   {' '.join(argv)}   (in {engine})")
         status = execute(argv, engine)
         if status is None:
-            not_run += 1
             continue
         entry.report = earl
         wrote = f"its report is {earl}" if earl.is_file() else "it wrote no report"
-        report(True, f"{entry.pin.name} ran, exit status {status}, which nothing relies on; {wrote}")
-    record.save(options.results)
-    return Status.NOT_RUN if not_run else Status.OK
+        report(True, f"{entry.name} ran, exit status {status}, which nothing relies on; {wrote}")

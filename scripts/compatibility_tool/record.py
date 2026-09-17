@@ -4,27 +4,15 @@ from enum import Enum
 from pathlib import Path
 
 from compatibility_tool.console import Stop
-from compatibility_tool.document import Pin, read_json
 
 RECORD = "record.json"
 
 
-class Source(Enum):
-    COMMIT = "commit"
-    TAG = "tag"
-    BRANCH_TIP = "branch tip"
-    WORKING_TREE = "working tree"
-    BRANCH_LAST_COMMIT = "branch last commit"
-
-    @property
-    def wording(self):
-        return {
-            Source.COMMIT: "the commit pinned",
-            Source.TAG: "the tag",
-            Source.BRANCH_TIP: "the branch's tip",
-            Source.WORKING_TREE: "the sibling's working tree",
-            Source.BRANCH_LAST_COMMIT: "the branch's last commit",
-        }[self]
+class Role(Enum):
+    UNDER_TEST = "under test"
+    SPECIFICATION = "specification"
+    COUNTERPART = "counterpart"
+    NOT_USED = "not used"
 
 
 def optional_path(value):
@@ -36,47 +24,51 @@ def optional_text(value):
 
 
 @dataclass
-class ResolvedPin:
-    pin: Pin
+class Used:
+    name: str
+    repository: str
     commit: str | None
-    source: Source
+    how: str
+    role: Role
     uncommitted_edits: bool = False
-    warning: str | None = None
     path: Path | None = None
     adapter: Path | None = None
     report: Path | None = None
+    result: str | None = None
+    holds: bool | None = None
 
     def describe(self):
         flag = ", with uncommitted edits" if self.uncommitted_edits else ""
-        return f"{self.pin} is {self.commit} ({self.source.wording}{flag})"
+        return f"{self.repository} is {self.commit} ({self.how}{flag})"
 
     def to_json(self):
         return {
-            "label": self.pin.label,
-            "codeRepository": self.pin.repository,
-            "name": self.pin.name,
-            "kind": self.pin.kind,
-            "value": self.pin.value,
+            "repository": self.repository,
             "commit": self.commit,
-            "source": self.source.value,
+            "how": self.how,
+            "role": self.role.value,
             "uncommittedEdits": self.uncommitted_edits,
-            "warning": self.warning,
             "path": optional_text(self.path),
             "adapter": optional_text(self.adapter),
             "report": optional_text(self.report),
+            "result": self.result,
+            "holds": self.holds,
         }
 
     @classmethod
-    def from_json(cls, data):
+    def from_json(cls, name, data):
         return cls(
-            pin=Pin(data["label"], data["codeRepository"], data["kind"], data["value"]),
+            name=name,
+            repository=data["repository"],
             commit=data["commit"],
-            source=Source(data["source"]),
+            how=data["how"],
+            role=Role(data["role"]),
             uncommitted_edits=data["uncommittedEdits"],
-            warning=data["warning"],
             path=optional_path(data["path"]),
             adapter=optional_path(data["adapter"]),
             report=optional_path(data["report"]),
+            result=data["result"],
+            holds=data["holds"],
         )
 
 
@@ -84,39 +76,29 @@ class ResolvedPin:
 class Record:
     directory: Path
     mode: str
-    pins: list[ResolvedPin] = field(default_factory=list)
-    checked_out: bool = False
+    used: list[Used] = field(default_factory=list)
 
     @property
     def counterparts(self):
-        return [entry for entry in self.pins if entry.pin.label == "mustPassWith"]
+        return [entry for entry in self.used if entry.role is Role.COUNTERPART]
 
     def save(self, results):
         results.mkdir(parents=True, exist_ok=True)
         body = {
             "directory": str(self.directory),
             "mode": self.mode,
-            "pins": [entry.to_json() for entry in self.pins],
-            "checkedOut": self.checked_out,
+            "repositories": {entry.name: entry.to_json() for entry in self.used},
         }
         (results / RECORD).write_text(json.dumps(body, indent=2) + "\n", encoding="utf-8")
 
     @classmethod
     def load(cls, results):
-        path = results / RECORD
+        path = Path(results) / RECORD
         if not path.is_file():
-            raise Stop(f"{path} is not there: run resolve or checkout first")
-        data = read_json(path)
+            raise Stop(f"{path} is not there: the run wrote no record")
+        data = json.loads(path.read_text(encoding="utf-8"))
         return cls(
             directory=Path(data["directory"]),
             mode=data["mode"],
-            pins=[ResolvedPin.from_json(entry) for entry in data["pins"]],
-            checked_out=data["checkedOut"],
+            used=[Used.from_json(name, entry) for name, entry in data["repositories"].items()],
         )
-
-    @classmethod
-    def load_checked_out(cls, results):
-        record = cls.load(results)
-        if not record.checked_out:
-            raise Stop("the record holds no checkout: run checkout first")
-        return record

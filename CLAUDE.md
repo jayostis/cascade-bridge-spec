@@ -37,10 +37,12 @@ So:
   machine-readable reference to one; the tooling takes a directory.
 - **Tiers are not specified**, and when they are they are measured, never declared.
 - **Standards, not inventions**: RO-Crate 1.2 and its profiles, W3C `mf:`,
-  SHACL, EARL, SKOS, Enterprise Integration Patterns.
+  SHACL, EARL, SKOS, Enterprise Integration Patterns, and OpenStack's Zuul model
+  ([gating](https://zuul-ci.org/docs/zuul/latest/gating.html),
+  [job configuration](https://zuul-ci.org/docs/zuul/latest/config/job.html),
+  [queues](https://zuul-ci.org/docs/zuul/latest/config/queue.html)).
 - **The pilot is evidence, not authority**, and is never modified here.
-- **A pin to this repository names, at merge time, a commit or tag on its
-  default branch, or that branch.** This repository pins nothing.
+- **Nothing pins this repository**; a caller names `start-v2`, which never moves.
 
 ## Layout
 

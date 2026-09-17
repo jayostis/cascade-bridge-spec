@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 """Usage:
 
-    python3 scripts/compatibility.py validate <dir>
-    python3 scripts/compatibility.py resolve  <dir> [--mode ci|local] [--results <dir>]
-    python3 scripts/compatibility.py checkout <dir> [--mode ci|local] [--results <dir>]
-    python3 scripts/compatibility.py run      <dir> [--results <dir>]
-    python3 scripts/compatibility.py judge   [<dir>] [--results <dir>] [--summary <file>]
-    python3 scripts/compatibility.py ready    <dir>
-    python3 scripts/compatibility.py spec-pin <dir> [--output <file>]
+    python3 scripts/compatibility.py <dir> [--check compatibility|ready-to-merge]
+                                          [--results <dir>] [--spec-repository <url>]
 
-Exit status is 1 when the subcommand fails or did not run, 0 otherwise.
-Requires git; validate also needs pyshacl and rdflib, and judge rdflib.
+compatibility: the adapter lint where the directory holds a crate, then its
+compatibility.json's counterparts, each run and judged. ready-to-merge: the
+merge gate. The version of every repository the run uses is picked when it
+runs; in a local run every sibling is used as it is on disk.
+
+Exit status is 1 when the check fails or did not run, 0 otherwise.
+Requires git; the compatibility check also needs pyshacl, rdflib and
+rocrate-validator.
 """
 
 import sys

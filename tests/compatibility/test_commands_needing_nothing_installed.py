@@ -17,17 +17,16 @@ def test_the_merge_gate_runs_with_no_package_installed(world):
     world.pull_request("adapter", 7, state="closed", merged=True)
     engine, event = engine_under_test(world, body=depends_on("adapter", 7))
 
-    said = world.tool(
-        engine, check="ready-to-merge", interpreter=WITHOUT_SITE_PACKAGES, **world.ci(event=event)
-    )
+    said = world.tool(engine, check="ready-to-merge", interpreter=WITHOUT_SITE_PACKAGES, **world.ci(event=event))
 
     assert "Traceback" not in said
 
 
 def test_a_check_with_the_validators_missing_names_what_is_missing(world):
-    engine, event = engine_under_test(world)
+    engine = world.engine([world.url("adapter")])
+    world.clone("adapter")
 
-    said = world.tool(engine, 1, interpreter=WITHOUT_SITE_PACKAGES, **world.ci(event=event))
+    said = world.tool(engine, 1, interpreter=WITHOUT_SITE_PACKAGES)
 
-    assert "rdflib" in said
+    assert "rdflib is not installed" in said
     assert "Traceback" not in said

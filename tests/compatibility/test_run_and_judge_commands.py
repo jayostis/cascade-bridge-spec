@@ -4,7 +4,7 @@ import sys
 
 import pytest
 
-from compatibility_world import git
+from compatibility_world import engine_document, git, write_compatibility
 
 
 def engine_beside_adapter(world, canned="passed", **overrides):
@@ -55,17 +55,22 @@ def test_an_entry_does_not_hold_on_what_its_report_says(world, canned, says):
         assert fragment in said
 
 
-@pytest.mark.parametrize(
-    "overrides",
-    [
-        pytest.param({"command": None}, id="an engine stating no command"),
-        pytest.param({"setup": [sys.executable, "-c", "raise SystemExit(1)"]}, id="an engine whose setup failed"),
-    ],
-)
-def test_an_entry_never_run_says_so_rather_than_that_it_wrote_no_report(world, overrides):
-    said = world.tool(engine_beside_adapter(world, **overrides), 1)
+def test_an_entry_whose_engines_setup_failed_says_so_rather_than_that_it_wrote_no_report(world):
+    engine = engine_beside_adapter(world, setup=[sys.executable, "-c", "raise SystemExit(1)"])
+    said = world.tool(engine, 1)
     assert "does not hold; it was not run" in said
     assert "it wrote no report" not in said
+
+
+def test_a_counterpart_engine_stating_no_command_is_not_run_rather_than_refused(world):
+    """A counterpart's files are read for what running it needs, never validated."""
+    adapter = world.clone("adapter")
+    write_compatibility(adapter, {"mustPassWith": [world.url("engine")]})
+    engine = world.clone("engine")
+    write_compatibility(engine, engine_document([], command=None))
+    said = world.tool(adapter, 1)
+    assert "states no setup and command" in said
+    assert "does not hold; it was not run" in said
 
 
 def test_an_entry_run_on_a_siblings_uncommitted_edits_is_flagged(world):

@@ -1,23 +1,26 @@
-# start-v1 never moves: a change here needs a new tag and an edit in every caller.
+# start-v2 holds no rule: it fetches this repository's default branch and runs
+# the entry point there. Only the names it relies on are frozen -- the entry
+# point's path, its arguments, and the directory it keeps as artifacts.
 name: Cascade Bridge start
 description: >-
-  Check the Cascade Bridge Specification out at the repository's own spec pin,
-  beside it, and run the adapter lint and the compatibility check from there,
-  or the merge gate.
+  Run the Cascade Bridge Specification's checks on the repository: the adapter
+  lint where it holds a crate, then its compatibility.json's counterparts, or
+  the merge gate. Which version of every repository the run uses is picked
+  when it runs.
 
 inputs:
   path:
     description: >-
       The repository under test, relative to the workspace: a directory named
-      as its repository, so that counterparts can be cloned beside it. When it
-      is not there, the calling repository is checked out into it.
+      as its repository, so that counterparts can be checked out beside it.
+      When it is not there, the calling repository is checked out into it.
     required: false
     default: ${{ github.event.repository.name }}
   check:
     description: >-
       compatibility: the adapter lint when the repository holds a crate, then
-      its compatibility.json's entries when it has one. ready-to-merge: the
-      merge gate, meant to be a required status check.
+      its compatibility.json's counterparts. ready-to-merge: the merge gate,
+      meant to be a required status check.
     required: false
     default: compatibility
   python-version:
@@ -51,70 +54,61 @@ runs:
       with:
         python-version: ${{ inputs.python-version }}
 
-    - name: read the spec pin
-      id: pin
-      shell: bash
-      env:
-        REPOSITORY_PATH: ${{ inputs.path }}
-      run: |
-        set -euo pipefail
-        own="$(cd "${{ github.action_path }}/../../.." && pwd)"
-        python3 "${own}/scripts/compatibility.py" spec-pin "${REPOSITORY_PATH}" --output "$GITHUB_OUTPUT"
-        [ -f "${REPOSITORY_PATH}/ro-crate-metadata.json" ] && echo "adapter=true" >> "$GITHUB_OUTPUT"
-        [ -f "${REPOSITORY_PATH}/compatibility.json" ] && echo "compatibility=true" >> "$GITHUB_OUTPUT"
-        exit 0
-
-    - name: check the specification out at the spec pin, beside the repository
+    - name: the specification's default branch, to run the entry point from
+      id: specification
       shell: bash
       env:
         ACTION_REPOSITORY: ${{ github.action_repository }}
-        PIN_REPOSITORY: ${{ steps.pin.outputs.repository }}
-        PIN_KIND: ${{ steps.pin.outputs.kind }}
-        PIN_REF: ${{ steps.pin.outputs.ref }}
+        SERVER_URL: ${{ github.server_url }}
       run: |
         set -euo pipefail
-        spec="${GITHUB_WORKSPACE}/cascade-bridge-spec"
         own="$(cd "${{ github.action_path }}/../../.." && pwd)"
         if [ -z "${ACTION_REPOSITORY}" ]; then
-          if [ "${own}" != "${spec}" ]; then
-            echo "::error::called by local path, the starter runs from ${spec}, not ${own}"
-            exit 1
-          fi
-          echo "called by local path: the tools run from ${own}, not from ${PIN_REPOSITORY} ${PIN_KIND} ${PIN_REF}"
+          echo "called by local path: the entry point runs from ${own}"
+          echo "entry-point=${own}/scripts/compatibility.py" >> "$GITHUB_OUTPUT"
+          echo "repository=${SERVER_URL}/${GITHUB_REPOSITORY}" >> "$GITHUB_OUTPUT"
           exit 0
         fi
-        if [ -e "${spec}" ]; then
-          echo "::error::${spec} is already there; the specification is checked out into it"
-          exit 1
-        fi
-        case "${PIN_KIND}" in
-          commit) ref="${PIN_REF}" ;;
-          tag) ref="refs/tags/${PIN_REF}" ;;
-          branch) ref="refs/heads/${PIN_REF}" ;;
-          *) echo "::error::${PIN_REPOSITORY} pin kind '${PIN_KIND}' is not commit, tag or branch"; exit 1 ;;
-        esac
-        git init --quiet "${spec}"
-        if ! git -C "${spec}" fetch --quiet --depth 1 "${PIN_REPOSITORY}" "${ref}"; then
-          echo "::error::${PIN_REPOSITORY} ${PIN_KIND} ${PIN_REF} could not be fetched: the repository may be private, renamed or deleted, or the pin names nothing in it"
-          exit 1
-        fi
-        git -C "${spec}" checkout --quiet --detach FETCH_HEAD
-        echo "${PIN_REPOSITORY} ${PIN_KIND} ${PIN_REF} is $(git -C "${spec}" rev-parse HEAD), at ${spec}"
+        repository="${SERVER_URL}/${ACTION_REPOSITORY}"
+        bootstrap="${RUNNER_TEMP}/cascade-bridge-spec-bootstrap"
+        rm -rf "${bootstrap}"
+        git init --quiet "${bootstrap}"
+        branch="$(git ls-remote --symref "${repository}" HEAD | sed -n 's|^ref: refs/heads/||p' | cut -f1)"
+        git -C "${bootstrap}" fetch --quiet --depth 1 "${repository}" "refs/heads/${branch}"
+        git -C "${bootstrap}" checkout --quiet --detach FETCH_HEAD
+        echo "${repository} ${branch} is $(git -C "${bootstrap}" rev-parse HEAD), at ${bootstrap}"
+        echo "entry-point=${bootstrap}/scripts/compatibility.py" >> "$GITHUB_OUTPUT"
+        echo "repository=${repository}" >> "$GITHUB_OUTPUT"
 
-    - if: inputs.check == 'compatibility' && steps.pin.outputs.adapter == 'true'
-      uses: ./cascade-bridge-spec/.github/actions/validate-adapter
-      with:
-        path: ${{ inputs.path }}
-        python-version: ${{ inputs.python-version }}
+    - name: run the check
+      shell: bash
+      env:
+        REPOSITORY_PATH: ${{ inputs.path }}
+        CHECK: ${{ inputs.check }}
+        ENTRY_POINT: ${{ steps.specification.outputs.entry-point }}
+        SPEC_REPOSITORY: ${{ steps.specification.outputs.repository }}
+        RESULTS: ${{ runner.temp }}/compatibility
+      run: |
+        set -euo pipefail
+        python3 "${ENTRY_POINT}" "${REPOSITORY_PATH}" \
+          --check "${CHECK}" \
+          --results "${RESULTS}" \
+          --spec-repository "${SPEC_REPOSITORY}"
 
-    - if: inputs.check == 'compatibility' && steps.pin.outputs.compatibility == 'true'
-      uses: ./cascade-bridge-spec/.github/actions/compatibility
-      with:
-        path: ${{ inputs.path }}
-        python-version: ${{ inputs.python-version }}
+    # Matrix legs share github.job; the check run id keeps their artifacts apart.
+    - name: name the results for this leg
+      id: artifact
+      if: always()
+      shell: bash
+      env:
+        JOB: ${{ github.job }}
+        CHECK_RUN: ${{ job.check_run_id }}
+      run: echo "name=compatibility-${JOB}-${CHECK_RUN:-${RANDOM}${RANDOM}}" >> "$GITHUB_OUTPUT"
 
-    - if: inputs.check == 'ready-to-merge'
-      uses: ./cascade-bridge-spec/.github/actions/ready-to-merge
+    - name: keep the record and the EARL reports
+      if: always()
+      uses: actions/upload-artifact@v7
       with:
-        path: ${{ inputs.path }}
-        python-version: ${{ inputs.python-version }}
+        name: ${{ steps.artifact.outputs.name }}
+        path: ${{ runner.temp }}/compatibility
+        if-no-files-found: ignore

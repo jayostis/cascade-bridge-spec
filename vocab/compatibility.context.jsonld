@@ -3,10 +3,6 @@
     "@version": 1.1,
     "@base": null,
     "bridge": "https://ns.cascadeprotocol.org/bridge/v1-draft#",
-    "schema": "http://schema.org/",
-    "specPin": {
-      "@id": "bridge:specPin"
-    },
     "setup": {
       "@id": "bridge:setup",
       "@container": "@list"
@@ -17,20 +13,8 @@
     },
     "mustPassWith": {
       "@id": "bridge:mustPassWith",
-      "@container": "@set"
-    },
-    "codeRepository": {
-      "@id": "schema:codeRepository",
+      "@container": "@set",
       "@type": "@id"
-    },
-    "commit": {
-      "@id": "schema:version"
-    },
-    "tag": {
-      "@id": "bridge:tag"
-    },
-    "branch": {
-      "@id": "bridge:branch"
     }
   }
 }

@@ -2,6 +2,8 @@
 
 from compatibility_world import git
 
+MATCHING = "main, the branch matching the pull request's target"
+
 
 def depends_on(repository, number):
     return f"Some description.\n\nDepends-On: https://github.com/jayostis/{repository}/pull/{number}\n"
@@ -14,6 +16,7 @@ def engine_under_test(world, number=1, body="", base="main"):
 
 def test_a_named_pull_request_is_merged_into_the_branch_it_targets(world):
     head = world.pull_request("adapter", 7, fill=lambda path: (path / "NOTICE").write_text("named\n"))
+    world.commit_on_main("adapter", "AFTER")
     engine, event = engine_under_test(world, body=depends_on("adapter", 7))
 
     world.tool(engine, **world.ci(event=event))
@@ -22,6 +25,7 @@ def test_a_named_pull_request_is_merged_into_the_branch_it_targets(world):
     assert adapter["how"] == "pull request #7 merged into main"
     assert (world.workspace / "adapter" / "NOTICE").read_text() == "named\n"
     assert adapter["commit"] != head, "the run uses the merge, not the pull request's head"
+    assert (world.workspace / "adapter" / "AFTER").exists(), "what the branch gained since is there too"
 
 
 def test_a_pull_request_named_by_a_named_pull_request_is_followed(world):
@@ -128,7 +132,7 @@ def test_a_description_changed_between_runs_is_read_again_by_the_second_run(worl
     engine, event = engine_under_test(world)
 
     world.tool(engine, **world.ci(event=event))
-    assert world.record()["repositories"]["adapter"]["how"] == "main, the default branch"
+    assert world.record()["repositories"]["adapter"]["how"] == MATCHING
 
     world.pull_requests.get("engine", 1)["body"] = depends_on("adapter", 7)
     world.tool(engine, **world.ci(event=event))

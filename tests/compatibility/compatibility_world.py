@@ -19,6 +19,7 @@ SETTINGS = (
     "user.email=tests@example.org",
     "commit.gpgsign=false",
     "tag.gpgsign=false",
+    "core.autocrlf=false",
 )
 IDENTITY = [argument for setting in SETTINGS for argument in ("-c", setting)]
 
@@ -41,7 +42,9 @@ def publish(origins, name, fill):
 
 
 def specification(path):
-    shutil.copytree(ROOT / "scripts", path / "scripts")
+    """What a run fetches and runs the checks from: this working tree, uncommitted edits included."""
+    for directory in ("scripts", "vocab", "shapes", "adapter"):
+        shutil.copytree(ROOT / directory, path / directory, ignore=shutil.ignore_patterns("__pycache__"))
     shutil.copy(ROOT / "pyproject.toml", path / "pyproject.toml")
 
 
@@ -198,7 +201,17 @@ class World:
         git("checkout", "-q", "main", cwd=origin)
         return head
 
+    def commit_on_main(self, name, line):
+        origin = self.origin(name)
+        (origin / line).write_text(f"{line}\n", encoding="utf-8")
+        git("add", "-A", cwd=origin)
+        git("commit", "-q", "-m", line, cwd=origin)
+        return git("rev-parse", "HEAD", cwd=origin)
+
     def pull_request(self, name, number, body="", base="main", fill=None, state="open", merged=False):
+        if not self.origin(name).exists():  # a repository this run checks nothing out from
+            self.pull_requests.open(name, number, body=body, base=base, state=state, merged=merged)
+            return None
         head = self.branch(name, f"pull/{number}", fill)
         git("update-ref", f"refs/pull/{number}/head", head, cwd=self.origin(name))
         self.pull_requests.open(name, number, body=body, base=base, head=head, state=state, merged=merged)
@@ -209,15 +222,26 @@ class World:
         write_compatibility(engine, engine_document(must_pass_with, canned, **overrides))
         return engine
 
-    def event(self, number):
+    def event(self, number, repository="engine"):
+        pull = self.pull_requests.get(repository, number) or {"base": {"ref": "main"}}
         path = self.root / "event.json"
-        body = {"pull_request": {"number": number, "base": {"ref": self.pull_requests.get("engine", number)["base"]["ref"]}}}
+        body = {"pull_request": {"number": number, "base": {"ref": pull["base"]["ref"]}}}
         path.write_text(json.dumps(body), encoding="utf-8")
         return path
 
     def environment(self, **extra):
         temporary = str(self.temporary)
-        environment = dict(os.environ, TMPDIR=temporary, TEMP=temporary, TMP=temporary, PYTHONIOENCODING="utf-8")
+        environment = dict(
+            os.environ,
+            TMPDIR=temporary,
+            TEMP=temporary,
+            TMP=temporary,
+            PYTHONIOENCODING="utf-8",
+            # A digested fixture is bytes: a checkout that rewrote its line endings is a different file.
+            GIT_CONFIG_COUNT="1",
+            GIT_CONFIG_KEY_0="core.autocrlf",
+            GIT_CONFIG_VALUE_0="false",
+        )
         environment.pop("CI", None)
         for name in ("GITHUB_REPOSITORY", "GITHUB_EVENT_PATH", "GITHUB_REF_NAME", "GITHUB_STEP_SUMMARY"):
             environment.pop(name, None)
@@ -233,6 +257,7 @@ class World:
             "GITHUB_TOKEN": "a token the stub does not check",
             "GITHUB_WORKSPACE": str(self.workspace),
             "GITHUB_SERVER_URL": str(self.origins.as_uri()),
+            "CASCADE_SPEC_REPOSITORY": self.url("cascade-bridge-spec"),
             "GITHUB_STEP_SUMMARY": str(self.summary),
             "GITHUB_REF_NAME": branch,
         }

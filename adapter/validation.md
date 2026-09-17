@@ -22,14 +22,13 @@ jobs:
   adapter:
     runs-on: ubuntu-latest
     steps:
-      - uses: jayostis/cascade-bridge-spec/.github/actions/start@start-v1
+      - uses: jayostis/cascade-bridge-spec/.github/actions/start@start-v2
   ready-to-merge:
     runs-on: ubuntu-latest
     steps:
-      - uses: jayostis/cascade-bridge-spec/.github/actions/start@start-v1
+      - uses: jayostis/cascade-bridge-spec/.github/actions/start@start-v2
         with:
           check: ready-to-merge
 ```
 
-Make both jobs required status checks. Bumping the spec pin is an edit
-to the crate alone.
+Make both jobs required status checks.
