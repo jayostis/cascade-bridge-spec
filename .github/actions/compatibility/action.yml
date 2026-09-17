@@ -1,0 +1,63 @@
+name: Cascade Bridge compatibility
+description: >-
+  Validate the repository's compatibility.json, clone each counterpart beside
+  it at its resolved commit, run each engine on each adapter, and judge every
+  EARL report. Fails when any entry does not hold.
+
+inputs:
+  path:
+    description: >-
+      Path to the repository under test, relative to the workspace: a
+      directory named as its repository, so that its counterparts can be
+      cloned beside it.
+    required: false
+    default: '.'
+  python-version:
+    description: The Python the tooling runs on.
+    required: false
+    default: '3.12'
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v7
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: install the validators
+      shell: bash
+      run: |
+        python3 -m pip install --upgrade pip
+        python3 -m pip install --group "${{ github.action_path }}/../../../pyproject.toml:validators"
+
+    # judge decides: an entry run could not run has no report, and judge fails it.
+    - name: validate, check out, run and judge
+      shell: bash
+      env:
+        REPOSITORY_PATH: ${{ inputs.path }}
+        RESULTS: ${{ runner.temp }}/compatibility
+      run: |
+        set -euo pipefail
+        tool="$(cd "${{ github.action_path }}/../../.." && pwd)/scripts/compatibility.py"
+        python3 "${tool}" validate "${REPOSITORY_PATH}"
+        python3 "${tool}" checkout "${REPOSITORY_PATH}" --mode ci --results "${RESULTS}"
+        python3 "${tool}" run "${REPOSITORY_PATH}" --results "${RESULTS}" || true
+        python3 "${tool}" judge "${REPOSITORY_PATH}" --results "${RESULTS}"
+
+    # Matrix legs share github.job; the check run id keeps their artifacts apart.
+    - name: name the reports for this leg
+      id: artifact
+      if: always()
+      shell: bash
+      env:
+        JOB: ${{ github.job }}
+        CHECK_RUN: ${{ job.check_run_id }}
+      run: echo "name=compatibility-earl-${JOB}-${CHECK_RUN:-${RANDOM}${RANDOM}}" >> "$GITHUB_OUTPUT"
+
+    - name: keep the EARL reports
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ steps.artifact.outputs.name }}
+        path: ${{ runner.temp }}/compatibility
+        if-no-files-found: ignore

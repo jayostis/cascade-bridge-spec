@@ -1,11 +1,9 @@
-# A Note, which the invented vocabulary has no term for, is a finding.
-
 PREFIX fx:  <http://sparql.xyz/facade-x/ns/>
 PREFIX xyz: <http://sparql.xyz/facade-x/data/>
 
 SELECT ?sourceField ?reason ?severity ?context
 WHERE {
-  ?unit a fx:root, xyz:ExampleRecord ;
+  ?record a fx:root, xyz:ExampleRecord ;
     xyz:Accession ?context ;
     ?slot ?note .
   ?note a xyz:Note .

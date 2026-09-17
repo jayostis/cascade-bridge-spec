@@ -1,30 +1,15 @@
 # scripts — Agent Context
 
-Machinery, not contract: `../adapter/validation.md` is the contract and
-`validate-adapter.py` implements it. But it is the *published* machinery — an
-adapter's CI calls it through `../.github/actions/validate-adapter` at a tag — so
-a change here is felt by every adapter at its next tag, and by none of them
-before. That is the whole reason the pin exists.
+Published machinery: it runs in every adapter's and engine's CI from a checkout
+at their spec pin.
 
-`selftest-lint.py` is the answer to "what would the lint report if the thing it
-claims to check were wrong?" It mutates a copy of `../fixtures/synthetic-adapter`
-in a temporary directory and asserts the lint says so, in the words
-`../adapter/validation.md` fixes. A check that quietly does nothing and reports a
-pass is invisible from a green run.
-
-- **Nothing here may learn an adapter's name.** The lint takes a directory;
-  `../fixtures/README.md` says why its test subject is synthetic.
-- **Nothing mutates a tracked file.** Mutation happens on a copy, outside the
-  repository.
-- **A check that is specified but not built says so in the output.** A package
-  that passed three checks must not read as though it passed seven.
-- A new check lands with `../adapter/validation.md` and a `selftest-lint.py` case in
-  the same commit.
+- **Nothing here learns an adapter's or an engine's name.** A tool takes a directory.
+- **Nothing mutates a tracked file.** Mutation happens on a copy.
+- **A rule lands with a test case that asserts it**, in the same commit.
+- **A suite is fast enough to run on every edit.**
+- **A docstring is usage, not a description of the code.**
 
 ```bash
-python3 -m pip install pyshacl rdflib roc-validator lxml
-python3 scripts/validate-adapter.py <path to an adapter checkout>
-python3 scripts/selftest-lint.py
+python3 -m pip install --group dev
+python3 -m pytest tests/compatibility
 ```
-
-The adapter run stays out of CI on purpose; `../pinning.md` says why.

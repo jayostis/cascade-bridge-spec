@@ -1,75 +1,57 @@
 # cascade-bridge-spec — Agent Context
 
-The home of the **Cascade Bridge Specification**: the contract every Cascade
-Bridge Adapter and every Bridge implementation follows.
+The Cascade Bridge Specification: the contract every Cascade Bridge Adapter and
+every Bridge follows. DRAFT; no compatibility is promised before a numbered v1.
 
-DRAFT, thin and pilot-driven. Every artefact was seeded from phase 1 of the pilot
-adapter.
-**No compatibility is promised before a numbered v1.** Do not re-derive that.
+## Documentation is a defect until proven otherwise
 
-## What is normative
+Anything that restates something else goes stale, so the default is to write
+nothing. What something is and what it must do is carried, in this order, by:
 
-`vocab/bridge.ttl`, `shapes/bridge.shapes.ttl`, `pinning.md`,
-`engine/sparql.md`, and in `adapter/`: `profile/ro-crate-metadata.json`,
-`ro-crate-metadata.md`, `fixtures/manifest.md`, `validation.md`. Changing any
-of them changes what every adapter and every Bridge must do, and needs its
-reasoning recorded in the same commit. The rest is explanatory, machinery, or
-the lint's own test subject: see each directory.
+1. **A name** that makes a comment unnecessary: a term, a field, a function, a file.
+2. **Structure**: the crate, the directory layout, a shape's constraints.
+3. **A test** whose name is the sentence and whose assertion is the specification.
+4. **A shape's `sh:message`**, because a failing run prints it.
+5. **Prose**, only for what none of the above can hold, and as short as it goes.
 
-**The prose must agree with the Turtle exactly** — term names, cardinalities,
-what each shape checks. The Turtle is what runs, and a document disagreeing with
-it is the failure mode this project is organised against. Change both in one
-commit.
+So:
+
+- **No comment, docstring, `rdfs:comment` or `sh:description` that restates a
+  name, a signature, a constraint or another file.** Rename instead. A term
+  whose name says what it is needs no `rdfs:comment`; cardinality is the shape's.
+- **No reference by number, count, position or line**: "check 5", "the three
+  types", "below", `file.py:120`. Name the thing, or link it.
+- **No reasoning in files.** Why a change was made goes in the commit message.
+- **Deleting prose is always in scope**, in any change, and preferred to editing it.
+- **A behaviour this repository cannot run** (a Bridge's) is specified by vectors
+  under `fixtures/` first, and by the shortest normative sentence only where a
+  vector cannot say it.
 
 ## The rules
 
-- **What is unsettled stays unsettled here.** What Core contains, the canonical
-  findings model, router precedence and the export direction are open. A document
-  touching one says so; answering one here would settle it by accident.
-- **v1-draft is XML sources and the `sparql-1.1` profile.** Another source
-  format or mapping language arrives as its own specified addition, not a
-  passing mention.
-- **No Cascade terms are minted here.** `bridge:` only; a term in `cascade:` or
-  `genomics:` goes through spec's own process.
-- **This repository must not know that any adapter exists.** The specification
-  knows about itself; an adapter and a Bridge know about the specification; a
-  catalogue knows about all of them and nothing knows about it. Prose citing the
-  ClinVar pilot as an example is fine; a machine-readable reference to a
-  particular adapter is the bug. Publishing the lint is not an inversion: it
-  takes a directory and learns no adapter's name.
-- **Tiers are not specified in v1-draft.** When they are, they are measured,
-  never declared: an adapter declares no tier.
-- **Standards, not inventions.** RO-Crate 1.2, W3C's `mf:`, SHACL, Enterprise
-  Integration Patterns for stage names, EARL for results, SKOS for a concept
-  table. If something seems to need a new convention, find the published one.
-- **The pilot is evidence, not authority.** A fact taken from the pilot adapter
-  is written here generalised. Do not modify it here.
-- **Everything that pins this repository pins a tagged commit**, verified with
-  `git ls-remote` first: a pin to an untagged commit dies at `git checkout` the
-  first time a branch is reset. This repository pins nothing, in either
-  direction; `pinning.md` is the mechanism in full.
+- **What is unsettled stays unsettled**: Core, the canonical findings model,
+  router precedence, the export direction. Answering one here settles it by accident.
+- **v1-draft is XML sources and the `sparql-1.1` profile**, nothing else.
+- **No Cascade terms are minted here.** `bridge:` only.
+- **This repository must not know that any adapter or engine exists.** No
+  machine-readable reference to one; the tooling takes a directory.
+- **Tiers are not specified**, and when they are they are measured, never declared.
+- **Standards, not inventions**: RO-Crate 1.2 and its profiles, W3C `mf:`,
+  SHACL, EARL, SKOS, Enterprise Integration Patterns.
+- **The pilot is evidence, not authority**, and is never modified here.
+- **A pin to this repository names, at merge time, a commit or tag on its
+  default branch, or that branch.** This repository pins nothing.
 
-## Where a rule goes
+## Layout
 
-This file holds what has to be known *before* choosing a directory to open.
-Everything else belongs in a `CLAUDE.md` in the directory it governs, which loads
-only when that directory is touched. Keep this file under 80 lines.
-
-A `README.md` addresses whoever is building something that must conform; a
-`CLAUDE.md` addresses whoever is changing this repository, so rules for authoring
-an adapter never go in one. Conformance targets are top-level (`adapter/`,
-`engine/`), each holding its own contract; `vocab/` and `shapes/` are the spine
-they share; `scripts/` and `fixtures/` are machinery, never inside a target.
-`.github/` is where GitHub requires it.
+Conformance targets are top-level (`adapter/`, `engine/`), each holding its
+contract and the profile that checks it; `vocab/` and `shapes/` are shared;
+`scripts/`, `fixtures/` and `tests/` are machinery. A `CLAUDE.md` holds a rule
+for changing the directory it sits in, and only that.
 
 ## Conventions
 
 - Conventional commits: `feat(spec): ...`, `docs: ...`, `fix(shapes): ...`.
-- Impersonal: findings and decisions, not promises by a person.
-- **Say it once.** A fact in the vocabulary or the shapes is linked,
-  never restated: two statements of one contract can disagree, and have.
-- **No archaeology.** What a file used to be, and what changed in a move, is
-  git's job. Not a header, not a comment.
-- **Why, never what.** A comment restating the line below it goes. A reason that
-  belongs to a term goes in its `rdfs:comment` or `sh:description`, where it is
-  machine-readable, not in a header block above it.
+- A change to `vocab/`, `shapes/`, `adapter/profile/`, `engine/sparql.md`,
+  `engine/command.md`, `pinning.md` or `compatibility.md` changes what every
+  adapter and Bridge must do; its commit message says why.

@@ -1,24 +1,14 @@
 # Building an engine
 
-A Bridge is the thing that runs adapters. It owns every stage around the
-mapping; an adapter only contributes data to those stages. If you are writing
-one, this directory is what you need.
+An engine (a Cascade Bridge) runs adapters.
 
-1. [`stages.md`](stages.md) — the stages you run around an adapter's mapping,
-   each named with the Enterprise Integration Pattern it already is, and what an
-   adapter contributes to each.
-2. [`sparql.md`](sparql.md) — the `sparql-1.1` profile, and normative: the lift
-   of XML to RDF, and how an adapter's queries are run over it.
-3. [`executing.md`](executing.md) — running an adapter's test manifest: loading
-   the crate and the manifest as one graph, applying each entry type's rule, and
-   reporting in EARL.
-
-You do not need most of [`../adapter/`](../adapter/) — that is how a package is
-authored. The exception is [`../adapter/fixtures/manifest.md`](../adapter/fixtures/manifest.md),
-which is the shape of the file you will be executing, and
-[`../adapter/ro-crate-metadata.md`](../adapter/ro-crate-metadata.md), which is the shape of the
-crate you will be reading.
-
-The normative term definitions are [`../vocab/bridge.ttl`](../vocab/bridge.ttl).
-Each test type's `rdfs:comment` there carries the comparison rule you must
-implement — implement those, not a prose paraphrase of them.
+| to find out | look at |
+|---|---|
+| the lift your output must reproduce, input by input | [`../fixtures/lift/`](../fixtures/lift/): each `.xml` and the `.nt` it must lift to, listed in `manifest.ttl` |
+| the rules the lift follows | [`sparql.md`](sparql.md) |
+| how each test type is judged | the test types' `rdfs:comment` in [`../vocab/bridge.ttl`](../vocab/bridge.ttl) |
+| an adapter to run | [`../fixtures/synthetic-adapter/`](../fixtures/synthetic-adapter/) |
+| the command you must offer | [`command.md`](command.md) |
+| the smallest thing that meets that command | [`../fixtures/fake-engine/engine.py`](../fixtures/fake-engine/engine.py) |
+| loading and reporting a test manifest | [`executing.md`](executing.md) |
+| the stages around a mapping | [`stages.md`](stages.md) |

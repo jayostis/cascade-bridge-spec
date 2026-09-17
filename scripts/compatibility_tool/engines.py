@@ -1,0 +1,80 @@
+import shutil
+import subprocess
+from pathlib import Path
+
+from compatibility_tool.console import Status, report
+from compatibility_tool.document import is_adapter, read_file
+from compatibility_tool.record import Record
+
+
+def executable(argv, cwd):
+    first = argv[0]
+    if "/" in first or "\\" in first:
+        candidate = Path(cwd, first)
+        return [str(candidate) if candidate.exists() else first, *argv[1:]]
+    return [shutil.which(first) or first, *argv[1:]]  # so Windows finds npm.cmd
+
+
+def execute(argv, cwd):
+    try:
+        run = subprocess.run(executable(argv, cwd), cwd=cwd, capture_output=True, encoding="utf-8", errors="replace")
+    except OSError as error:
+        report(False, f"{argv[0]} could not be started in {cwd}: {error}")
+        return None
+    for line in (run.stdout + run.stderr).splitlines():
+        print(f"        | {line}")
+    return run.returncode
+
+
+def vectors(engine):
+    document = read_file(engine) or {}
+    setup, command = document.get("setup"), document.get("command")
+    if isinstance(setup, list) and setup and isinstance(command, list) and command:
+        return setup, command
+    return None
+
+
+def run_command(directory, options):
+    record = Record.load_checked_out(options.results)
+    reports = options.results / "earl"
+    shutil.rmtree(reports, ignore_errors=True)
+    reports.mkdir(parents=True)
+    counterparts = record.counterparts
+    print("Each engine on each adapter")
+    if not counterparts:
+        report(True, "no counterpart to run: nothing to check")
+        return Status.NOTHING_TO_CHECK
+
+    adapter_side = is_adapter(directory)
+    set_up = {}
+    not_run = 0
+    for entry in counterparts:
+        engine, adapter = (entry.path, directory) if adapter_side else (directory, entry.path)
+        entry.adapter = adapter
+        found = vectors(engine)
+        if found is None:
+            not_run += 1
+            report(False, f"{engine} states no setup and command, so {entry.pin.name} was not run")
+            continue
+        setup, command = found
+        if engine not in set_up:
+            print(f"  setup {' '.join(setup)}   (in {engine})")
+            set_up[engine] = execute(setup, engine) == 0
+            if not set_up[engine]:
+                report(False, f"the setup failed in {engine}")
+        if not set_up[engine]:
+            not_run += 1
+            report(False, f"{entry.pin.name} was not run: its engine's setup failed")
+            continue
+        earl = reports / f"{entry.pin.name}.ttl"
+        argv = [*command, "test", str(adapter), "--earl", str(earl)]
+        print(f"  run   {' '.join(argv)}   (in {engine})")
+        status = execute(argv, engine)
+        if status is None:
+            not_run += 1
+            continue
+        entry.report = earl
+        wrote = f"its report is {earl}" if earl.is_file() else "it wrote no report"
+        report(True, f"{entry.pin.name} ran, exit status {status}, which nothing relies on; {wrote}")
+    record.save(options.results)
+    return Status.NOT_RUN if not_run else Status.OK
