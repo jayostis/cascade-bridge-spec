@@ -3,11 +3,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from _held import held
-from _terms import BRIDGE, MF
 from rdflib import Graph
 from rocrate_validator.models import ValidationContext
 from rocrate_validator.requirements.python import PyFunctionCheck, check, requirement
+
+from _findings import report_findings
+from _terms import BRIDGE, MF
 
 
 def unparsable(crate):
@@ -21,10 +22,7 @@ def unparsable(crate):
         name = crate.name_of(test)
         path = crate.file_at(turtle)
         if path is None:
-            yield (
-                f"{name}: bridge:expectedGraph names {turtle}, which is not a file in "
-                "this package"
-            )
+            yield (f"{name}: bridge:expectedGraph names {turtle}, which is not a file in this package")
             continue
         try:
             Graph().parse(path, format="turtle", publicID=str(turtle))
@@ -38,4 +36,4 @@ class ExpectedGraphs(PyFunctionCheck):
 
     @check(name="every expected graph parses as Turtle")
     def run_check(self, context: ValidationContext) -> bool:
-        return held(self, context, unparsable)
+        return report_findings(self, context, unparsable)

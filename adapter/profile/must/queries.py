@@ -3,12 +3,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from _held import held
-from _crate import file_name_of
-from _terms import BRIDGE
 from rdflib.plugins.sparql import prepareQuery
 from rocrate_validator.models import ValidationContext
 from rocrate_validator.requirements.python import PyFunctionCheck, check, requirement
+
+from _crate import file_name_of
+from _findings import report_findings
+from _terms import BRIDGE
 
 QUERY_FORMS = {
     BRIDGE.mapping: ("bridge:mapping", "CONSTRUCT"),
@@ -19,11 +20,7 @@ FINDING_VARIABLES = ("sourceField", "reason", "severity", "context")
 
 
 def malformed(crate):
-    named = [
-        (prop, query)
-        for prop in QUERY_FORMS
-        for query in sorted(crate.graph.objects(crate.root, prop))
-    ]
+    named = [(prop, query) for prop in QUERY_FORMS for query in sorted(crate.graph.objects(crate.root, prop))]
     for prop, query in named:
         term, form = QUERY_FORMS[prop]
         name = file_name_of(query)
@@ -57,4 +54,4 @@ class Queries(PyFunctionCheck):
 
     @check(name="every query parses in its declared form")
     def run_check(self, context: ValidationContext) -> bool:
-        return held(self, context, malformed)
+        return report_findings(self, context, malformed)

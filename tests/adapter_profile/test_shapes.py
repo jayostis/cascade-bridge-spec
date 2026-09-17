@@ -1,7 +1,8 @@
-import shapes
-from _terms import BRIDGE, MF
 from rdflib import BNode, Literal
 from rdflib.namespace import RDF
+
+import shapes
+from _terms import BRIDGE, MF
 
 
 def test_reports_nothing_for_a_crate_and_manifest_that_conform(crate):

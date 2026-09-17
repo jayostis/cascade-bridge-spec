@@ -3,10 +3,22 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from _held import held
-from _terms import DIGEST_ALGORITHMS, LOCAL_DIGEST, digest_of
+import hashlib
+
 from rocrate_validator.models import ValidationContext
 from rocrate_validator.requirements.python import PyFunctionCheck, check, requirement
+
+from _findings import report_findings
+from _terms import SCHEMA
+
+ALGORITHMS = {
+    "md5": hashlib.md5,
+    "sha1": hashlib.sha1,
+    "sha256": hashlib.sha256,
+    "sha384": hashlib.sha384,
+    "sha512": hashlib.sha512,
+}
+LOCAL_DIGEST = SCHEMA.sha256
 
 LOCAL_ADVICE = (
     "This is the local claim, and it is wrong about the file beside it: the "
@@ -21,10 +33,18 @@ PUBLISHER_ADVICE = (
 )
 
 
+def digest_of(path, algorithm):
+    hasher = ALGORITHMS[algorithm]()
+    with open(path, "rb") as handle:
+        for block in iter(lambda: handle.read(1 << 20), b""):
+            hasher.update(block)
+    return hasher.hexdigest()
+
+
 def claims(crate):
     for subject, predicate, value in crate.graph:
         algorithm = str(predicate).rsplit("#", 1)[-1].rsplit("/", 1)[-1].lower()
-        if algorithm not in DIGEST_ALGORITHMS:
+        if algorithm not in ALGORITHMS:
             continue
         path = crate.path_in_package(subject)
         if path is not None:
@@ -35,10 +55,7 @@ def mismatches(crate):
     for path, algorithm, declared, is_local in claims(crate):
         whose = "crate's" if is_local else "publisher's"
         if not path.is_file():
-            yield (
-                f"{path.name}: the crate records a {whose} {algorithm} for a "
-                "file that is not there"
-            )
+            yield (f"{path.name}: the crate records a {whose} {algorithm} for a file that is not there")
             continue
         actual = digest_of(path, algorithm)
         if actual == declared:
@@ -63,4 +80,4 @@ class Digests(PyFunctionCheck):
 
     @check(name="every digest matches its file")
     def run_check(self, context: ValidationContext) -> bool:
-        return held(self, context, mismatches)
+        return report_findings(self, context, mismatches)

@@ -1,6 +1,7 @@
+from rdflib import Literal
+
 import inputs
 from _terms import BRIDGE, SCHEMA
-from rdflib import Literal
 
 
 def test_reports_nothing_for_an_input_that_satisfies_its_envelopes_schema(crate):
