@@ -40,6 +40,11 @@ Each holds until the design it describes changes, and then it changes with it.
   closely as practical. A departure from it, forced or chosen, is named in
   [`compatibility.md`](compatibility.md) with what someone must do by hand
   instead, or it is not taken.
+- **A breaking change is handled by that model, not by a transitional path.**
+  Before a numbered v1, nothing here grows a second accepted form to keep a
+  default branch green: the work branches share one name, so each repository's
+  CI runs against the others' while all are open, and they merge in sequence.
+  A default branch is red between the first merge and the last.
 
 ## Layout
 
