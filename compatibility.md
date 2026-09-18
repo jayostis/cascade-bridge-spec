@@ -90,6 +90,12 @@ These are chosen, and could be otherwise:
 - **A counterpart is named by the repository under test**, not by a tenant, and
   not transitively: what a counterpart itself must pass with is its own run's
   business.
+- **A breaking change across an engine and an adapter leaves one of the two
+  red.** Each is the other's counterpart, and a `Depends-On:` line goes one way,
+  so only one pull request can name the other and run against it. Name the
+  adapter's from the engine's, so what is proven before anything merges is the
+  engine against the adapter's new form; the adapter's own check stays red until
+  that engine merges, as its default branch would be anyway.
 - **A run is aimed at no version.** There is no `override-checkout`. A pull
   request matches the branch it *targets*, so cutting one name in each
   repository pairs nothing while the work is in review: name each pull request
