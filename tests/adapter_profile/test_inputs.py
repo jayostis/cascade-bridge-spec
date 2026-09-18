@@ -49,6 +49,14 @@ def test_reports_an_input_holding_no_record_of_the_element_name_the_adapter_decl
     )
 
 
+def test_reports_a_source_schema_no_record_was_validated_against_for_want_of_an_element_name(crate):
+    crate.graph.remove((crate.root, BRIDGE.elementNameOfEachRecord, None))
+    assert (
+        "the adapter declares bridge:sourceSchema and no bridge:elementNameOfEachRecord, "
+        "so no record of example-0001.xml was validated against it"
+    ) in "\n".join(inputs.invalid(crate))
+
+
 def test_holds_a_package_to_nothing_when_the_schema_language_is_one_it_cannot_read(crate):
     schemas = set(crate.graph.objects(crate.root, BRIDGE.sourceSchema)) | set(
         crate.graph.objects(None, BRIDGE.documentSchema)

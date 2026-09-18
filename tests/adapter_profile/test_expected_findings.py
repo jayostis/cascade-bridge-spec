@@ -84,11 +84,41 @@ def test_reports_nothing_for_a_refined_selector_that_selects_an_attribute(packag
     assert not list(expected_findings.faulty(package.crate))
 
 
-def test_reports_a_record_selector_that_selects_an_attribute(package):
+def test_reports_a_record_selector_that_selects_an_attribute_as_a_node_that_is_not_an_element(package):
     package.write(FINDINGS, finding(record="/ExampleRecordSet/ExampleRecord[1]/@Version", refined=None))
-    assert "selects an attribute of example-0001.xml, where a record's selector selects the record" in "\n".join(
-        expected_findings.faulty(package.crate)
-    )
+    assert (
+        "selects a node of example-0001.xml that is not an element, where a record's selector selects the record"
+    ) in "\n".join(expected_findings.faulty(package.crate))
+
+
+def test_reports_a_record_selector_that_selects_a_text_node_as_a_node_that_is_not_an_element(package):
+    package.write(FINDINGS, finding(record="/ExampleRecordSet/ExampleRecord[1]/Label/text()", refined=None))
+    assert (
+        "selects a node of example-0001.xml that is not an element, where a record's selector selects the record"
+    ) in "\n".join(expected_findings.faulty(package.crate))
+
+
+def test_reports_a_record_selector_that_selects_the_document_element_rather_than_a_record(package):
+    package.write(FINDINGS, finding(record="/ExampleRecordSet", refined=None))
+    assert (
+        "/ExampleRecordSet selects ExampleRecordSet of example-0001.xml, where a record's selector selects "
+        "ExampleRecord, the adapter's bridge:elementNameOfEachRecord"
+    ) in "\n".join(expected_findings.faulty(package.crate))
+
+
+def test_reports_a_record_selector_that_selects_an_element_inside_a_record(package):
+    package.write(FINDINGS, finding(record="/ExampleRecordSet/ExampleRecord[1]/Label", refined=None))
+    assert (
+        "selects Label of example-0001.xml, where a record's selector selects "
+        "ExampleRecord, the adapter's bridge:elementNameOfEachRecord"
+    ) in "\n".join(expected_findings.faulty(package.crate))
+
+
+def test_holds_a_record_selector_to_no_element_name_when_the_adapter_declares_none(package):
+    package.write(FINDINGS, finding(record="/ExampleRecordSet", refined=None))
+    crate = package.crate
+    crate.graph.remove((crate.root, BRIDGE.elementNameOfEachRecord, None))
+    assert not list(expected_findings.faulty(crate))
 
 
 def test_reports_a_selector_that_is_not_an_xpath(package):

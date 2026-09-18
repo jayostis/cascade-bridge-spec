@@ -9,7 +9,7 @@ from rocrate_validator.requirements.python import PyFunctionCheck, check, requir
 
 from _crate import file_name_of
 from _findings import report_findings
-from _terms import BRIDGE
+from _terms import BRIDGE, OA
 
 QUERY_FORMS = {
     BRIDGE.mapping: ("bridge:mapping", "CONSTRUCT"),
@@ -18,8 +18,8 @@ QUERY_FORMS = {
 }
 
 
-def constructs(parsed):
-    return {term for triple in parsed.algebra.get("template") or () for term in triple}
+def constructed_sources(parsed):
+    return {triple[2] for triple in parsed.algebra.get("template") or () if triple[1] == OA.hasSource}
 
 
 def malformed(crate):
@@ -40,8 +40,11 @@ def malformed(crate):
         if found != form:
             yield f"{name} is a {found} query, where {term} requires {form}"
             continue
-        if prop == BRIDGE.findingsQuery and BRIDGE.thisRecord not in constructs(parsed):
-            yield f"{name} constructs no bridge:thisRecord, the record each finding it produces is about"
+        if prop == BRIDGE.findingsQuery and BRIDGE.thisRecord not in constructed_sources(parsed):
+            yield (
+                f"{name} constructs no oa:hasSource bridge:thisRecord, "
+                "the document each finding it produces is read from"
+            )
 
 
 @requirement(name="Queries")

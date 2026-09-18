@@ -52,7 +52,12 @@ def selected(node, xpath, etree, document_name):
     return chosen[0]
 
 
-def unselected(graph, document, document_name, source, etree):
+def local_name_of(node):
+    tag = getattr(node, "tag", None)
+    return tag.rpartition("}")[2] if isinstance(tag, str) else None
+
+
+def unselected(graph, document, document_name, source, record_name, etree):
     for annotation in graph.subjects(RDF.type, OA.Annotation):
         target = graph.value(annotation, OA.hasTarget)
         if target is None:
@@ -72,8 +77,18 @@ def unselected(graph, document, document_name, source, etree):
         if isinstance(record, Fault):
             yield record
             continue
-        if not etree.iselement(record):
-            yield f"{xpath} selects an attribute of {document_name}, where a record's selector selects the record"
+        found = local_name_of(record) if etree.iselement(record) else None
+        if found is None:
+            yield (
+                f"{xpath} selects a node of {document_name} that is not an element, "
+                "where a record's selector selects the record"
+            )
+            continue
+        if record_name and found != record_name:
+            yield (
+                f"{xpath} selects {found} of {document_name}, where a record's selector selects "
+                f"{record_name}, the adapter's bridge:elementNameOfEachRecord"
+            )
             continue
         refined = graph.value(selector, OA.refinedBy)
         if refined is None:
@@ -95,6 +110,7 @@ def faulty(crate):
         return
 
     shapes = Graph().parse(SHAPES, format="turtle")
+    record_name = str(crate.graph.value(crate.root, BRIDGE.elementNameOfEachRecord) or "")
     for test, findings, source in entries:
         name = crate.name_of(test)
         path = crate.file_at(findings)
@@ -116,7 +132,7 @@ def faulty(crate):
             document = etree.parse(str(input_path))
         except etree.Error:
             continue
-        for message in unselected(graph, document, input_path.name, source, etree):
+        for message in unselected(graph, document, input_path.name, source, record_name, etree):
             yield f"{name}: {path.name}: {message}"
 
 

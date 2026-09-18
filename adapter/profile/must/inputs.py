@@ -119,7 +119,14 @@ def invalid(crate):
                 [(input_path.name, document)],
                 name,
             )
-        if source_schema is None or not record_name:
+        if source_schema is None:
+            continue
+        if not record_name:
+            yield (
+                f"{name}: the adapter declares bridge:sourceSchema and no "
+                f"bridge:elementNameOfEachRecord, so no record of {input_path.name} "
+                "was validated against it"
+            )
             continue
         records = records_of(document, record_name)
         if not records:
