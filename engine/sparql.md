@@ -65,6 +65,11 @@ accepts, in document order, a Bridge:
    record itself: its target carries the record's selector and no
    `oa:refinedBy`.
 
+A findings query's `oa:hasTarget` is a blank node. A name is one node for every
+finding the query produces, so which selector standing on it belongs to which
+finding is unrecoverable; a query says the record itself by targeting
+`[ oa:hasSource bridge:thisRecord ]` and constructing no selector.
+
 A record's selector is its position: `/` the envelope's document root element,
 `/` the record element, `[n]`, n counting records of that name from 1 in
 document order. Where the document root element is the record element, the

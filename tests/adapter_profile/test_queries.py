@@ -25,6 +25,27 @@ WHERE {
 """
 
 
+A_FINDINGS_QUERY_TARGETING_THE_RECORD_BY_NAME = """PREFIX rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX sh:     <http://www.w3.org/ns/shacl#>
+PREFIX oa:     <http://www.w3.org/ns/oa#>
+PREFIX fx:     <http://sparql.xyz/facade-x/ns/>
+PREFIX xyz:    <http://sparql.xyz/facade-x/data/>
+PREFIX bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#>
+
+CONSTRUCT {
+  [] a oa:Annotation ;
+    oa:hasTarget bridge:thisRecord ;
+    oa:hasBody [ a oa:TextualBody ; rdf:value "no term for a free-text note" ] ;
+    sh:resultSeverity sh:Info .
+  bridge:thisRecord oa:hasSource bridge:thisRecord ;
+    oa:hasSelector [ a oa:XPathSelector ; rdf:value "Note" ] .
+}
+WHERE {
+  ?record a fx:root, xyz:ExampleRecord .
+}
+"""
+
+
 def test_reports_nothing_for_queries_in_the_form_their_property_declares(crate):
     assert not list(queries.malformed(crate))
 
@@ -59,6 +80,14 @@ def test_reports_a_findings_query_constructing_no_this_record(package):
 def test_reports_a_findings_query_naming_this_record_outside_its_targets_source(package):
     package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_NAMING_THIS_RECORD_OUTSIDE_ITS_TARGETS_SOURCE)
     assert "constructs no oa:hasSource bridge:thisRecord" in "\n".join(queries.malformed(package.crate))
+
+
+def test_reports_a_findings_query_targeting_a_name_rather_than_a_blank_node(package):
+    package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_TARGETING_THE_RECORD_BY_NAME)
+    assert (
+        "targets <https://ns.cascadeprotocol.org/bridge/v1-draft#thisRecord>, "
+        "where a finding's oa:hasTarget is a blank node"
+    ) in "\n".join(queries.malformed(package.crate))
 
 
 def test_reports_nothing_when_the_adapter_names_no_query(crate):

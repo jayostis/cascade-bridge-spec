@@ -3,6 +3,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from rdflib import BNode
 from rdflib.plugins.sparql import prepareQuery
 from rocrate_validator.models import ValidationContext
 from rocrate_validator.requirements.python import PyFunctionCheck, check, requirement
@@ -18,8 +19,8 @@ QUERY_FORMS = {
 }
 
 
-def constructed_sources(parsed):
-    return {triple[2] for triple in parsed.algebra.get("template") or () if triple[1] == OA.hasSource}
+def constructed(parsed, predicate):
+    return {triple[2] for triple in parsed.algebra.get("template") or () if triple[1] == predicate}
 
 
 def malformed(crate):
@@ -40,10 +41,19 @@ def malformed(crate):
         if found != form:
             yield f"{name} is a {found} query, where {term} requires {form}"
             continue
-        if prop == BRIDGE.findingsQuery and BRIDGE.thisRecord not in constructed_sources(parsed):
+        if prop != BRIDGE.findingsQuery:
+            continue
+        if BRIDGE.thisRecord not in constructed(parsed, OA.hasSource):
             yield (
                 f"{name} constructs no oa:hasSource bridge:thisRecord, "
                 "the document each finding it produces is read from"
+            )
+        named = sorted(term for term in constructed(parsed, OA.hasTarget) if not isinstance(term, BNode))
+        if named:
+            yield (
+                f"{name} targets {', '.join(term.n3() for term in named)}, where a finding's oa:hasTarget "
+                "is a blank node: one name is one node for every finding the query produces, and which "
+                "selector on it belongs to which finding is then unrecoverable"
             )
 
 
