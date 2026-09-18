@@ -36,6 +36,10 @@ Picked when the run starts, as Zuul checks out a job's required projects
 A local run uses every sibling checkout as it is on disk, uncommitted edits
 included.
 
+Descriptions are read without credentials, so every repository a run reads must
+be public, and the reads a run makes share GitHub's hourly allowance for the
+address it runs from.
+
 A pull request merges only once every pull request it names directly has merged.
 
 **A `Depends-On:` line goes one way**, as in Zuul without

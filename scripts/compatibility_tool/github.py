@@ -62,6 +62,18 @@ class Unreadable:
     said: str
 
 
+RATE_LIMITED = (403, 429)
+
+
+def unreadable(error):
+    said = f"{error.code} {error.reason}"
+    if error.code in RATE_LIMITED and (error.headers or {}).get("x-ratelimit-remaining") == "0":
+        return Unreadable(f"{said}: this address has spent GitHub's rate limit for reads without credentials")
+    if error.code >= 500:
+        return Unreadable(f"{said}: GitHub answered with an error of its own")
+    return Unreadable(said)
+
+
 class Api:
     def __init__(self):
         self.url = (os.environ.get("GITHUB_API_URL") or "https://api.github.com").rstrip("/")
@@ -91,7 +103,7 @@ class Api:
             try:
                 self.pulls[named] = self.get(f"repos/{named.path}/pulls/{named.number}")
             except urllib.error.HTTPError as error:
-                self.pulls[named] = Unreadable(f"{error.code} {error.reason}")
+                self.pulls[named] = unreadable(error)
         found = self.pulls[named]
         if isinstance(found, Unreadable):
             if refuse:  # a later reader may want what an earlier one could do without
