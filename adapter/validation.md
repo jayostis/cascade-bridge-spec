@@ -15,38 +15,5 @@ rocrate-validator validate <adapter> \
 Nothing an adapter names is fetched. A media type the profile does not allow is
 a pull request here, not one invented in an adapter.
 
-## In CI
-
-```yaml
-on:
-  push:
-    branches: [main]
-  pull_request:
-    types: [opened, synchronize, reopened, edited]
-  schedule:
-    - cron: '17 3 * * *'
-  workflow_dispatch:
-
-permissions:
-  contents: read
-  pull-requests: write
-
-jobs:
-  adapter:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: jayostis/cascade-bridge-spec/.github/actions/start@main
-  ready-to-merge:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: jayostis/cascade-bridge-spec/.github/actions/start@main
-        with:
-          check: ready-to-merge
-```
-
-Make both jobs required status checks. `edited` is what starts a run when a
-description's `Depends-On:` lines change, and `pull-requests: write` is what the
-action posts the table with, in a step of its own: the checks are the version the
-run picked — a named pull request's own code, where one is named — and are given
-no token. On a pull request from a fork the token is read-only whatever the
-workflow asks for, and the run says so rather than failing.
+In CI this runs from the workflow in
+[`../compatibility.md`](../compatibility.md).

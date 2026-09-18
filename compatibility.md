@@ -96,10 +96,46 @@ These are chosen, and could be otherwise:
 ## The tooling
 
 [`scripts/compatibility.py`](scripts/compatibility.py); its docstring is the
-usage. A repository's CI calls only `.github/actions/start@main`
-([`adapter/validation.md`](adapter/validation.md) shows the workflow). A pull
+usage. A repository's CI calls only `.github/actions/start@main`. A pull
 request here that changes the tooling is tried first from a no-op engine or
 adapter pull request naming it on a `Depends-On:` line. A caller depends on no
 more than the entry point's path, its arguments, the results directory and the
 `table.md` it writes there: those names reach a caller only once they have
 merged, and everything else the run does comes from the version it picked.
+
+## The workflow an adapter and an engine both run
+
+```yaml
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  compatibility:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: jayostis/cascade-bridge-spec/.github/actions/start@main
+  ready-to-merge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: jayostis/cascade-bridge-spec/.github/actions/start@main
+        with:
+          check: ready-to-merge
+```
+
+Make both jobs required status checks and keep their names: a renamed job leaves
+every merge waiting on a check that never reports. `edited` is what starts a run
+when a description's `Depends-On:` lines change, and `pull-requests: write` is
+what the action posts the table with, in a step of its own: the checks are the
+version the run picked — a named pull request's own code, where one is named —
+and are given no token. On a pull request from a fork the token is read-only
+whatever the workflow asks for, and the run says so rather than failing.
