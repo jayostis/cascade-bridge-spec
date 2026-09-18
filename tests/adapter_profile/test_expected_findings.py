@@ -79,6 +79,18 @@ def test_reports_a_refined_selector_that_selects_more_than_one_node_of_its_recor
     )
 
 
+def test_reports_nothing_for_a_refined_selector_that_selects_an_attribute(package):
+    package.write(FINDINGS, finding(refined="@Version"))
+    assert not list(expected_findings.faulty(package.crate))
+
+
+def test_reports_a_record_selector_that_selects_an_attribute(package):
+    package.write(FINDINGS, finding(record="/ExampleRecordSet/ExampleRecord[1]/@Version", refined=None))
+    assert "selects an attribute of example-0001.xml, where a record's selector selects the record" in "\n".join(
+        expected_findings.faulty(package.crate)
+    )
+
+
 def test_reports_a_selector_that_is_not_an_xpath(package):
     package.write(FINDINGS, finding(refined="Note["))
     assert "is not an XPath this lint can evaluate" in "\n".join(expected_findings.faulty(package.crate))

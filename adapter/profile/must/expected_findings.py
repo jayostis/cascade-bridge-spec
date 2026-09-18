@@ -34,17 +34,21 @@ def unmet(graph, shapes):
         yield str(report.value(found, SH.resultMessage) or "").strip()
 
 
+class Fault(str):
+    """A message about a selector. lxml returns an attribute as a str, so a node is never one of these."""
+
+
 def selected(node, xpath, etree, document_name):
-    """The one node an XPath selects, or a fault to report."""
+    """The one node an XPath selects, or a Fault."""
     try:
         chosen = node.xpath(xpath)
     except etree.XPathError as error:
-        return f"{xpath} is not an XPath this lint can evaluate: {error}"
+        return Fault(f"{xpath} is not an XPath this lint can evaluate: {error}")
     if not isinstance(chosen, list):
-        return f"{xpath} selects a value, where a finding selects one node of {document_name}"
+        return Fault(f"{xpath} selects a value, where a finding selects one node of {document_name}")
     if len(chosen) != 1:
         how_many = f"{len(chosen)} nodes" if chosen else "no node"
-        return f"{xpath} selects {how_many} of {document_name}, where a finding selects exactly one"
+        return Fault(f"{xpath} selects {how_many} of {document_name}, where a finding selects exactly one")
     return chosen[0]
 
 
@@ -63,15 +67,19 @@ def unselected(graph, document, document_name, source, etree):
         selector = graph.value(target, OA.hasSelector)
         if selector is None:
             continue
-        record = selected(document, str(graph.value(selector, RDF.value)), etree, document_name)
-        if isinstance(record, str):
+        xpath = str(graph.value(selector, RDF.value))
+        record = selected(document, xpath, etree, document_name)
+        if isinstance(record, Fault):
             yield record
+            continue
+        if not etree.iselement(record):
+            yield f"{xpath} selects an attribute of {document_name}, where a record's selector selects the record"
             continue
         refined = graph.value(selector, OA.refinedBy)
         if refined is None:
             continue
         within = selected(record, str(graph.value(refined, RDF.value)), etree, document_name)
-        if isinstance(within, str):
+        if isinstance(within, Fault):
             yield within
 
 
