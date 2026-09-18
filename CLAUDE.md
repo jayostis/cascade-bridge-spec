@@ -31,12 +31,6 @@ So:
 
 Each holds until the design it describes changes, and then it changes with it.
 
-- **What is unsettled stays unsettled**: Core, router precedence, the export
-  direction. Answering one here settles it by accident.
-- **v1-draft is XML sources and the `sparql-1.1` profile**, nothing else.
-- **No Cascade terms are minted here.** `bridge:` only.
-- **This repository must not know that any adapter or engine exists.** No
-  machine-readable reference to one; the tooling takes a directory.
 - **Standards, not inventions**: RO-Crate 1.2 and its profiles, W3C `mf:`,
   SHACL, EARL, SKOS, Enterprise Integration Patterns.
 - **Which versions run together is OpenStack's Zuul model**
@@ -46,9 +40,6 @@ Each holds until the design it describes changes, and then it changes with it.
   closely as practical. A departure from it, forced or chosen, is named in
   [`compatibility.md`](compatibility.md) with what someone must do by hand
   instead, or it is not taken.
-- **The pilot is evidence, not authority**, and is never modified here.
-- **Nothing pins this repository**; a caller names `start@main`, as a Zuul
-  tenant loads shared job definitions from a branch.
 
 ## Layout
 

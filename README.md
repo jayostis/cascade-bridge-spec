@@ -19,9 +19,6 @@ run picks which version of each repository it uses when it starts, following
 closely as practical, departing from it only where
 [`compatibility.md`](compatibility.md) says so.
 
-Not settled: what Core contains, router precedence when two adapters' detect
-queries match one document, and the export direction.
-
 | you are building | start at |
 |---|---|
 | an adapter | [`adapter/`](adapter/) |
