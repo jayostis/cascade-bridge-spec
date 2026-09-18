@@ -58,7 +58,9 @@ accepts, in document order, a Bridge:
    record's findings are the union of their graphs, with `bridge:thisRecord`
    replaced by the IRI of the document the record was read from, and each
    annotation's selector moved under that record's own selector as its
-   `oa:refinedBy`.
+   `oa:refinedBy`. Each annotation gets a selector of its own, and an
+   annotation whose query constructed none is about the record itself: its
+   target carries the record's selector and no `oa:refinedBy`.
 
 A record's selector is its position: `/` the envelope's document root element,
 `/` the record element, `[n]`, n counting records of that name from 1 in
