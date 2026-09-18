@@ -60,6 +60,10 @@ GitHub Actions cannot reproduce these, so a person or an agent does it by hand:
   rather than trusting a mixed pair.
 - **A cycle is refused rather than merged as one unit.** Split the change into
   backward-compatible steps, each leaving every default branch green.
+- **A pull request named in the repository under test is merged into nothing**,
+  which its row says: the run checks that repository out as the pull request
+  under test, and the merge gate still holds this one until that one merges.
+  Land it first, or fold its changes into this pull request.
 
 These are chosen, and could be otherwise:
 

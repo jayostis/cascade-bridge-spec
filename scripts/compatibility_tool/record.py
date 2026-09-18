@@ -40,6 +40,7 @@ class Row:
     result: str | None = None
     holds: bool | None = None
     from_named_pull_requests: bool = False
+    pull_request: str | None = None
 
     def describe(self):
         flag = ", with uncommitted edits" if self.uncommitted_edits else ""
@@ -58,6 +59,7 @@ class Row:
             "result": self.result,
             "holds": self.holds,
             "fromNamedPullRequests": self.from_named_pull_requests,
+            "pullRequest": self.pull_request,
         }
 
     @classmethod
@@ -76,6 +78,7 @@ class Row:
             holds=data["holds"],
             # A record is handed from the version a caller fetched to the version picked, which may know more fields.
             from_named_pull_requests=data.get("fromNamedPullRequests", False),
+            pull_request=data.get("pullRequest"),
         )
 
 
@@ -90,10 +93,12 @@ class Record:
         return [entry for entry in self.used if entry.role is Role.COUNTERPART]
 
     def key(self, entry):
-        """A name, or owner/name where two repositories share one."""
+        """A name, owner/name where two repositories share one, or the pull request where two rows share that."""
         if sum(other.name == entry.name for other in self.used) == 1 or not entry.repository:
             return entry.name
-        return repository_path(entry.repository)
+        path = repository_path(entry.repository)
+        sharing = sum(bool(other.repository) and repository_path(other.repository) == path for other in self.used)
+        return path if sharing == 1 or not entry.pull_request else entry.pull_request
 
     def save(self, results):
         results.mkdir(parents=True, exist_ok=True)

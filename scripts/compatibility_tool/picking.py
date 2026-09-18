@@ -7,12 +7,15 @@ from compatibility_tool import git
 from compatibility_tool.console import Stop
 from compatibility_tool.github import Named, named_in, repository_path
 
+NOTHING_CHECKED_OUT = "in a repository this run checks nothing out from"
+ALREADY_CHECKED_OUT = "in the repository under test, which this run does not merge it into"
+
 
 @dataclass
 class Reached:
     named: Named
     pull: dict
-    checked_out: bool = True
+    unused: str | None = None
 
     @property
     def base(self):
@@ -36,17 +39,23 @@ class Choice:
     merging: list[Reached] = field(default_factory=list)
 
 
+def unused_where(named, event, merged_into):
+    if named.path == event.repository:
+        return ALREADY_CHECKED_OUT
+    return None if named.path in merged_into else NOTHING_CHECKED_OUT
+
+
 def follow(api, event, counterparts, specification):
     """Every pull request reached by Depends-On:, in the order reached.
 
-    One in a repository the run checks nothing out from is followed for its own
-    lines and listed, and nothing about it fails the check.
+    One the run merges into nothing is followed for its own lines and listed,
+    and nothing about it fails the check.
     """
     if event.under_test is None:
         return []
-    checked_out = {event.repository, *(repository_path(url) for url in counterparts)}
+    merged_into = {repository_path(url) for url in counterparts}
     if specification:
-        checked_out.add(repository_path(specification))
+        merged_into.add(repository_path(specification))
     under_test = event.under_test
     reached = {}
     walking = [(api.pull_request(under_test), [under_test])]
@@ -58,15 +67,15 @@ def follow(api, event, counterparts, specification):
                     f"{' -> '.join(step.label for step in path)} -> {named.label} is a cycle of pull requests, "
                     "and a Depends-On: line goes one way"
                 )
-            wanted = named.path in checked_out
+            unused = unused_where(named, event, merged_into)
             if named not in reached:
-                found = api.pull_request(named, refuse=wanted)
+                found = api.pull_request(named, refuse=unused is None)
                 if found is None:
-                    reached[named] = Reached(named, {}, checked_out=False)
+                    reached[named] = Reached(named, {}, unused)
                     continue
-                if wanted and not found.get("merged") and found.get("state") != "open":
+                if unused is None and not found.get("merged") and found.get("state") != "open":
                     raise Stop(f"{named.label} is closed without merging, so nothing names a version of {named.path}")
-                reached[named] = Reached(named, found, checked_out=wanted)
+                reached[named] = Reached(named, found, unused)
             entry = reached[named]
             if entry.open:
                 walking.append((entry.pull, [*path, named]))
@@ -74,7 +83,7 @@ def follow(api, event, counterparts, specification):
 
 
 def merging(reached, path):
-    return [entry for entry in reached if entry.checked_out and entry.open and entry.named.path == path]
+    return [entry for entry in reached if entry.unused is None and entry.open and entry.named.path == path]
 
 
 def choose(url, path, reached, event):
