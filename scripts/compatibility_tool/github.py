@@ -102,9 +102,6 @@ class Api:
             return None
         return found
 
-    def comment(self, path, number, body):
-        self.request("POST", f"repos/{path}/issues/{number}/comments", {"body": body})
-
 
 @dataclass(frozen=True)
 class Event:

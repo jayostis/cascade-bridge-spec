@@ -85,14 +85,33 @@ runs:
         ENTRY_POINT: ${{ steps.specification.outputs.entry-point }}
         SPEC_REPOSITORY: ${{ steps.specification.outputs.repository }}
         RESULTS: ${{ runner.temp }}/compatibility-${{ inputs.check }}
-        # A composite action's steps inherit no token; the table is commented with this one.
-        GITHUB_TOKEN: ${{ github.token }}
+      # No token: the entry point is the version the run picked, which for a named
+      # pull request is that pull request's own code. Descriptions are read as a
+      # reader with no credentials reads a public repository's.
       run: |
         set -euo pipefail
         python3 "${ENTRY_POINT}" "${REPOSITORY_PATH}" \
           --check "${CHECK}" \
           --results "${RESULTS}" \
           --spec-repository "${SPEC_REPOSITORY}"
+
+    - name: comment the table the check wrote
+      if: always() && github.event.pull_request.number
+      shell: bash
+      env:
+        TABLE: ${{ runner.temp }}/compatibility-${{ inputs.check }}/table.md
+        NUMBER: ${{ github.event.pull_request.number }}
+        # A composite action's steps inherit no token; this step is resolved with
+        # the action, at the ref the caller named, and is the only one given one.
+        GITHUB_TOKEN: ${{ github.token }}
+      run: |
+        set -euo pipefail
+        if [ ! -f "${TABLE}" ]; then
+          echo "the check wrote no ${TABLE}: nothing to comment"
+          exit 0
+        fi
+        gh api "repos/${GITHUB_REPOSITORY}/issues/${NUMBER}/comments" --silent -F "body=@${TABLE}" \
+          || echo "::warning::no comment was posted on ${GITHUB_REPOSITORY}#${NUMBER}"
 
     # An upload refuses a name another leg has taken: matrix legs share
     # github.job, and one job may start both checks.

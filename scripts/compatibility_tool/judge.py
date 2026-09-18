@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from compatibility_tool import packages
-from compatibility_tool.console import Status, Stop, first_line, note, report, warn
+from compatibility_tool.console import Status, Stop, first_line, note, report
 from compatibility_tool.document import CRATE, crate_root, referenced_id
 from compatibility_tool.record import Role
 
@@ -154,17 +154,12 @@ def table(record):
     return "\n".join(lines) + "\n"
 
 
-def write_table(record, options, api, event):
+def write_table(record, options):
     if options.mode != "ci":
         return
     written = table(record)
+    (options.results / "table.md").write_text(written, encoding="utf-8")
     summary = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary:
         with Path(summary).open("a", encoding="utf-8") as handle:
             handle.write(written + "\n")
-    if not event.number:
-        return
-    try:
-        api.comment(event.repository, event.number, written)
-    except Exception as error:
-        warn(f"no comment was posted on {event.repository}#{event.number}: {first_line(str(error))}")

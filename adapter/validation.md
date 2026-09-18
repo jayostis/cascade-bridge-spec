@@ -43,6 +43,8 @@ jobs:
 ```
 
 Make both jobs required status checks. `edited` is what starts a run when a
-description's `Depends-On:` lines change, and `pull-requests: write` is what
-posts the table; on a pull request from a fork the token is read-only whatever
-the workflow asks for, and the run says so rather than failing.
+description's `Depends-On:` lines change, and `pull-requests: write` is what the
+action posts the table with, in a step of its own: the checks are the version the
+run picked — a named pull request's own code, where one is named — and are given
+no token. On a pull request from a fork the token is read-only whatever the
+workflow asks for, and the run says so rather than failing.

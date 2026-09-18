@@ -87,7 +87,7 @@ def compatibility(directory, options, event, api, spec):
         engines.run(directory, record, options)
         status = judge.judge(record, options)
         record.save(options.results)
-    judge.write_table(record, options, api, event)
+    judge.write_table(record, options)
     return status
 
 

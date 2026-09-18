@@ -64,8 +64,9 @@ These are chosen, and could be otherwise:
   here is tried before it merges, and is how Zuul treats an
   [untrusted project's](https://zuul-ci.org/docs/zuul/latest/concepts.html) job
   content rather than a config project's. Review a pull request here as code
-  that will run in every repository whose pull request names it, with the token
-  that repository's workflow grants.
+  that will run in every repository whose pull request names it. It is handed no
+  token there: `.github/actions/start`, which the caller names at `@main` and
+  which no run replaces, posts the table itself.
 - **Nothing here starts a run anywhere else**, because this repository knows of
   no adapter and no engine. A change to what an adapter or a Bridge must do is
   tried from a no-op pull request in one, naming this one on a `Depends-On:`
