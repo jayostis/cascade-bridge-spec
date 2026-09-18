@@ -27,7 +27,9 @@ So:
   under `fixtures/` first, and by the shortest normative sentence only where a
   vector cannot say it.
 
-## The rules
+## The guidelines
+
+Each holds until the design it describes changes, and then it changes with it.
 
 - **What is unsettled stays unsettled**: Core, router precedence, the export
   direction. Answering one here settles it by accident.
@@ -35,7 +37,6 @@ So:
 - **No Cascade terms are minted here.** `bridge:` only.
 - **This repository must not know that any adapter or engine exists.** No
   machine-readable reference to one; the tooling takes a directory.
-- **Tiers are not specified**, and when they are they are measured, never declared.
 - **Standards, not inventions**: RO-Crate 1.2 and its profiles, W3C `mf:`,
   SHACL, EARL, SKOS, Enterprise Integration Patterns.
 - **Which versions run together is OpenStack's Zuul model**
