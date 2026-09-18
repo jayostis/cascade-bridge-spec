@@ -13,10 +13,25 @@ from _terms import BRIDGE
 
 QUERY_FORMS = {
     BRIDGE.mapping: ("bridge:mapping", "CONSTRUCT"),
-    BRIDGE.findingsQuery: ("bridge:findingsQuery", "SELECT"),
+    BRIDGE.findingsQuery: ("bridge:findingsQuery", "CONSTRUCT"),
     BRIDGE.detectQuery: ("bridge:detectQuery", "ASK"),
 }
-FINDING_VARIABLES = ("sourceField", "reason", "severity", "context")
+SUPERSEDED_SELECT_FINDING_VARIABLES = ("sourceField", "reason", "severity", "context")
+
+
+def superseded_select(name, parsed):
+    projected = [str(variable) for variable in parsed.algebra["PV"]]
+    if sorted(projected) != sorted(SUPERSEDED_SELECT_FINDING_VARIABLES):
+        listed = " ".join("?" + variable for variable in projected)
+        yield (
+            f"{name} projects {listed}, where the superseded SELECT form of a "
+            "findings query projects ?sourceField ?reason ?severity ?context, "
+            "in any order and no other variable"
+        )
+
+
+def constructs(parsed):
+    return {term for triple in parsed.algebra.get("template") or () for term in triple}
 
 
 def malformed(crate):
@@ -34,18 +49,14 @@ def malformed(crate):
             yield f"{name} does not parse as SPARQL 1.1\n{error}"
             continue
         found = parsed.algebra.name.removesuffix("Query").upper()
+        if prop == BRIDGE.findingsQuery and found == "SELECT":
+            yield from superseded_select(name, parsed)
+            continue
         if found != form:
             yield f"{name} is a {found} query, where {term} requires {form}"
             continue
-        if prop == BRIDGE.findingsQuery:
-            projected = [str(variable) for variable in parsed.algebra["PV"]]
-            if sorted(projected) != sorted(FINDING_VARIABLES):
-                listed = " ".join("?" + v for v in projected)
-                yield (
-                    f"{name} projects {listed}, where a findings query projects "
-                    "?sourceField ?reason ?severity ?context, in any order and "
-                    "no other variable"
-                )
+        if prop == BRIDGE.findingsQuery and BRIDGE.thisRecord not in constructs(parsed):
+            yield f"{name} constructs no bridge:thisRecord, the record each finding it produces is about"
 
 
 @requirement(name="Queries")

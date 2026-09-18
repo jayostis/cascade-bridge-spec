@@ -19,7 +19,7 @@
   ] ;
   mf:result [
     bridge:expectedGraph <expected/example-0001.ttl> ;
-    bridge:expectedFindings <findings/example-0001.gaps.json>
+    bridge:expectedFindings <findings/example-0001.ttl>
   ] .
 
 <#example-0002> a bridge:InputOnlyTest ;

@@ -117,7 +117,7 @@
           "@id": "fixtures/expected/example-0001.ttl"
         },
         {
-          "@id": "fixtures/findings/example-0001.gaps.json"
+          "@id": "fixtures/findings/example-0001.ttl"
         },
         {
           "@id": "https://example.org/synthetic-adapter/releases/example-release-2026-01.xml.gz"
@@ -183,8 +183,8 @@
       "@type": "File",
       "name": "Findings query",
       "encodingFormat": "application/sparql-query",
-      "contentSize": "382",
-      "sha256": "19b9dea07e1974d2318c316d47786523a7718db351d6182acada2528431964f6",
+      "contentSize": "681",
+      "sha256": "373cf039e2953f52c589131364fcfb5ebf5877db55883a5dfdd53fb816db79fa",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       }
@@ -240,8 +240,8 @@
       "@type": "File",
       "name": "Synthetic input, set envelope",
       "encodingFormat": "application/xml",
-      "contentSize": "426",
-      "sha256": "82765f6bde38848c3a2e1b298d0d5f2cab8195914a2a2029496bd5ee79ff563d",
+      "contentSize": "516",
+      "sha256": "8512fdf37ccb2afb9723c576328bb4cb32acdd54337b1ac9f0c0872c7017edce",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       }
@@ -276,12 +276,12 @@
       }
     },
     {
-      "@id": "fixtures/findings/example-0001.gaps.json",
+      "@id": "fixtures/findings/example-0001.ttl",
       "@type": "File",
       "name": "Expected findings for example-0001",
-      "encodingFormat": "application/json",
-      "contentSize": "149",
-      "sha256": "218bc13e106d59528d830311f4dfd6f402f21dda2157189190a83b45c1b2a571",
+      "encodingFormat": "text/turtle",
+      "contentSize": "884",
+      "sha256": "6fbe6b7245a3f5954d8c76e97058686ab53ee7dd683ff0a5bf254fbbda38c52f",
       "isBasedOn": {
         "@id": "fixtures/in/example-0001.xml"
       },
