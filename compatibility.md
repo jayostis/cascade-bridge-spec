@@ -132,8 +132,8 @@ jobs:
           check: ready-to-merge
 ```
 
-Make both jobs required status checks and keep their names: a renamed job leaves
-every merge waiting on a check that never reports. `edited` is what starts a run
+Make both jobs required status checks, and keep whatever you have named them: a
+renamed job leaves every merge waiting on a check that never reports. `edited` is what starts a run
 when a description's `Depends-On:` lines change, and `pull-requests: write` is
 what the action posts the table with, in a step of its own: the checks are the
 version the run picked — a named pull request's own code, where one is named —
