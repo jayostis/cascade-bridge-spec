@@ -90,8 +90,10 @@ These are chosen, and could be otherwise:
 - **A counterpart is named by the repository under test**, not by a tenant, and
   not transitively: what a counterpart itself must pass with is its own run's
   business.
-- **A run is aimed at no version.** There is no `override-checkout`; to try a
-  branch, cut one of the same name in each repository.
+- **A run is aimed at no version.** There is no `override-checkout`. A pull
+  request matches the branch it *targets*, so cutting one name in each
+  repository pairs nothing while the work is in review: name each pull request
+  the others need on a `Depends-On:` line instead.
 
 ## The tooling
 

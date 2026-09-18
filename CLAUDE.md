@@ -42,9 +42,10 @@ Each holds until the design it describes changes, and then it changes with it.
   instead, or it is not taken.
 - **A breaking change is handled by that model, not by a transitional path.**
   Before a numbered v1, nothing here grows a second accepted form to keep a
-  default branch green: the work branches share one name, so each repository's
-  CI runs against the others' while all are open, and they merge in sequence.
-  A default branch is red between the first merge and the last.
+  default branch green: each work pull request names the others it needs on a
+  `Depends-On:` line, so every repository's CI runs against them while all are
+  open, and they merge in the order those lines set. A default branch is red
+  between the first merge and the last.
 
 ## Layout
 
