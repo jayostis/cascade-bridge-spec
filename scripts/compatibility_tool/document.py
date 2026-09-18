@@ -47,13 +47,7 @@ def counterparts(document):
 
 
 def problems_json_ld_hides_from_shacl(document):
-    problems = [
-        f"{key} is not a key the context defines" for key in document if key not in TOP_KEYS and key != "specPin"
-    ]
-    if "specPin" in document:
-        problems.append(
-            f"specPin was removed: nothing names a version of cascade-bridge-spec, {PICKED_WHEN_THE_CHECK_RUNS}"
-        )
+    problems = [f"{key} is not a key the context defines" for key in document if key not in TOP_KEYS]
     for key in ENGINE_KEYS:
         if key in document and not isinstance(document[key], list):
             problems.append(f"{key} is an argument vector, written as a JSON array of strings")
