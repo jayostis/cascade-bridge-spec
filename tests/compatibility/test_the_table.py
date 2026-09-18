@@ -1,7 +1,7 @@
-"""What a run records: a row per repository it used, on the summary page and as a comment."""
+"""What a run records: a row per repository it used, on the summary page and in the results."""
 
 from compatibility_world import git
-from test_picking_versions import depends_on, engine_under_test
+from test_picking_versions import MATCHING, depends_on, engine_under_test
 
 
 def test_the_table_has_a_row_for_the_repository_under_test_the_specification_and_each_counterpart(world):
@@ -26,14 +26,25 @@ def test_only_a_counterparts_row_says_whether_it_holds(world):
     assert "holds" not in rows["[cascade-bridge-spec](" + world.url("cascade-bridge-spec") + ")"]
 
 
-def test_the_table_is_posted_as_a_new_comment_on_the_pull_request(world):
+def test_the_run_posts_no_comment_and_writes_the_table_to_the_results(world):
     engine, event = engine_under_test(world)
 
     world.tool(engine, **world.ci(event=event))
 
-    (repository, number, body) = world.pull_requests.comments[-1]
-    assert (repository, number) == ("engine", 1)
-    assert "| adapter |" in body or "[adapter]" in body
+    assert world.pull_requests.comments == []
+    assert "[adapter]" in world.table_in_results()
+
+
+def test_a_run_with_no_token_picks_a_version_and_writes_the_table(world):
+    engine, event = engine_under_test(world)
+    variables = world.ci(event=event)
+    del variables["GITHUB_TOKEN"]
+
+    world.tool(engine, **variables)
+
+    assert world.record()["repositories"]["cascade-bridge-spec"]["how"] == MATCHING
+    assert "[adapter]" in world.table_in_results()
+    assert world.pull_requests.comments == []
 
 
 def test_a_run_that_used_a_named_pull_request_says_the_pass_is_as_fresh_as_it_is(world):
@@ -64,16 +75,6 @@ def test_the_pull_request_under_test_is_not_a_named_pull_request(world):
 
     assert "pull request #1 merged into main" in world.table()
     assert "rerun" not in world.table()
-
-
-def test_a_comment_the_api_refuses_is_said_and_leaves_the_exit_status_unchanged(world):
-    engine, event = engine_under_test(world)
-    world.pull_requests.refuse_comments = True
-
-    said = world.tool(engine, **world.ci(event=event))
-
-    assert "no comment was posted" in said
-    assert world.pull_requests.comments == []
 
 
 def test_a_counterpart_in_the_form_this_epic_removes_is_run_and_judged(world):
