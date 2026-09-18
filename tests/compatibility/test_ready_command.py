@@ -23,6 +23,17 @@ def test_ready_to_merge_passes_once_the_named_pull_request_has_merged(world):
     assert "has merged" in said
 
 
+def test_ready_to_merge_tells_a_pull_request_closed_without_merging_to_cut_the_line_naming_it(world):
+    world.pull_request("adapter", 7, state="closed")
+    world.pull_request("adapter", 8)
+    engine, event = engine_under_test(world, body=depends_on("adapter", 7) + depends_on("adapter", 8))
+
+    said = world.tool(engine, 1, check="ready-to-merge", **world.ci(event=event))
+
+    assert "adapter/pull/7 is closed without merging: cut the Depends-On: line naming it" in said
+    assert "adapter/pull/8 has not merged" in said
+
+
 def test_ready_to_merge_passes_a_pull_request_naming_nothing(world):
     engine, event = engine_under_test(world)
 

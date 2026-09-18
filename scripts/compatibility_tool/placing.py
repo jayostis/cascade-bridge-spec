@@ -59,15 +59,16 @@ def in_ci(url, reached, event, into, role):
 
 
 def not_used(reached):
-    """A pull request named in a repository the run checks nothing out from."""
+    """A named pull request the run merges into nothing."""
     return [
         Row(
             name=repository_name(entry.named.path),
             repository=url_on_this_server(entry.named.path),
             commit=entry.head,
-            how=f"{entry.named.label}, in a repository this run checks nothing out from",
+            how=f"{entry.named.label}, {entry.unused}",
             role=Role.NOT_USED,
+            pull_request=entry.named.label,
         )
         for entry in reached
-        if not entry.checked_out
+        if entry.unused is not None
     ]

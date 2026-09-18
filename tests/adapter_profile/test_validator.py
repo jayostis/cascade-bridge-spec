@@ -79,19 +79,18 @@ def undeclared_context_key(package):
     package.edit(CRATE, '      "bridge:cascadeVocabularyPin": "bridge:cascadeVocabularyPin",\n', "")
 
 
-def spec_pin_still_carried(package):
+def term_the_vocabulary_does_not_declare(package):
     package.edit(
         CRATE,
         '      "bridge:cascadeVocabularyPin": "bridge:cascadeVocabularyPin",\n',
-        '      "bridge:specPin": "bridge:specPin",\n'
+        '      "bridge:mappings": "bridge:mappings",\n'
         '      "bridge:cascadeVocabularyPin": "bridge:cascadeVocabularyPin",\n',
     )
     package.edit(
         CRATE,
         '      "bridge:cascadeVocabularyPin": {\n',
-        '      "bridge:specPin": {\n'
-        '        "@id": "https://example.org/synthetic-adapter/vocabulary/commit/'
-        '0000000000000000000000000000000000000000"\n'
+        '      "bridge:mappings": {\n'
+        '        "@id": "https://example.org/synthetic-adapter/queries/a-typo.rq"\n'
         "      },\n"
         '      "bridge:cascadeVocabularyPin": {\n',
     )
@@ -156,11 +155,11 @@ def pin_not_a_data_entity(package):
             id="RO-Crate 1.2 is inherited: a key the @context does not declare",
         ),
         pytest.param(
-            spec_pin_still_carried,
+            term_the_vocabulary_does_not_declare,
             False,
-            ["bridge:specPin was removed"],
+            ["bridge:mappings is not a term the Cascade Bridge vocabulary declares"],
             [],
-            id="a crate that still carries bridge:specPin fails",
+            id="a crate carrying a bridge: term the vocabulary does not declare fails",
         ),
         pytest.param(
             profile_not_an_entity,

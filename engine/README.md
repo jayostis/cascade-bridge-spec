@@ -12,3 +12,4 @@ An engine (a Cascade Bridge) runs adapters.
 | the smallest thing that meets that command | [`../fixtures/fake-engine/engine.py`](../fixtures/fake-engine/engine.py) |
 | loading and reporting a test manifest | [`executing.md`](executing.md) |
 | the stages around a mapping | [`stages.md`](stages.md) |
+| which adapters you must pass with, and the workflow your CI runs | [`../compatibility.md`](../compatibility.md) |

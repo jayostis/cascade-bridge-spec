@@ -10,9 +10,21 @@ def test_a_named_pull_request_in_the_repository_under_test_leaves_its_own_row_al
 
     world.tool(engine, **world.ci(event=event))
 
-    row = world.record()["repositories"]["engine"]
+    row = world.record()["repositories"]["jayostis/engine"]
     assert row["role"] == "under test"
     assert row["how"] == "pull request #1 merged into main"
+
+
+def test_a_named_pull_request_in_the_repository_under_test_is_listed_as_not_used(world):
+    """The run merges it into nothing, so it is a row like any other the run uses no code from."""
+    world.pull_request("engine", 2)
+    engine, event = engine_under_test(world, body=depends_on("engine", 2))
+
+    world.tool(engine, **world.ci(event=event))
+
+    table = world.table()
+    assert "engine/pull/2" in table
+    assert "not used" in table
 
 
 def test_a_cycle_between_two_named_pull_requests_fails_the_check(world):
@@ -76,6 +88,26 @@ def test_an_unreadable_pull_request_in_a_counterpart_repository_fails_the_check(
     said = world.tool(engine, 1, **world.ci(event=event))
 
     assert "adapter/pull/404 could not be read" in said
+
+
+def test_a_spent_rate_limit_says_so_rather_than_reading_like_a_wrong_pull_request_number(world):
+    world.pull_requests.refuse("adapter", 7, 403, {"x-ratelimit-remaining": "0"})
+    engine, event = engine_under_test(world, body=depends_on("adapter", 7))
+
+    said = world.tool(engine, 1, **world.ci(event=event))
+
+    assert "adapter/pull/7 could not be read" in said
+    assert "rate limit" in said
+
+
+def test_an_error_of_githubs_own_says_so_rather_than_reading_like_a_wrong_pull_request_number(world):
+    world.pull_requests.refuse("adapter", 7, 502)
+    engine, event = engine_under_test(world, body=depends_on("adapter", 7))
+
+    said = world.tool(engine, 1, **world.ci(event=event))
+
+    assert "adapter/pull/7 could not be read" in said
+    assert "GitHub answered with an error of its own" in said
 
 
 def test_a_named_specification_pull_request_is_used_rather_than_listed_as_not_used(world):

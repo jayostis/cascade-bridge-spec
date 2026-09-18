@@ -1,4 +1,4 @@
-from compatibility_tool.console import Status, Stop, report
+from compatibility_tool.console import Status, report
 from compatibility_tool.github import named_in
 
 
@@ -21,5 +21,6 @@ def check(event, api):
             failed += 1
             report(False, f"{entry.label} has not merged, and this pull request merges only after it does")
         else:
-            raise Stop(f"{entry.label} is closed without merging")
+            failed += 1
+            report(False, f"{entry.label} is closed without merging: cut the Depends-On: line naming it")
     return Status.FAIL if failed else Status.OK

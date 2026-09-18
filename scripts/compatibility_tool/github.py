@@ -62,22 +62,31 @@ class Unreadable:
     said: str
 
 
+RATE_LIMITED = (403, 429)
+
+
+def unreadable(error):
+    said = f"{error.code} {error.reason}"
+    if error.code in RATE_LIMITED and (error.headers or {}).get("x-ratelimit-remaining") == "0":
+        return Unreadable(f"{said}: this address has spent GitHub's rate limit for reads without credentials")
+    if error.code >= 500:
+        return Unreadable(f"{said}: GitHub answered with an error of its own")
+    return Unreadable(said)
+
+
 class Api:
-    def __init__(self, url=None, token=None):
-        self.url = (url or os.environ.get("GITHUB_API_URL") or "https://api.github.com").rstrip("/")
-        self.token = token if token is not None else os.environ.get("GITHUB_TOKEN", "")
+    def __init__(self):
+        self.url = (os.environ.get("GITHUB_API_URL") or "https://api.github.com").rstrip("/")
+        self.token = os.environ.get("GITHUB_TOKEN", "")  # start empties it; a local run may have one
         self.pulls = {}
 
-    def request(self, method, path, body=None):
+    def get(self, path):
         request = urllib.request.Request(
             f"{self.url}/{path}",
-            method=method,
-            data=json.dumps(body).encode("utf-8") if body is not None else None,
             headers={
                 "Accept": "application/vnd.github+json",
                 "User-Agent": "cascade-compatibility",
                 **({"Authorization": f"Bearer {self.token}"} if self.token else {}),
-                **({"Content-Type": "application/json"} if body is not None else {}),
             },
         )
         try:
@@ -92,18 +101,15 @@ class Api:
         """None where the run reads a pull request it uses nothing from and cannot."""
         if named not in self.pulls:
             try:
-                self.pulls[named] = self.request("GET", f"repos/{named.path}/pulls/{named.number}")
+                self.pulls[named] = self.get(f"repos/{named.path}/pulls/{named.number}")
             except urllib.error.HTTPError as error:
-                self.pulls[named] = Unreadable(f"{error.code} {error.reason}")
+                self.pulls[named] = unreadable(error)
         found = self.pulls[named]
         if isinstance(found, Unreadable):
             if refuse:  # a later reader may want what an earlier one could do without
                 raise Stop(f"{named.label} could not be read: {found.said}")
             return None
         return found
-
-    def comment(self, path, number, body):
-        self.request("POST", f"repos/{path}/issues/{number}/comments", {"body": body})
 
 
 @dataclass(frozen=True)

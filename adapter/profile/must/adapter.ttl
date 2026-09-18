@@ -65,11 +65,6 @@
     sh:message "Each bridge:findingsQuery is a SPARQL 1.1 SELECT whose rows are a record's findings: a crate File entity (schema:MediaObject) by IRI, declared application/sparql-query."
   ] ;
   sh:property [
-    sh:path bridge:specPin ;
-    sh:maxCount 0 ;
-    sh:message "bridge:specPin was removed: the version of cascade-bridge-spec an adapter is checked against is picked when the check runs."
-  ] ;
-  sh:property [
     sh:path bridge:cascadeVocabularyPin ;
     sh:minCount 1 ;
     sh:maxCount 1 ;

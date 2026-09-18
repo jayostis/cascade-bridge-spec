@@ -24,10 +24,6 @@ def note(line):
     print("  note  " + line)
 
 
-def warn(line):
-    print("  warn  " + line)
-
-
 def detail(line):
     print("        " + line)
 

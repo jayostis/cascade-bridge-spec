@@ -85,7 +85,10 @@ class PullRequests:
     def __init__(self):
         self.by_repository = {}
         self.comments = []
-        self.refuse_comments = False
+        self.refusals = {}
+
+    def refuse(self, repository, number, status, headers=None):
+        self.refusals[(repository, number)] = (status, dict(headers or {}))
 
     def open(self, repository, number, body="", base="main", head=None, state="open", merged=False):
         pull = {
@@ -107,11 +110,13 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, *arguments):
         pass
 
-    def answer(self, status, body):
+    def answer(self, status, body, headers=None):
         payload = json.dumps(body).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(payload)))
+        for name, value in (headers or {}).items():
+            self.send_header(name, value)
         self.end_headers()
         self.wfile.write(payload)
 
@@ -121,6 +126,10 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         parts = self.parts()
         if len(parts) == 5 and parts[0] == "repos" and parts[3] == "pulls":
+            refusal = self.server.pull_requests.refusals.get((parts[2], int(parts[4])))
+            if refusal:
+                status, headers = refusal
+                return self.answer(status, {"message": "refused"}, headers)
             pull = self.server.pull_requests.get(parts[2], int(parts[4]))
             return self.answer(200 if pull else 404, pull or {"message": "Not Found"})
         return self.answer(404, {"message": "Not Found"})
@@ -128,8 +137,6 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         parts = self.parts()
         body = self.rfile.read(int(self.headers.get("Content-Length", 0))).decode("utf-8")
-        if self.server.pull_requests.refuse_comments:
-            return self.answer(403, {"message": "Resource not accessible by integration"})
         if len(parts) == 6 and parts[3] == "issues" and parts[5] == "comments":
             self.server.pull_requests.comments.append((parts[2], int(parts[4]), json.loads(body)["body"]))
             return self.answer(201, {"id": len(self.server.pull_requests.comments)})
@@ -236,7 +243,13 @@ class World:
             GIT_CONFIG_VALUE_0="false",
         )
         environment.pop("CI", None)
-        for name in ("GITHUB_REPOSITORY", "GITHUB_EVENT_PATH", "GITHUB_REF_NAME", "GITHUB_STEP_SUMMARY"):
+        for name in (
+            "GITHUB_REPOSITORY",
+            "GITHUB_EVENT_PATH",
+            "GITHUB_REF_NAME",
+            "GITHUB_STEP_SUMMARY",
+            "GITHUB_TOKEN",
+        ):
             environment.pop(name, None)
         environment.update({key: str(value) for key, value in extra.items()})
         return environment
@@ -275,6 +288,10 @@ class World:
 
     def table(self):
         return self.summary.read_text(encoding="utf-8") if self.summary.exists() else ""
+
+    def table_in_results(self):
+        written = self.results / "table.md"
+        return written.read_text(encoding="utf-8") if written.exists() else ""
 
 
 def current_branch(path):
