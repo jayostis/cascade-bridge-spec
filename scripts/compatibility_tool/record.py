@@ -44,7 +44,7 @@ class Row:
 
     def describe(self):
         flag = ", with uncommitted edits" if self.uncommitted_edits else ""
-        return f"{self.repository} is {self.commit} ({self.how}{flag})"
+        return f"{self.repository or self.name} is {self.commit} ({self.how}{flag})"
 
     def to_json(self):
         return {
