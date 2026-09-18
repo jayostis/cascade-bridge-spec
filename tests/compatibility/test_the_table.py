@@ -77,11 +77,11 @@ def test_the_pull_request_under_test_is_not_a_named_pull_request(world):
     assert "rerun" not in world.table()
 
 
-def test_a_counterpart_in_the_form_this_epic_removes_is_run_and_judged(world):
+def test_a_counterpart_whose_crate_would_not_validate_is_run_and_judged(world):
     """Rule: a counterpart's files are read for what running it needs, never validated."""
     crate = world.origin("adapter") / "ro-crate-metadata.json"
-    crate.write_text(crate.read_text(encoding="utf-8").replace('"@id": "./"', '"bridge:specPin": "old", "@id": "./"'))
-    git("commit", "-qam", "the form this epic removes", cwd=world.origin("adapter"))
+    crate.write_text(crate.read_text(encoding="utf-8").replace('"@id": "./"', '"bridge:mappings": "old", "@id": "./"'))
+    git("commit", "-qam", "a crate the profile would refuse", cwd=world.origin("adapter"))
     engine, event = engine_under_test(world)
 
     said = world.tool(engine, **world.ci(event=event))
