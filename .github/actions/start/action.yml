@@ -60,6 +60,7 @@ runs:
       run: |
         set -euo pipefail
         own="$(cd "${{ github.action_path }}/../../.." && pwd)"
+        echo "gh=$(command -v gh)" >> "$GITHUB_OUTPUT"
         if [ -z "${ACTION_REPOSITORY}" ]; then
           echo "called by local path: the entry point runs from ${own}"
           echo "entry-point=${own}/scripts/compatibility.py" >> "$GITHUB_OUTPUT"
@@ -85,9 +86,12 @@ runs:
         ENTRY_POINT: ${{ steps.specification.outputs.entry-point }}
         SPEC_REPOSITORY: ${{ steps.specification.outputs.repository }}
         RESULTS: ${{ runner.temp }}/compatibility-${{ inputs.check }}
-      # No token: the entry point is the version the run picked, which for a named
-      # pull request is that pull request's own code. Descriptions are read as a
-      # reader with no credentials reads a public repository's.
+        # Emptied, not omitted: a caller that sets either at workflow or job level
+        # would otherwise hand it to the version the run picked, which for a named
+        # pull request is that pull request's own code. Descriptions are read as a
+        # reader with no credentials reads a public repository's.
+        GITHUB_TOKEN: ''
+        GH_TOKEN: ''
       run: |
         set -euo pipefail
         python3 "${ENTRY_POINT}" "${REPOSITORY_PATH}" \
@@ -98,9 +102,17 @@ runs:
     - name: comment the table the check wrote
       if: always() && github.event.pull_request.number
       shell: bash
+      # Every value comes from the workflow context, and gh from the path read
+      # before the check ran: what the check writes to the environment files
+      # reaches this step, and would otherwise choose the host this token is
+      # sent to, or the program it is handed to.
       env:
         TABLE: ${{ runner.temp }}/compatibility-${{ inputs.check }}/table.md
+        CHECK: ${{ inputs.check }}
         NUMBER: ${{ github.event.pull_request.number }}
+        REPOSITORY: ${{ github.repository }}
+        API: ${{ github.api_url }}
+        GH: ${{ steps.specification.outputs.gh }}
         # A composite action's steps inherit no token; this step is resolved with
         # the action, at the ref the caller named, and is the only one given one.
         GITHUB_TOKEN: ${{ github.token }}
@@ -108,10 +120,11 @@ runs:
         set -euo pipefail
         if [ ! -f "${TABLE}" ]; then
           echo "the check wrote no ${TABLE}: nothing to comment"
+          [ "${CHECK}" = "ready-to-merge" ] || echo "::warning::${CHECK} wrote no table to comment"
           exit 0
         fi
-        gh api "repos/${GITHUB_REPOSITORY}/issues/${NUMBER}/comments" --silent -F "body=@${TABLE}" \
-          || echo "::warning::no comment was posted on ${GITHUB_REPOSITORY}#${NUMBER}"
+        "${GH}" api "${API}/repos/${REPOSITORY}/issues/${NUMBER}/comments" --silent -F "body=@${TABLE}" \
+          || echo "::warning::no comment was posted on ${REPOSITORY}#${NUMBER}"
 
     # An upload refuses a name another leg has taken: matrix legs share
     # github.job, and one job may start both checks.

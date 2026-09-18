@@ -66,7 +66,9 @@ These are chosen, and could be otherwise:
   content rather than a config project's. Review a pull request here as code
   that will run in every repository whose pull request names it. It is handed no
   token there: `.github/actions/start`, which the caller names at `@main` and
-  which no run replaces, posts the table itself.
+  which no run replaces, posts the table itself, from the workflow's own context
+  rather than anything the run leaves behind. A run and that step share a
+  runner, so this is a boundary and not a sandbox.
 - **Nothing here starts a run anywhere else**, because this repository knows of
   no adapter and no engine. A change to what an adapter or a Bridge must do is
   tried from a no-op pull request in one, naming this one on a `Depends-On:`
@@ -89,6 +91,6 @@ usage. A repository's CI calls only `.github/actions/start@main`
 ([`adapter/validation.md`](adapter/validation.md) shows the workflow). A pull
 request here that changes the tooling is tried first from a no-op engine or
 adapter pull request naming it on a `Depends-On:` line. A caller depends on no
-more than the entry point's path, its arguments and the results directory: those
-names reach a caller only once they have merged, and everything else the run
-does comes from the version it picked.
+more than the entry point's path, its arguments, the results directory and the
+`table.md` it writes there: those names reach a caller only once they have
+merged, and everything else the run does comes from the version it picked.
