@@ -62,4 +62,5 @@ accepts, in document order, a Bridge:
 
 A record's selector is its position: `/` the envelope's document root element,
 `/` the record element, `[n]`, n counting records of that name from 1 in
-document order.
+document order. Where the document root element is the record element, the
+selector is that one step and not two.
