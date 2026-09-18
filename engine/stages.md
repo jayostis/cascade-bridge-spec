@@ -19,6 +19,9 @@ adapter contributes data to them through these terms.
 
 - **Validation reports; it never refuses.** A source record that fails its
   schema is a finding, and the record still goes through.
+- **A schema's `xs:include` and `xs:import` resolve against the schema's own
+  IRI**, through the host, and only to files in the adapter package. Nothing is
+  fetched.
 - **The stamp is the Bridge's**, never the adapter's.
 - **Re-import changes nothing**: an adapter's output is a function of its input.
 - **A format has one adapter**, with vendor quirks as data, never one adapter per vendor.

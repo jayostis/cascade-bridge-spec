@@ -29,8 +29,8 @@ So:
 
 ## The rules
 
-- **What is unsettled stays unsettled**: Core, the canonical findings model,
-  router precedence, the export direction. Answering one here settles it by accident.
+- **What is unsettled stays unsettled**: Core, router precedence, the export
+  direction. Answering one here settles it by accident.
 - **v1-draft is XML sources and the `sparql-1.1` profile**, nothing else.
 - **No Cascade terms are minted here.** `bridge:` only.
 - **This repository must not know that any adapter or engine exists.** No

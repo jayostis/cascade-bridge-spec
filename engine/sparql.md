@@ -54,8 +54,12 @@ accepts, in document order, a Bridge:
    graph. No other table format is specified;
 3. runs every `bridge:mapping`, a CONSTRUCT, over that dataset. The record's
    graph is the union of their results;
-4. runs every `bridge:findingsQuery` over the same dataset. Each member of a
-   finding is the lexical form of the term its variable is bound to: an IRI's
-   own characters, or a literal's lexical form without its datatype or language
-   tag. A variable unbound, or bound to a blank node, is an error in the findings
-   query, and a Bridge reports it rather than choosing a value.
+4. runs every `bridge:findingsQuery`, a CONSTRUCT, over the same dataset. The
+   record's findings are the union of their graphs, with `bridge:thisRecord`
+   replaced by the IRI of the document the record was read from, and each
+   annotation's selector moved under that record's own selector as its
+   `oa:refinedBy`.
+
+A record's selector is its position: `/` the envelope's document root element,
+`/` the record element, `[n]`, n counting records of that name from 1 in
+document order.
