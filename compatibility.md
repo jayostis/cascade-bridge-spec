@@ -54,7 +54,8 @@ GitHub Actions cannot reproduce these, so a person or an agent does it by hand:
 - **There is no gate queue**, so a pass is as fresh as its last run and the
   branches under it can move after it. Rerun `compatibility` and
   `ready-to-merge` before merging; a run says so when it used a named pull
-  request.
+  request. Nothing pins a counterpart either, so a pass on a default branch
+  goes stale the same way, and the caller's nightly run is what notices.
 - **A repository's state is not frozen across a run's jobs**, so two checks of
   one pull request can read different descriptions and branches. Rerun both
   rather than trusting a mixed pair.

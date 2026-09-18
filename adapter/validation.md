@@ -23,6 +23,8 @@ on:
     branches: [main]
   pull_request:
     types: [opened, synchronize, reopened, edited]
+  schedule:
+    - cron: '17 3 * * *'
   workflow_dispatch:
 
 permissions:
