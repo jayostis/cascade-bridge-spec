@@ -11,10 +11,9 @@ from rocrate_validator.requirements.python import PyFunctionCheck, check, requir
 
 from _crate import file_name_of
 from _findings import report_findings
-from _terms import BRIDGE, MF, OA, SCHEMA
+from _terms import BRIDGE, MF, OA
 
 SHAPES = Path(__file__).resolve().parents[3] / "shapes" / "bridge.shapes.ttl"
-SUPERSEDED_JSON_FINDINGS = {"application/json"}
 
 
 def expected_findings_of(crate):
@@ -24,8 +23,6 @@ def expected_findings_of(crate):
             continue
         findings = crate.graph.value(result, BRIDGE.expectedFindings)
         if findings is None:
-            continue
-        if str(crate.graph.value(findings, SCHEMA.encodingFormat) or "") in SUPERSEDED_JSON_FINDINGS:
             continue
         action = crate.graph.value(test, MF.action)
         yield test, findings, None if action is None else crate.graph.value(action, BRIDGE.input)

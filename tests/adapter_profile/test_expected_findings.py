@@ -1,7 +1,5 @@
-from rdflib import Literal
-
 import expected_findings
-from _terms import BRIDGE, MF, SCHEMA
+from _terms import BRIDGE, MF
 
 FINDINGS = "fixtures/findings/example-0001.ttl"
 
@@ -117,12 +115,6 @@ def test_reports_a_severity_outside_the_scale(package):
 def test_reports_two_findings_sharing_one_selector(package):
     package.write(FINDINGS, TWO_FINDINGS_SHARING_ONE_SELECTOR)
     assert "selector of its own, shared with no other finding" in "\n".join(expected_findings.faulty(package.crate))
-
-
-def test_holds_a_findings_file_declared_the_superseded_json_form_to_nothing(crate):
-    findings = next(crate.graph.objects(None, BRIDGE.expectedFindings))
-    crate.graph.set((findings, SCHEMA.encodingFormat, Literal("application/json")))
-    assert not list(expected_findings.faulty(crate))
 
 
 def test_evaluates_no_selector_for_an_entry_naming_no_input(crate):
