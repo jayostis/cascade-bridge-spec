@@ -64,3 +64,15 @@ def test_an_adapter_is_run_by_the_engine_beside_it(world):
 
     assert "fake engine: testing" in said
     assert "1 counterpart: 1 hold" in said
+
+
+def test_every_line_names_the_repository_it_is_about(world):
+    """Locally there is no URL for the repository under test or the specification; a line still names one."""
+    engine = world.engine([world.url("adapter")])
+    world.clone("adapter")
+    nowhere(world)
+
+    said = world.tool(engine)
+
+    assert "engine is" in said
+    assert "cascade-bridge-spec is" in said
