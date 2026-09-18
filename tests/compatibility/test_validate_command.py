@@ -37,11 +37,10 @@ def test_an_entry_written_as_an_object_is_refused_saying_the_version_is_picked_w
     assert PICKED_WHEN_THE_CHECK_RUNS in said
 
 
-def test_a_file_carrying_spec_pin_is_refused_saying_the_version_is_picked_when_the_check_runs(world):
-    engine = world.engine([world.url("adapter")], specPin={"codeRepository": world.url("cascade-bridge-spec")})
+def test_a_key_the_context_does_not_define_is_refused_naming_it(world):
+    engine = world.engine([world.url("adapter")], specVersion="v1-draft")
     said = world.tool(engine, 1)
-    assert "specPin" in said
-    assert PICKED_WHEN_THE_CHECK_RUNS in said
+    assert "specVersion is not a key the context defines" in said
 
 
 @pytest.mark.parametrize(
