@@ -27,15 +27,10 @@ So:
   under `fixtures/` first, and by the shortest normative sentence only where a
   vector cannot say it.
 
-## The rules
+## The guidelines
 
-- **What is unsettled stays unsettled**: Core, the canonical findings model,
-  router precedence, the export direction. Answering one here settles it by accident.
-- **v1-draft is XML sources and the `sparql-1.1` profile**, nothing else.
-- **No Cascade terms are minted here.** `bridge:` only.
-- **This repository must not know that any adapter or engine exists.** No
-  machine-readable reference to one; the tooling takes a directory.
-- **Tiers are not specified**, and when they are they are measured, never declared.
+Each holds until the design it describes changes, and then it changes with it.
+
 - **Standards, not inventions**: RO-Crate 1.2 and its profiles, W3C `mf:`,
   SHACL, EARL, SKOS, Enterprise Integration Patterns.
 - **Which versions run together is OpenStack's Zuul model**
@@ -45,9 +40,12 @@ So:
   closely as practical. A departure from it, forced or chosen, is named in
   [`compatibility.md`](compatibility.md) with what someone must do by hand
   instead, or it is not taken.
-- **The pilot is evidence, not authority**, and is never modified here.
-- **Nothing pins this repository**; a caller names `start@main`, as a Zuul
-  tenant loads shared job definitions from a branch.
+- **A breaking change is handled by that model, not by a transitional path.**
+  Before a numbered v1, nothing here grows a second accepted form to keep a
+  default branch green: each work pull request names the others it needs on a
+  `Depends-On:` line, and they merge in the order those lines set. What that
+  costs while they are all open is in [`compatibility.md`](compatibility.md).
+  A default branch is red between the first merge and the last.
 
 ## Layout
 

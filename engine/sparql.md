@@ -19,23 +19,23 @@ triples in the shape of SPARQL Anything's Facade-X. Every node is a blank node.
   is not an attribute.
 - **An element's children**, elements and text in document order, are the
   objects of `rdf:_1`, `rdf:_2`, … from its node. A text child is a plain
-  string literal holding its characters verbatim. Character data and CDATA
-  sections with nothing but dropped content between them are one text child.
+  string literal holding its characters verbatim.
 - **Dropped:** a text child made only of whitespace, comments, processing
   instructions, the document type declaration and the XML declaration. What is
-  dropped takes no number. Whitespace is XML's `S` production: space, tab,
-  carriage return and line feed, and no other character. A no-break space is
-  text, alone or beside spaces.
+  dropped takes no number. Whitespace is XML's `S` production, and no other
+  character.
 
-How a non-ASCII name is written in an IRI is not specified.
+A name is appended to the namespace IRI as its own characters, each one outside
+[RFC 3987's `iunreserved`](https://www.rfc-editor.org/rfc/rfc3987#section-2.2)
+percent-encoded as its UTF-8 octets.
 
 ## What is lifted
 
 **A mapping and a findings query** run over one source record at a time, lifted
 with the record's element as the lift root: nothing outside the record is lifted.
 A record is an element whose local name is the adapter's
-`bridge:elementNameOfEachRecord`; a record's namespace, and a record inside
-another, are not specified.
+`bridge:elementNameOfEachRecord`, in any namespace or none; a record inside
+another is not specified.
 
 **The detect query** runs over the document's *envelope skeleton*: the lift of
 the whole document, with the document element as the lift root, except that
@@ -46,16 +46,43 @@ is then its type triples alone.
 
 ## Running an adapter
 
-For each source record of a document the adapter's `bridge:detectQuery`
-accepts, in document order, a Bridge:
+A Bridge runs every source record of a document whatever the adapter's
+`bridge:detectQuery` answers, and reports the answer.
+
+For each source record of a document, in document order, a Bridge:
 
 1. lifts the record into the default graph of an empty dataset;
 2. loads every `bridge:table` declared `text/turtle` into the same default
    graph. No other table format is specified;
 3. runs every `bridge:mapping`, a CONSTRUCT, over that dataset. The record's
    graph is the union of their results;
-4. runs every `bridge:findingsQuery` over the same dataset. Each member of a
-   finding is the lexical form of the term its variable is bound to: an IRI's
-   own characters, or a literal's lexical form without its datatype or language
-   tag. A variable unbound, or bound to a blank node, is an error in the findings
-   query, and a Bridge reports it rather than choosing a value.
+4. runs every `bridge:findingsQuery`, a CONSTRUCT, over the same dataset. The
+   record's findings are the union of their graphs, with `bridge:thisRecord`
+   replaced by the IRI the Bridge was given for the document the record was
+   read from — the entry's `bridge:input` as [`executing.md`](executing.md)
+   resolves it under `test`, the `<document>` argument as an absolute `file:`
+   IRI under `convert` — and each annotation's selector moved under that
+   record's own selector as its `oa:refinedBy`. Each annotation gets a selector
+   of its own, and an annotation whose query constructed none is about the
+   record itself: its target carries the record's selector and no
+   `oa:refinedBy`.
+
+Each annotation a findings query constructs targets a blank node written for
+that one annotation, `[ oa:hasSource bridge:thisRecord ]`; a query says the
+record itself by constructing no selector on it. A name, one labelled blank node
+two annotations share, and a variable bound to a node the lift already holds are
+each one node for more than one finding, so which selector standing on it
+belongs to which finding is unrecoverable.
+
+A record's selector is the XPath from the document element to the record: a
+step for the document element, then one for each element down to and including
+the record, however deep it is. Every step below the document element carries
+`[n]`, its position among its own siblings of that name, counting from 1.
+
+A step names an element in no namespace by that name. A step names an element
+in a namespace by `*[local-name()='…' and namespace-uri()='…']`, because an
+XPath carries no prefix bindings and a selector is read where nothing can
+supply them.
+
+A finding a Bridge makes about the document rather than about a record selects
+the document element: that one step, and nothing below it.

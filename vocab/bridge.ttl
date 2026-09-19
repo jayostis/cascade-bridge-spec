@@ -60,7 +60,7 @@ bridge:sourceMediaType a owl:DatatypeProperty ;
 
 bridge:sourceSchema a owl:ObjectProperty ;
   rdfs:label "source schema"@en ;
-  rdfs:comment "The XSD a Bridge validates every record against."@en ;
+  rdfs:comment "The XSD 1.0 schema a Bridge validates every record against."@en ;
   rdfs:domain bridge:Adapter ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
@@ -83,8 +83,13 @@ bridge:mapping a owl:ObjectProperty ;
 
 bridge:findingsQuery a owl:ObjectProperty ;
   rdfs:label "findings query"@en ;
-  rdfs:comment "A SPARQL 1.1 SELECT over the same dataset as the mappings, projecting ?sourceField ?reason ?severity ?context and no other variable. Each row is one finding; rows are not deduplicated, and a record's findings are the rows of every findings query, concatenated."@en ;
+  rdfs:comment "A SPARQL 1.1 CONSTRUCT over the same dataset as the mappings, producing a record's findings about the source document as Web Annotations."@en ;
   rdfs:domain bridge:Adapter ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:thisRecord a owl:NamedIndividual ;
+  rdfs:label "this record"@en ;
+  rdfs:comment "What a findings query names as the thing its annotations are about, standing for the record it is running on. A Bridge replaces it with the IRI of the document that record was read from, and expresses the record itself as the target's selector."@en ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
 bridge:detectQuery a owl:ObjectProperty ;
@@ -119,7 +124,7 @@ bridge:docRootElementName a owl:DatatypeProperty ;
 
 bridge:documentSchema a owl:ObjectProperty ;
   rdfs:label "document schema"@en ;
-  rdfs:comment "A schema that validates a whole document in this envelope, where the source schema does not declare its root."@en ;
+  rdfs:comment "The XSD 1.0 schema a Bridge validates a whole document in this envelope against, where the source schema does not declare its root."@en ;
   rdfs:domain bridge:Envelope ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
@@ -128,7 +133,7 @@ bridge:documentSchema a owl:ObjectProperty ;
 bridge:IsomorphicConversionTest a owl:Class ;
   rdfs:subClassOf mf:ManifestEntry ;
   rdfs:label "Isomorphic conversion test"@en ;
-  rdfs:comment "Run the mapping on bridge:input. The produced graph must be isomorphic to bridge:expectedGraph (blank nodes relabelled, IRIs and literals exact) after every triple whose predicate is a bridge:stampPredicate is removed from both sides. The produced findings must equal bridge:expectedFindings as a multiset: the same entries with the same multiplicity, in any order, two entries being equal as JSON objects."@en ;
+  rdfs:comment "Run the mapping on bridge:input. The produced graph must be isomorphic to bridge:expectedGraph (blank nodes relabelled, IRIs and literals exact) after every triple whose predicate is a bridge:stampPredicate is removed from both sides. The produced findings must be isomorphic to bridge:expectedFindings in the same way: a finding produced twice is two blank nodes and counts twice."@en ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
 bridge:InputOnlyTest a owl:Class ;

@@ -15,6 +15,7 @@ UTF8_OUTPUT_ENV = {**os.environ, "PYTHONIOENCODING": "utf-8"}
 CRATE = "ro-crate-metadata.json"
 MANIFEST = "fixtures/manifest.ttl"
 EXPECTED = "fixtures/expected/example-0001.ttl"
+FINDINGS = "fixtures/findings/example-0001.ttl"
 
 
 def restate_digest(package, relative):
@@ -53,6 +54,11 @@ def expected_graph_not_turtle(package):
     restate_digest(package, EXPECTED)
 
 
+def a_finding_selecting_no_node(package):
+    package.edit(FINDINGS, '"/ExampleRecordSet/ExampleRecord[2]"', '"/ExampleRecordSet/ExampleRecord[3]"')
+    restate_digest(package, FINDINGS)
+
+
 def manifest_not_turtle(package):
     package.edit(MANIFEST, "@prefix mf:", "@prefixx mf:")
     restate_digest(package, MANIFEST)
@@ -68,7 +74,7 @@ def no_expected_graphs(package):
         MANIFEST,
         "  ] ;\n  mf:result [\n"
         "    bridge:expectedGraph <expected/example-0001.ttl> ;\n"
-        "    bridge:expectedFindings <findings/example-0001.gaps.json>\n"
+        "    bridge:expectedFindings <findings/example-0001.ttl>\n"
         "  ] .",
         "  ] .",
     )
@@ -132,6 +138,13 @@ def pin_not_a_data_entity(package):
             ["example-0001: example-0001.ttl does not parse as Turtle"],
             ["sha256 is not this file's"],
             id="a requirement unmet fails: an expected graph that is not Turtle",
+        ),
+        pytest.param(
+            a_finding_selecting_no_node,
+            False,
+            ["selects no node of example-0001.xml"],
+            [],
+            id="a requirement unmet fails: a finding selecting no node of its input",
         ),
         pytest.param(
             manifest_not_turtle,

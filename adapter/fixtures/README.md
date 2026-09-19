@@ -13,19 +13,10 @@ crate; [`../profile/must/`](../profile/must/) checks what each carries.
   a "latest" pointer.
 
 ```
-fixtures/in/<mf:name>.<ext>            the source document
-fixtures/expected/<mf:name>.ttl        the graph it must produce
-fixtures/findings/<mf:name>.gaps.json  the findings it must produce
+fixtures/in/<mf:name>.<ext>       the source document
+fixtures/expected/<mf:name>.ttl   the graph it must produce
+fixtures/findings/<mf:name>.ttl   the findings it must produce
 ```
 
 [`../../fixtures/synthetic-adapter/`](../../fixtures/synthetic-adapter/) is a
 package laid out this way.
-
-## The findings model is not settled
-
-A findings sidecar is a JSON array of `sourceField`, `reason`, `severity`,
-`context` records ([`../../engine/sparql.md`](../../engine/sparql.md)): a private
-shape that should not stay one. Two published forms fit: SHACL validation
-results for a finding about the produced graph, and the W3C Web Annotation Data
-Model, with `oa:XPathSelector` for `sourceField`, for a finding about the source
-document. It has to be chosen **before a second adapter writes findings**.

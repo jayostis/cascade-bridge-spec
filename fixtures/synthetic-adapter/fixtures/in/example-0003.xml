@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ExampleRecordSet>
+  <ExampleRecord Accession="EX000004" Version="1">
+    <Label>a record that is valid where the document around it is not</Label>
+  </ExampleRecord>
+  <Trailer>no element of this name is declared in the set schema</Trailer>
+</ExampleRecordSet>
