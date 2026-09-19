@@ -2,9 +2,10 @@
 <ExampleRecordSet>
   <ExampleRecord Accession="EX000001" Version="3">
     <Label>first synthetic record</Label>
-    <Note>a free-text note the mapping has no term for, which is what the findings sidecar beside this file records</Note>
+    <Note>a free-text note the mapping has no term for, which is what the findings beside this file record</Note>
   </ExampleRecord>
   <ExampleRecord Accession="EX000002" Version="1">
     <Label>second synthetic record</Label>
+    <Note>a second note, so the findings beside this file name the record each one is about</Note>
   </ExampleRecord>
 </ExampleRecordSet>

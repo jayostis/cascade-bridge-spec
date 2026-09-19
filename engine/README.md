@@ -8,8 +8,8 @@ An engine (a Cascade Bridge) runs adapters.
 | the rules the lift follows | [`sparql.md`](sparql.md) |
 | how each test type is judged | the test types' `rdfs:comment` in [`../vocab/bridge.ttl`](../vocab/bridge.ttl) |
 | an adapter to run | [`../fixtures/synthetic-adapter/`](../fixtures/synthetic-adapter/) |
-| the command you must offer | [`command.md`](command.md) |
-| the smallest thing that meets that command | [`../fixtures/fake-engine/engine.py`](../fixtures/fake-engine/engine.py) |
+| the commands you must offer | [`command.md`](command.md) |
+| the smallest thing that meets them | [`../fixtures/fake-engine/engine.py`](../fixtures/fake-engine/engine.py) |
 | loading and reporting a test manifest | [`executing.md`](executing.md) |
 | the stages around a mapping | [`stages.md`](stages.md) |
 | which adapters you must pass with, and the workflow your CI runs | [`../compatibility.md`](../compatibility.md) |

@@ -8,6 +8,7 @@
   mf:entries (
     <#example-0001>
     <#example-0002>
+    <#example-0003>
     <#example-release-2026-01>
   ) .
 
@@ -19,7 +20,7 @@
   ] ;
   mf:result [
     bridge:expectedGraph <expected/example-0001.ttl> ;
-    bridge:expectedFindings <findings/example-0001.gaps.json>
+    bridge:expectedFindings <findings/example-0001.ttl>
   ] .
 
 <#example-0002> a bridge:InputOnlyTest ;
@@ -27,6 +28,18 @@
   mf:action [
     bridge:input <in/example-0002.xml> ;
     bridge:envelope <../ro-crate-metadata.json#envelope-record>
+  ] .
+
+<#example-0003> a bridge:IsomorphicConversionTest ;
+  mf:name "example-0003" ;
+  rdfs:comment "A document that fails its bridge:documentSchema around a record that passes bridge:sourceSchema: its one finding is about the document, and selects the document element." ;
+  mf:action [
+    bridge:input <in/example-0003.xml> ;
+    bridge:envelope <../ro-crate-metadata.json#envelope-set>
+  ] ;
+  mf:result [
+    bridge:expectedGraph <expected/example-0003.ttl> ;
+    bridge:expectedFindings <findings/example-0003.ttl>
   ] .
 
 <#example-release-2026-01> a bridge:DatasetCompletionTest ;

@@ -5,11 +5,13 @@
 @prefix owl:    <http://www.w3.org/2002/07/owl#> .
 @prefix schema: <http://schema.org/> .
 @prefix mf:     <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .
+@prefix oa:     <http://www.w3.org/ns/oa#> .
 @prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
 <> a owl:Ontology ;
   sh:declare [ sh:prefix "rdf" ;    sh:namespace "http://www.w3.org/1999/02/22-rdf-syntax-ns#"^^xsd:anyURI ] ;
   sh:declare [ sh:prefix "mf" ;     sh:namespace "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#"^^xsd:anyURI ] ;
+  sh:declare [ sh:prefix "oa" ;     sh:namespace "http://www.w3.org/ns/oa#"^^xsd:anyURI ] ;
   sh:declare [ sh:prefix "bridge" ; sh:namespace "https://ns.cascadeprotocol.org/bridge/v1-draft#"^^xsd:anyURI ] ;
   sh:declare [ sh:prefix "schema" ; sh:namespace "http://schema.org/"^^xsd:anyURI ] .
 
@@ -270,7 +272,113 @@
     sh:maxCount 1 ;
     sh:nodeKind sh:IRI ;
     sh:class schema:MediaObject ;
-    sh:message "The result names exactly one bridge:expectedFindings, the expected sidecar, and it is a crate File entity (schema:MediaObject), not a bare IRI naming nothing."
+    sh:message "The result names exactly one bridge:expectedFindings, the Turtle graph of the findings the entry must produce, and it is a crate File entity (schema:MediaObject), not a bare IRI naming nothing."
+  ] .
+
+<#SourceFinding> a sh:NodeShape ;
+  sh:targetClass oa:Annotation ;
+  sh:property [
+    sh:path oa:hasTarget ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:node <#FindingTarget> ;
+    sh:message "A finding about the source document carries exactly one oa:hasTarget, naming the document the record was read from and selecting the node the finding is about."
+  ] ;
+  sh:property [
+    sh:path oa:hasBody ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:node <#FindingBody> ;
+    sh:message "A finding carries exactly one oa:hasBody, the reason."
+  ] ;
+  sh:property [
+    sh:path sh:resultSeverity ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:in ( sh:Info sh:Warning sh:Violation ) ;
+    sh:message "A finding carries exactly one sh:resultSeverity, one of sh:Info, sh:Warning, sh:Violation."
+  ] .
+
+<#FindingTarget> a sh:NodeShape ;
+  sh:property [
+    sh:path oa:hasSource ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "A finding's target names exactly one oa:hasSource by IRI, the document the record was read from."
+  ] ;
+  sh:property [
+    sh:path oa:hasSelector ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:node <#RecordSelector> ;
+    sh:message "A finding's target carries exactly one oa:hasSelector, the record's selector."
+  ] ;
+  sh:sparql [
+    sh:prefixes <> ;
+    sh:message "A finding's target carries a selector of its own, shared with no other finding: selectors on one node are alternative ways of selecting the same thing." ;
+    sh:select """
+      SELECT $this ?value WHERE {
+        $this oa:hasSelector ?value .
+        ?other oa:hasSelector ?value .
+        FILTER (?other != $this)
+      }
+    """
+  ] ;
+  sh:sparql [
+    sh:prefixes <> ;
+    sh:message "A finding carries a target of its own, shared with no other finding: two findings on one target stand on that target's one selector, and which node each finding is about is then unrecoverable." ;
+    sh:select """
+      SELECT $this ?value WHERE {
+        ?value oa:hasTarget $this .
+        ?other oa:hasTarget $this .
+        FILTER (?other != ?value)
+      }
+    """
+  ] .
+
+<#FindingBody> a sh:NodeShape ;
+  sh:class oa:TextualBody ;
+  sh:message "A finding's body is an oa:TextualBody." ;
+  sh:property [
+    sh:path rdf:value ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "A finding's body carries exactly one rdf:value, the reason, a string."
+  ] .
+
+<#RecordSelector> a sh:NodeShape ;
+  sh:class oa:XPathSelector ;
+  sh:message "A record's selector is an oa:XPathSelector." ;
+  sh:property [
+    sh:path rdf:value ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "A selector carries exactly one rdf:value, its XPath, a string."
+  ] ;
+  sh:property [
+    sh:path oa:refinedBy ;
+    sh:maxCount 1 ;
+    sh:node <#RefinedSelector> ;
+    sh:message "A record's selector is refined by at most one selector, the one the finding names inside the record."
+  ] .
+
+<#RefinedSelector> a sh:NodeShape ;
+  sh:class oa:XPathSelector ;
+  sh:message "A selector refining a record's selector is an oa:XPathSelector." ;
+  sh:property [
+    sh:path rdf:value ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "A selector carries exactly one rdf:value, its XPath, a string."
+  ] ;
+  sh:property [
+    sh:path oa:refinedBy ;
+    sh:maxCount 0 ;
+    sh:message "A selector refining a record's selector is refined no further."
   ] .
 
 <#DatasetResult> a sh:NodeShape ;
