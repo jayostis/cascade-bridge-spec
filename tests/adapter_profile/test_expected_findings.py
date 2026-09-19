@@ -234,3 +234,154 @@ def test_reports_a_record_selector_that_names_its_record_another_way(package):
         "selects the record /ExampleRecordSet/ExampleRecord[1] names, where a record's selector "
         "is the XPath from the document element to the record"
     ) in "\n".join(expected_findings.faulty(package.crate))
+
+
+A_FINDING_WITH_TWO_TARGETS = (
+    PREFIXES
+    + """
+[] a oa:Annotation ;
+  oa:hasTarget [ oa:hasSource <../in/example-0001.xml> ;
+                 oa:hasSelector [ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ] ] ;
+  oa:hasTarget [ oa:hasSource <../in/example-0001.xml> ;
+                 oa:hasSelector [ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[2]" ] ] ;
+  oa:hasBody [ a oa:TextualBody ; rdf:value "no term for a free-text note" ] ;
+  sh:resultSeverity sh:Info .
+"""
+)
+
+A_FINDING_SOURCED_BY_A_LITERAL = (
+    PREFIXES
+    + """
+[] a oa:Annotation ;
+  oa:hasTarget [ oa:hasSource "example-0001.xml" ;
+                 oa:hasSelector [ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ] ] ;
+  oa:hasBody [ a oa:TextualBody ; rdf:value "no term for a free-text note" ] ;
+  sh:resultSeverity sh:Info .
+"""
+)
+
+A_FINDING_NAMED_RATHER_THAN_WRITTEN_FOR_ITSELF = (
+    PREFIXES
+    + """
+<#the-one-finding> a oa:Annotation ;
+  oa:hasTarget [ oa:hasSource <../in/example-0001.xml> ;
+                 oa:hasSelector [ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ] ] ;
+  oa:hasBody [ a oa:TextualBody ; rdf:value "no term for a free-text note" ] ;
+  sh:resultSeverity sh:Info .
+"""
+)
+
+
+def finding_carrying(body='[ a oa:TextualBody ; rdf:value "no term for a free-text note" ]', selector=None):
+    selector = selector or '[ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ]'
+    return (
+        PREFIXES
+        + f"""
+[] a oa:Annotation ;
+  oa:hasTarget [ oa:hasSource <../in/example-0001.xml> ; oa:hasSelector {selector} ] ;
+  oa:hasBody {body} ;
+  sh:resultSeverity sh:Info .
+"""
+    )
+
+
+def test_reports_a_finding_carrying_more_than_one_target(package):
+    package.write(FINDINGS, A_FINDING_WITH_TWO_TARGETS)
+    assert ("A finding about the source document carries exactly one oa:hasTarget") in "\n".join(
+        expected_findings.faulty(package.crate)
+    )
+
+
+def test_reports_a_target_naming_its_source_as_a_literal_rather_than_by_iri(package):
+    package.write(FINDINGS, A_FINDING_SOURCED_BY_A_LITERAL)
+    assert (
+        "A finding's target names exactly one oa:hasSource by IRI, the document the record was read from."
+    ) in "\n".join(expected_findings.faulty(package.crate))
+
+
+def test_reports_a_finding_named_rather_than_written_for_itself(package):
+    package.write(FINDINGS, A_FINDING_NAMED_RATHER_THAN_WRITTEN_FOR_ITSELF)
+    assert "A finding is a blank node written for that one finding" in "\n".join(
+        expected_findings.faulty(package.crate)
+    )
+
+
+def test_reports_a_body_that_is_not_a_textual_body(package):
+    package.write(FINDINGS, finding_carrying(body='[ a oa:SpecificResource ; rdf:value "a reason" ]'))
+    assert "A finding's body is an oa:TextualBody." in "\n".join(expected_findings.faulty(package.crate))
+
+
+def test_reports_a_body_carrying_no_reason(package):
+    package.write(FINDINGS, finding_carrying(body="[ a oa:TextualBody ]"))
+    assert "A finding's body carries exactly one rdf:value, the reason, a string." in "\n".join(
+        expected_findings.faulty(package.crate)
+    )
+
+
+def test_reports_a_reason_that_is_not_a_string(package):
+    package.write(FINDINGS, finding_carrying(body="[ a oa:TextualBody ; rdf:value 3 ]"))
+    assert "A finding's body carries exactly one rdf:value, the reason, a string." in "\n".join(
+        expected_findings.faulty(package.crate)
+    )
+
+
+def test_reports_a_record_selector_that_is_not_an_xpath_selector(package):
+    package.write(
+        FINDINGS,
+        finding_carrying(selector='[ a oa:TextQuoteSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ]'),
+    )
+    assert "A record's selector is an oa:XPathSelector." in "\n".join(expected_findings.faulty(package.crate))
+
+
+def test_reports_a_record_selector_carrying_no_xpath(package):
+    package.write(FINDINGS, finding_carrying(selector="[ a oa:XPathSelector ]"))
+    assert "A selector carries exactly one rdf:value, its XPath, a string." in "\n".join(
+        expected_findings.faulty(package.crate)
+    )
+
+
+def test_reports_a_record_selector_refined_more_than_once(package):
+    package.write(
+        FINDINGS,
+        finding_carrying(
+            selector=(
+                '[ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ; '
+                'oa:refinedBy [ a oa:XPathSelector ; rdf:value "Label" ] ; '
+                'oa:refinedBy [ a oa:XPathSelector ; rdf:value "Note" ] ]'
+            )
+        ),
+    )
+    assert "A record's selector is refined by at most one selector" in "\n".join(
+        expected_findings.faulty(package.crate)
+    )
+
+
+def test_reports_a_refinement_that_is_not_an_xpath_selector(package):
+    package.write(
+        FINDINGS,
+        finding_carrying(
+            selector=(
+                '[ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ; '
+                'oa:refinedBy [ a oa:TextQuoteSelector ; rdf:value "Note" ] ]'
+            )
+        ),
+    )
+    assert "A selector refining a record's selector is an oa:XPathSelector." in "\n".join(
+        expected_findings.faulty(package.crate)
+    )
+
+
+def test_reports_a_refinement_refined_further(package):
+    package.write(
+        FINDINGS,
+        finding_carrying(
+            selector=(
+                '[ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ; '
+                'oa:refinedBy [ a oa:XPathSelector ; rdf:value "Note" ; '
+                'oa:refinedBy [ a oa:XPathSelector ; rdf:value "text()" ] ] ]'
+            )
+        ),
+    )
+    assert "A selector refining a record's selector is refined no further." in "\n".join(
+        expected_findings.faulty(package.crate)
+    )
