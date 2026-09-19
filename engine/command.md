@@ -32,6 +32,3 @@ caller holds rather than one the adapter committed, and emits their union as one
 graph: Turtle by default, `--format ntriples` for a reader that consumes a
 stream, on standard output unless `--out` names a file. Standard output carries
 the graph and nothing else.
-
-**`bridge:detectQuery` is reported, not enforced**: the engine converts a
-document whose ASK answers false, and says so.

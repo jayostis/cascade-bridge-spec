@@ -324,6 +324,17 @@
         FILTER (?other != $this)
       }
     """
+  ] ;
+  sh:sparql [
+    sh:prefixes <> ;
+    sh:message "A finding carries a target of its own, shared with no other finding: two findings on one target stand on that target's one selector, and which node each finding is about is then unrecoverable." ;
+    sh:select """
+      SELECT $this ?value WHERE {
+        ?value oa:hasTarget $this .
+        ?other oa:hasTarget $this .
+        FILTER (?other != ?value)
+      }
+    """
   ] .
 
 <#FindingBody> a sh:NodeShape ;

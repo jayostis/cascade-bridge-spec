@@ -44,6 +44,9 @@ is then its type triples alone.
 
 ## Running an adapter
 
+A Bridge runs every source record of a document whatever the adapter's
+`bridge:detectQuery` answers, and reports the answer.
+
 For each source record of a document, in document order, a Bridge:
 
 1. lifts the record into the default graph of an empty dataset;
@@ -62,10 +65,12 @@ For each source record of a document, in document order, a Bridge:
    record itself: its target carries the record's selector and no
    `oa:refinedBy`.
 
-A findings query's `oa:hasTarget` is a blank node. A name is one node for every
-finding the query produces, so which selector standing on it belongs to which
-finding is unrecoverable; a query says the record itself by targeting
-`[ oa:hasSource bridge:thisRecord ]` and constructing no selector.
+Each annotation a findings query constructs targets a blank node written for
+that one annotation, `[ oa:hasSource bridge:thisRecord ]`; a query says the
+record itself by constructing no selector on it. A name, one labelled blank node
+two annotations share, and a variable bound to a node the lift already holds are
+each one node for more than one finding, so which selector standing on it
+belongs to which finding is unrecoverable.
 
 A record's selector is the XPath from the document element to the record: a
 step for the document element, then one for each element down to and including

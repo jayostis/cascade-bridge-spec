@@ -170,6 +170,12 @@ def faulty(crate):
         except Exception as error:
             yield f"{name}: {path.name} does not parse as Turtle\n{error}"
             continue
+        if (None, RDF.type, OA.Annotation) not in graph:
+            yield (
+                f"{name}: {path.name} carries no oa:Annotation, where an entry's bridge:expectedFindings "
+                "is every finding its input produces, each one an oa:Annotation"
+            )
+            continue
         for message in unmet(graph, shapes):
             yield f"{name}: {path.name}: {message}"
         input_path = None if source is None else crate.file_at(source)

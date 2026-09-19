@@ -27,6 +27,32 @@ TWO_FINDINGS_SHARING_ONE_SELECTOR = (
 """
 )
 
+TWO_FINDINGS_SHARING_ONE_TARGET = (
+    PREFIXES
+    + """
+_:t oa:hasSource <../in/example-0001.xml> ;
+  oa:hasSelector [ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ;
+                   oa:refinedBy [ a oa:XPathSelector ; rdf:value "Note" ] ] .
+
+[] a oa:Annotation ;
+  oa:hasTarget _:t ;
+  oa:hasBody [ a oa:TextualBody ; rdf:value "no term for a free-text note" ] ;
+  sh:resultSeverity sh:Info .
+
+[] a oa:Annotation ;
+  oa:hasTarget _:t ;
+  oa:hasBody [ a oa:TextualBody ; rdf:value "a second note" ] ;
+  sh:resultSeverity sh:Info .
+"""
+)
+
+A_STRAY_SELECTOR_AND_NO_FINDING = (
+    PREFIXES
+    + """
+[] a oa:XPathSelector ; rdf:value "/no/such/path[99]" .
+"""
+)
+
 
 def finding(
     source="<../in/example-0001.xml>",
@@ -176,6 +202,26 @@ def test_reports_a_severity_outside_the_scale(package):
 def test_reports_two_findings_sharing_one_selector(package):
     package.write(FINDINGS, TWO_FINDINGS_SHARING_ONE_SELECTOR)
     assert "selector of its own, shared with no other finding" in "\n".join(expected_findings.faulty(package.crate))
+
+
+def test_reports_two_findings_sharing_one_target(package):
+    package.write(FINDINGS, TWO_FINDINGS_SHARING_ONE_TARGET)
+    assert "a target of its own, shared with no other finding" in "\n".join(expected_findings.faulty(package.crate))
+
+
+def test_reports_expected_findings_holding_no_finding_at_all(package):
+    package.write(FINDINGS, PREFIXES)
+    assert "carries no oa:Annotation" in "\n".join(expected_findings.faulty(package.crate))
+
+
+def test_reports_expected_findings_whose_only_finding_mistypes_the_annotation_class(package):
+    package.write(FINDINGS, finding().replace("a oa:Annotation", "a oa:Annotaton"))
+    assert "carries no oa:Annotation" in "\n".join(expected_findings.faulty(package.crate))
+
+
+def test_reports_expected_findings_holding_a_selector_but_no_finding(package):
+    package.write(FINDINGS, A_STRAY_SELECTOR_AND_NO_FINDING)
+    assert "carries no oa:Annotation" in "\n".join(expected_findings.faulty(package.crate))
 
 
 def test_evaluates_no_selector_for_an_entry_naming_no_input(crate):
