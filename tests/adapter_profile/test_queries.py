@@ -174,3 +174,90 @@ def test_reports_nothing_when_the_adapter_names_no_query(crate):
     for term in (BRIDGE.mapping, BRIDGE.findingsQuery, BRIDGE.detectQuery):
         crate.graph.remove((crate.root, term, None))
     assert not list(queries.malformed(crate))
+
+
+A_FINDINGS_QUERY_CONSTRUCTING_A_FINDING_WITH_NO_BODY_OR_SEVERITY = findings_query("""  [] a oa:Annotation ;
+    oa:hasTarget [
+      oa:hasSource bridge:thisRecord ;
+      oa:hasSelector [ a oa:XPathSelector ; rdf:value "Note" ]
+    ] .""")
+
+A_FINDINGS_QUERY_CONSTRUCTING_A_SEVERITY_OUTSIDE_THE_SCALE = findings_query("""  [] a oa:Annotation ;
+    oa:hasTarget [
+      oa:hasSource bridge:thisRecord ;
+      oa:hasSelector [ a oa:XPathSelector ; rdf:value "Note" ]
+    ] ;
+    oa:hasBody [ a oa:TextualBody ; rdf:value "no term for a free-text note" ] ;
+    sh:resultSeverity <https://example.org/catastrophe> .""")
+
+A_FINDINGS_QUERY_GIVING_ONE_TARGET_TWO_SELECTORS = findings_query("""  [] a oa:Annotation ;
+    oa:hasTarget [
+      oa:hasSource bridge:thisRecord ;
+      oa:hasSelector [ a oa:XPathSelector ; rdf:value "Note" ] ;
+      oa:hasSelector [ a oa:XPathSelector ; rdf:value "Label" ]
+    ] ;
+    oa:hasBody [ a oa:TextualBody ; rdf:value "no term for a free-text note" ] ;
+    sh:resultSeverity sh:Info .""")
+
+A_FINDINGS_QUERY_NAMING_THE_ANNOTATION_IT_CONSTRUCTS = findings_query("""  <https://example.org/the-one-finding> a oa:Annotation ;
+    oa:hasTarget [
+      oa:hasSource bridge:thisRecord ;
+      oa:hasSelector [ a oa:XPathSelector ; rdf:value "Note" ]
+    ] ;
+    oa:hasBody [ a oa:TextualBody ; rdf:value "no term for a free-text note" ] ;
+    sh:resultSeverity sh:Info .""")
+
+A_FINDINGS_QUERY_BINDING_THE_ANNOTATION_TO_A_VARIABLE = findings_query("""  ?note a oa:Annotation ;
+    oa:hasTarget [
+      oa:hasSource bridge:thisRecord ;
+      oa:hasSelector [ a oa:XPathSelector ; rdf:value "Note" ]
+    ] ;
+    oa:hasBody [ a oa:TextualBody ; rdf:value "no term for a free-text note" ] ;
+    sh:resultSeverity sh:Info .""")
+
+A_FINDINGS_QUERY_WHOSE_REASON_SEVERITY_AND_XPATH_ARE_BOUND = findings_query("""  [] a oa:Annotation ;
+    oa:hasTarget [
+      oa:hasSource bridge:thisRecord ;
+      oa:hasSelector ?selector
+    ] ;
+    oa:hasBody [ a oa:TextualBody ; rdf:value ?reason ] ;
+    sh:resultSeverity ?severity .
+  ?selector a oa:XPathSelector ; rdf:value ?xpath .""")
+
+
+def test_reports_a_findings_query_constructing_a_finding_with_no_body_or_severity(package):
+    package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_CONSTRUCTING_A_FINDING_WITH_NO_BODY_OR_SEVERITY)
+    said = "\n".join(queries.malformed(package.crate))
+    assert "A finding carries exactly one oa:hasBody, the reason." in said
+    assert "A finding carries exactly one sh:resultSeverity" in said
+
+
+def test_reports_a_findings_query_constructing_a_severity_outside_the_scale(package):
+    package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_CONSTRUCTING_A_SEVERITY_OUTSIDE_THE_SCALE)
+    assert "A finding carries exactly one sh:resultSeverity, one of sh:Info, sh:Warning, sh:Violation." in "\n".join(
+        queries.malformed(package.crate)
+    )
+
+
+def test_reports_a_findings_query_giving_one_target_two_selectors(package):
+    package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_GIVING_ONE_TARGET_TWO_SELECTORS)
+    assert "A finding's target carries exactly one oa:hasSelector, the record's selector." in "\n".join(
+        queries.malformed(package.crate)
+    )
+
+
+def test_reports_a_findings_query_naming_the_annotation_it_constructs(package):
+    package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_NAMING_THE_ANNOTATION_IT_CONSTRUCTS)
+    assert "A finding is a blank node written for that one finding" in "\n".join(queries.malformed(package.crate))
+
+
+def test_reports_a_findings_query_binding_the_annotation_to_a_variable(package):
+    package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_BINDING_THE_ANNOTATION_TO_A_VARIABLE)
+    assert "?note as an oa:Annotation, where a finding is a blank node written for that one finding" in "\n".join(
+        queries.malformed(package.crate)
+    )
+
+
+def test_holds_a_findings_query_to_nothing_a_variable_binds(package):
+    package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_WHOSE_REASON_SEVERITY_AND_XPATH_ARE_BOUND)
+    assert not list(queries.malformed(package.crate))

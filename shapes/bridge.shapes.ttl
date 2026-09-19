@@ -277,6 +277,8 @@
 
 <#SourceFinding> a sh:NodeShape ;
   sh:targetClass oa:Annotation ;
+  sh:nodeKind sh:BlankNode ;
+  sh:message "A finding is a blank node written for that one finding: a name is one node for every finding, and which target, body and severity standing on it belong to which finding is then unrecoverable." ;
   sh:property [
     sh:path oa:hasTarget ;
     sh:minCount 1 ;

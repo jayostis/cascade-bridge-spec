@@ -3,14 +3,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from rdflib import BNode, Variable
+from rdflib import BNode, Graph, Variable
 from rdflib.namespace import RDF
 from rdflib.plugins.sparql import prepareQuery
 from rocrate_validator.models import ValidationContext
 from rocrate_validator.requirements.python import PyFunctionCheck, check, requirement
 
 from _crate import file_name_of
-from _findings import report_findings
+from _findings import SHAPES, report_findings, unmet
 from _terms import BRIDGE, OA
 
 QUERY_FORMS = {
@@ -33,6 +33,19 @@ def targets_of(template):
 
 def listed(terms):
     return ", ".join(term.n3() for term in sorted(terms))
+
+
+def constructs(template):
+    """The graph a query constructs, each variable standing for the node or value it binds."""
+    graph = Graph()
+    standing_for = {}
+
+    def term(node):
+        return standing_for.setdefault(node, BNode()) if isinstance(node, Variable) else node
+
+    for triple in template:
+        graph.add(tuple(term(node) for node in triple))
+    return graph, set(standing_for.values())
 
 
 def malformed(crate):
@@ -71,6 +84,17 @@ def malformed(crate):
                 f"{name} constructs a finding that targets no [ oa:hasSource bridge:thisRecord ], "
                 "the document each finding it produces is read from"
             )
+        annotated = {annotation for annotation in targeted if isinstance(annotation, Variable)}
+        if annotated:
+            yield (
+                f"{name} constructs {listed(annotated)} as an oa:Annotation, where a finding is a blank node "
+                "written for that one finding: a variable is bound to a node the lift already holds, so two "
+                "solutions binding it alike stand every finding of both on one node"
+            )
+        shapes = Graph().parse(SHAPES, format="turtle")
+        constructed_graph, standing_for = constructs(template)
+        for message in unmet(constructed_graph, shapes, standing_for):
+            yield f"{name}: {message}"
         every = [(annotation, target) for annotation, targets in targeted.items() for target in targets]
         named = {target for _, target in every if not isinstance(target, (BNode, Variable))}
         if named:

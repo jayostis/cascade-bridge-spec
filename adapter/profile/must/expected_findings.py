@@ -3,18 +3,15 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from pyshacl import validate as shacl_validate
 from rdflib import Graph
-from rdflib.namespace import RDF, SH
+from rdflib.namespace import RDF
 from rocrate_validator.models import ValidationContext
 from rocrate_validator.requirements.python import PyFunctionCheck, check, requirement
 
 from _crate import file_name_of
-from _findings import report_findings
+from _findings import SHAPES, report_findings, unmet
 from _selectors import local_name_of, selector_of
 from _terms import BRIDGE, MF, OA
-
-SHAPES = Path(__file__).resolve().parents[3] / "shapes" / "bridge.shapes.ttl"
 
 
 def expected_findings_of(crate):
@@ -27,12 +24,6 @@ def expected_findings_of(crate):
             continue
         action = crate.graph.value(test, MF.action)
         yield test, findings, None if action is None else crate.graph.value(action, BRIDGE.input)
-
-
-def unmet(graph, shapes):
-    _, report, _ = shacl_validate(graph, shacl_graph=shapes, advanced=True, inplace=False)
-    for found in report.subjects(RDF.type, SH.ValidationResult):
-        yield str(report.value(found, SH.resultMessage) or "").strip()
 
 
 class Fault(str):
