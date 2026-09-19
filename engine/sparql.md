@@ -25,7 +25,9 @@ triples in the shape of SPARQL Anything's Facade-X. Every node is a blank node.
   dropped takes no number. Whitespace is XML's `S` production, and no other
   character.
 
-How a non-ASCII name is written in an IRI is not specified.
+A name is appended to the namespace IRI as its own characters, each one outside
+[RFC 3987's `iunreserved`](https://www.rfc-editor.org/rfc/rfc3987#section-2.2)
+percent-encoded as its UTF-8 octets.
 
 ## What is lifted
 
