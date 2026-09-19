@@ -7,7 +7,6 @@ adapter contributes data to them through these terms.
 | stage | Enterprise Integration Pattern | the adapter contributes |
 |---|---|---|
 | read and chunk | **Splitter** | `bridge:elementNameOfEachRecord` |
-| detect and route | **Content-Based Router** | `bridge:detectQuery` |
 | transform | **Message Translator** | `bridge:mapping`, `bridge:table` |
 | Cascade RDF as target | **Canonical Data Model** | `bridge:vocabulary`, `bridge:cascadeVocabularyPin` |
 | link within the batch | **Aggregator** | nothing: the mapping emits the links, the Bridge resolves them |
@@ -19,6 +18,9 @@ adapter contributes data to them through these terms.
 
 - **Validation reports; it never refuses.** A source record that fails its
   schema is a finding, and the record still goes through.
+- **`bridge:detectQuery` reports; it never routes.** A Bridge runs every source
+  record whatever it answers. Choosing among adapters is the caller's, holding
+  that answer.
 - **A schema's `xs:include` and `xs:import` resolve against the schema's own
   IRI**, through the host, and only to files in the adapter package. Nothing is
   fetched.
