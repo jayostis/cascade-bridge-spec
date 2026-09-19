@@ -76,3 +76,6 @@ A step names an element in no namespace by that name. A step names an element
 in a namespace by `*[local-name()='…' and namespace-uri()='…']`, because an
 XPath carries no prefix bindings and a selector is read where nothing can
 supply them.
+
+A finding a Bridge makes about the document rather than about a record selects
+the document element: that one step, and nothing below it.
