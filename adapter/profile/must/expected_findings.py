@@ -52,6 +52,15 @@ def selected(node, xpath, etree, document_name):
     return chosen[0]
 
 
+def inside(record, node, etree):
+    element = node if etree.iselement(node) else getattr(node, "getparent", lambda: None)()
+    while element is not None:
+        if element is record:
+            return True
+        element = element.getparent()
+    return False
+
+
 def local_name_of(node):
     tag = getattr(node, "tag", None)
     return tag.rpartition("}")[2] if isinstance(tag, str) else None
@@ -93,9 +102,16 @@ def unselected(graph, document, document_name, source, record_name, etree):
         refined = graph.value(selector, OA.refinedBy)
         if refined is None:
             continue
-        within = selected(record, str(graph.value(refined, RDF.value)), etree, document_name)
+        refinement = str(graph.value(refined, RDF.value))
+        within = selected(record, refinement, etree, document_name)
         if isinstance(within, Fault):
             yield within
+            continue
+        if not inside(record, within, etree):
+            yield (
+                f"{refinement} selects a node of {document_name} outside {xpath}, "
+                "where a refinement selects a node of the record its selector names"
+            )
 
 
 def faulty(crate):

@@ -79,6 +79,25 @@ def test_reports_a_refined_selector_that_selects_more_than_one_node_of_its_recor
     )
 
 
+def test_reports_a_refined_selector_that_selects_a_node_of_another_record(package):
+    package.write(
+        FINDINGS,
+        finding(record="/ExampleRecordSet/ExampleRecord[2]", refined="/ExampleRecordSet/ExampleRecord[1]/Note"),
+    )
+    assert (
+        "/ExampleRecordSet/ExampleRecord[1]/Note selects a node of example-0001.xml outside "
+        "/ExampleRecordSet/ExampleRecord[2], where a refinement selects a node of the record"
+    ) in "\n".join(expected_findings.faulty(package.crate))
+
+
+def test_reports_nothing_for_a_refined_selector_that_names_its_own_record_from_the_document_root(package):
+    package.write(
+        FINDINGS,
+        finding(record="/ExampleRecordSet/ExampleRecord[2]", refined="/ExampleRecordSet/ExampleRecord[2]/Note"),
+    )
+    assert not list(expected_findings.faulty(package.crate))
+
+
 def test_reports_nothing_for_a_refined_selector_that_selects_an_attribute(package):
     package.write(FINDINGS, finding(refined="@Version"))
     assert not list(expected_findings.faulty(package.crate))
