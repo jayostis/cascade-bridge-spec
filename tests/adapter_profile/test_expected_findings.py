@@ -143,24 +143,22 @@ def test_reports_a_record_selector_that_selects_a_text_node_as_a_node_that_is_no
     ) in "\n".join(expected_findings.faulty(package.crate))
 
 
-def test_reports_a_record_selector_that_selects_the_document_element_rather_than_a_record(package):
+def test_reports_nothing_for_a_finding_about_the_document_selecting_the_document_element(package):
     package.write(FINDINGS, finding(record="/ExampleRecordSet", refined=None))
-    assert (
-        "/ExampleRecordSet selects ExampleRecordSet of example-0001.xml, where a record's selector selects "
-        "ExampleRecord, the adapter's bridge:elementNameOfEachRecord"
-    ) in "\n".join(expected_findings.faulty(package.crate))
+    assert not list(expected_findings.faulty(package.crate))
 
 
 def test_reports_a_record_selector_that_selects_an_element_inside_a_record(package):
     package.write(FINDINGS, finding(record="/ExampleRecordSet/ExampleRecord[1]/Label", refined=None))
     assert (
-        "selects Label of example-0001.xml, where a record's selector selects "
-        "ExampleRecord, the adapter's bridge:elementNameOfEachRecord"
+        "selects Label of example-0001.xml, where a finding is about the document, selecting its "
+        "document element, or about a record, selecting ExampleRecord, the adapter's "
+        "bridge:elementNameOfEachRecord"
     ) in "\n".join(expected_findings.faulty(package.crate))
 
 
 def test_holds_a_record_selector_to_no_element_name_when_the_adapter_declares_none(package):
-    package.write(FINDINGS, finding(record="/ExampleRecordSet", refined=None))
+    package.write(FINDINGS, finding(record="/ExampleRecordSet/ExampleRecord[1]/Label[1]", refined=None))
     crate = package.crate
     crate.graph.remove((crate.root, BRIDGE.elementNameOfEachRecord, None))
     assert not list(expected_findings.faulty(crate))

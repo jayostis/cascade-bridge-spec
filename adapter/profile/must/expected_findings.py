@@ -11,6 +11,7 @@ from rocrate_validator.requirements.python import PyFunctionCheck, check, requir
 
 from _crate import file_name_of
 from _findings import report_findings
+from _selectors import local_name_of, selector_of
 from _terms import BRIDGE, MF, OA
 
 SHAPES = Path(__file__).resolve().parents[3] / "shapes" / "bridge.shapes.ttl"
@@ -61,33 +62,8 @@ def inside(record, node, etree):
     return False
 
 
-def local_name_of(node):
-    tag = getattr(node, "tag", None)
-    return tag.rpartition("}")[2] if isinstance(tag, str) else None
-
-
-def namespace_of(node):
-    tag = getattr(node, "tag", "")
-    return tag[1:].partition("}")[0] if isinstance(tag, str) and tag.startswith("{") else ""
-
-
-def step_of(element, indexed):
-    name = local_name_of(element)
-    namespace = namespace_of(element)
-    written = name if not namespace else f"*[local-name()='{name}' and namespace-uri()='{namespace}']"
-    if not indexed:
-        return written
-    parent = element.getparent()
-    alike = [other for other in parent if other.tag == element.tag]
-    return f"{written}[{alike.index(element) + 1}]"
-
-
-def selector_of(record):
-    steps, element = [], record
-    while element is not None:
-        steps.append(step_of(element, element.getparent() is not None))
-        element = element.getparent()
-    return "/" + "/".join(reversed(steps))
+def about_the_document(document, xpath):
+    return xpath == selector_of(document.getroot())
 
 
 def unselected(graph, document, document_name, source, record_name, etree):
@@ -117,19 +93,21 @@ def unselected(graph, document, document_name, source, record_name, etree):
                 "where a record's selector selects the record"
             )
             continue
-        if record_name and found != record_name:
-            yield (
-                f"{xpath} selects {found} of {document_name}, where a record's selector selects "
-                f"{record_name}, the adapter's bridge:elementNameOfEachRecord"
-            )
-            continue
-        written = selector_of(record)
-        if xpath != written:
-            yield (
-                f"{xpath} selects the record {written} names, where a record's selector is the XPath "
-                "from the document element to the record, each step below it carrying its position"
-            )
-            continue
+        if not about_the_document(document, xpath):
+            if record_name and found != record_name:
+                yield (
+                    f"{xpath} selects {found} of {document_name}, where a finding is about the document, "
+                    f"selecting its document element, or about a record, selecting {record_name}, "
+                    "the adapter's bridge:elementNameOfEachRecord"
+                )
+                continue
+            written = selector_of(record)
+            if xpath != written:
+                yield (
+                    f"{xpath} selects the record {written} names, where a record's selector is the XPath "
+                    "from the document element to the record, each step below it carrying its position"
+                )
+                continue
         refined = graph.value(selector, OA.refinedBy)
         if refined is None:
             continue
