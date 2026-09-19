@@ -261,3 +261,14 @@ def test_reports_a_findings_query_binding_the_annotation_to_a_variable(package):
 def test_holds_a_findings_query_to_nothing_a_variable_binds(package):
     package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_WHOSE_REASON_SEVERITY_AND_XPATH_ARE_BOUND)
     assert not list(queries.malformed(package.crate))
+
+
+A_FINDINGS_QUERY_WHOSE_FINDING_IS_ABOUT_THE_RECORD_ITSELF = findings_query("""  [] a oa:Annotation ;
+    oa:hasTarget [ oa:hasSource bridge:thisRecord ] ;
+    oa:hasBody [ a oa:TextualBody ; rdf:value "the record is the finding" ] ;
+    sh:resultSeverity sh:Warning .""")
+
+
+def test_reports_nothing_for_a_findings_query_constructing_no_selector(package):
+    package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_WHOSE_FINDING_IS_ABOUT_THE_RECORD_ITSELF)
+    assert not list(queries.malformed(package.crate))

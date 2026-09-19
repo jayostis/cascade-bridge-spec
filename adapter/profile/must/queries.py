@@ -4,7 +4,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from rdflib import BNode, Graph, Variable
-from rdflib.namespace import RDF
+from rdflib.namespace import RDF, SH
 from rdflib.plugins.sparql import prepareQuery
 from rocrate_validator.models import ValidationContext
 from rocrate_validator.requirements.python import PyFunctionCheck, check, requirement
@@ -46,6 +46,14 @@ def constructs(template):
     for triple in template:
         graph.add(tuple(term(node) for node in triple))
     return graph, set(standing_for.values())
+
+
+def shapes_less_the_selector_the_bridge_adds():
+    """A finding whose query constructs no selector is about the record itself."""
+    shapes = Graph().parse(SHAPES, format="turtle")
+    for constraint in shapes.subjects(SH.path, OA.hasSelector):
+        shapes.remove((constraint, SH.minCount, None))
+    return shapes
 
 
 def malformed(crate):
@@ -91,7 +99,7 @@ def malformed(crate):
                 "written for that one finding: a variable is bound to a node the lift already holds, so two "
                 "solutions binding it alike stand every finding of both on one node"
             )
-        shapes = Graph().parse(SHAPES, format="turtle")
+        shapes = shapes_less_the_selector_the_bridge_adds()
         constructed_graph, standing_for = constructs(template)
         for message in unmet(constructed_graph, shapes, standing_for):
             yield f"{name}: {message}"
