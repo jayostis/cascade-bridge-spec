@@ -8,6 +8,7 @@ from rocrate_validator.requirements.python import PyFunctionCheck, check, requir
 
 from _crate import file_name_of
 from _findings import report_findings
+from _selectors import expected_findings_file_of, selector_of, violations_recorded_in
 from _terms import BRIDGE, MF, SCHEMA
 
 XSD_MEDIA_TYPES = {"application/xml", "text/xml"}
@@ -66,9 +67,10 @@ class XsdSchemas:
             return f"{path.name} is declared XML and does not compile as an XSD 1.0 schema: {error}"
 
 
-def measured_against(xsd, schema_iri, declared_by, nodes, name):
-    for what, node in nodes:
-        if xsd.validate(node):
+def measured_against(xsd, schema_iri, declared_by, nodes, name, recorded):
+    """A failure the entry's expected findings record as a violation of that node is the adapter's, not a fault."""
+    for what, selector, node in nodes:
+        if xsd.validate(node) or selector in recorded:
             continue
         lines = "\n".join(f"line {entry.line}: {entry.message}" for entry in xsd.error_log)
         yield (f"{name}: {what} does not validate against {file_name_of(schema_iri)}, {declared_by}\n{lines}")
@@ -114,13 +116,16 @@ def invalid(crate):
         except etree.Error as error:
             yield f"{name}: {input_path.name} is not well-formed XML\n{error}"
             continue
+        findings_file = expected_findings_file_of(crate, test)
+        recorded = set() if findings_file is None else violations_recorded_in(findings_file)
         if isinstance(against_document, etree.XMLSchema):
             yield from measured_against(
                 against_document,
                 document_schema,
                 DOCUMENT_SCHEMA,
-                [(input_path.name, document)],
+                [(input_path.name, selector_of(document.getroot()), document)],
                 name,
+                recorded,
             )
         if not isinstance(against_records, etree.XMLSchema):
             continue
@@ -138,14 +143,15 @@ def invalid(crate):
             against_records,
             source_schema,
             SOURCE_SCHEMA,
-            [(f"{document.getpath(record)} of {input_path.name}", record) for record in records],
+            [(f"{document.getpath(record)} of {input_path.name}", selector_of(record), record) for record in records],
             name,
+            recorded,
         )
 
 
 @requirement(name="Inputs against the declared schemas")
 class Inputs(PyFunctionCheck):
-    """Every committed input validates whole against its envelope's document schema, and record by record against the source schema."""
+    """Every committed input validates whole against its envelope's document schema, and record by record against the source schema, except where the entry's expected findings record the failure."""
 
     @check(name="every input and every record in it validates against the declared schema")
     def run_check(self, context: ValidationContext) -> bool:

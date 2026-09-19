@@ -114,10 +114,19 @@
           "@id": "fixtures/in/example-0002.xml"
         },
         {
+          "@id": "fixtures/in/example-0003.xml"
+        },
+        {
           "@id": "fixtures/expected/example-0001.ttl"
         },
         {
+          "@id": "fixtures/expected/example-0003.ttl"
+        },
+        {
           "@id": "fixtures/findings/example-0001.ttl"
+        },
+        {
+          "@id": "fixtures/findings/example-0003.ttl"
         },
         {
           "@id": "https://example.org/synthetic-adapter/releases/example-release-2026-01.xml.gz"
@@ -256,6 +265,45 @@
       "md5": "a8788709287838a1c7c689737307cdde",
       "isBasedOn": {
         "@id": "https://example.org/synthetic-adapter/records/example-0002.xml"
+      },
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      }
+    },
+    {
+      "@id": "fixtures/in/example-0003.xml",
+      "@type": "File",
+      "name": "Synthetic input whose document fails its schema",
+      "encodingFormat": "application/xml",
+      "contentSize": "301",
+      "sha256": "700b2f64dad66dac05f17dbea1d2afd79d7876d0de7208f53adf432852146bfa",
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      }
+    },
+    {
+      "@id": "fixtures/expected/example-0003.ttl",
+      "@type": "File",
+      "name": "Expected graph for example-0003",
+      "encodingFormat": "text/turtle",
+      "contentSize": "377",
+      "sha256": "5c3cb9076b2ff83c4d3a7505a0111a8a87bfb4de35f75ae2bfc7ea7ff7410457",
+      "isBasedOn": {
+        "@id": "fixtures/in/example-0003.xml"
+      },
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      }
+    },
+    {
+      "@id": "fixtures/findings/example-0003.ttl",
+      "@type": "File",
+      "name": "Expected findings for example-0003",
+      "encodingFormat": "text/turtle",
+      "contentSize": "445",
+      "sha256": "aa73da02a6bc06316897acf8d6fb4ff8264e57ca1fb3b2c13087e4674b33b6de",
+      "isBasedOn": {
+        "@id": "fixtures/in/example-0003.xml"
       },
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"

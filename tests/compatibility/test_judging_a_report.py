@@ -7,7 +7,7 @@ from compatibility_tool.judge import judge_report
 from compatibility_world import SYNTHETIC_ADAPTER
 
 MANIFEST = (SYNTHETIC_ADAPTER / "fixtures" / "manifest.ttl").resolve().as_uri()
-EVERY_TEST = ("example-0001", "example-0002", "example-release-2026-01")
+EVERY_TEST = ("example-0001", "example-0002", "example-0003", "example-release-2026-01")
 
 
 def earl(tmp_path, outcomes):
@@ -22,21 +22,21 @@ def earl(tmp_path, outcomes):
 
 
 def test_a_report_with_every_test_passed_or_undecided_holds(tmp_path):
-    report = earl(tmp_path, dict(zip(EVERY_TEST, ("passed", "cantTell", "untested"), strict=True)))
+    report = earl(tmp_path, dict(zip(EVERY_TEST, ("passed", "cantTell", "passed", "untested"), strict=True)))
     verdict = judge_report(report, SYNTHETIC_ADAPTER)
     assert verdict.holds
-    assert verdict.tally == {"passed": 1, "cantTell": 1, "untested": 1}
-    assert verdict.describe() == "1 cantTell, 1 passed, 1 untested, covering all 3 of the manifest's tests"
+    assert verdict.tally == {"passed": 2, "cantTell": 1, "untested": 1}
+    assert verdict.describe() == "1 cantTell, 2 passed, 1 untested, covering all 4 of the manifest's tests"
 
 
 @pytest.mark.parametrize("outcome", ["failed", "inapplicable"])
 def test_a_report_with_a_failing_outcome_does_not_hold(tmp_path, outcome):
-    report = earl(tmp_path, dict(zip(EVERY_TEST, (outcome, "passed", "passed"), strict=True)))
+    report = earl(tmp_path, dict(zip(EVERY_TEST, (outcome, "passed", "passed", "passed"), strict=True)))
     assert not judge_report(report, SYNTHETIC_ADAPTER).holds
 
 
 def test_an_outcome_outside_earls_five_does_not_hold(tmp_path):
-    report = earl(tmp_path, dict(zip(EVERY_TEST, ("passed", "passed", "sortOf"), strict=True)))
+    report = earl(tmp_path, dict(zip(EVERY_TEST, ("passed", "passed", "passed", "sortOf"), strict=True)))
     verdict = judge_report(report, SYNTHETIC_ADAPTER)
     assert not verdict.holds
     assert verdict.unknown == ["sortOf"]
@@ -45,7 +45,11 @@ def test_an_outcome_outside_earls_five_does_not_hold(tmp_path):
 def test_a_report_missing_tests_of_the_manifest_does_not_hold(tmp_path):
     verdict = judge_report(earl(tmp_path, {"example-0001": "passed"}), SYNTHETIC_ADAPTER)
     assert not verdict.holds
-    assert [entry.rsplit("#", 1)[-1] for entry in verdict.missing] == ["example-0002", "example-release-2026-01"]
+    assert [entry.rsplit("#", 1)[-1] for entry in verdict.missing] == [
+        "example-0002",
+        "example-0003",
+        "example-release-2026-01",
+    ]
 
 
 @pytest.mark.parametrize(

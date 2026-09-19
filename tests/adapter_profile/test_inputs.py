@@ -33,6 +33,20 @@ def test_reports_an_input_that_does_not_satisfy_its_schema(package):
     assert "does not validate against" in "\n".join(inputs.invalid(package.crate))
 
 
+def test_reports_nothing_for_a_schema_failure_its_entrys_expected_findings_record(crate):
+    assert not [message for message in inputs.invalid(crate) if "example-0003" in message]
+
+
+def test_reports_a_schema_failure_its_entrys_expected_findings_record_at_a_lesser_severity(package):
+    package.edit("fixtures/findings/example-0003.ttl", "sh:Violation", "sh:Warning")
+    assert "example-0003.xml does not validate against example-set.xsd" in "\n".join(inputs.invalid(package.crate))
+
+
+def test_reports_a_schema_failure_its_entrys_expected_findings_record_against_another_node(package):
+    package.edit("fixtures/findings/example-0003.ttl", '"/ExampleRecordSet"', '"/ExampleRecordSet/ExampleRecord[1]"')
+    assert "example-0003.xml does not validate against example-set.xsd" in "\n".join(inputs.invalid(package.crate))
+
+
 def test_reports_a_record_that_fails_the_source_schema_where_the_document_schema_passes_the_document(package):
     package.write("schema/example-set.xsd", A_DOCUMENT_SCHEMA_HOLDING_EVERY_RECORD_TO_NOTHING)
     package.edit("fixtures/in/example-0001.xml", 'Version="1"', 'Version="first"')
