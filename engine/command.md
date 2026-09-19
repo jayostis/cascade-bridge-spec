@@ -32,3 +32,7 @@ caller holds rather than one the adapter committed, and emits their union as one
 graph: Turtle by default, `--format ntriples` for a reader that consumes a
 stream, on standard output unless `--out` names a file. Standard output carries
 the graph and nothing else.
+
+**The exit code is the whole of what a caller learns**, because `convert` writes
+no report: zero when the graph was produced, non-zero when it was not, and
+standard output carries nothing in that case.

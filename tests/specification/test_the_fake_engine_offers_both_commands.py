@@ -38,3 +38,14 @@ def test_convert_writes_the_graph_to_the_file_out_names_instead(tmp_path):
     run = engine("convert", str(ADAPTER), str(DOCUMENT), "--out", str(written))
     assert run.stdout == ""
     assert Graph().parse(written, format="turtle")
+
+
+def test_convert_exits_non_zero_and_writes_no_graph_when_the_document_is_not_one(tmp_path):
+    run = subprocess.run(
+        [sys.executable, str(ENGINE), "convert", str(ADAPTER), str(tmp_path / "absent.xml")],
+        capture_output=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+    assert run.returncode != 0, run.stdout + run.stderr
+    assert run.stdout == ""
