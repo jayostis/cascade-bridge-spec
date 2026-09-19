@@ -15,6 +15,14 @@ A_DOCUMENT_SCHEMA_HOLDING_EVERY_RECORD_TO_NOTHING = """<?xml version="1.0" encod
 </xs:schema>
 """
 
+AN_INPUT_IN_THE_SCHEMA_LANGUAGE_THIS_LINT_CANNOT_READ = '{"ExampleRecord": [{"Accession": "EX000001"}]}\n'
+
+
+def schemas_of(crate):
+    return set(crate.graph.objects(crate.root, BRIDGE.sourceSchema)) | set(
+        crate.graph.objects(None, BRIDGE.documentSchema)
+    )
+
 
 def test_reports_nothing_for_an_input_that_satisfies_its_envelopes_schema(crate):
     assert not list(inputs.invalid(crate))
@@ -57,13 +65,18 @@ def test_reports_a_source_schema_no_record_was_validated_against_for_want_of_an_
     ) in "\n".join(inputs.invalid(crate))
 
 
-def test_holds_a_package_to_nothing_when_the_schema_language_is_one_it_cannot_read(crate):
-    schemas = set(crate.graph.objects(crate.root, BRIDGE.sourceSchema)) | set(
-        crate.graph.objects(None, BRIDGE.documentSchema)
-    )
-    for schema in schemas:
-        crate.graph.set((schema, SCHEMA.encodingFormat, Literal("application/json")))
+def test_holds_a_package_to_nothing_when_the_schema_language_is_one_it_cannot_read(package):
+    crate = package.crate
+    for schema in schemas_of(crate):
+        crate.graph.set((schema, SCHEMA.encodingFormat, Literal("application/schema+json")))
+    for _, source, _ in inputs.committed_inputs(crate):
+        crate.file_at(source).write_text(AN_INPUT_IN_THE_SCHEMA_LANGUAGE_THIS_LINT_CANNOT_READ, encoding="utf-8")
     assert not list(inputs.invalid(crate))
+
+
+def test_reports_an_input_that_is_not_well_formed_xml_where_the_schema_is_one_it_reads(package):
+    package.edit("fixtures/in/example-0001.xml", "</ExampleRecordSet>", "")
+    assert "example-0001.xml is not well-formed XML" in "\n".join(inputs.invalid(package.crate))
 
 
 def test_reports_a_schema_that_is_not_a_file_in_the_package(package):
@@ -74,19 +87,13 @@ def test_reports_a_schema_that_is_not_a_file_in_the_package(package):
 
 
 def test_reports_a_schema_declared_in_a_media_type_it_cannot_validate_against(crate):
-    schemas = set(crate.graph.objects(crate.root, BRIDGE.sourceSchema)) | set(
-        crate.graph.objects(None, BRIDGE.documentSchema)
-    )
-    for schema in schemas:
+    for schema in schemas_of(crate):
         crate.graph.set((schema, SCHEMA.encodingFormat, Literal("text/plain")))
     assert "which this lint cannot validate against" in "\n".join(inputs.invalid(crate))
 
 
 def test_reports_a_schema_that_declares_no_media_type(crate):
-    schemas = set(crate.graph.objects(crate.root, BRIDGE.sourceSchema)) | set(
-        crate.graph.objects(None, BRIDGE.documentSchema)
-    )
-    for schema in schemas:
+    for schema in schemas_of(crate):
         crate.graph.remove((schema, SCHEMA.encodingFormat, None))
     assert "declares no encodingFormat" in "\n".join(inputs.invalid(crate))
 

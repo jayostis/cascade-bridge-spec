@@ -12,6 +12,8 @@ from _terms import BRIDGE, MF, SCHEMA
 
 XSD_MEDIA_TYPES = {"application/xml", "text/xml"}
 JSON_SCHEMA_MEDIA_TYPES = {"application/json", "application/schema+json"}
+DOCUMENT_SCHEMA = "the envelope's bridge:documentSchema"
+SOURCE_SCHEMA = "the adapter's bridge:sourceSchema"
 
 
 def records_of(document, element_name):
@@ -64,13 +66,7 @@ class XsdSchemas:
             return f"{path.name} is declared XML and does not compile as an XSD 1.0 schema: {error}"
 
 
-def measured_against(schemas, schema_iri, declared_by, nodes, name):
-    xsd = schemas.lookup(schema_iri, declared_by)
-    if xsd is None:
-        return
-    if isinstance(xsd, str):
-        yield f"{name}: {xsd}"
-        return
+def measured_against(xsd, schema_iri, declared_by, nodes, name):
     for what, node in nodes:
         if xsd.validate(node):
             continue
@@ -106,20 +102,27 @@ def invalid(crate):
         if input_path is None:
             yield f"{name}: bridge:input names {source}, which is not a file in this package"
             continue
+        against_document = None if document_schema is None else schemas.lookup(document_schema, DOCUMENT_SCHEMA)
+        against_records = None if source_schema is None else schemas.lookup(source_schema, SOURCE_SCHEMA)
+        for fault in (against_document, against_records):
+            if isinstance(fault, str):
+                yield f"{name}: {fault}"
+        if not any(isinstance(xsd, etree.XMLSchema) for xsd in (against_document, against_records)):
+            continue
         try:
             document = etree.parse(str(input_path))
         except etree.Error as error:
             yield f"{name}: {input_path.name} is not well-formed XML\n{error}"
             continue
-        if document_schema is not None:
+        if isinstance(against_document, etree.XMLSchema):
             yield from measured_against(
-                schemas,
+                against_document,
                 document_schema,
-                "the envelope's bridge:documentSchema",
+                DOCUMENT_SCHEMA,
                 [(input_path.name, document)],
                 name,
             )
-        if source_schema is None:
+        if not isinstance(against_records, etree.XMLSchema):
             continue
         if not record_name:
             yield (
@@ -132,9 +135,9 @@ def invalid(crate):
         if not records:
             yield (f"{name}: {input_path.name} holds no {record_name}, the adapter's bridge:elementNameOfEachRecord")
         yield from measured_against(
-            schemas,
+            against_records,
             source_schema,
-            "the adapter's bridge:sourceSchema",
+            SOURCE_SCHEMA,
             [(f"{document.getpath(record)} of {input_path.name}", record) for record in records],
             name,
         )
