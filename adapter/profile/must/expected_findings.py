@@ -66,6 +66,30 @@ def local_name_of(node):
     return tag.rpartition("}")[2] if isinstance(tag, str) else None
 
 
+def namespace_of(node):
+    tag = getattr(node, "tag", "")
+    return tag[1:].partition("}")[0] if isinstance(tag, str) and tag.startswith("{") else ""
+
+
+def step_of(element, indexed):
+    name = local_name_of(element)
+    namespace = namespace_of(element)
+    written = name if not namespace else f"*[local-name()='{name}' and namespace-uri()='{namespace}']"
+    if not indexed:
+        return written
+    parent = element.getparent()
+    alike = [other for other in parent if other.tag == element.tag]
+    return f"{written}[{alike.index(element) + 1}]"
+
+
+def selector_of(record):
+    steps, element = [], record
+    while element is not None:
+        steps.append(step_of(element, element.getparent() is not None))
+        element = element.getparent()
+    return "/" + "/".join(reversed(steps))
+
+
 def unselected(graph, document, document_name, source, record_name, etree):
     for annotation in graph.subjects(RDF.type, OA.Annotation):
         target = graph.value(annotation, OA.hasTarget)
@@ -97,6 +121,13 @@ def unselected(graph, document, document_name, source, record_name, etree):
             yield (
                 f"{xpath} selects {found} of {document_name}, where a record's selector selects "
                 f"{record_name}, the adapter's bridge:elementNameOfEachRecord"
+            )
+            continue
+        written = selector_of(record)
+        if xpath != written:
+            yield (
+                f"{xpath} selects the record {written} names, where a record's selector is the XPath "
+                "from the document element to the record, each step below it carrying its position"
             )
             continue
         refined = graph.value(selector, OA.refinedBy)

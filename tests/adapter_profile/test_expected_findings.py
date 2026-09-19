@@ -182,3 +182,11 @@ def test_evaluates_no_selector_for_an_entry_naming_no_input(crate):
     for test in crate.entries:
         crate.graph.remove((crate.graph.value(test, MF.action), BRIDGE.input, None))
     assert not [message for message in expected_findings.faulty(crate) if "selects" in message]
+
+
+def test_reports_a_record_selector_that_names_its_record_another_way(package):
+    package.write(FINDINGS, finding(record="/ExampleRecordSet/*[local-name()='ExampleRecord'][1]"))
+    assert (
+        "selects the record /ExampleRecordSet/ExampleRecord[1] names, where a record's selector "
+        "is the XPath from the document element to the record"
+    ) in "\n".join(expected_findings.faulty(package.crate))

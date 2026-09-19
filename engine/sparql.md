@@ -19,13 +19,11 @@ triples in the shape of SPARQL Anything's Facade-X. Every node is a blank node.
   is not an attribute.
 - **An element's children**, elements and text in document order, are the
   objects of `rdf:_1`, `rdf:_2`, … from its node. A text child is a plain
-  string literal holding its characters verbatim. Character data and CDATA
-  sections with nothing but dropped content between them are one text child.
+  string literal holding its characters verbatim.
 - **Dropped:** a text child made only of whitespace, comments, processing
   instructions, the document type declaration and the XML declaration. What is
-  dropped takes no number. Whitespace is XML's `S` production: space, tab,
-  carriage return and line feed, and no other character. A no-break space is
-  text, alone or beside spaces.
+  dropped takes no number. Whitespace is XML's `S` production, and no other
+  character.
 
 How a non-ASCII name is written in an IRI is not specified.
 
@@ -34,8 +32,8 @@ How a non-ASCII name is written in an IRI is not specified.
 **A mapping and a findings query** run over one source record at a time, lifted
 with the record's element as the lift root: nothing outside the record is lifted.
 A record is an element whose local name is the adapter's
-`bridge:elementNameOfEachRecord`; a record's namespace, and a record inside
-another, are not specified.
+`bridge:elementNameOfEachRecord`, in any namespace or none; a record inside
+another is not specified.
 
 **The detect query** runs over the document's *envelope skeleton*: the lift of
 the whole document, with the document element as the lift root, except that
@@ -46,8 +44,7 @@ is then its type triples alone.
 
 ## Running an adapter
 
-For each source record of a document the adapter's `bridge:detectQuery`
-accepts, in document order, a Bridge:
+For each source record of a document, in document order, a Bridge:
 
 1. lifts the record into the default graph of an empty dataset;
 2. loads every `bridge:table` declared `text/turtle` into the same default
@@ -70,7 +67,12 @@ finding the query produces, so which selector standing on it belongs to which
 finding is unrecoverable; a query says the record itself by targeting
 `[ oa:hasSource bridge:thisRecord ]` and constructing no selector.
 
-A record's selector is its position: `/` the envelope's document root element,
-`/` the record element, `[n]`, n counting records of that name from 1 in
-document order. Where the document root element is the record element, the
-selector is that one step and not two.
+A record's selector is the XPath from the document element to the record: a
+step for the document element, then one for each element down to and including
+the record, however deep it is. Every step below the document element carries
+`[n]`, its position among its own siblings of that name, counting from 1.
+
+A step names an element in no namespace by that name. A step names an element
+in a namespace by `*[local-name()='…' and namespace-uri()='…']`, because an
+XPath carries no prefix bindings and a selector is read where nothing can
+supply them.
