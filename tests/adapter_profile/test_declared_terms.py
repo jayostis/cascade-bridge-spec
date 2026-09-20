@@ -43,3 +43,7 @@ def test_the_vocabulary_declares_the_term_by_which_an_adapter_names_its_gap_sche
 
 def test_the_vocabulary_declares_the_predicate_by_which_a_gap_names_the_term_that_would_close_it():
     assert str(BRIDGE.closedBy) in declared_terms.declared()
+
+
+def test_the_vocabulary_declares_the_predicate_by_which_a_finding_says_how_many_nodes_stand_at_its_path():
+    assert str(BRIDGE.occurrences) in declared_terms.declared()

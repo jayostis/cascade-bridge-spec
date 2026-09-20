@@ -4,10 +4,11 @@ from _findings import SHAPES, unmet
 
 BASE = "https://example.org/synthetic-adapter/fixtures/findings/example-0001.ttl"
 
-PREFIXES = """@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix sh:  <http://www.w3.org/ns/shacl#> .
-@prefix oa:  <http://www.w3.org/ns/oa#> .
-@prefix ex:  <https://example.org/synthetic-adapter/v1#> .
+PREFIXES = """@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix sh:     <http://www.w3.org/ns/shacl#> .
+@prefix oa:     <http://www.w3.org/ns/oa#> .
+@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+@prefix ex:     <https://example.org/synthetic-adapter/v1#> .
 """
 
 TARGET = """oa:hasTarget [
@@ -16,7 +17,7 @@ TARGET = """oa:hasTarget [
   ]"""
 
 
-def finding(body="ex:no-term-for-a-free-text-note", motivation="oa:classifying", value=None):
+def finding(body="ex:no-term-for-a-free-text-note", motivation="oa:classifying", value=None, occurrences=None):
     written = ["[] a oa:Annotation", TARGET, "sh:resultSeverity sh:Info"]
     if body is not None:
         written.append(f"oa:hasBody {body}")
@@ -24,6 +25,8 @@ def finding(body="ex:no-term-for-a-free-text-note", motivation="oa:classifying",
         written.append(f"oa:motivatedBy {motivation}")
     if value is not None:
         written.append(f"sh:value {value}")
+    if occurrences is not None:
+        written.append(f"bridge:occurrences {occurrences}")
     return PREFIXES + "\n" + " ;\n  ".join(written) + " .\n"
 
 
@@ -78,3 +81,18 @@ def test_rejects_a_finding_carrying_two_source_values():
 
 def test_accepts_a_finding_whose_body_is_an_iri_classifying_it_and_the_source_value_that_made_it_fire():
     assert not said_about(finding(value='"clinically significant"'))
+
+
+def test_rejects_a_finding_carrying_two_occurrence_counts():
+    assert "bridge:occurrences" in said_about(finding(occurrences="2, 3"))
+    assert not said_about(finding(occurrences="2"))
+
+
+def test_rejects_a_finding_whose_occurrence_count_is_no_integer():
+    assert "bridge:occurrences" in said_about(finding(occurrences='"two"'))
+    assert not said_about(finding(occurrences="297"))
+
+
+def test_rejects_a_finding_whose_occurrence_count_is_one_where_a_count_of_one_is_written_by_omitting_it():
+    assert "bridge:occurrences" in said_about(finding(occurrences="1"))
+    assert not said_about(finding())

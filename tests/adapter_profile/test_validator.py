@@ -164,6 +164,30 @@ def no_accounting_named_and_no_census_expected(package):
     crate.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8", newline="")
 
 
+A_FINDING_COUNTING_THE_ONE_NODE_IT_STANDS_FOR = """
+[] a oa:Annotation ;
+  oa:hasTarget [
+    oa:hasSource <../in/example-0001.xml> ;
+    oa:hasSelector [
+      a oa:XPathSelector ;
+      rdf:value "/ExampleRecordSet/ExampleRecord[1]" ;
+      oa:refinedBy [ a oa:XPathSelector ; rdf:value "Note[1]" ]
+    ]
+  ] ;
+  oa:hasBody ex:no-term-for-a-free-text-note ;
+  oa:motivatedBy oa:classifying ;
+  sh:value "/ExampleRecord/Note" ;
+  <https://ns.cascadeprotocol.org/bridge/v1-draft#occurrences> 1 ;
+  sh:resultSeverity sh:Info .
+"""
+
+
+def a_finding_counting_the_one_node_it_stands_for(package):
+    written = (package.path / FINDINGS).read_text(encoding="utf-8")
+    package.write(FINDINGS, written + A_FINDING_COUNTING_THE_ONE_NODE_IT_STANDS_FOR)
+    restate_digest(package, FINDINGS)
+
+
 def profile_not_an_entity(package):
     package.edit(CRATE, '      "@type": ["CreativeWork", "Profile"],', '      "@type": "CreativeWork",')
 
@@ -266,6 +290,13 @@ def pin_not_a_data_entity(package):
             [],
             [],
             id="a source path naming a node in a namespace passes the profile",
+        ),
+        pytest.param(
+            a_finding_counting_the_one_node_it_stands_for,
+            False,
+            ["bridge:occurrences"],
+            [],
+            id="a count of one fails the profile, where a count of one is written by omitting it",
         ),
         pytest.param(
             undeclared_context_key,
