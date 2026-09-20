@@ -129,7 +129,6 @@ bridge:PathEntry a owl:Class ;
 
 bridge:sourcePath a owl:DatatypeProperty ;
   rdfs:label "source path"@en ;
-  rdfs:comment "The element and attribute names from the record element down to the node, the record element first, separated by '/', an attribute's last step written @name, no step carrying a position. The record element itself is no path."@en ;
   rdfs:domain bridge:PathEntry ;
   rdfs:range xsd:string ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .

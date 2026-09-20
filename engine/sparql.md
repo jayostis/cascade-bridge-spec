@@ -72,16 +72,16 @@ For each source record of a document, in document order, a Bridge:
 
 A path is the element and attribute names from the record element down to the
 node, the record element first, separated by `/`, an attribute's last step
-written `@name`, no step carrying a position. The record element itself is no
-path, so every census finding is refined under the record's selector. A path is
-the same under every envelope the adapter declares, because it starts at the
-record rather than at the document.
+written `@name`, no step carrying a position. A step names a node in a namespace
+as a selector's step does, an attribute's after its `@`. The record element
+itself is no path. A path is the same under every envelope the adapter declares.
 
-A census finding is addressed at the path's first occurrence in the record,
-refined under the record's selector as any other finding is, and carries
-`bridge:pathNotAccounted` as its body, the path as its `sh:value`, and
-`sh:Info` as its `sh:resultSeverity`. A finding about an attribute is refined
-onto the element the attribute stands on, and names the attribute in `sh:value`.
+A census finding is addressed at the path's first occurrence in the record and
+carries `bridge:pathNotAccounted` as its body, the path as its `sh:value`, and
+`sh:Info` as its `sh:resultSeverity`. It is refined under the record's selector
+as any other finding is, onto the element at that occurrence or, for an
+attribute, onto the element the attribute stands on. An attribute of the record
+element is refined no further.
 
 A `bridge:sourceAccounting` a crate names and a Bridge cannot read is an error,
 as one that does not parse is. Naming none is the silent case.
