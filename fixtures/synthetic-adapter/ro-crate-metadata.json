@@ -237,9 +237,9 @@
       "@type": "File",
       "name": "Example record XSD, pinned copy",
       "encodingFormat": "application/xml",
-      "contentSize": "1021",
-      "sha256": "3d57bb1912655f263e2dd18031e5cc0b6d46a74549fcafc47b347f50eb9f9bf1",
-      "md5": "904624d17c93dd1b46dfde317d9655f5",
+      "contentSize": "1281",
+      "sha256": "797adbc05938b7a66b13673c89095af80df24cd622003203934563ecf6217ff2",
+      "md5": "4c318ccf7f0cc46ae843604bed8229bd",
       "isBasedOn": {
         "@id": "https://example.org/synthetic-adapter/schema/example-record.xsd"
       },
@@ -383,10 +383,10 @@
     {
       "@id": "fixtures/in/example-0004.xml",
       "@type": "File",
-      "name": "Synthetic input carrying an element the accounting names nowhere",
+      "name": "Synthetic input carrying nodes the accounting names nowhere",
       "encodingFormat": "application/xml",
-      "contentSize": "351",
-      "sha256": "3389548884dfb448f163a75ad697140f0ba0d5d5b327b6ca4d49b3f53b73c52c",
+      "contentSize": "570",
+      "sha256": "e2b5e08456b58d21fb841dda2c8c56844b4c40a0c382b92144ac4c4784366dc6",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       }
@@ -410,8 +410,8 @@
       "@type": "File",
       "name": "Expected findings for example-0004",
       "encodingFormat": "text/turtle",
-      "contentSize": "631",
-      "sha256": "7223d9c509d10c007b62b167f317cdbb1c654bde29dff8572b2cd6cb2fb1e201",
+      "contentSize": "2401",
+      "sha256": "5f9c4f0761ea2a4763e6c6b64f5726343bb13718423e7acf9f9da3e40f2ffe0f",
       "isBasedOn": {
         "@id": "fixtures/in/example-0004.xml"
       },

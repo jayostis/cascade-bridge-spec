@@ -45,7 +45,7 @@
 
 <#example-0004> a bridge:IsomorphicConversionTest ;
   mf:name "example-0004" ;
-  rdfs:comment "A record carrying an element the adapter's bridge:sourceAccounting names nowhere: its findings are the census finding for that path, addressed at its first occurrence in the record." ;
+  rdfs:comment "A record carrying nodes the adapter's bridge:sourceAccounting names nowhere — an element, an attribute of a child element, an attribute of the record element, and an element and an attribute in a namespace: its findings are the census finding for each path, addressed at its first occurrence in the record." ;
   mf:action [
     bridge:input <in/example-0004.xml> ;
     bridge:envelope <../ro-crate-metadata.json#envelope-set>

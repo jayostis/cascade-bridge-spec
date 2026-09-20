@@ -10,16 +10,20 @@
       <xs:element name="Novelty" type="xs:string" minOccurs="0"/>
       <xs:element name="Status" type="xs:string" minOccurs="0"/>
       <xs:element name="AccessionAlias" type="xs:string" minOccurs="0"/>
+      <xs:any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
     </xs:sequence>
     <xs:attribute name="Accession" type="xs:string" use="required"/>
     <xs:attribute name="Version" type="xs:positiveInteger" use="required"/>
     <xs:attribute name="SchemaVersion" type="xs:string"/>
+    <xs:attribute name="Curated" type="xs:string"/>
+    <xs:anyAttribute namespace="##other" processContents="lax"/>
   </xs:complexType>
 
   <xs:complexType name="LabelType" mixed="true">
     <xs:sequence>
       <xs:element name="Emphasis" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
     </xs:sequence>
+    <xs:attribute name="lang" type="xs:string"/>
   </xs:complexType>
 
 </xs:schema>
