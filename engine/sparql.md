@@ -68,7 +68,24 @@ For each source record of a document, in document order, a Bridge:
    `oa:refinedBy`.
 5. adds, where the adapter names a `bridge:sourceAccounting`, one finding for
    each distinct path of the record that no `bridge:PathEntry` of that file
-   carries as its `bridge:sourcePath`. An adapter naming none gets none.
+   carries as its `bridge:sourcePath`. An adapter naming none gets none;
+6. adds, where the adapter names a `bridge:sourceAccounting`, one finding for
+   each distinct path of the record whose `bridge:PathEntry` names a gap that
+   reports. An adapter naming none gets none.
+
+A record's findings are the union of what its queries construct and what its
+entries emit. Where both report a gap at one node, both findings stand.
+
+A gap of kind `bridge:noPredicate`, `bridge:sourceLacksRequired` or
+`bridge:carriedWithLoss` is true of the path, and the entry naming it reports it.
+A gap of kind `bridge:valueNotMapped` or `bridge:schemaRuleUnnamed` is true of a
+value at the path, which no entry names, and reports nothing. An entry whose
+verdict is neither `bridge:carriedInPart` nor `bridge:noHome` names no gap.
+
+A finding an entry reports is addressed as a census finding is, and carries the
+gap as its body, `oa:classifying` as its `oa:motivatedBy`, the path as its
+`sh:value`, the same `bridge:occurrences`, and as its `sh:resultSeverity` the
+`sh:resultSeverity` the gap concept declares, `sh:Info` where it declares none.
 
 A path is the element and attribute names from the record element down to the
 node, the record element first, separated by `/`, an attribute's last step
@@ -82,6 +99,9 @@ carries `bridge:pathNotAccounted` as its body, the path as its `sh:value`, and
 as any other finding is, onto the element at that occurrence or, for an
 attribute, onto the element the attribute stands on. An attribute of the record
 element is refined no further.
+
+A finding addressed at a path carries `bridge:occurrences`, how many nodes of the
+record stand at that path, an `xsd:integer` of 2 or more, omitted where it is 1.
 
 A `bridge:sourceAccounting` a crate names and a Bridge cannot read is an error,
 as one that does not parse is. Naming none is the silent case.
