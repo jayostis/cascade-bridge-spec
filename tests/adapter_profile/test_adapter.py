@@ -46,3 +46,17 @@ def test_reports_a_crate_whose_gap_scheme_is_declared_in_another_media_type(crat
     scheme = crate.graph.value(crate.root, BRIDGE.gapScheme)
     crate.graph.set((scheme, SCHEMA.encodingFormat, Literal("text/plain")))
     assert "A gap scheme is declared text/turtle." in shape_file_messages(crate, "adapter.ttl")
+
+
+def test_reports_a_crate_whose_source_accounting_is_no_file_entity_in_it(crate, shape_file_messages):
+    accounting = crate.graph.value(crate.root, BRIDGE.sourceAccounting)
+    assert accounting is not None
+    crate.graph.remove((accounting, None, None))
+    assert "bridge:sourceAccounting" in shape_file_messages(crate, "adapter.ttl")
+
+
+def test_reports_a_crate_whose_source_accounting_is_declared_in_another_media_type(crate, shape_file_messages):
+    accounting = crate.graph.value(crate.root, BRIDGE.sourceAccounting)
+    assert accounting is not None
+    crate.graph.set((accounting, SCHEMA.encodingFormat, Literal("text/plain")))
+    assert "text/turtle" in shape_file_messages(crate, "adapter.ttl")

@@ -16,6 +16,7 @@ FIXTURE = ROOT / "fixtures" / "synthetic-adapter"
 MUST = ROOT / "adapter" / "profile" / "must"
 
 GAP_SCHEME_FILE = "vocab/example-gaps.ttl"
+SOURCE_ACCOUNTING_FILE = "vocab/example-accounting.ttl"
 
 A_GAP_SCHEME_OF_TWO_WHOLE_GAPS = """@prefix skos:   <http://www.w3.org/2004/02/skos/core#> .
 @prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
@@ -63,15 +64,13 @@ class Package:
             self._git("add", "-A")
         return self
 
-    def gap_scheme(self, turtle=A_GAP_SCHEME_OF_TWO_WHOLE_GAPS, named=GAP_SCHEME_FILE):
-        """The package's one bridge:gapScheme, whatever it named before."""
-        self.write(named, turtle)
+    def _named_turtle(self, term, named, name):
         crate = self.path / "ro-crate-metadata.json"
         document = json.loads(crate.read_text(encoding="utf-8"))
-        document["@context"][1]["bridge:gapScheme"] = "bridge:gapScheme"
+        document["@context"][1][term] = term
         for entity in document["@graph"]:
             if entity["@id"] == "./":
-                entity["bridge:gapScheme"] = {"@id": named}
+                entity[term] = {"@id": named}
                 if {"@id": named} not in entity["hasPart"]:
                     entity["hasPart"].append({"@id": named})
         if not any(entity["@id"] == named for entity in document["@graph"]):
@@ -79,7 +78,7 @@ class Package:
                 {
                     "@id": named,
                     "@type": "File",
-                    "name": "Gap scheme",
+                    "name": name,
                     "encodingFormat": "text/turtle",
                     "license": {"@id": "https://spdx.org/licenses/Apache-2.0"},
                 }
@@ -88,6 +87,16 @@ class Package:
         if self.tracked:
             self._git("add", "-A")
         return self
+
+    def gap_scheme(self, turtle=A_GAP_SCHEME_OF_TWO_WHOLE_GAPS, named=GAP_SCHEME_FILE):
+        """The package's one bridge:gapScheme, whatever it named before."""
+        self.write(named, turtle)
+        return self._named_turtle("bridge:gapScheme", named, "Gap scheme")
+
+    def source_accounting(self, turtle, named=SOURCE_ACCOUNTING_FILE):
+        """The package's one bridge:sourceAccounting, whatever it named before."""
+        self.write(named, turtle)
+        return self._named_turtle("bridge:sourceAccounting", named, "Source accounting")
 
     @property
     def crate(self):
