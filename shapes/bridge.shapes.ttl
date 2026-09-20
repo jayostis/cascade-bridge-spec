@@ -303,7 +303,7 @@
   sh:property [
     sh:path sh:value ;
     sh:maxCount 1 ;
-    sh:message "A finding carries at most one sh:value, the source value that made it fire."
+    sh:message "A finding carries at most one sh:value, what in the source it is about."
   ] ;
   sh:property [
     sh:path sh:resultSeverity ;
@@ -384,6 +384,17 @@
     sh:message "A selector refining a record's selector is refined no further."
   ] .
 
+<#SubjectOfASourcePath> a sh:NodeShape ;
+  sh:target [
+    a sh:SPARQLTarget ;
+    sh:prefixes <> ;
+    sh:select """
+      SELECT ?this WHERE { ?this bridge:sourcePath ?path }
+    """
+  ] ;
+  sh:class bridge:PathEntry ;
+  sh:message "A subject of a bridge:sourcePath is a bridge:PathEntry." .
+
 <#PathEntry> a sh:NodeShape ;
   sh:targetClass bridge:PathEntry ;
   sh:property [
@@ -392,11 +403,6 @@
     sh:maxCount 1 ;
     sh:datatype xsd:string ;
     sh:message "An entry carries exactly one bridge:sourcePath, the path it accounts for, a string."
-  ] ;
-  sh:property [
-    sh:path bridge:sourcePath ;
-    sh:pattern "^(/[^/]+){2,}$" ;
-    sh:message "A bridge:sourcePath starts at the record element and names a node below it: a step for the record element, then one for each element down to the node, an attribute's last step written @name, and no step carrying a position. It is not rooted at the document, and the record element alone is no path."
   ] ;
   sh:property [
     sh:path bridge:verdict ;

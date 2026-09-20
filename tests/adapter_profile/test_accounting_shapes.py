@@ -28,15 +28,11 @@ ONE_VERDICT = (
     "bridge:redundantWith, bridge:consumed, bridge:noHome, bridge:ignored."
 )
 ONE_SOURCE_PATH = "An entry carries exactly one bridge:sourcePath, the path it accounts for, a string."
-A_PATH_BELOW_THE_RECORD = (
-    "A bridge:sourcePath starts at the record element and names a node below it: a step for the record "
-    "element, then one for each element down to the node, an attribute's last step written @name, and no "
-    "step carrying a position. It is not rooted at the document, and the record element alone is no path."
-)
+AN_ENTRY_IS_TYPED = "A subject of a bridge:sourcePath is a bridge:PathEntry."
 
 
-def entry(path=A_PATH, verdict=CARRIED, names_gap=None, same_fact_as=None, because=None):
-    written = ["[] a bridge:PathEntry"]
+def entry(path=A_PATH, verdict=CARRIED, names_gap=None, same_fact_as=None, because=None, typed=True):
+    written = ["a bridge:PathEntry"] if typed else []
     written += [
         f"{predicate} {value}"
         for predicate, value in (
@@ -48,7 +44,7 @@ def entry(path=A_PATH, verdict=CARRIED, names_gap=None, same_fact_as=None, becau
         )
         if value is not None
     ]
-    return PREFIXES + "\n" + " ;\n  ".join(written) + " .\n"
+    return PREFIXES + "\n[] " + " ;\n  ".join(written) + " .\n"
 
 
 def said_about(turtle):
@@ -90,8 +86,8 @@ def test_rejects_an_entry_whose_source_path_is_an_iri_rather_than_a_string():
     assert not said_about(entry())
 
 
-def test_rejects_an_entry_whose_source_path_is_the_record_element_rather_than_a_node_below_it():
-    assert A_PATH_BELOW_THE_RECORD in said_about(entry(path='"/ExampleRecord"'))
+def test_rejects_a_subject_of_a_source_path_that_is_no_path_entry():
+    assert AN_ENTRY_IS_TYPED in said_about(entry(typed=False))
     assert not said_about(entry())
 
 

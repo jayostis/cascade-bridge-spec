@@ -112,6 +112,35 @@ def an_accounting_entry_with_no_verdict(package):
     restate_digest(package, ACCOUNTING)
 
 
+def an_accounting_entry_carrying_a_position(package):
+    package.edit(ACCOUNTING, '"/ExampleRecord/Note"', '"/ExampleRecord/Note[1]"')
+    restate_digest(package, ACCOUNTING)
+
+
+def an_accounting_entry_padded_with_whitespace(package):
+    package.edit(ACCOUNTING, '"/ExampleRecord/Note"', '"/ExampleRecord/ Note "')
+    restate_digest(package, ACCOUNTING)
+
+
+def an_accounting_entry_carrying_no_type(package):
+    package.edit(
+        ACCOUNTING,
+        '[] a bridge:PathEntry ;\n  bridge:sourcePath "/ExampleRecord/Status" ;\n  bridge:verdict bridge:consumed .',
+        '[] bridge:sourcePath "/ExampleRecord/Status" ;\n  bridge:verdict bridge:consumed .',
+    )
+    restate_digest(package, ACCOUNTING)
+
+
+def an_accounting_entry_for_a_node_in_a_namespace(package):
+    package.edit(
+        ACCOUNTING,
+        '[] a bridge:PathEntry ;\n  bridge:sourcePath "/ExampleRecord/Note" ;',
+        "[] a bridge:PathEntry ;\n  bridge:sourcePath \"/ExampleRecord/*[local-name()='Note' and "
+        "namespace-uri()='https://example.org/synthetic-adapter/ext/v1']\" ;",
+    )
+    restate_digest(package, ACCOUNTING)
+
+
 def accounting_not_named(package):
     crate = package.path / CRATE
     document = json.loads(crate.read_text(encoding="utf-8"))
@@ -195,6 +224,34 @@ def pin_not_a_data_entity(package):
             ],
             [],
             id="a shape the accounting does not meet fails the profile, not only a test running the shapes by hand",
+        ),
+        pytest.param(
+            an_accounting_entry_carrying_a_position,
+            False,
+            ["/ExampleRecord/Note[1] is written in steps this lint cannot read"],
+            [],
+            id="a source path carrying a position fails the profile",
+        ),
+        pytest.param(
+            an_accounting_entry_padded_with_whitespace,
+            False,
+            ["/ExampleRecord/ Note  is written in steps this lint cannot read"],
+            [],
+            id="a source path padded with whitespace fails the profile",
+        ),
+        pytest.param(
+            an_accounting_entry_carrying_no_type,
+            False,
+            ["A subject of a bridge:sourcePath is a bridge:PathEntry."],
+            [],
+            id="an entry carrying no bridge:PathEntry type fails the profile, where it silenced a path before",
+        ),
+        pytest.param(
+            an_accounting_entry_for_a_node_in_a_namespace,
+            True,
+            [],
+            [],
+            id="a source path naming a node in a namespace passes the profile",
         ),
         pytest.param(
             undeclared_context_key,

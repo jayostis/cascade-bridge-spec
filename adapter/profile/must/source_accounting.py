@@ -23,18 +23,60 @@ VERDICTS_CLAIMING_CARRIAGE = (BRIDGE.carried, BRIDGE.carriedInPart)
 
 A_NAME = re.compile(r"[A-Za-z_][A-Za-z0-9_.-]*")
 
+IN_NO_NAMESPACE = r"[^\s/\[\]'*@=():]+"
+
+A_STEP = re.compile(
+    rf"/(?P<attribute>@?)"
+    rf"(?:(?P<name>{IN_NO_NAMESPACE})"
+    rf"|\*\[local-name\(\)='(?P<local>{IN_NO_NAMESPACE})' and namespace-uri\(\)='[^']*'\])"
+)
+
+A_PATH_IS_STEPS = (
+    "where a step of a bridge:sourcePath follows a /, and is an element's name or, for a node in a namespace, "
+    "the step an oa:XPathSelector writes for it, an attribute's step that form after an @, "
+    "and no step carries a position"
+)
+
 
 def shortened(term):
     return str(term).replace(str(BRIDGE), "bridge:")
 
 
-def first_step_of(path):
-    return str(path).split("/")[1] if str(path).startswith("/") and "/" in str(path)[1:] else ""
+def steps_of(source_path):
+    """Each step of a path, or None where the path is written as no sequence of steps."""
+    steps, rest = [], source_path
+    while rest:
+        found = A_STEP.match(rest)
+        if found is None:
+            return None
+        steps.append(found)
+        rest = rest[found.end() :]
+    return steps or None
 
 
-def last_step_of(path):
-    """The element or attribute a path ends at, as a mapping writes it: a facade-X lift erases the leading @."""
-    return str(path).rsplit("/", 1)[-1].removeprefix("@")
+def name_of(step):
+    """The element or attribute a step names, as a mapping writes it: a facade-X lift erases the leading @."""
+    return step["local"] or step["name"]
+
+
+def ill_formed(source_path, steps, record):
+    if steps is None:
+        yield f"{source_path} is written in steps this lint cannot read, {A_PATH_IS_STEPS}"
+        return
+    if len(steps) < 2:
+        yield f"{source_path} is the record element alone, where a bridge:sourcePath names a node below it"
+        return
+    if any(step["attribute"] for step in steps[:-1]):
+        yield (
+            f"{source_path} writes @ before a step that is not its last, where an attribute is the node a path ends at"
+        )
+        return
+    first = name_of(steps[0])
+    if record and first != record:
+        yield (
+            f"{source_path} starts at {first}, where a bridge:sourcePath starts at {record}, "
+            "the adapter's bridge:elementNameOfEachRecord"
+        )
 
 
 def mentioned_by_the_mappings(crate):
@@ -101,12 +143,8 @@ def faulty(crate):
     record = str(crate.graph.value(crate.root, BRIDGE.elementNameOfEachRecord) or "")
 
     for entry, source_path, verdict in entries:
-        first = first_step_of(source_path)
-        if record and first and first != record:
-            yield (
-                f"{source_path} starts at {first}, where a bridge:sourcePath starts at {record}, "
-                "the adapter's bridge:elementNameOfEachRecord"
-            )
+        steps = steps_of(source_path)
+        yield from ill_formed(source_path, steps, record)
         for instead in sorted(accounting.objects(entry, BRIDGE.sameFactAs)):
             if str(instead) == source_path:
                 yield (
@@ -135,9 +173,9 @@ def faulty(crate):
                     f"{', '.join(sorted(shortened(kind) for kind in kinds)) or 'nothing'}, where an entry whose "
                     f"verdict is {shortened(verdict)} names a gap skos:broader {shortened(wanted)}"
                 )
-        if verdict not in VERDICTS_CLAIMING_CARRIAGE or mentioned is None:
+        if verdict not in VERDICTS_CLAIMING_CARRIAGE or mentioned is None or steps is None:
             continue
-        step = last_step_of(source_path)
+        step = name_of(steps[-1])
         if step not in mentioned:
             yield (
                 f"{source_path} is {shortened(verdict)}, where no bridge:mapping of this adapter mentions {step}: "

@@ -39,6 +39,23 @@ ONLY_THE_FINDINGS_QUERY_MENTIONS = "/ExampleRecord/Note"
 NO_QUERY_MENTIONS = "/ExampleRecord/Provenance"
 THE_ACCESSION = "/ExampleRecord/@Accession"
 
+A_PATH_IS_STEPS = (
+    "is written in steps this lint cannot read, where a step of a bridge:sourcePath follows a /, and is an "
+    "element's name or, for a node in a namespace, the step an oa:XPathSelector writes for it, an attribute's "
+    "step that form after an @, and no step carries a position"
+)
+
+AN_EXTENSION_NAMESPACE = "https://example.org/synthetic-adapter/ext/v1"
+A_NAMESPACED_ELEMENT_NO_QUERY_MENTIONS = (
+    f"/ExampleRecord/*[local-name()='Extension' and namespace-uri()='{AN_EXTENSION_NAMESPACE}']"
+)
+A_NAMESPACED_ELEMENT_THE_MAPPING_MENTIONS = (
+    f"/ExampleRecord/*[local-name()='Label' and namespace-uri()='{AN_EXTENSION_NAMESPACE}']"
+)
+A_NAMESPACED_ATTRIBUTE_OF_THE_RECORD = (
+    f"/ExampleRecord/@*[local-name()='kind' and namespace-uri()='{AN_EXTENSION_NAMESPACE}']"
+)
+
 CARRIED = "bridge:carried"
 CARRIED_IN_PART = "bridge:carriedInPart"
 REDUNDANT_WITH = "bridge:redundantWith"
@@ -99,6 +116,58 @@ def test_reports_a_source_path_that_starts_at_the_document_rather_than_at_the_re
         "/ExampleRecordSet/ExampleRecord/Label starts at ExampleRecordSet, where a bridge:sourcePath "
         "starts at ExampleRecord, the adapter's bridge:elementNameOfEachRecord"
     ) in said_about(package)
+
+
+def test_reports_a_source_path_that_is_the_record_element_alone(package):
+    accounted(package, entry("/ExampleRecord"))
+    assert (
+        "/ExampleRecord is the record element alone, where a bridge:sourcePath names a node below it"
+    ) in said_about(package)
+
+
+def test_reports_a_source_path_whose_step_carries_a_position(package):
+    accounted(package, entry("/ExampleRecord/Note[1]", verdict=NO_HOME, names_gap=A_GAP_WITH_NO_PREDICATE))
+    assert "/ExampleRecord/Note[1] " + A_PATH_IS_STEPS in said_about(package)
+
+
+def test_reports_a_source_path_whose_step_is_padded_with_whitespace(package):
+    accounted(package, entry("/ExampleRecord/ Note ", verdict=NO_HOME, names_gap=A_GAP_WITH_NO_PREDICATE))
+    assert "/ExampleRecord/ Note  " + A_PATH_IS_STEPS in said_about(package)
+
+
+def test_reports_a_source_path_that_names_a_node_in_a_namespace_by_a_prefix(package):
+    accounted(package, entry("/ExampleRecord/@xsi:schemaLocation", verdict=CONSUMED))
+    assert "/ExampleRecord/@xsi:schemaLocation " + A_PATH_IS_STEPS in said_about(package)
+
+
+def test_reports_a_source_path_writing_an_attribute_before_its_last_step(package):
+    accounted(package, entry("/ExampleRecord/@Label/Emphasis", verdict=NO_HOME, names_gap=A_GAP_WITH_NO_PREDICATE))
+    assert (
+        "/ExampleRecord/@Label/Emphasis writes @ before a step that is not its last, "
+        "where an attribute is the node a path ends at"
+    ) in said_about(package)
+
+
+def test_reports_nothing_for_a_source_path_naming_an_element_in_a_namespace(package):
+    accounted(
+        package,
+        entry(A_NAMESPACED_ELEMENT_NO_QUERY_MENTIONS, verdict=NO_HOME, names_gap=A_GAP_WITH_NO_PREDICATE),
+    )
+    assert not said_about(package)
+
+
+def test_reports_nothing_for_a_source_path_naming_an_attribute_in_a_namespace(package):
+    accounted(package, entry(A_NAMESPACED_ATTRIBUTE_OF_THE_RECORD, verdict=CONSUMED))
+    assert not said_about(package)
+
+
+def test_reports_a_carried_entry_for_an_element_in_a_namespace_by_the_local_name_the_mapping_would_write(package):
+    accounted(package, entry(A_NAMESPACED_ELEMENT_NO_QUERY_MENTIONS))
+    said = said_about(package)
+    assert "no bridge:mapping of this adapter mentions Extension" in said
+
+    accounted(package, entry(A_NAMESPACED_ELEMENT_THE_MAPPING_MENTIONS))
+    assert not said_about(package)
 
 
 def test_reports_two_entries_sharing_a_source_path(package):
