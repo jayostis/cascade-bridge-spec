@@ -431,6 +431,11 @@ def test_reports_nothing_for_a_finding_whose_body_is_the_concept_for_a_schema_fa
     assert not said_about(package)
 
 
+def test_reports_nothing_for_a_finding_whose_body_is_the_concept_a_census_carries(package):
+    package.gap_scheme().write(FINDINGS, coded_finding(body="bridge:pathNotAccounted"))
+    assert not said_about(package)
+
+
 def test_reports_a_finding_whose_body_is_the_anchor_of_no_w3c_xml_schema_validation_rule(package):
     package.gap_scheme().write(FINDINGS, coded_finding(body="<https://www.w3.org/TR/xmlschema-1/#cvc-nonesuch>"))
     assert (

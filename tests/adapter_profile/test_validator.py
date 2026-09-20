@@ -102,6 +102,15 @@ def term_the_vocabulary_does_not_declare(package):
     )
 
 
+def accounting_not_named(package):
+    crate = package.path / CRATE
+    document = json.loads(crate.read_text(encoding="utf-8"))
+    root = next(entity for entity in document["@graph"] if entity["@id"] == "./")
+    assert "bridge:sourceAccounting" in root
+    del root["bridge:sourceAccounting"]
+    crate.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8", newline="")
+
+
 def profile_not_an_entity(package):
     package.edit(CRATE, '      "@type": ["CreativeWork", "Profile"],', '      "@type": "CreativeWork",')
 
@@ -159,6 +168,13 @@ def pin_not_a_data_entity(package):
             [],
             [],
             id="nothing of its kind passes: no expected graphs",
+        ),
+        pytest.param(
+            accounting_not_named,
+            True,
+            [],
+            [],
+            id="a crate naming no accounting passes, as every adapter that exists today does",
         ),
         pytest.param(
             undeclared_context_key,
