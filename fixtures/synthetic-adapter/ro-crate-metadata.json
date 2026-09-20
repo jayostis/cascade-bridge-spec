@@ -13,6 +13,7 @@
       "bridge:elementNameOfEachRecord": "bridge:elementNameOfEachRecord",
       "bridge:mapping": "bridge:mapping",
       "bridge:findingsQuery": "bridge:findingsQuery",
+      "bridge:gapScheme": "bridge:gapScheme",
       "bridge:detectQuery": "bridge:detectQuery",
       "bridge:testManifest": "bridge:testManifest",
       "bridge:docRootElementName": "bridge:docRootElementName",
@@ -82,6 +83,9 @@
           "@id": "in/example-findings.rq"
         }
       ],
+      "bridge:gapScheme": {
+        "@id": "vocab/example-gaps.ttl"
+      },
       "bridge:detectQuery": {
         "@id": "in/example-detect.rq"
       },
@@ -97,6 +101,9 @@
         },
         {
           "@id": "in/example-detect.rq"
+        },
+        {
+          "@id": "vocab/example-gaps.ttl"
         },
         {
           "@id": "schema/example-record.xsd"
@@ -192,8 +199,8 @@
       "@type": "File",
       "name": "Findings query",
       "encodingFormat": "application/sparql-query",
-      "contentSize": "681",
-      "sha256": "373cf039e2953f52c589131364fcfb5ebf5877db55883a5dfdd53fb816db79fa",
+      "contentSize": "744",
+      "sha256": "64f1982e4fb198f1d427bfa5cb684f09cc744118b1907b495f0fc20842bef1a2",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       }
@@ -231,6 +238,15 @@
       "encodingFormat": "application/xml",
       "contentSize": "397",
       "sha256": "3c693d6d32386c6f6617e74421307217048be830e9d5aae39c5500817002bae3",
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      }
+    },
+    {
+      "@id": "vocab/example-gaps.ttl",
+      "@type": "File",
+      "name": "Gap scheme",
+      "encodingFormat": "text/turtle",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       }
@@ -300,8 +316,8 @@
       "@type": "File",
       "name": "Expected findings for example-0003",
       "encodingFormat": "text/turtle",
-      "contentSize": "445",
-      "sha256": "aa73da02a6bc06316897acf8d6fb4ff8264e57ca1fb3b2c13087e4674b33b6de",
+      "contentSize": "911",
+      "sha256": "cc0ee72d8506e0550b192d1ebff4f5407db01f8a54d586c1e038bd71e9ab3acf",
       "isBasedOn": {
         "@id": "fixtures/in/example-0003.xml"
       },
@@ -328,8 +344,8 @@
       "@type": "File",
       "name": "Expected findings for example-0001",
       "encodingFormat": "text/turtle",
-      "contentSize": "884",
-      "sha256": "6fbe6b7245a3f5954d8c76e97058686ab53ee7dd683ff0a5bf254fbbda38c52f",
+      "contentSize": "947",
+      "sha256": "53a9ccbf0d735edeb9a670e9e5d526e3b2c2607edab5b63469de767b1b0a84fc",
       "isBasedOn": {
         "@id": "fixtures/in/example-0001.xml"
       },

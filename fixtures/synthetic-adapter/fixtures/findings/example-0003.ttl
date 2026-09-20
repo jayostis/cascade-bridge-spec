@@ -5,7 +5,25 @@
 [] a oa:Annotation ;
   oa:hasTarget [
     oa:hasSource <../in/example-0003.xml> ;
-    oa:hasSelector [ a oa:XPathSelector ; rdf:value "/ExampleRecordSet" ]
+    oa:hasSelector [
+      a oa:XPathSelector ;
+      rdf:value "/ExampleRecordSet" ;
+      oa:refinedBy [ a oa:XPathSelector ; rdf:value "Trailer[1]" ]
+    ]
   ] ;
-  oa:hasBody [ a oa:TextualBody ; rdf:value "Element 'Trailer': This element is not expected." ] ;
+  oa:hasBody <https://www.w3.org/TR/xmlschema-1/#cvc-complex-type> ;
+  oa:motivatedBy oa:classifying ;
+  sh:resultSeverity sh:Violation .
+
+[] a oa:Annotation ;
+  oa:hasTarget [
+    oa:hasSource <../in/example-0003.xml> ;
+    oa:hasSelector [
+      a oa:XPathSelector ;
+      rdf:value "/ExampleRecordSet" ;
+      oa:refinedBy [ a oa:XPathSelector ; rdf:value "Trailer[1]" ]
+    ]
+  ] ;
+  oa:hasBody <https://www.w3.org/TR/xmlschema-1/#cvc-elt> ;
+  oa:motivatedBy oa:classifying ;
   sh:resultSeverity sh:Violation .

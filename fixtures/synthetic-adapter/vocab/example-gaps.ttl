@@ -1,0 +1,15 @@
+@prefix skos:   <http://www.w3.org/2004/02/skos/core#> .
+@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+@prefix ex:     <https://example.org/synthetic-adapter/v1#> .
+
+ex:gaps a skos:ConceptScheme .
+
+ex:no-term-for-a-free-text-note a skos:Concept ;
+  skos:prefLabel "no term for a free-text note" ;
+  skos:inScheme ex:gaps ;
+  skos:broader bridge:noPredicate .
+
+ex:a-status-outside-the-set-the-vocabulary-fixes a skos:Concept ;
+  skos:prefLabel "a status outside the set the vocabulary fixes" ;
+  skos:inScheme ex:gaps ;
+  skos:broader bridge:valueNotMapped .
