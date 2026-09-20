@@ -38,12 +38,17 @@ def test_reports_nothing_for_a_schema_failure_its_entrys_expected_findings_recor
 
 
 def test_reports_a_schema_failure_its_entrys_expected_findings_record_at_a_lesser_severity(package):
-    package.edit("fixtures/findings/example-0003.ttl", "sh:Violation", "sh:Warning")
+    package.edit("fixtures/findings/example-0003.ttl", "sh:Violation", "sh:Warning", times=2)
     assert "example-0003.xml does not validate against example-set.xsd" in "\n".join(inputs.invalid(package.crate))
 
 
 def test_reports_a_schema_failure_its_entrys_expected_findings_record_against_another_node(package):
-    package.edit("fixtures/findings/example-0003.ttl", '"/ExampleRecordSet"', '"/ExampleRecordSet/ExampleRecord[1]"')
+    package.edit(
+        "fixtures/findings/example-0003.ttl",
+        '"/ExampleRecordSet"',
+        '"/ExampleRecordSet/ExampleRecord[1]"',
+        times=2,
+    )
     assert "example-0003.xml does not validate against example-set.xsd" in "\n".join(inputs.invalid(package.crate))
 
 
@@ -121,3 +126,13 @@ def test_reports_a_schema_that_does_not_compile_for_every_input_validated_agains
     crate.file_at(source_schema).write_text("<not-a-schema/>", encoding="utf-8")
     faults = [message for message in inputs.invalid(crate) if "does not compile" in message]
     assert len(faults) == len(tests)
+
+
+def test_reports_a_schema_failure_its_entrys_expected_findings_record_as_a_gap_rather_than_a_broken_rule(package):
+    for rule in ("cvc-complex-type", "cvc-elt"):
+        package.edit(
+            "fixtures/findings/example-0003.ttl",
+            f"<https://www.w3.org/TR/xmlschema-1/#{rule}>",
+            "<https://example.org/synthetic-adapter/v1#no-term-for-a-free-text-note>",
+        )
+    assert "example-0003.xml does not validate against example-set.xsd" in "\n".join(inputs.invalid(package.crate))

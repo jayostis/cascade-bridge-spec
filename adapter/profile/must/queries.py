@@ -3,12 +3,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from rdflib import BNode, Graph, Variable
+from rdflib import BNode, Graph, URIRef, Variable
 from rdflib.namespace import RDF, SH
 from rdflib.plugins.sparql import prepareQuery
 from rocrate_validator.models import ValidationContext
 from rocrate_validator.requirements.python import PyFunctionCheck, check, requirement
 
+from _codes import gaps_of
 from _crate import file_name_of
 from _findings import SHAPES, report_findings, unmet
 from _terms import BRIDGE, OA
@@ -58,6 +59,7 @@ def shapes_less_the_selector_the_bridge_adds():
 
 def malformed(crate):
     declared = [(prop, query) for prop in QUERY_FORMS for query in sorted(crate.graph.objects(crate.root, prop))]
+    gaps = gaps_of(crate)
     for prop, query in declared:
         term, form = QUERY_FORMS[prop]
         name = file_name_of(query)
@@ -99,6 +101,12 @@ def malformed(crate):
                 "written for that one finding: a variable is bound to a node the lift already holds, so two "
                 "solutions binding it alike stand every finding of both on one node"
             )
+        for body in sorted({triple[2] for triple in template if triple[1] == OA.hasBody}):
+            if isinstance(body, URIRef) and body not in gaps:
+                yield (
+                    f"{name} constructs {body} as a finding's body, where a body a findings query "
+                    "constructs as a constant is a gap of the adapter's bridge:gapScheme"
+                )
         shapes = shapes_less_the_selector_the_bridge_adds()
         constructed_graph, standing_for = constructs(template)
         for message in unmet(constructed_graph, shapes, standing_for):

@@ -4,6 +4,7 @@
 @prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
 @prefix dct:    <http://purl.org/dc/terms/> .
+@prefix skos:   <http://www.w3.org/2004/02/skos/core#> .
 
 <https://ns.cascadeprotocol.org/bridge/v1-draft#> a owl:Ontology ;
   dct:title "Cascade Bridge Vocabulary"@en ;
@@ -108,6 +109,46 @@ bridge:extensionVocabulary a owl:ObjectProperty ;
   rdfs:label "extension vocabulary"@en ;
   rdfs:comment "The adapter's own namespace for values that have no Cascade term."@en ;
   rdfs:domain bridge:Adapter ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:gapScheme a owl:ObjectProperty ;
+  rdfs:label "gap scheme"@en ;
+  rdfs:domain bridge:Adapter ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:closedBy a owl:ObjectProperty ;
+  rdfs:label "closed by"@en ;
+  rdfs:comment "The Cascade term whose declaration would let the adapter carry what the gap says it cannot."@en ;
+  rdfs:domain skos:Concept ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:gapKinds a skos:ConceptScheme ;
+  skos:prefLabel "Kinds of gap"@en ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:noPredicate a skos:Concept ;
+  skos:prefLabel "a source node no Cascade predicate carries"@en ;
+  skos:inScheme bridge:gapKinds ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:valueNotMapped a skos:Concept ;
+  skos:prefLabel "a source value outside a set the vocabulary fixes"@en ;
+  skos:inScheme bridge:gapKinds ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:sourceLacksRequired a skos:Concept ;
+  skos:prefLabel "a source record lacking what a shape requires"@en ;
+  skos:inScheme bridge:gapKinds ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:carriedWithLoss a skos:Concept ;
+  skos:prefLabel "a source node carried, but not wholly"@en ;
+  skos:inScheme bridge:gapKinds ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:schemaRuleUnnamed a skos:Concept ;
+  skos:prefLabel "a schema failure W3C names no rule for"@en ;
+  skos:inScheme bridge:gapKinds ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
 bridge:testManifest a owl:ObjectProperty ;

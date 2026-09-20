@@ -9,6 +9,7 @@ PREFIX oa:     <http://www.w3.org/ns/oa#>
 PREFIX fx:     <http://sparql.xyz/facade-x/ns/>
 PREFIX xyz:    <http://sparql.xyz/facade-x/data/>
 PREFIX bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#>
+PREFIX ex:     <https://example.org/synthetic-adapter/v1#>
 """
 
 WHERE = """WHERE {
@@ -76,14 +77,16 @@ TWO_FINDINGS_EACH_WITH_A_TARGET_OF_ITS_OWN = findings_query("""  [] a oa:Annotat
       oa:hasSource bridge:thisRecord ;
       oa:hasSelector [ a oa:XPathSelector ; rdf:value "Note" ]
     ] ;
-    oa:hasBody [ a oa:TextualBody ; rdf:value "no term for a free-text note" ] ;
+    oa:hasBody ex:no-term-for-a-free-text-note ;
+    oa:motivatedBy oa:classifying ;
     sh:resultSeverity sh:Info .
   [] a oa:Annotation ;
     oa:hasTarget [
       oa:hasSource bridge:thisRecord ;
       oa:hasSelector [ a oa:XPathSelector ; rdf:value "Label" ]
     ] ;
-    oa:hasBody [ a oa:TextualBody ; rdf:value "a second note" ] ;
+    oa:hasBody ex:a-status-outside-the-set-the-vocabulary-fixes ;
+    oa:motivatedBy oa:classifying ;
     sh:resultSeverity sh:Info .""")
 
 
@@ -212,15 +215,17 @@ A_FINDINGS_QUERY_BINDING_THE_ANNOTATION_TO_A_VARIABLE = findings_query("""  ?not
       oa:hasSource bridge:thisRecord ;
       oa:hasSelector [ a oa:XPathSelector ; rdf:value "Note" ]
     ] ;
-    oa:hasBody [ a oa:TextualBody ; rdf:value "no term for a free-text note" ] ;
+    oa:hasBody ex:no-term-for-a-free-text-note ;
+    oa:motivatedBy oa:classifying ;
     sh:resultSeverity sh:Info .""")
 
-A_FINDINGS_QUERY_WHOSE_REASON_SEVERITY_AND_XPATH_ARE_BOUND = findings_query("""  [] a oa:Annotation ;
+A_FINDINGS_QUERY_WHOSE_BODY_SEVERITY_AND_XPATH_ARE_BOUND = findings_query("""  [] a oa:Annotation ;
     oa:hasTarget [
       oa:hasSource bridge:thisRecord ;
       oa:hasSelector ?selector
     ] ;
-    oa:hasBody [ a oa:TextualBody ; rdf:value ?reason ] ;
+    oa:hasBody ?gap ;
+    oa:motivatedBy oa:classifying ;
     sh:resultSeverity ?severity .
   ?selector a oa:XPathSelector ; rdf:value ?xpath .""")
 
@@ -228,7 +233,9 @@ A_FINDINGS_QUERY_WHOSE_REASON_SEVERITY_AND_XPATH_ARE_BOUND = findings_query(""" 
 def test_reports_a_findings_query_constructing_a_finding_with_no_body_or_severity(package):
     package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_CONSTRUCTING_A_FINDING_WITH_NO_BODY_OR_SEVERITY)
     said = "\n".join(queries.malformed(package.crate))
-    assert "A finding carries exactly one oa:hasBody, the reason." in said
+    assert (
+        "A finding carries exactly one oa:hasBody, an IRI: the code the finding is an instance of, never a sentence."
+    ) in said
     assert "A finding carries exactly one sh:resultSeverity" in said
 
 
@@ -253,22 +260,86 @@ def test_reports_a_findings_query_naming_the_annotation_it_constructs(package):
 
 def test_reports_a_findings_query_binding_the_annotation_to_a_variable(package):
     package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_BINDING_THE_ANNOTATION_TO_A_VARIABLE)
-    assert "?note as an oa:Annotation, where a finding is a blank node written for that one finding" in "\n".join(
-        queries.malformed(package.crate)
-    )
+    said = list(queries.malformed(package.crate))
+    assert len(said) == 1
+    assert "?note as an oa:Annotation, where a finding is a blank node written for that one finding" in said[0]
 
 
 def test_holds_a_findings_query_to_nothing_a_variable_binds(package):
-    package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_WHOSE_REASON_SEVERITY_AND_XPATH_ARE_BOUND)
+    package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_WHOSE_BODY_SEVERITY_AND_XPATH_ARE_BOUND)
     assert not list(queries.malformed(package.crate))
 
 
 A_FINDINGS_QUERY_WHOSE_FINDING_IS_ABOUT_THE_RECORD_ITSELF = findings_query("""  [] a oa:Annotation ;
     oa:hasTarget [ oa:hasSource bridge:thisRecord ] ;
-    oa:hasBody [ a oa:TextualBody ; rdf:value "the record is the finding" ] ;
+    oa:hasBody ex:no-term-for-a-free-text-note ;
+    oa:motivatedBy oa:classifying ;
     sh:resultSeverity sh:Warning .""")
 
 
 def test_reports_nothing_for_a_findings_query_constructing_no_selector(package):
     package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_WHOSE_FINDING_IS_ABOUT_THE_RECORD_ITSELF)
+    assert not list(queries.malformed(package.crate))
+
+
+A_FINDINGS_QUERY_CONSTRUCTING_A_TEXTUAL_BODY = findings_query("""  [] a oa:Annotation ;
+    oa:hasTarget [
+      oa:hasSource bridge:thisRecord ;
+      oa:hasSelector [ a oa:XPathSelector ; rdf:value "Note" ]
+    ] ;
+    oa:hasBody [ a oa:TextualBody ; rdf:value "no term for a free-text note" ] ;
+    oa:motivatedBy oa:classifying ;
+    sh:resultSeverity sh:Info .""")
+
+A_FINDINGS_QUERY_CONSTRUCTING_A_GAP_OF_THE_ADAPTERS_SCHEME = findings_query("""  [] a oa:Annotation ;
+    oa:hasTarget [
+      oa:hasSource bridge:thisRecord ;
+      oa:hasSelector [ a oa:XPathSelector ; rdf:value "Note" ]
+    ] ;
+    oa:hasBody ex:no-term-for-a-free-text-note ;
+    oa:motivatedBy oa:classifying ;
+    sh:resultSeverity sh:Info .""")
+
+A_FINDINGS_QUERY_CONSTRUCTING_A_CONSTANT_BODY_OUTSIDE_THE_SCHEME = findings_query("""  [] a oa:Annotation ;
+    oa:hasTarget [
+      oa:hasSource bridge:thisRecord ;
+      oa:hasSelector [ a oa:XPathSelector ; rdf:value "Note" ]
+    ] ;
+    oa:hasBody ex:a-gap-the-scheme-does-not-hold ;
+    oa:motivatedBy oa:classifying ;
+    sh:resultSeverity sh:Info .""")
+
+A_FINDINGS_QUERY_WHOSE_BODY_IS_BOUND_TO_A_VARIABLE = findings_query("""  [] a oa:Annotation ;
+    oa:hasTarget [
+      oa:hasSource bridge:thisRecord ;
+      oa:hasSelector [ a oa:XPathSelector ; rdf:value "Note" ]
+    ] ;
+    oa:hasBody ?gap ;
+    oa:motivatedBy oa:classifying ;
+    sh:resultSeverity sh:Info .""")
+
+
+def test_reports_a_findings_query_constructing_an_oa_textual_body(package):
+    package.gap_scheme().write(FINDINGS_QUERY, A_FINDINGS_QUERY_CONSTRUCTING_A_TEXTUAL_BODY)
+    assert (
+        "A finding carries exactly one oa:hasBody, an IRI: the code the finding is an instance of, never a sentence."
+    ) in "\n".join(queries.malformed(package.crate))
+
+
+def test_reports_a_findings_query_constructing_a_constant_body_outside_the_adapters_gap_scheme(package):
+    package.gap_scheme().write(FINDINGS_QUERY, A_FINDINGS_QUERY_CONSTRUCTING_A_CONSTANT_BODY_OUTSIDE_THE_SCHEME)
+    assert (
+        "example-findings.rq constructs https://example.org/synthetic-adapter/v1#a-gap-the-scheme-does-not-hold "
+        "as a finding's body, where a body a findings query constructs as a constant is a gap of the adapter's "
+        "bridge:gapScheme"
+    ) in "\n".join(queries.malformed(package.crate))
+
+
+def test_reports_nothing_for_a_findings_query_constructing_a_gap_of_the_adapters_scheme(package):
+    package.gap_scheme().write(FINDINGS_QUERY, A_FINDINGS_QUERY_CONSTRUCTING_A_GAP_OF_THE_ADAPTERS_SCHEME)
+    assert not list(queries.malformed(package.crate))
+
+
+def test_holds_a_findings_query_to_nothing_where_the_body_it_constructs_is_bound_to_a_variable(package):
+    package.gap_scheme().write(FINDINGS_QUERY, A_FINDINGS_QUERY_WHOSE_BODY_IS_BOUND_TO_A_VARIABLE)
     assert not list(queries.malformed(package.crate))

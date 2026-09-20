@@ -1,7 +1,7 @@
-from rdflib import URIRef
+from rdflib import Literal, URIRef
 from rdflib.namespace import DCTERMS
 
-from _terms import BRIDGE
+from _terms import BRIDGE, SCHEMA
 
 PROFILE = URIRef("https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/")
 
@@ -33,3 +33,16 @@ def test_reports_a_crate_that_names_no_element_name_of_each_record(crate, shape_
 def test_reports_a_crate_that_names_no_cascade_vocabulary_pin(crate, shape_file_messages):
     crate.graph.remove((crate.root, BRIDGE.cascadeVocabularyPin, None))
     assert "bridge:cascadeVocabularyPin" in shape_file_messages(crate, "adapter.ttl")
+
+
+def test_reports_a_crate_whose_gap_scheme_is_no_file_entity_in_it(crate, shape_file_messages):
+    crate.graph.remove((crate.graph.value(crate.root, BRIDGE.gapScheme), None, None))
+    assert "a crate File entity (schema:MediaObject) by IRI, declared text/turtle" in shape_file_messages(
+        crate, "adapter.ttl"
+    )
+
+
+def test_reports_a_crate_whose_gap_scheme_is_declared_in_another_media_type(crate, shape_file_messages):
+    scheme = crate.graph.value(crate.root, BRIDGE.gapScheme)
+    crate.graph.set((scheme, SCHEMA.encodingFormat, Literal("text/plain")))
+    assert "A gap scheme is declared text/turtle." in shape_file_messages(crate, "adapter.ttl")

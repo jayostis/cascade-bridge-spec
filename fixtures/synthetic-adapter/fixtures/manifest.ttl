@@ -32,7 +32,7 @@
 
 <#example-0003> a bridge:IsomorphicConversionTest ;
   mf:name "example-0003" ;
-  rdfs:comment "A document that fails its bridge:documentSchema around a record that passes bridge:sourceSchema: its one finding is about the document, and selects the document element." ;
+  rdfs:comment "A document that fails its bridge:documentSchema around a record that passes bridge:sourceSchema: its findings are about the document, one for each W3C rule the undeclared element breaks, each refined to that element." ;
   mf:action [
     bridge:input <in/example-0003.xml> ;
     bridge:envelope <../ro-crate-metadata.json#envelope-set>

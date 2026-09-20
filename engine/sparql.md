@@ -85,4 +85,14 @@ XPath carries no prefix bindings and a selector is read where nothing can
 supply them.
 
 A finding a Bridge makes about the document rather than about a record selects
-the document element: that one step, and nothing below it.
+the document element, and is refined under it as a record's finding is refined
+under the record.
+
+A finding about a source document breaking its schema carries as its body the
+anchor of the rule broken, in the XML Schema Recommendation that defines it,
+read from the validator's code up to its first dot: `cvc-complex-type.2.4` is
+`https://www.w3.org/TR/xmlschema-1/#cvc-complex-type`. A code neither Part
+names carries `bridge:schemaRuleUnnamed`. Which Part defines a rule is not a
+choice: the adapter profile refuses a body naming the other, and lists every
+anchor a body may take. Each rule a node breaks is a finding of its own,
+refined to that node.
