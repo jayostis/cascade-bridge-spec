@@ -530,7 +530,7 @@ def test_the_schema_findings_the_synthetic_adapter_expects_are_w3cs_rules_and_th
         if committed.value(finding, SH.resultSeverity) == SH.Violation
     ]
     bodies = {committed.value(finding, OA.hasBody) for finding in findings}
-    assert len(findings) == 2
+    assert len(set(committed.subjects(RDF.type, OA.Annotation))) == len(findings) == 2
     assert len(bodies) == 2
     assert bodies <= W3C_XML_SCHEMA_RULE_ANCHORS
     assert len({selected_by(committed, finding) for finding in findings}) == 1

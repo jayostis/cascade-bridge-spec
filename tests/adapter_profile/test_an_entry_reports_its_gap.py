@@ -6,7 +6,8 @@ from _codes import scheme_named_by
 from _selectors import selector_of, step_of
 from _terms import BRIDGE, MF, OA
 
-KINDS_AN_ENTRY_REPORTS = (BRIDGE.carriedWithLoss, BRIDGE.noPredicate, BRIDGE.sourceLacksRequired)
+KINDS_AN_ENTRY_REPORTS = (BRIDGE.noPredicate, BRIDGE.sourceLacksRequired)
+KINDS_AN_ENTRY_REPORTS_NOTHING_OF = (BRIDGE.carriedWithLoss, BRIDGE.valueNotMapped, BRIDGE.schemaRuleUnnamed)
 VERDICTS_THAT_MAY_NAME_A_GAP = (BRIDGE.carriedInPart, BRIDGE.noHome)
 
 THE_NAMESPACE = "https://example.org/synthetic-adapter/ext/v1"
@@ -18,6 +19,7 @@ A_PATH_STANDING_AT_MORE_THAN_ONE_NODE = "/ExampleRecord/Label/Emphasis"
 A_PATH_STANDING_AT_ONE_NODE = "/ExampleRecord/Note"
 A_PATH_IN_A_NAMESPACE = f"/ExampleRecord/*[local-name()='Provenance' and namespace-uri()='{THE_NAMESPACE}']"
 A_PATH_WHOSE_ENTRY_NAMES_NO_GAP = "/ExampleRecord/Status"
+A_PATH_WHOSE_ENTRY_NAMES_A_GAP_OF_A_KIND_THAT_REPORTS_NOTHING = "/ExampleRecord/Label"
 AN_UNACCOUNTED_PATH_STANDING_AT_MORE_THAN_ONE_NODE = (
     f"/ExampleRecord/*[local-name()='Extension' and namespace-uri()='{THE_NAMESPACE}']"
 )
@@ -48,6 +50,15 @@ def reported_by_an_entry(crate):
         (path, gap, severity)
         for path, gap, severity in entries_of(crate)
         if gap is not None and scheme.value(gap, SKOS.broader) in KINDS_AN_ENTRY_REPORTS
+    ]
+
+
+def naming_a_gap_no_entry_reports(crate):
+    scheme = scheme_named_by(crate)
+    return [
+        (path, gap)
+        for path, gap, _ in entries_of(crate)
+        if gap is not None and scheme.value(gap, SKOS.broader) in KINDS_AN_ENTRY_REPORTS_NOTHING_OF
     ]
 
 
@@ -185,6 +196,18 @@ def test_an_entry_whose_verdict_names_no_gap_reports_nothing(crate):
         for record in records:
             for source_path in silent:
                 assert not naming(graph, record, source_path), f"{named}: {source_path}"
+
+
+def test_an_entry_naming_a_gap_of_a_kind_that_reports_nothing_is_expected_at_no_record(crate):
+    silent = naming_a_gap_no_entry_reports(crate)
+    the_path = A_PATH_WHOSE_ENTRY_NAMES_A_GAP_OF_A_KIND_THAT_REPORTS_NOTHING
+    assert the_path in [path for path, _ in silent]
+    standing = [record for _, _, records in cases(crate) for record in records if standing_at(record, the_path)]
+    assert standing, f"no record of the synthetic adapter's inputs stands at {the_path}"
+    for named, graph, records in cases(crate):
+        for record in records:
+            for source_path, gap in silent:
+                assert not naming(graph, record, source_path, gap), f"{named}: {source_path}"
 
 
 def test_a_path_standing_at_more_than_one_node_of_one_record_is_reported_once_carrying_that_count(crate):
