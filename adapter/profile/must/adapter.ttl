@@ -65,6 +65,11 @@
     sh:message "Each bridge:findingsQuery is a SPARQL 1.1 CONSTRUCT whose graph is a record's findings: a crate File entity (schema:MediaObject) by IRI, declared application/sparql-query."
   ] ;
   sh:property [
+    sh:path bridge:gapScheme ;
+    sh:node <#GapScheme> ;
+    sh:message "Each bridge:gapScheme is the adapter's file of skos:Concepts, one for each gap a finding's body names: a crate File entity (schema:MediaObject) by IRI, declared text/turtle."
+  ] ;
+  sh:property [
     sh:path bridge:cascadeVocabularyPin ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
@@ -140,6 +145,16 @@
     sh:minCount 1 ;
     sh:nodeKind sh:IRI ;
     sh:message "A table names at least one schema:isBasedOn, by IRI: where its rows came from."
+  ] .
+
+<#GapScheme> a sh:NodeShape ;
+  sh:name "Gap scheme" ;
+  sh:nodeKind sh:IRI ;
+  sh:class schema:MediaObject ;
+  sh:property [
+    sh:path schema:encodingFormat ;
+    sh:hasValue "text/turtle" ;
+    sh:message "A gap scheme is declared text/turtle."
   ] .
 
 <#Query> a sh:NodeShape ;
