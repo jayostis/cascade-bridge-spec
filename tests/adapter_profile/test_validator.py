@@ -141,7 +141,21 @@ def an_accounting_entry_for_a_node_in_a_namespace(package):
     restate_digest(package, ACCOUNTING)
 
 
-def accounting_not_named(package):
+def no_accounting_named_and_no_census_expected(package):
+    package.edit(
+        MANIFEST,
+        "<#example-0004> a bridge:IsomorphicConversionTest ;",
+        "<#example-0004> a bridge:InputOnlyTest ;",
+    )
+    package.edit(
+        MANIFEST,
+        "  ] ;\n  mf:result [\n"
+        "    bridge:expectedGraph <expected/example-0004.ttl> ;\n"
+        "    bridge:expectedFindings <findings/example-0004.ttl>\n"
+        "  ] .",
+        "  ] .",
+    )
+    restate_digest(package, MANIFEST)
     crate = package.path / CRATE
     document = json.loads(crate.read_text(encoding="utf-8"))
     root = next(entity for entity in document["@graph"] if entity["@id"] == "./")
@@ -209,7 +223,7 @@ def pin_not_a_data_entity(package):
             id="nothing of its kind passes: no expected graphs",
         ),
         pytest.param(
-            accounting_not_named,
+            no_accounting_named_and_no_census_expected,
             True,
             [],
             [],

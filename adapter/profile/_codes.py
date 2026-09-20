@@ -50,15 +50,22 @@ W3C_XML_SCHEMA_RULE_ANCHORS = frozenset(
 
 BODIES_OF_A_SCHEMA_FAILURE = W3C_XML_SCHEMA_RULE_ANCHORS | {BRIDGE.schemaRuleUnnamed}
 
-BODIES_NO_GAP_SCHEME_DECLARES = BODIES_OF_A_SCHEMA_FAILURE | {BRIDGE.pathNotAccounted}
-
 THE_ANCHORS = ", ".join(sorted(str(anchor) for anchor in W3C_XML_SCHEMA_RULE_ANCHORS))
 
-NO_GAP_OF_THE_SCHEME = (
-    "is not a gap of the adapter's bridge:gapScheme, the anchor of a validation rule "
-    "in a W3C XML Schema Recommendation, bridge:schemaRuleUnnamed, or bridge:pathNotAccounted. "
-    f"The anchors a body may take are {THE_ANCHORS}"
-)
+
+def accounts_for_its_source(crate):
+    return (crate.root, BRIDGE.sourceAccounting, None) in crate.graph
+
+
+def no_gap_of_the_scheme(crate):
+    admitted = "bridge:schemaRuleUnnamed, or bridge:pathNotAccounted"
+    if not accounts_for_its_source(crate):
+        admitted = "or bridge:schemaRuleUnnamed, the adapter naming no bridge:sourceAccounting"
+    return (
+        "is not a gap of the adapter's bridge:gapScheme, the anchor of a validation rule "
+        f"in a W3C XML Schema Recommendation, {admitted}. "
+        f"The anchors a body may take are {THE_ANCHORS}"
+    )
 
 
 def scheme_named_by(crate):
@@ -80,4 +87,5 @@ def gaps_of(crate):
 
 
 def bodies_a_finding_may_carry(crate):
-    return gaps_of(crate) | BODIES_NO_GAP_SCHEME_DECLARES
+    census = {BRIDGE.pathNotAccounted} if accounts_for_its_source(crate) else set()
+    return gaps_of(crate) | BODIES_OF_A_SCHEMA_FAILURE | census
