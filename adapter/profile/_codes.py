@@ -48,6 +48,8 @@ W3C_XML_SCHEMA_RULE_ANCHORS = frozenset(
     for rule in rules
 )
 
+BODIES_OF_A_SCHEMA_FAILURE = W3C_XML_SCHEMA_RULE_ANCHORS | {BRIDGE.schemaRuleUnnamed}
+
 NO_GAP_OF_THE_SCHEME = (
     "is not a gap of the adapter's bridge:gapScheme, the anchor of a validation rule "
     "in a W3C XML Schema Recommendation, or bridge:schemaRuleUnnamed"
@@ -73,4 +75,4 @@ def gaps_of(crate):
 
 
 def bodies_a_finding_may_carry(crate):
-    return gaps_of(crate) | W3C_XML_SCHEMA_RULE_ANCHORS | {BRIDGE.schemaRuleUnnamed}
+    return gaps_of(crate) | BODIES_OF_A_SCHEMA_FAILURE

@@ -165,3 +165,13 @@ def test_reports_nothing_for_a_schema_failure_recorded_on_the_element_the_rules_
         "fixtures/findings/example-0003.ttl", A_SCHEMA_FAILURE_RECORDED_ON_THE_ELEMENT_THE_RULES_WERE_BROKEN_ON
     )
     assert not [message for message in inputs.invalid(package.crate) if "example-0003" in message]
+
+
+def test_reports_a_schema_failure_its_entrys_expected_findings_record_as_a_gap_rather_than_a_broken_rule(package):
+    for rule in ("cvc-complex-type", "cvc-elt"):
+        package.edit(
+            "fixtures/findings/example-0003.ttl",
+            f"<https://www.w3.org/TR/xmlschema-1/#{rule}>",
+            "<https://example.org/synthetic-adapter/v1#no-term-for-a-free-text-note>",
+        )
+    assert "example-0003.xml does not validate against example-set.xsd" in "\n".join(inputs.invalid(package.crate))

@@ -1,6 +1,7 @@
 from rdflib import Graph
 from rdflib.namespace import RDF, SH
 
+from _codes import BODIES_OF_A_SCHEMA_FAILURE
 from _terms import BRIDGE, MF, OA
 
 
@@ -40,7 +41,7 @@ def expected_findings_file_of(crate, test):
 
 
 def violations_recorded_in(path):
-    """The record selectors a findings file records as sh:Violation, which are the schema failures its adapter expects."""
+    """The selectors a findings file records a broken W3C schema rule on, as sh:Violation: the schema failures its adapter expects."""
     graph = Graph()
     try:
         graph.parse(path, format="turtle")
@@ -49,6 +50,8 @@ def violations_recorded_in(path):
     recorded = set()
     for annotation in graph.subjects(RDF.type, OA.Annotation):
         if graph.value(annotation, SH.resultSeverity) != SH.Violation:
+            continue
+        if BODIES_OF_A_SCHEMA_FAILURE.isdisjoint(graph.objects(annotation, OA.hasBody)):
             continue
         target = graph.value(annotation, OA.hasTarget)
         selector = None if target is None else graph.value(target, OA.hasSelector)
