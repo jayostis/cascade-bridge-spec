@@ -204,28 +204,34 @@ bridge:gapKinds a skos:ConceptScheme ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
 bridge:noPredicate a skos:Concept ;
-  skos:prefLabel "a source node no Cascade predicate carries"@en ;
+  skos:prefLabel "a source path no Cascade predicate carries"@en ;
   skos:inScheme bridge:gapKinds ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
 bridge:valueNotMapped a skos:Concept ;
-  skos:prefLabel "a source value outside a set the vocabulary fixes"@en ;
+  skos:prefLabel "a value at a source path, outside a set the vocabulary fixes"@en ;
   skos:inScheme bridge:gapKinds ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
 bridge:sourceLacksRequired a skos:Concept ;
-  skos:prefLabel "a source record lacking what a shape requires"@en ;
+  skos:prefLabel "a source path a shape requires and a record lacks"@en ;
   skos:inScheme bridge:gapKinds ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
 bridge:carriedWithLoss a skos:Concept ;
-  skos:prefLabel "a source node carried, but not wholly"@en ;
+  skos:prefLabel "a source path carried, but not wholly"@en ;
   skos:inScheme bridge:gapKinds ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
 bridge:schemaRuleUnnamed a skos:Concept ;
-  skos:prefLabel "a schema failure W3C names no rule for"@en ;
+  skos:prefLabel "a value at a source path failing a schema rule W3C names no anchor for"@en ;
   skos:inScheme bridge:gapKinds ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:occurrences a owl:DatatypeProperty ;
+  rdfs:label "occurrences"@en ;
+  rdfs:comment "How many nodes of the record stand at the path the finding is about."@en ;
+  rdfs:range xsd:integer ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
 bridge:pathNotAccounted a skos:Concept ;
