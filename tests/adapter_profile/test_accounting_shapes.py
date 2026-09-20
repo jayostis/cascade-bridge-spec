@@ -8,9 +8,9 @@ PREFIXES = """@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> 
 @prefix ex:     <https://example.org/synthetic-adapter/v1#> .
 """
 
-A_PATH = '"/ExampleRecordSet/ExampleRecord/Label"'
-THE_PATH_THAT_CARRIES_THE_FACT = '"/ExampleRecordSet/ExampleRecord/@Accession"'
-ANOTHER_PATH_THAT_CARRIES_IT = '"/ExampleRecordSet/ExampleRecord/@Version"'
+A_PATH = '"/ExampleRecord/Label"'
+THE_PATH_THAT_CARRIES_THE_FACT = '"/ExampleRecord/@Accession"'
+ANOTHER_PATH_THAT_CARRIES_IT = '"/ExampleRecord/@Version"'
 A_GAP = "ex:no-term-for-a-free-text-note"
 ANOTHER_GAP = "ex:only-the-first-note-is-carried"
 A_REASON = '"A schema location is not data about the record."'

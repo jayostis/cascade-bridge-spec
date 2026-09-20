@@ -41,7 +41,8 @@ def test_the_census_finding_is_addressed_at_the_first_occurrence_of_the_path_it_
     _, graph, finding = the_one(crate)
     record, refinement = selected_by(graph, finding)
     assert re.search(r"\[\d+\]$", refinement)
-    assert str(graph.value(finding, SH.value)) == re.sub(r"\[\d+\]", "", f"{record}/{refinement}")
+    record_element = record.rsplit("/", 1)[-1]
+    assert str(graph.value(finding, SH.value)) == re.sub(r"\[\d+\]", "", f"/{record_element}/{refinement}")
 
 
 def test_the_census_finding_is_a_backlog_item_rather_than_a_defect_in_the_document(crate):

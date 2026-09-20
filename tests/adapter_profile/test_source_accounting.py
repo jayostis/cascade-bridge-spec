@@ -33,11 +33,11 @@ A_GAP_WITH_NO_PREDICATE = "ex:no-term-for-a-free-text-note"
 A_GAP_CARRIED_WITH_LOSS = "ex:only-the-first-note-is-carried"
 A_GAP_OF_A_VALUE_NOT_MAPPED = "ex:a-status-outside-the-set-the-vocabulary-fixes"
 
-THE_RECORD = "/ExampleRecordSet/ExampleRecord"
-THE_MAPPING_MENTIONS = "/ExampleRecordSet/ExampleRecord/Label"
-ONLY_THE_FINDINGS_QUERY_MENTIONS = "/ExampleRecordSet/ExampleRecord/Note"
-NO_QUERY_MENTIONS = "/ExampleRecordSet/ExampleRecord/Provenance"
-THE_ACCESSION = "/ExampleRecordSet/ExampleRecord/@Accession"
+THE_VERSION = "/ExampleRecord/@Version"
+THE_MAPPING_MENTIONS = "/ExampleRecord/Label"
+ONLY_THE_FINDINGS_QUERY_MENTIONS = "/ExampleRecord/Note"
+NO_QUERY_MENTIONS = "/ExampleRecord/Provenance"
+THE_ACCESSION = "/ExampleRecord/@Accession"
 
 CARRIED = "bridge:carried"
 CARRIED_IN_PART = "bridge:carriedInPart"
@@ -167,11 +167,11 @@ def test_reports_nothing_for_an_accounting_carrying_an_entry_of_each_verdict(pac
     accounted(
         package,
         entry(THE_MAPPING_MENTIONS),
-        entry(THE_RECORD, verdict=CARRIED_IN_PART, names_gap=A_GAP_CARRIED_WITH_LOSS),
+        entry(THE_VERSION, verdict=CARRIED_IN_PART, names_gap=A_GAP_CARRIED_WITH_LOSS),
         entry(ONLY_THE_FINDINGS_QUERY_MENTIONS, verdict=REDUNDANT_WITH, same_fact_as=THE_MAPPING_MENTIONS),
         entry(THE_ACCESSION, verdict=CONSUMED),
         entry(NO_QUERY_MENTIONS, verdict=NO_HOME, names_gap=A_GAP_WITH_NO_PREDICATE),
-        entry("/ExampleRecordSet/@xsi:schemaLocation", verdict=IGNORED, because='"A schema location is not data."'),
+        entry("/ExampleRecord/@SchemaVersion", verdict=IGNORED, because='"A schema version is not data."'),
     )
     assert not said_about(package)
 
