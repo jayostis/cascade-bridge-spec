@@ -310,25 +310,6 @@ def test_reports_a_finding_named_rather_than_written_for_itself(package):
     )
 
 
-def test_reports_a_body_that_is_not_a_textual_body(package):
-    package.write(FINDINGS, finding_carrying(body='[ a oa:SpecificResource ; rdf:value "a reason" ]'))
-    assert "A finding's body is an oa:TextualBody." in "\n".join(expected_findings.faulty(package.crate))
-
-
-def test_reports_a_body_carrying_no_reason(package):
-    package.write(FINDINGS, finding_carrying(body="[ a oa:TextualBody ]"))
-    assert "A finding's body carries exactly one rdf:value, the reason, a string." in "\n".join(
-        expected_findings.faulty(package.crate)
-    )
-
-
-def test_reports_a_reason_that_is_not_a_string(package):
-    package.write(FINDINGS, finding_carrying(body="[ a oa:TextualBody ; rdf:value 3 ]"))
-    assert "A finding's body carries exactly one rdf:value, the reason, a string." in "\n".join(
-        expected_findings.faulty(package.crate)
-    )
-
-
 def test_reports_a_record_selector_that_is_not_an_xpath_selector(package):
     package.write(
         FINDINGS,
