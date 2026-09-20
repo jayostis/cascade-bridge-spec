@@ -47,10 +47,11 @@ class Package:
     def _git(self, *args):
         subprocess.run(["git", "-C", str(self.path), *args], check=True, capture_output=True)
 
-    def edit(self, relative, old, new):
+    def edit(self, relative, old, new, times=1):
         target = self.path / relative
         text = target.read_text(encoding="utf-8")
-        assert old in text, f"{relative}: {old!r} is not there"
+        found = text.count(old)
+        assert found == times, f"{relative}: {old!r} occurs {found} times, {times} expected"
         target.write_text(text.replace(old, new), encoding="utf-8", newline="")
         return self
 

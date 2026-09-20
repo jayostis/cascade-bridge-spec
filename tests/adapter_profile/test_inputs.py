@@ -38,12 +38,17 @@ def test_reports_nothing_for_a_schema_failure_its_entrys_expected_findings_recor
 
 
 def test_reports_a_schema_failure_its_entrys_expected_findings_record_at_a_lesser_severity(package):
-    package.edit("fixtures/findings/example-0003.ttl", "sh:Violation", "sh:Warning")
+    package.edit("fixtures/findings/example-0003.ttl", "sh:Violation", "sh:Warning", times=2)
     assert "example-0003.xml does not validate against example-set.xsd" in "\n".join(inputs.invalid(package.crate))
 
 
 def test_reports_a_schema_failure_its_entrys_expected_findings_record_against_another_node(package):
-    package.edit("fixtures/findings/example-0003.ttl", '"/ExampleRecordSet"', '"/ExampleRecordSet/ExampleRecord[1]"')
+    package.edit(
+        "fixtures/findings/example-0003.ttl",
+        '"/ExampleRecordSet"',
+        '"/ExampleRecordSet/ExampleRecord[1]"',
+        times=2,
+    )
     assert "example-0003.xml does not validate against example-set.xsd" in "\n".join(inputs.invalid(package.crate))
 
 
