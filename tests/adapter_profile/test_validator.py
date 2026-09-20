@@ -56,7 +56,7 @@ def expected_graph_not_turtle(package):
 
 
 def a_finding_selecting_no_node(package):
-    package.edit(FINDINGS, '"/ExampleRecordSet/ExampleRecord[2]"', '"/ExampleRecordSet/ExampleRecord[3]"', times=3)
+    package.edit(FINDINGS, '"/ExampleRecordSet/ExampleRecord[2]"', '"/ExampleRecordSet/ExampleRecord[3]"', times=2)
     restate_digest(package, FINDINGS)
 
 

@@ -1,7 +1,6 @@
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix sh:  <http://www.w3.org/ns/shacl#> .
 @prefix oa:  <http://www.w3.org/ns/oa#> .
-@prefix ex:  <https://example.org/synthetic-adapter/v1#> .
 
 [] a oa:Annotation ;
   oa:hasTarget [
@@ -28,17 +27,3 @@
   oa:hasBody <https://www.w3.org/TR/xmlschema-1/#cvc-elt> ;
   oa:motivatedBy oa:classifying ;
   sh:resultSeverity sh:Violation .
-
-[] a oa:Annotation ;
-  oa:hasTarget [
-    oa:hasSource <../in/example-0003.xml> ;
-    oa:hasSelector [
-      a oa:XPathSelector ;
-      rdf:value "/ExampleRecordSet/ExampleRecord[1]" ;
-      oa:refinedBy [ a oa:XPathSelector ; rdf:value "Label[1]" ]
-    ]
-  ] ;
-  oa:hasBody ex:only-the-first-run-of-a-labels-text-is-carried ;
-  oa:motivatedBy oa:classifying ;
-  sh:value "/ExampleRecord/Label" ;
-  sh:resultSeverity sh:Info .

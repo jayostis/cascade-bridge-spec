@@ -219,7 +219,7 @@ bridge:sourceLacksRequired a skos:Concept ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
 bridge:carriedWithLoss a skos:Concept ;
-  skos:prefLabel "a source path carried, but not wholly"@en ;
+  skos:prefLabel "what a record holds at a source path, carried but not wholly"@en ;
   skos:inScheme bridge:gapKinds ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 

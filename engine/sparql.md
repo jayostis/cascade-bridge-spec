@@ -76,11 +76,11 @@ For each source record of a document, in document order, a Bridge:
 A record's findings are the union of what its queries construct and what its
 entries emit. Where both report a gap at one node, both findings stand.
 
-A gap of kind `bridge:noPredicate`, `bridge:sourceLacksRequired` or
-`bridge:carriedWithLoss` is true of the path, and the entry naming it reports it.
-A gap of kind `bridge:valueNotMapped` or `bridge:schemaRuleUnnamed` is true of a
-value at the path, which no entry names, and reports nothing. An entry whose
-verdict is neither `bridge:carriedInPart` nor `bridge:noHome` names no gap.
+A gap of kind `bridge:noPredicate` or `bridge:sourceLacksRequired` is true of
+the path, and the entry naming it reports it. A gap of kind
+`bridge:carriedWithLoss`, `bridge:valueNotMapped` or `bridge:schemaRuleUnnamed`
+is true of what a record holds at the path, which an entry cannot name, and
+reports nothing.
 
 A finding an entry reports is addressed as a census finding is, and carries the
 gap as its body, `oa:classifying` as its `oa:motivatedBy`, the path as its
