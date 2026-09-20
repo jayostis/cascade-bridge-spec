@@ -11,6 +11,7 @@ ex:gaps a skos:ConceptScheme .
 """
 
 THE_GAP = "https://example.org/synthetic-adapter/v1#no-term-for-a-free-text-note"
+THE_SCHEME = "https://example.org/synthetic-adapter/v1#gaps"
 
 THE_KINDS = (
     "bridge:carriedWithLoss, bridge:noPredicate, bridge:schemaRuleUnnamed, "
@@ -72,7 +73,8 @@ def test_reports_a_gap_carrying_no_preferred_label(package):
 def test_reports_a_gap_that_names_no_scheme(package):
     package.gap_scheme(scheme_of_one_gap(in_scheme=None))
     assert (
-        f"{THE_GAP} carries exactly one skos:inScheme, the scheme the adapter's bridge:gapScheme names"
+        f"{THE_GAP} carries exactly one skos:inScheme, {THE_SCHEME}, "
+        "the one skos:ConceptScheme example-gaps.ttl carries"
     ) in "\n".join(gap_scheme.faulty(package.crate))
 
 
@@ -101,3 +103,40 @@ def test_reports_a_closing_term_that_is_a_literal(package):
 def test_reports_nothing_for_a_gap_carrying_a_label_its_scheme_one_kind_and_a_closing_term(package):
     package.gap_scheme(scheme_of_one_gap(closed_by="<https://ns.cascadeprotocol.org/genomics/v1#assertionDate>"))
     assert not list(gap_scheme.faulty(package.crate))
+
+
+A_SCHEME_FILE_NAMING_NO_CONCEPT_SCHEME = """@prefix skos:   <http://www.w3.org/2004/02/skos/core#> .
+@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+@prefix ex:     <https://example.org/synthetic-adapter/v1#> .
+
+ex:no-term-for-a-free-text-note a skos:Concept ;
+  skos:prefLabel "no term for a free-text note" ;
+  skos:inScheme ex:gaps ;
+  skos:broader bridge:noPredicate .
+"""
+
+A_SECOND_CONCEPT_SCHEME = "\nex:gaps-of-our-own a skos:ConceptScheme .\n"
+
+
+def test_reports_a_gap_scheme_file_carrying_no_concept_scheme(package):
+    package.gap_scheme(A_SCHEME_FILE_NAMING_NO_CONCEPT_SCHEME)
+    assert (
+        "example-gaps.ttl carries 0 skos:ConceptSchemes, where a gap scheme carries exactly one, "
+        "the scheme every gap in it is skos:inScheme"
+    ) in "\n".join(gap_scheme.faulty(package.crate))
+
+
+def test_reports_a_gap_scheme_file_carrying_two_concept_schemes(package):
+    package.gap_scheme(scheme_of_one_gap() + A_SECOND_CONCEPT_SCHEME)
+    assert (
+        "example-gaps.ttl carries 2 skos:ConceptSchemes, where a gap scheme carries exactly one, "
+        "the scheme every gap in it is skos:inScheme"
+    ) in "\n".join(gap_scheme.faulty(package.crate))
+
+
+def test_reports_a_gap_that_names_a_scheme_other_than_the_one_its_file_carries(package):
+    package.gap_scheme(scheme_of_one_gap(in_scheme="skos:inScheme ex:something-else"))
+    assert (
+        f"{THE_GAP} carries exactly one skos:inScheme, {THE_SCHEME}, "
+        "the one skos:ConceptScheme example-gaps.ttl carries"
+    ) in "\n".join(gap_scheme.faulty(package.crate))

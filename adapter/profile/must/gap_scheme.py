@@ -37,11 +37,20 @@ def faulty(crate):
     except Exception as error:
         yield f"{path.name} does not parse as Turtle\n{error}"
         return
+    schemes = sorted(scheme.subjects(RDF.type, SKOS.ConceptScheme))
+    if len(schemes) != 1:
+        yield (
+            f"{path.name} carries {len(schemes)} skos:ConceptSchemes, where a gap scheme carries "
+            "exactly one, the scheme every gap in it is skos:inScheme"
+        )
+        return
     for gap in sorted(scheme.subjects(RDF.type, SKOS.Concept)):
         if len(list(scheme.objects(gap, SKOS.prefLabel))) != 1:
             yield f"{gap} carries exactly one skos:prefLabel, the sentence a finding no longer carries"
-        if len(list(scheme.objects(gap, SKOS.inScheme))) != 1:
-            yield f"{gap} carries exactly one skos:inScheme, the scheme the adapter's bridge:gapScheme names"
+        if list(scheme.objects(gap, SKOS.inScheme)) != schemes:
+            yield (
+                f"{gap} carries exactly one skos:inScheme, {schemes[0]}, the one skos:ConceptScheme {path.name} carries"
+            )
         kinds = list(scheme.objects(gap, SKOS.broader))
         if len(kinds) != 1 or kinds[0] not in KINDS_OF_GAP:
             yield f"{gap} is skos:broader exactly one of {THE_KINDS}"
