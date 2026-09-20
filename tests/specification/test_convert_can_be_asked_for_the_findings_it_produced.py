@@ -1,7 +1,7 @@
 from pathlib import Path
 
 CONTRACT = (Path(__file__).resolve().parents[2] / "engine" / "command.md").read_text(encoding="utf-8")
-CONVERT = CONTRACT.split("## `convert`", 1)[1]
+CONVERT = " ".join(CONTRACT.split("## `convert`", 1)[1].split())
 
 
 def test_convert_takes_a_findings_file():
