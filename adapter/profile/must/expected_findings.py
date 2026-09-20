@@ -3,11 +3,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from rdflib import Graph
+from rdflib import Graph, URIRef
 from rdflib.namespace import RDF
 from rocrate_validator.models import ValidationContext
 from rocrate_validator.requirements.python import PyFunctionCheck, check, requirement
 
+from _codes import NO_GAP_OF_THE_SCHEME, bodies_a_finding_may_carry
 from _crate import file_name_of
 from _findings import SHAPES, report_findings, unmet
 from _selectors import local_name_of, selector_of
@@ -126,6 +127,7 @@ def faulty(crate):
         return
 
     shapes = Graph().parse(SHAPES, format="turtle")
+    coded = bodies_a_finding_may_carry(crate)
     record_name = str(crate.graph.value(crate.root, BRIDGE.elementNameOfEachRecord) or "")
     for test, findings, source in entries:
         name = crate.name_of(test)
@@ -147,6 +149,9 @@ def faulty(crate):
             continue
         for message in unmet(graph, shapes):
             yield f"{name}: {path.name}: {message}"
+        for body in sorted(set(graph.objects(None, OA.hasBody))):
+            if isinstance(body, URIRef) and body not in coded:
+                yield f"{name}: {path.name}: {body} {NO_GAP_OF_THE_SCHEME}"
         input_path = None if source is None else crate.file_at(source)
         if input_path is None:
             continue

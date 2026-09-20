@@ -40,7 +40,7 @@ def expected_findings_file_of(crate, test):
 
 
 def violations_recorded_in(path):
-    """The selectors a findings file records as sh:Violation on the node itself, which are the schema failures its adapter expects."""
+    """The record selectors a findings file records as sh:Violation, which are the schema failures its adapter expects."""
     graph = Graph()
     try:
         graph.parse(path, format="turtle")
@@ -52,6 +52,6 @@ def violations_recorded_in(path):
             continue
         target = graph.value(annotation, OA.hasTarget)
         selector = None if target is None else graph.value(target, OA.hasSelector)
-        if selector is not None and graph.value(selector, OA.refinedBy) is None:
+        if selector is not None:
             recorded.add(str(graph.value(selector, RDF.value)))
     return recorded
