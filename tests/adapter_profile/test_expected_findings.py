@@ -467,20 +467,16 @@ def test_reports_a_finding_whose_body_names_a_rule_in_the_recommendation_that_do
     ) in "\n".join(said_about(package))
 
 
-def test_reports_a_finding_whose_gap_is_a_value_outside_a_fixed_set_and_which_carries_no_source_value(package):
+def test_reports_nothing_for_a_finding_whose_gap_is_a_value_outside_a_fixed_set_carrying_no_source_value(package):
     package.gap_scheme().write(FINDINGS, coded_finding(body=A_GAP_WHOSE_VALUE_IS_OUTSIDE_A_FIXED_SET))
-    assert (
-        "https://example.org/synthetic-adapter/v1#a-status-outside-the-set-the-vocabulary-fixes is skos:broader "
-        "bridge:valueNotMapped, where a finding carries exactly one sh:value, the source value that made it fire"
-    ) in "\n".join(said_about(package))
+    assert not said_about(package)
 
 
-def test_reports_a_finding_carrying_a_source_value_where_its_gap_is_of_another_kind(package):
+def test_reports_nothing_for_a_finding_carrying_the_source_value_that_made_it_fire_where_its_gap_is_of_another_kind(
+    package,
+):
     package.gap_scheme().write(FINDINGS, coded_finding(value='"a free-text note"'))
-    assert (
-        "https://example.org/synthetic-adapter/v1#no-term-for-a-free-text-note is not skos:broader "
-        "bridge:valueNotMapped, where a finding carries no sh:value"
-    ) in "\n".join(said_about(package))
+    assert not said_about(package)
 
 
 def test_reports_nothing_for_a_finding_whose_gap_is_a_value_outside_a_fixed_set_carrying_that_value(package):
@@ -510,7 +506,7 @@ def test_reports_a_finding_about_the_document_whose_refinement_selects_more_than
     ]
 
 
-THE_SCHEMA_FINDING_EXAMPLE_0003_EXPECTS = """@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+THE_SCHEMA_FINDINGS_EXAMPLE_0003_EXPECTS = """@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix sh:  <http://www.w3.org/ns/shacl#> .
 @prefix oa:  <http://www.w3.org/ns/oa#> .
 
@@ -526,17 +522,30 @@ THE_SCHEMA_FINDING_EXAMPLE_0003_EXPECTS = """@prefix rdf: <http://www.w3.org/199
   oa:hasBody <https://www.w3.org/TR/xmlschema-1/#cvc-complex-type> ;
   oa:motivatedBy oa:classifying ;
   sh:resultSeverity sh:Violation .
+
+[] a oa:Annotation ;
+  oa:hasTarget [
+    oa:hasSource <../in/example-0003.xml> ;
+    oa:hasSelector [
+      a oa:XPathSelector ;
+      rdf:value "/ExampleRecordSet" ;
+      oa:refinedBy [ a oa:XPathSelector ; rdf:value "Trailer[1]" ]
+    ]
+  ] ;
+  oa:hasBody <https://www.w3.org/TR/xmlschema-1/#cvc-elt> ;
+  oa:motivatedBy oa:classifying ;
+  sh:resultSeverity sh:Violation .
 """
 
 EXAMPLE_0003_BASE = "https://example.org/synthetic-adapter/fixtures/findings/example-0003.ttl"
 
 
-def test_the_schema_finding_the_synthetic_adapter_expects_is_w3cs_rule_and_the_element_it_was_broken_on():
+def test_the_schema_findings_the_synthetic_adapter_expects_are_w3cs_rules_and_the_element_they_were_broken_on():
     committed = Graph().parse(
         Path(__file__).resolve().parents[2] / "fixtures/synthetic-adapter/fixtures/findings/example-0003.ttl",
         format="turtle",
         publicID=EXAMPLE_0003_BASE,
     )
     assert committed.isomorphic(
-        Graph().parse(data=THE_SCHEMA_FINDING_EXAMPLE_0003_EXPECTS, format="turtle", publicID=EXAMPLE_0003_BASE)
+        Graph().parse(data=THE_SCHEMA_FINDINGS_EXAMPLE_0003_EXPECTS, format="turtle", publicID=EXAMPLE_0003_BASE)
     )
