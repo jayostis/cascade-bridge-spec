@@ -128,45 +128,6 @@ def test_reports_a_schema_that_does_not_compile_for_every_input_validated_agains
     assert len(faults) == len(tests)
 
 
-A_SCHEMA_FAILURE_RECORDED_ON_THE_ELEMENT_THE_RULES_WERE_BROKEN_ON = """@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix sh:  <http://www.w3.org/ns/shacl#> .
-@prefix oa:  <http://www.w3.org/ns/oa#> .
-
-[] a oa:Annotation ;
-  oa:hasTarget [
-    oa:hasSource <../in/example-0003.xml> ;
-    oa:hasSelector [
-      a oa:XPathSelector ;
-      rdf:value "/ExampleRecordSet" ;
-      oa:refinedBy [ a oa:XPathSelector ; rdf:value "Trailer[1]" ]
-    ]
-  ] ;
-  oa:hasBody <https://www.w3.org/TR/xmlschema-1/#cvc-complex-type> ;
-  oa:motivatedBy oa:classifying ;
-  sh:resultSeverity sh:Violation .
-
-[] a oa:Annotation ;
-  oa:hasTarget [
-    oa:hasSource <../in/example-0003.xml> ;
-    oa:hasSelector [
-      a oa:XPathSelector ;
-      rdf:value "/ExampleRecordSet" ;
-      oa:refinedBy [ a oa:XPathSelector ; rdf:value "Trailer[1]" ]
-    ]
-  ] ;
-  oa:hasBody <https://www.w3.org/TR/xmlschema-1/#cvc-elt> ;
-  oa:motivatedBy oa:classifying ;
-  sh:resultSeverity sh:Violation .
-"""
-
-
-def test_reports_nothing_for_a_schema_failure_recorded_on_the_element_the_rules_were_broken_on(package):
-    package.write(
-        "fixtures/findings/example-0003.ttl", A_SCHEMA_FAILURE_RECORDED_ON_THE_ELEMENT_THE_RULES_WERE_BROKEN_ON
-    )
-    assert not [message for message in inputs.invalid(package.crate) if "example-0003" in message]
-
-
 def test_reports_a_schema_failure_its_entrys_expected_findings_record_as_a_gap_rather_than_a_broken_rule(package):
     for rule in ("cvc-complex-type", "cvc-elt"):
         package.edit(

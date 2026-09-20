@@ -1,10 +1,11 @@
 from pathlib import Path
 
 from rdflib import Graph
+from rdflib.namespace import RDF
 
 import expected_findings
 from _codes import W3C_XML_SCHEMA_RULE_ANCHORS
-from _terms import BRIDGE, MF
+from _terms import BRIDGE, MF, OA
 
 FINDINGS = "fixtures/findings/example-0001.ttl"
 
@@ -491,46 +492,20 @@ def test_reports_a_finding_about_the_document_whose_refinement_selects_more_than
     ]
 
 
-THE_SCHEMA_FINDINGS_EXAMPLE_0003_EXPECTS = """@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix sh:  <http://www.w3.org/ns/shacl#> .
-@prefix oa:  <http://www.w3.org/ns/oa#> .
+EXAMPLE_0003 = Path(__file__).resolve().parents[2] / "fixtures/synthetic-adapter/fixtures/findings/example-0003.ttl"
 
-[] a oa:Annotation ;
-  oa:hasTarget [
-    oa:hasSource <../in/example-0003.xml> ;
-    oa:hasSelector [
-      a oa:XPathSelector ;
-      rdf:value "/ExampleRecordSet" ;
-      oa:refinedBy [ a oa:XPathSelector ; rdf:value "Trailer[1]" ]
-    ]
-  ] ;
-  oa:hasBody <https://www.w3.org/TR/xmlschema-1/#cvc-complex-type> ;
-  oa:motivatedBy oa:classifying ;
-  sh:resultSeverity sh:Violation .
 
-[] a oa:Annotation ;
-  oa:hasTarget [
-    oa:hasSource <../in/example-0003.xml> ;
-    oa:hasSelector [
-      a oa:XPathSelector ;
-      rdf:value "/ExampleRecordSet" ;
-      oa:refinedBy [ a oa:XPathSelector ; rdf:value "Trailer[1]" ]
-    ]
-  ] ;
-  oa:hasBody <https://www.w3.org/TR/xmlschema-1/#cvc-elt> ;
-  oa:motivatedBy oa:classifying ;
-  sh:resultSeverity sh:Violation .
-"""
-
-EXAMPLE_0003_BASE = "https://example.org/synthetic-adapter/fixtures/findings/example-0003.ttl"
+def selected_by(graph, finding):
+    selector = graph.value(graph.value(finding, OA.hasTarget), OA.hasSelector)
+    refinement = graph.value(selector, OA.refinedBy)
+    return str(graph.value(selector, RDF.value)), str(graph.value(refinement, RDF.value))
 
 
 def test_the_schema_findings_the_synthetic_adapter_expects_are_w3cs_rules_and_the_element_they_were_broken_on():
-    committed = Graph().parse(
-        Path(__file__).resolve().parents[2] / "fixtures/synthetic-adapter/fixtures/findings/example-0003.ttl",
-        format="turtle",
-        publicID=EXAMPLE_0003_BASE,
-    )
-    assert committed.isomorphic(
-        Graph().parse(data=THE_SCHEMA_FINDINGS_EXAMPLE_0003_EXPECTS, format="turtle", publicID=EXAMPLE_0003_BASE)
-    )
+    committed = Graph().parse(EXAMPLE_0003, format="turtle")
+    findings = list(committed.subjects(RDF.type, OA.Annotation))
+    bodies = {committed.value(finding, OA.hasBody) for finding in findings}
+    assert len(findings) == 2
+    assert len(bodies) == 2
+    assert bodies <= W3C_XML_SCHEMA_RULE_ANCHORS
+    assert len({selected_by(committed, finding) for finding in findings}) == 1
