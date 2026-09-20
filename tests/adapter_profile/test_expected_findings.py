@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from rdflib import Graph
-from rdflib.namespace import RDF
+from rdflib.namespace import RDF, SH
 
 import expected_findings
 from _codes import W3C_XML_SCHEMA_RULE_ANCHORS
@@ -524,7 +524,11 @@ def selected_by(graph, finding):
 
 def test_the_schema_findings_the_synthetic_adapter_expects_are_w3cs_rules_and_the_element_they_were_broken_on():
     committed = Graph().parse(EXAMPLE_0003, format="turtle")
-    findings = list(committed.subjects(RDF.type, OA.Annotation))
+    findings = [
+        finding
+        for finding in committed.subjects(RDF.type, OA.Annotation)
+        if committed.value(finding, SH.resultSeverity) == SH.Violation
+    ]
     bodies = {committed.value(finding, OA.hasBody) for finding in findings}
     assert len(findings) == 2
     assert len(bodies) == 2

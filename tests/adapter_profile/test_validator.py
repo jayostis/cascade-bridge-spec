@@ -56,7 +56,7 @@ def expected_graph_not_turtle(package):
 
 
 def a_finding_selecting_no_node(package):
-    package.edit(FINDINGS, '"/ExampleRecordSet/ExampleRecord[2]"', '"/ExampleRecordSet/ExampleRecord[3]"')
+    package.edit(FINDINGS, '"/ExampleRecordSet/ExampleRecord[2]"', '"/ExampleRecordSet/ExampleRecord[3]"', times=3)
     restate_digest(package, FINDINGS)
 
 
@@ -152,6 +152,19 @@ def no_accounting_named_and_no_census_expected(package):
         "  ] ;\n  mf:result [\n"
         "    bridge:expectedGraph <expected/example-0004.ttl> ;\n"
         "    bridge:expectedFindings <findings/example-0004.ttl>\n"
+        "  ] .",
+        "  ] .",
+    )
+    package.edit(
+        MANIFEST,
+        "<#example-0005> a bridge:IsomorphicConversionTest ;",
+        "<#example-0005> a bridge:InputOnlyTest ;",
+    )
+    package.edit(
+        MANIFEST,
+        "  ] ;\n  mf:result [\n"
+        "    bridge:expectedGraph <expected/example-0005.ttl> ;\n"
+        "    bridge:expectedFindings <findings/example-0005.ttl>\n"
         "  ] .",
         "  ] .",
     )
