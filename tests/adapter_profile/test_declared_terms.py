@@ -21,19 +21,20 @@ def test_reports_a_test_manifest_carrying_a_bridge_term_the_vocabulary_does_not_
     assert "bridge:entries" in "\n".join(declared_terms.undeclared(crate))
 
 
-KINDS_OF_GAP = {
+CONCEPTS_OF_GAP_KINDS = {
     BRIDGE.noPredicate,
     BRIDGE.valueNotMapped,
     BRIDGE.sourceLacksRequired,
     BRIDGE.carriedWithLoss,
     BRIDGE.schemaRuleUnnamed,
+    BRIDGE.pathNotAccounted,
 }
 
 
-def test_the_vocabulary_declares_every_kind_of_gap_in_the_scheme_they_belong_to():
+def test_the_vocabulary_declares_every_concept_of_gap_kinds_in_the_scheme_they_belong_to():
     vocabulary = Graph().parse(declared_terms.VOCABULARY, format="turtle")
     assert (BRIDGE.gapKinds, RDF.type, SKOS.ConceptScheme) in vocabulary
-    assert set(vocabulary.subjects(SKOS.inScheme, BRIDGE.gapKinds)) == KINDS_OF_GAP
+    assert set(vocabulary.subjects(SKOS.inScheme, BRIDGE.gapKinds)) == CONCEPTS_OF_GAP_KINDS
 
 
 def test_the_vocabulary_declares_the_term_by_which_an_adapter_names_its_gap_scheme():

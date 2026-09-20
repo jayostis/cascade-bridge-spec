@@ -116,6 +116,83 @@ bridge:gapScheme a owl:ObjectProperty ;
   rdfs:domain bridge:Adapter ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
+bridge:sourceAccounting a owl:ObjectProperty ;
+  rdfs:label "source accounting"@en ;
+  rdfs:comment "The adapter's file of bridge:PathEntry, one for every path of its source."@en ;
+  rdfs:domain bridge:Adapter ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:PathEntry a owl:Class ;
+  rdfs:label "Path entry"@en ;
+  rdfs:comment "One path of the source, and what the adapter does with it."@en ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:sourcePath a owl:DatatypeProperty ;
+  rdfs:label "source path"@en ;
+  rdfs:domain bridge:PathEntry ;
+  rdfs:range xsd:string ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:verdict a owl:ObjectProperty ;
+  rdfs:label "verdict"@en ;
+  rdfs:domain bridge:PathEntry ;
+  rdfs:range skos:Concept ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:namesGap a owl:ObjectProperty ;
+  rdfs:label "names gap"@en ;
+  rdfs:comment "The gap of the adapter's bridge:gapScheme the entry opens."@en ;
+  rdfs:domain bridge:PathEntry ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:sameFactAs a owl:DatatypeProperty ;
+  rdfs:label "same fact as"@en ;
+  rdfs:comment "The bridge:sourcePath that carries the fact instead."@en ;
+  rdfs:domain bridge:PathEntry ;
+  rdfs:range xsd:string ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:because a owl:DatatypeProperty ;
+  rdfs:label "because"@en ;
+  rdfs:comment "Why a path is deliberately not carried."@en ;
+  rdfs:domain bridge:PathEntry ;
+  rdfs:range xsd:string ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:verdicts a skos:ConceptScheme ;
+  skos:prefLabel "What an adapter does with a path"@en ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:carried a skos:Concept ;
+  skos:prefLabel "the path reaches the graph whole"@en ;
+  skos:inScheme bridge:verdicts ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:carriedInPart a skos:Concept ;
+  skos:prefLabel "the path reaches the graph, but not wholly"@en ;
+  skos:inScheme bridge:verdicts ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:redundantWith a skos:Concept ;
+  skos:prefLabel "another path already carries the same fact"@en ;
+  skos:inScheme bridge:verdicts ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:consumed a skos:Concept ;
+  skos:prefLabel "read while the graph is built, and not carried"@en ;
+  skos:inScheme bridge:verdicts ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:noHome a skos:Concept ;
+  skos:prefLabel "no Cascade predicate carries it"@en ;
+  skos:inScheme bridge:verdicts ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:ignored a skos:Concept ;
+  skos:prefLabel "deliberately not carried"@en ;
+  skos:inScheme bridge:verdicts ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
 bridge:closedBy a owl:ObjectProperty ;
   rdfs:label "closed by"@en ;
   rdfs:comment "The Cascade term whose declaration would let the adapter carry what the gap says it cannot."@en ;
@@ -148,6 +225,11 @@ bridge:carriedWithLoss a skos:Concept ;
 
 bridge:schemaRuleUnnamed a skos:Concept ;
   skos:prefLabel "a schema failure W3C names no rule for"@en ;
+  skos:inScheme bridge:gapKinds ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:pathNotAccounted a skos:Concept ;
+  skos:prefLabel "a path of the record the adapter's bridge:sourceAccounting does not carry"@en ;
   skos:inScheme bridge:gapKinds ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 

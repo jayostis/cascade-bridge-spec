@@ -16,6 +16,7 @@ CRATE = "ro-crate-metadata.json"
 MANIFEST = "fixtures/manifest.ttl"
 EXPECTED = "fixtures/expected/example-0001.ttl"
 FINDINGS = "fixtures/findings/example-0001.ttl"
+ACCOUNTING = "vocab/example-accounting.ttl"
 
 
 def restate_digest(package, relative):
@@ -102,6 +103,67 @@ def term_the_vocabulary_does_not_declare(package):
     )
 
 
+def an_accounting_entry_with_no_verdict(package):
+    package.edit(
+        ACCOUNTING,
+        '  bridge:sourcePath "/ExampleRecord/@Version" ;\n  bridge:verdict bridge:carried .',
+        '  bridge:sourcePath "/ExampleRecord/@Version" .',
+    )
+    restate_digest(package, ACCOUNTING)
+
+
+def an_accounting_entry_carrying_a_position(package):
+    package.edit(ACCOUNTING, '"/ExampleRecord/Note"', '"/ExampleRecord/Note[1]"')
+    restate_digest(package, ACCOUNTING)
+
+
+def an_accounting_entry_padded_with_whitespace(package):
+    package.edit(ACCOUNTING, '"/ExampleRecord/Note"', '"/ExampleRecord/ Note "')
+    restate_digest(package, ACCOUNTING)
+
+
+def an_accounting_entry_carrying_no_type(package):
+    package.edit(
+        ACCOUNTING,
+        '[] a bridge:PathEntry ;\n  bridge:sourcePath "/ExampleRecord/Status" ;\n  bridge:verdict bridge:consumed .',
+        '[] bridge:sourcePath "/ExampleRecord/Status" ;\n  bridge:verdict bridge:consumed .',
+    )
+    restate_digest(package, ACCOUNTING)
+
+
+def an_accounting_entry_for_a_node_in_a_namespace(package):
+    package.edit(
+        ACCOUNTING,
+        '[] a bridge:PathEntry ;\n  bridge:sourcePath "/ExampleRecord/Note" ;',
+        "[] a bridge:PathEntry ;\n  bridge:sourcePath \"/ExampleRecord/*[local-name()='Note' and "
+        "namespace-uri()='https://example.org/synthetic-adapter/ext/v1']\" ;",
+    )
+    restate_digest(package, ACCOUNTING)
+
+
+def no_accounting_named_and_no_census_expected(package):
+    package.edit(
+        MANIFEST,
+        "<#example-0004> a bridge:IsomorphicConversionTest ;",
+        "<#example-0004> a bridge:InputOnlyTest ;",
+    )
+    package.edit(
+        MANIFEST,
+        "  ] ;\n  mf:result [\n"
+        "    bridge:expectedGraph <expected/example-0004.ttl> ;\n"
+        "    bridge:expectedFindings <findings/example-0004.ttl>\n"
+        "  ] .",
+        "  ] .",
+    )
+    restate_digest(package, MANIFEST)
+    crate = package.path / CRATE
+    document = json.loads(crate.read_text(encoding="utf-8"))
+    root = next(entity for entity in document["@graph"] if entity["@id"] == "./")
+    assert "bridge:sourceAccounting" in root
+    del root["bridge:sourceAccounting"]
+    crate.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8", newline="")
+
+
 def profile_not_an_entity(package):
     package.edit(CRATE, '      "@type": ["CreativeWork", "Profile"],', '      "@type": "CreativeWork",')
 
@@ -159,6 +221,51 @@ def pin_not_a_data_entity(package):
             [],
             [],
             id="nothing of its kind passes: no expected graphs",
+        ),
+        pytest.param(
+            no_accounting_named_and_no_census_expected,
+            True,
+            [],
+            [],
+            id="a crate naming no accounting passes, as every adapter that exists today does",
+        ),
+        pytest.param(
+            an_accounting_entry_with_no_verdict,
+            False,
+            [
+                "An entry carries exactly one bridge:verdict, one of bridge:carried, bridge:carriedInPart, "
+                "bridge:redundantWith, bridge:consumed, bridge:noHome, bridge:ignored."
+            ],
+            [],
+            id="a shape the accounting does not meet fails the profile, not only a test running the shapes by hand",
+        ),
+        pytest.param(
+            an_accounting_entry_carrying_a_position,
+            False,
+            ["/ExampleRecord/Note[1] is written in steps this lint cannot read"],
+            [],
+            id="a source path carrying a position fails the profile",
+        ),
+        pytest.param(
+            an_accounting_entry_padded_with_whitespace,
+            False,
+            ["/ExampleRecord/ Note  is written in steps this lint cannot read"],
+            [],
+            id="a source path padded with whitespace fails the profile",
+        ),
+        pytest.param(
+            an_accounting_entry_carrying_no_type,
+            False,
+            ["A subject of a bridge:sourcePath is a bridge:PathEntry."],
+            [],
+            id="an entry carrying no bridge:PathEntry type fails the profile, where it silenced a path before",
+        ),
+        pytest.param(
+            an_accounting_entry_for_a_node_in_a_namespace,
+            True,
+            [],
+            [],
+            id="a source path naming a node in a namespace passes the profile",
         ),
         pytest.param(
             undeclared_context_key,

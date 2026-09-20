@@ -71,7 +71,7 @@ def test_rejects_a_finding_carrying_two_motivations():
 
 
 def test_rejects_a_finding_carrying_two_source_values():
-    assert "A finding carries at most one sh:value, the source value that made it fire." in said_about(
+    assert "A finding carries at most one sh:value, what in the source it is about." in said_about(
         finding(value='"clinically significant", "uncertain"')
     )
 

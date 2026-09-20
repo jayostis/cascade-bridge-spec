@@ -417,7 +417,7 @@ def test_reports_a_finding_whose_body_is_no_gap_of_the_adapters_gap_scheme(packa
     assert (
         "https://example.org/synthetic-adapter/v1#a-gap-the-scheme-does-not-hold is not a gap of the adapter's "
         "bridge:gapScheme, the anchor of a validation rule in a W3C XML Schema Recommendation, "
-        "or bridge:schemaRuleUnnamed"
+        "bridge:schemaRuleUnnamed, or bridge:pathNotAccounted"
     ) in "\n".join(said_about(package))
 
 
@@ -431,11 +431,31 @@ def test_reports_nothing_for_a_finding_whose_body_is_the_concept_for_a_schema_fa
     assert not said_about(package)
 
 
+def test_reports_nothing_for_a_finding_whose_body_is_the_concept_a_census_carries(package):
+    package.gap_scheme().write(FINDINGS, coded_finding(body="bridge:pathNotAccounted"))
+    assert not said_about(package)
+
+
+def test_reports_the_concept_a_census_carries_where_the_adapter_names_no_source_accounting(package):
+    package.gap_scheme().write(FINDINGS, coded_finding(body="bridge:pathNotAccounted"))
+    package.edit(
+        "ro-crate-metadata.json",
+        '      "bridge:sourceAccounting": {\n        "@id": "vocab/example-accounting.ttl"\n      },\n',
+        "",
+    )
+    assert (
+        "https://ns.cascadeprotocol.org/bridge/v1-draft#pathNotAccounted is not a gap of the adapter's "
+        "bridge:gapScheme, the anchor of a validation rule in a W3C XML Schema Recommendation, "
+        "or bridge:schemaRuleUnnamed, the adapter naming no bridge:sourceAccounting"
+    ) in "\n".join(said_about(package))
+
+
 def test_reports_a_finding_whose_body_is_the_anchor_of_no_w3c_xml_schema_validation_rule(package):
     package.gap_scheme().write(FINDINGS, coded_finding(body="<https://www.w3.org/TR/xmlschema-1/#cvc-nonesuch>"))
     assert (
         "https://www.w3.org/TR/xmlschema-1/#cvc-nonesuch is not a gap of the adapter's bridge:gapScheme, "
-        "the anchor of a validation rule in a W3C XML Schema Recommendation, or bridge:schemaRuleUnnamed"
+        "the anchor of a validation rule in a W3C XML Schema Recommendation, bridge:schemaRuleUnnamed, "
+        "or bridge:pathNotAccounted"
     ) in "\n".join(said_about(package))
 
 
@@ -449,7 +469,8 @@ def test_reports_a_finding_whose_body_names_a_rule_in_the_recommendation_that_do
     package.gap_scheme().write(FINDINGS, coded_finding(body="<https://www.w3.org/TR/xmlschema-1/#cvc-pattern-valid>"))
     assert (
         "https://www.w3.org/TR/xmlschema-1/#cvc-pattern-valid is not a gap of the adapter's bridge:gapScheme, "
-        "the anchor of a validation rule in a W3C XML Schema Recommendation, or bridge:schemaRuleUnnamed"
+        "the anchor of a validation rule in a W3C XML Schema Recommendation, bridge:schemaRuleUnnamed, "
+        "or bridge:pathNotAccounted"
     ) in "\n".join(said_about(package))
 
 

@@ -303,7 +303,7 @@
   sh:property [
     sh:path sh:value ;
     sh:maxCount 1 ;
-    sh:message "A finding carries at most one sh:value, the source value that made it fire."
+    sh:message "A finding carries at most one sh:value, what in the source it is about."
   ] ;
   sh:property [
     sh:path sh:resultSeverity ;
@@ -382,6 +382,182 @@
     sh:path oa:refinedBy ;
     sh:maxCount 0 ;
     sh:message "A selector refining a record's selector is refined no further."
+  ] .
+
+<#SubjectOfASourcePath> a sh:NodeShape ;
+  sh:target [
+    a sh:SPARQLTarget ;
+    sh:prefixes <> ;
+    sh:select """
+      SELECT ?this WHERE { ?this bridge:sourcePath ?path }
+    """
+  ] ;
+  sh:class bridge:PathEntry ;
+  sh:message "A subject of a bridge:sourcePath is a bridge:PathEntry." .
+
+<#PathEntry> a sh:NodeShape ;
+  sh:targetClass bridge:PathEntry ;
+  sh:property [
+    sh:path bridge:sourcePath ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "An entry carries exactly one bridge:sourcePath, the path it accounts for, a string."
+  ] ;
+  sh:property [
+    sh:path bridge:verdict ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:in ( bridge:carried bridge:carriedInPart bridge:redundantWith bridge:consumed bridge:noHome bridge:ignored ) ;
+    sh:message "An entry carries exactly one bridge:verdict, one of bridge:carried, bridge:carriedInPart, bridge:redundantWith, bridge:consumed, bridge:noHome, bridge:ignored."
+  ] .
+
+<#CarriedEntry> a sh:NodeShape ;
+  sh:target [
+    a sh:SPARQLTarget ;
+    sh:prefixes <> ;
+    sh:select """
+      SELECT ?this WHERE { ?this a bridge:PathEntry ; bridge:verdict bridge:carried }
+    """
+  ] ;
+  sh:property [
+    sh:path bridge:namesGap ;
+    sh:maxCount 0 ;
+    sh:message "An entry whose verdict is bridge:carried names no bridge:namesGap."
+  ] ;
+  sh:property [
+    sh:path bridge:sameFactAs ;
+    sh:maxCount 0 ;
+    sh:message "An entry whose verdict is bridge:carried names no bridge:sameFactAs."
+  ] ;
+  sh:property [
+    sh:path bridge:because ;
+    sh:maxCount 0 ;
+    sh:message "An entry whose verdict is bridge:carried gives no bridge:because."
+  ] .
+
+<#CarriedInPartEntry> a sh:NodeShape ;
+  sh:target [
+    a sh:SPARQLTarget ;
+    sh:prefixes <> ;
+    sh:select """
+      SELECT ?this WHERE { ?this a bridge:PathEntry ; bridge:verdict bridge:carriedInPart }
+    """
+  ] ;
+  sh:property [
+    sh:path bridge:namesGap ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:message "An entry whose verdict is bridge:carriedInPart names exactly one bridge:namesGap, the gap the loss opens."
+  ] ;
+  sh:property [
+    sh:path bridge:sameFactAs ;
+    sh:maxCount 0 ;
+    sh:message "An entry whose verdict is bridge:carriedInPart names no bridge:sameFactAs."
+  ] ;
+  sh:property [
+    sh:path bridge:because ;
+    sh:maxCount 0 ;
+    sh:message "An entry whose verdict is bridge:carriedInPart gives no bridge:because."
+  ] .
+
+<#RedundantWithEntry> a sh:NodeShape ;
+  sh:target [
+    a sh:SPARQLTarget ;
+    sh:prefixes <> ;
+    sh:select """
+      SELECT ?this WHERE { ?this a bridge:PathEntry ; bridge:verdict bridge:redundantWith }
+    """
+  ] ;
+  sh:property [
+    sh:path bridge:sameFactAs ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:message "An entry whose verdict is bridge:redundantWith names exactly one bridge:sameFactAs, the bridge:sourcePath that carries the fact instead."
+  ] ;
+  sh:property [
+    sh:path bridge:namesGap ;
+    sh:maxCount 0 ;
+    sh:message "An entry whose verdict is bridge:redundantWith names no bridge:namesGap."
+  ] ;
+  sh:property [
+    sh:path bridge:because ;
+    sh:maxCount 0 ;
+    sh:message "An entry whose verdict is bridge:redundantWith gives no bridge:because."
+  ] .
+
+<#ConsumedEntry> a sh:NodeShape ;
+  sh:target [
+    a sh:SPARQLTarget ;
+    sh:prefixes <> ;
+    sh:select """
+      SELECT ?this WHERE { ?this a bridge:PathEntry ; bridge:verdict bridge:consumed }
+    """
+  ] ;
+  sh:property [
+    sh:path bridge:namesGap ;
+    sh:maxCount 0 ;
+    sh:message "An entry whose verdict is bridge:consumed names no bridge:namesGap."
+  ] ;
+  sh:property [
+    sh:path bridge:sameFactAs ;
+    sh:maxCount 0 ;
+    sh:message "An entry whose verdict is bridge:consumed names no bridge:sameFactAs."
+  ] ;
+  sh:property [
+    sh:path bridge:because ;
+    sh:maxCount 0 ;
+    sh:message "An entry whose verdict is bridge:consumed gives no bridge:because."
+  ] .
+
+<#NoHomeEntry> a sh:NodeShape ;
+  sh:target [
+    a sh:SPARQLTarget ;
+    sh:prefixes <> ;
+    sh:select """
+      SELECT ?this WHERE { ?this a bridge:PathEntry ; bridge:verdict bridge:noHome }
+    """
+  ] ;
+  sh:property [
+    sh:path bridge:namesGap ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:message "An entry whose verdict is bridge:noHome names exactly one bridge:namesGap, the gap the missing predicate opens."
+  ] ;
+  sh:property [
+    sh:path bridge:sameFactAs ;
+    sh:maxCount 0 ;
+    sh:message "An entry whose verdict is bridge:noHome names no bridge:sameFactAs."
+  ] ;
+  sh:property [
+    sh:path bridge:because ;
+    sh:maxCount 0 ;
+    sh:message "An entry whose verdict is bridge:noHome gives no bridge:because."
+  ] .
+
+<#IgnoredEntry> a sh:NodeShape ;
+  sh:target [
+    a sh:SPARQLTarget ;
+    sh:prefixes <> ;
+    sh:select """
+      SELECT ?this WHERE { ?this a bridge:PathEntry ; bridge:verdict bridge:ignored }
+    """
+  ] ;
+  sh:property [
+    sh:path bridge:because ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:message "An entry whose verdict is bridge:ignored gives exactly one bridge:because, why the path is deliberately not carried."
+  ] ;
+  sh:property [
+    sh:path bridge:namesGap ;
+    sh:maxCount 0 ;
+    sh:message "An entry whose verdict is bridge:ignored names no bridge:namesGap."
+  ] ;
+  sh:property [
+    sh:path bridge:sameFactAs ;
+    sh:maxCount 0 ;
+    sh:message "An entry whose verdict is bridge:ignored names no bridge:sameFactAs."
   ] .
 
 <#DatasetResult> a sh:NodeShape ;

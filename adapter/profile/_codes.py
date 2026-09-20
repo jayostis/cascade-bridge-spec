@@ -3,7 +3,7 @@ from rdflib.namespace import RDF, SKOS
 
 from _terms import BRIDGE
 
-KINDS_OF_GAP = (
+KINDS_A_GAP_MAY_NAME = (
     BRIDGE.carriedWithLoss,
     BRIDGE.noPredicate,
     BRIDGE.schemaRuleUnnamed,
@@ -11,7 +11,7 @@ KINDS_OF_GAP = (
     BRIDGE.valueNotMapped,
 )
 
-THE_KINDS = ", ".join(str(kind).replace(str(BRIDGE), "bridge:") for kind in KINDS_OF_GAP)
+THE_KINDS_A_GAP_MAY_NAME = ", ".join(str(kind).replace(str(BRIDGE), "bridge:") for kind in KINDS_A_GAP_MAY_NAME)
 
 VALIDATION_RULES_OF_XML_SCHEMA_PART_1 = (
     "cos-st-restricts",
@@ -52,11 +52,20 @@ BODIES_OF_A_SCHEMA_FAILURE = W3C_XML_SCHEMA_RULE_ANCHORS | {BRIDGE.schemaRuleUnn
 
 THE_ANCHORS = ", ".join(sorted(str(anchor) for anchor in W3C_XML_SCHEMA_RULE_ANCHORS))
 
-NO_GAP_OF_THE_SCHEME = (
-    "is not a gap of the adapter's bridge:gapScheme, the anchor of a validation rule "
-    "in a W3C XML Schema Recommendation, or bridge:schemaRuleUnnamed. The anchors a body "
-    f"may take are {THE_ANCHORS}"
-)
+
+def accounts_for_its_source(crate):
+    return (crate.root, BRIDGE.sourceAccounting, None) in crate.graph
+
+
+def no_gap_of_the_scheme(crate):
+    admitted = "bridge:schemaRuleUnnamed, or bridge:pathNotAccounted"
+    if not accounts_for_its_source(crate):
+        admitted = "or bridge:schemaRuleUnnamed, the adapter naming no bridge:sourceAccounting"
+    return (
+        "is not a gap of the adapter's bridge:gapScheme, the anchor of a validation rule "
+        f"in a W3C XML Schema Recommendation, {admitted}. "
+        f"The anchors a body may take are {THE_ANCHORS}"
+    )
 
 
 def scheme_named_by(crate):
@@ -78,4 +87,5 @@ def gaps_of(crate):
 
 
 def bodies_a_finding_may_carry(crate):
-    return gaps_of(crate) | BODIES_OF_A_SCHEMA_FAILURE
+    census = {BRIDGE.pathNotAccounted} if accounts_for_its_source(crate) else set()
+    return gaps_of(crate) | BODIES_OF_A_SCHEMA_FAILURE | census

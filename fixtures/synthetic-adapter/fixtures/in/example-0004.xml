@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ExampleRecordSet>
+  <ExampleRecord xmlns:ext="https://example.org/synthetic-adapter/ext/v1"
+                 Accession="EX000005" Version="1" Curated="true" ext:origin="submitted">
+    <Label lang="en">a record carrying an element the accounting does not name</Label>
+    <Novelty>the schema allows this element and no entry of the accounting mentions it</Novelty>
+    <Status>current</Status>
+    <ext:Extension>an element in a namespace no entry of the accounting mentions</ext:Extension>
+  </ExampleRecord>
+</ExampleRecordSet>

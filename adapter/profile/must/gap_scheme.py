@@ -8,7 +8,7 @@ from rdflib.namespace import RDF, SKOS
 from rocrate_validator.models import ValidationContext
 from rocrate_validator.requirements.python import PyFunctionCheck, check, requirement
 
-from _codes import KINDS_OF_GAP, THE_KINDS
+from _codes import KINDS_A_GAP_MAY_NAME, THE_KINDS_A_GAP_MAY_NAME
 from _findings import report_findings
 from _terms import BRIDGE
 
@@ -52,8 +52,8 @@ def faulty(crate):
                 f"{gap} carries exactly one skos:inScheme, {schemes[0]}, the one skos:ConceptScheme {path.name} carries"
             )
         kinds = list(scheme.objects(gap, SKOS.broader))
-        if len(kinds) != 1 or kinds[0] not in KINDS_OF_GAP:
-            yield f"{gap} is skos:broader exactly one of {THE_KINDS}"
+        if len(kinds) != 1 or kinds[0] not in KINDS_A_GAP_MAY_NAME:
+            yield f"{gap} is skos:broader exactly one of {THE_KINDS_A_GAP_MAY_NAME}"
         closing = list(scheme.objects(gap, BRIDGE.closedBy))
         if len(closing) > 1 or not all(isinstance(term, URIRef) for term in closing):
             yield f"{gap} names at most one bridge:closedBy, the Cascade term that would close it, by IRI"
