@@ -140,3 +140,22 @@ def test_reports_a_gap_that_names_a_scheme_other_than_the_one_its_file_carries(p
         f"{THE_GAP} carries exactly one skos:inScheme, {THE_SCHEME}, "
         "the one skos:ConceptScheme example-gaps.ttl carries"
     ) in "\n".join(gap_scheme.faulty(package.crate))
+
+
+def test_reports_a_gap_naming_two_closing_terms(package):
+    package.gap_scheme(
+        scheme_of_one_gap(
+            closed_by=(
+                "<https://ns.cascadeprotocol.org/genomics/v1#assertionDate>, "
+                "<https://ns.cascadeprotocol.org/genomics/v1#assertionNote>"
+            )
+        )
+    )
+    assert (f"{THE_GAP} names at most one bridge:closedBy, the Cascade term that would close it, by IRI") in "\n".join(
+        gap_scheme.faulty(package.crate)
+    )
+
+
+def test_reports_a_gap_scheme_that_does_not_parse_as_turtle(package):
+    package.gap_scheme("ex:gaps a skos:ConceptScheme .\n")
+    assert "example-gaps.ttl does not parse as Turtle" in "\n".join(gap_scheme.faulty(package.crate))
