@@ -8,6 +8,7 @@
       <xs:element name="Label" type="LabelType"/>
       <xs:element name="Note" type="xs:string" minOccurs="0"/>
       <xs:element name="Novelty" type="xs:string" minOccurs="0"/>
+      <xs:element name="Status" type="xs:string" minOccurs="0"/>
       <xs:element name="AccessionAlias" type="xs:string" minOccurs="0"/>
     </xs:sequence>
     <xs:attribute name="Accession" type="xs:string" use="required"/>

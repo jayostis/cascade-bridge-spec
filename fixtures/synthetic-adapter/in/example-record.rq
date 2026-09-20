@@ -19,4 +19,6 @@ WHERE {
                   ?accession)) AS ?record)
   BIND(STRDT(?number, xsd:integer) AS ?version)
   OPTIONAL { ?exampleRecord ?slot ?element . ?element a xyz:Label ; rdf:_1 ?label }
+  OPTIONAL { ?exampleRecord ?statusSlot ?statusElement . ?statusElement a xyz:Status ; rdf:_1 ?status }
+  FILTER (!BOUND(?status) || ?status != "withdrawn")
 }

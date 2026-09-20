@@ -204,8 +204,8 @@
       "@type": "File",
       "name": "Mapping",
       "encodingFormat": "application/sparql-query",
-      "contentSize": "788",
-      "sha256": "38e89d86223ae679c6f4acfdc4403c59457efd3f627d5a138ada4a06a0f118af",
+      "contentSize": "945",
+      "sha256": "e9b17fa91b16ab4084a83cc684759da943eeb70fc37a5b186d996eb635791bce",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       }
@@ -237,9 +237,9 @@
       "@type": "File",
       "name": "Example record XSD, pinned copy",
       "encodingFormat": "application/xml",
-      "contentSize": "956",
-      "sha256": "a6dca3a11bb7dbf22c598a5a1d814aa3ee63a1729322f5679490935ca2f38018",
-      "md5": "4e9812c08c2f76e6e58b04d618785f3f",
+      "contentSize": "1021",
+      "sha256": "3d57bb1912655f263e2dd18031e5cc0b6d46a74549fcafc47b347f50eb9f9bf1",
+      "md5": "904624d17c93dd1b46dfde317d9655f5",
       "isBasedOn": {
         "@id": "https://example.org/synthetic-adapter/schema/example-record.xsd"
       },
@@ -272,8 +272,8 @@
       "@type": "File",
       "name": "Source accounting",
       "encodingFormat": "text/turtle",
-      "contentSize": "1201",
-      "sha256": "7d71950ce868cbdb54c26107eb895574c40b2eacddb04ad7d79b27fb913d7bb7",
+      "contentSize": "1307",
+      "sha256": "197cad05258eacc81aa1c8acab88d71a8adca635559edba9721c2fd45f7c5fae",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       }
@@ -385,8 +385,8 @@
       "@type": "File",
       "name": "Synthetic input carrying an element the accounting names nowhere",
       "encodingFormat": "application/xml",
-      "contentSize": "322",
-      "sha256": "b7f7fb480f8abbd7ec26684a55a946e98a50d3d4fe754a9a379f0663dac65ea5",
+      "contentSize": "351",
+      "sha256": "3389548884dfb448f163a75ad697140f0ba0d5d5b327b6ca4d49b3f53b73c52c",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       }
