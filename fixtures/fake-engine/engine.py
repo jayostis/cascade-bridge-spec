@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-"""Usage: engine.py [--canned passed|failed|partial|none|garbled] test <adapter directory> --earl <file>
-Usage: engine.py convert <adapter directory> <document> [--out <file>] [--format turtle|ntriples]
-"""
-
 import argparse
 import sys
 from pathlib import Path

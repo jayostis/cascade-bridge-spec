@@ -228,15 +228,15 @@ bridge:schemaRuleUnnamed a skos:Concept ;
   skos:inScheme bridge:gapKinds ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
+bridge:pathNotAccounted a skos:Concept ;
+  skos:prefLabel "a path of the record the adapter's bridge:sourceAccounting does not carry"@en ;
+  skos:inScheme bridge:gapKinds ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
 bridge:occurrences a owl:DatatypeProperty ;
   rdfs:label "occurrences"@en ;
   rdfs:comment "How many nodes of the record stand at the path the finding is about."@en ;
   rdfs:range xsd:integer ;
-  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
-
-bridge:pathNotAccounted a skos:Concept ;
-  skos:prefLabel "a path of the record the adapter's bridge:sourceAccounting does not carry"@en ;
-  skos:inScheme bridge:gapKinds ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
 bridge:testManifest a owl:ObjectProperty ;

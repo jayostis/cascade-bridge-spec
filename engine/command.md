@@ -35,10 +35,7 @@ the graph and nothing else.
 
 `--findings` writes the union of every record's findings as one graph, in the
 same format, to `<file>` and never on standard output. They are the findings a
-`bridge:expectedFindings` file is compared against, so an author writes an
-oracle by running an engine rather than by reimplementing one. Omitting it
-changes nothing: the same records run, the same graph is written, the same exit
-code is returned.
+`bridge:expectedFindings` file is compared against. Omitting it changes nothing.
 
 **The exit code is the whole of what a caller learns**, because `convert` writes
 no report: zero when the graph was produced, non-zero when it was not, and

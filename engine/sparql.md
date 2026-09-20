@@ -68,10 +68,10 @@ For each source record of a document, in document order, a Bridge:
    `oa:refinedBy`.
 5. adds, where the adapter names a `bridge:sourceAccounting`, one finding for
    each distinct path of the record that no `bridge:PathEntry` of that file
-   carries as its `bridge:sourcePath`. An adapter naming none gets none;
+   carries as its `bridge:sourcePath`;
 6. adds, where the adapter names a `bridge:sourceAccounting`, one finding for
    each distinct path of the record whose `bridge:PathEntry` names a gap that
-   reports. An adapter naming none gets none.
+   reports.
 
 A record's findings are the union of what its queries construct and what its
 entries emit. Where both report a gap at one node, both findings stand.
@@ -84,8 +84,8 @@ reports nothing.
 
 A finding an entry reports is addressed as a census finding is, and carries the
 gap as its body, `oa:classifying` as its `oa:motivatedBy`, the path as its
-`sh:value`, the same `bridge:occurrences`, and as its `sh:resultSeverity` the
-`sh:resultSeverity` the gap concept declares, `sh:Info` where it declares none.
+`sh:value`, and as its `sh:resultSeverity` the `sh:resultSeverity` the gap
+concept declares, `sh:Info` where it declares none.
 
 A path is the element and attribute names from the record element down to the
 node, the record element first, separated by `/`, an attribute's last step
@@ -105,6 +105,10 @@ record stand at that path, an `xsd:integer` of 2 or more, omitted where it is 1.
 
 A `bridge:sourceAccounting` a crate names and a Bridge cannot read is an error,
 as one that does not parse is. Naming none is the silent case.
+
+A gap's kind and its severity are read from the adapter's `bridge:gapScheme`.
+One a crate names and a Bridge cannot read or parse is an error, as a
+`bridge:sourceAccounting` is.
 
 Each annotation a findings query constructs targets a blank node written for
 that one annotation, `[ oa:hasSource bridge:thisRecord ]`; a query says the
