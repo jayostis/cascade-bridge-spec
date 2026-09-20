@@ -99,6 +99,13 @@ def test_reports_a_gap_whose_kind_is_outside_the_kinds_the_vocabulary_declares(p
     )
 
 
+def test_reports_a_gap_whose_kind_is_the_concept_a_census_carries(package):
+    package.gap_scheme(scheme_of_one_gap(broader="skos:broader bridge:pathNotAccounted"))
+    assert f"{THE_GAP} is skos:broader exactly one of {THE_KINDS_A_GAP_MAY_NAME}" in "\n".join(
+        gap_scheme.faulty(package.crate)
+    )
+
+
 def test_reports_a_closing_term_that_is_a_literal(package):
     package.gap_scheme(scheme_of_one_gap(closed_by='"genomics:assertionDate"'))
     assert (f"{THE_GAP} names at most one bridge:closedBy, the Cascade term that would close it, by IRI") in "\n".join(
