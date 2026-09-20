@@ -59,6 +59,7 @@ def shapes_less_the_selector_the_bridge_adds():
 
 def malformed(crate):
     declared = [(prop, query) for prop in QUERY_FORMS for query in sorted(crate.graph.objects(crate.root, prop))]
+    gaps = gaps_of(crate)
     for prop, query in declared:
         term, form = QUERY_FORMS[prop]
         name = file_name_of(query)
@@ -100,7 +101,6 @@ def malformed(crate):
                 "written for that one finding: a variable is bound to a node the lift already holds, so two "
                 "solutions binding it alike stand every finding of both on one node"
             )
-        gaps = gaps_of(crate)
         for body in sorted({triple[2] for triple in template if triple[1] == OA.hasBody}):
             if isinstance(body, URIRef) and body not in gaps:
                 yield (
