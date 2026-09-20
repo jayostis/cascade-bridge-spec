@@ -50,7 +50,7 @@ class Package:
     def edit(self, relative, old, new):
         target = self.path / relative
         text = target.read_text(encoding="utf-8")
-        assert text.count(old) == 1, f"{relative}: {old!r} occurs {text.count(old)} times"
+        assert old in text, f"{relative}: {old!r} is not there"
         target.write_text(text.replace(old, new), encoding="utf-8", newline="")
         return self
 

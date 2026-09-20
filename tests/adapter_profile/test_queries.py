@@ -9,6 +9,7 @@ PREFIX oa:     <http://www.w3.org/ns/oa#>
 PREFIX fx:     <http://sparql.xyz/facade-x/ns/>
 PREFIX xyz:    <http://sparql.xyz/facade-x/data/>
 PREFIX bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#>
+PREFIX ex:     <https://example.org/synthetic-adapter/v1#>
 """
 
 WHERE = """WHERE {
@@ -76,14 +77,16 @@ TWO_FINDINGS_EACH_WITH_A_TARGET_OF_ITS_OWN = findings_query("""  [] a oa:Annotat
       oa:hasSource bridge:thisRecord ;
       oa:hasSelector [ a oa:XPathSelector ; rdf:value "Note" ]
     ] ;
-    oa:hasBody [ a oa:TextualBody ; rdf:value "no term for a free-text note" ] ;
+    oa:hasBody ex:no-term-for-a-free-text-note ;
+    oa:motivatedBy oa:classifying ;
     sh:resultSeverity sh:Info .
   [] a oa:Annotation ;
     oa:hasTarget [
       oa:hasSource bridge:thisRecord ;
       oa:hasSelector [ a oa:XPathSelector ; rdf:value "Label" ]
     ] ;
-    oa:hasBody [ a oa:TextualBody ; rdf:value "a second note" ] ;
+    oa:hasBody ex:a-status-outside-the-set-the-vocabulary-fixes ;
+    oa:motivatedBy oa:classifying ;
     sh:resultSeverity sh:Info .""")
 
 
@@ -215,12 +218,13 @@ A_FINDINGS_QUERY_BINDING_THE_ANNOTATION_TO_A_VARIABLE = findings_query("""  ?not
     oa:hasBody [ a oa:TextualBody ; rdf:value "no term for a free-text note" ] ;
     sh:resultSeverity sh:Info .""")
 
-A_FINDINGS_QUERY_WHOSE_REASON_SEVERITY_AND_XPATH_ARE_BOUND = findings_query("""  [] a oa:Annotation ;
+A_FINDINGS_QUERY_WHOSE_BODY_SEVERITY_AND_XPATH_ARE_BOUND = findings_query("""  [] a oa:Annotation ;
     oa:hasTarget [
       oa:hasSource bridge:thisRecord ;
       oa:hasSelector ?selector
     ] ;
-    oa:hasBody [ a oa:TextualBody ; rdf:value ?reason ] ;
+    oa:hasBody ?gap ;
+    oa:motivatedBy oa:classifying ;
     sh:resultSeverity ?severity .
   ?selector a oa:XPathSelector ; rdf:value ?xpath .""")
 
@@ -259,13 +263,14 @@ def test_reports_a_findings_query_binding_the_annotation_to_a_variable(package):
 
 
 def test_holds_a_findings_query_to_nothing_a_variable_binds(package):
-    package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_WHOSE_REASON_SEVERITY_AND_XPATH_ARE_BOUND)
+    package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_WHOSE_BODY_SEVERITY_AND_XPATH_ARE_BOUND)
     assert not list(queries.malformed(package.crate))
 
 
 A_FINDINGS_QUERY_WHOSE_FINDING_IS_ABOUT_THE_RECORD_ITSELF = findings_query("""  [] a oa:Annotation ;
     oa:hasTarget [ oa:hasSource bridge:thisRecord ] ;
-    oa:hasBody [ a oa:TextualBody ; rdf:value "the record is the finding" ] ;
+    oa:hasBody ex:no-term-for-a-free-text-note ;
+    oa:motivatedBy oa:classifying ;
     sh:resultSeverity sh:Warning .""")
 
 
@@ -274,14 +279,7 @@ def test_reports_nothing_for_a_findings_query_constructing_no_selector(package):
     assert not list(queries.malformed(package.crate))
 
 
-CODED_PREFIXES = PREFIXES + "PREFIX ex:     <https://example.org/synthetic-adapter/v1#>\n"
-
-
-def coded_findings_query(template):
-    return f"{CODED_PREFIXES}\nCONSTRUCT {{\n{template}\n}}\n{WHERE}"
-
-
-A_FINDINGS_QUERY_CONSTRUCTING_A_TEXTUAL_BODY = coded_findings_query("""  [] a oa:Annotation ;
+A_FINDINGS_QUERY_CONSTRUCTING_A_TEXTUAL_BODY = findings_query("""  [] a oa:Annotation ;
     oa:hasTarget [
       oa:hasSource bridge:thisRecord ;
       oa:hasSelector [ a oa:XPathSelector ; rdf:value "Note" ]
@@ -290,7 +288,7 @@ A_FINDINGS_QUERY_CONSTRUCTING_A_TEXTUAL_BODY = coded_findings_query("""  [] a oa
     oa:motivatedBy oa:classifying ;
     sh:resultSeverity sh:Info .""")
 
-A_FINDINGS_QUERY_CONSTRUCTING_A_GAP_OF_THE_ADAPTERS_SCHEME = coded_findings_query("""  [] a oa:Annotation ;
+A_FINDINGS_QUERY_CONSTRUCTING_A_GAP_OF_THE_ADAPTERS_SCHEME = findings_query("""  [] a oa:Annotation ;
     oa:hasTarget [
       oa:hasSource bridge:thisRecord ;
       oa:hasSelector [ a oa:XPathSelector ; rdf:value "Note" ]
@@ -299,7 +297,7 @@ A_FINDINGS_QUERY_CONSTRUCTING_A_GAP_OF_THE_ADAPTERS_SCHEME = coded_findings_quer
     oa:motivatedBy oa:classifying ;
     sh:resultSeverity sh:Info .""")
 
-A_FINDINGS_QUERY_CONSTRUCTING_A_CONSTANT_BODY_OUTSIDE_THE_SCHEME = coded_findings_query("""  [] a oa:Annotation ;
+A_FINDINGS_QUERY_CONSTRUCTING_A_CONSTANT_BODY_OUTSIDE_THE_SCHEME = findings_query("""  [] a oa:Annotation ;
     oa:hasTarget [
       oa:hasSource bridge:thisRecord ;
       oa:hasSelector [ a oa:XPathSelector ; rdf:value "Note" ]
@@ -308,7 +306,7 @@ A_FINDINGS_QUERY_CONSTRUCTING_A_CONSTANT_BODY_OUTSIDE_THE_SCHEME = coded_finding
     oa:motivatedBy oa:classifying ;
     sh:resultSeverity sh:Info .""")
 
-A_FINDINGS_QUERY_WHOSE_BODY_IS_BOUND_TO_A_VARIABLE = coded_findings_query("""  [] a oa:Annotation ;
+A_FINDINGS_QUERY_WHOSE_BODY_IS_BOUND_TO_A_VARIABLE = findings_query("""  [] a oa:Annotation ;
     oa:hasTarget [
       oa:hasSource bridge:thisRecord ;
       oa:hasSelector [ a oa:XPathSelector ; rdf:value "Note" ]

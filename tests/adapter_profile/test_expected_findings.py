@@ -7,9 +7,11 @@ from _terms import BRIDGE, MF
 
 FINDINGS = "fixtures/findings/example-0001.ttl"
 
-PREFIXES = """@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix sh:  <http://www.w3.org/ns/shacl#> .
-@prefix oa:  <http://www.w3.org/ns/oa#> .
+PREFIXES = """@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix sh:     <http://www.w3.org/ns/shacl#> .
+@prefix oa:     <http://www.w3.org/ns/oa#> .
+@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+@prefix ex:     <https://example.org/synthetic-adapter/v1#> .
 """
 
 TWO_FINDINGS_SHARING_ONE_SELECTOR = (
@@ -62,7 +64,7 @@ def finding(
     source="<../in/example-0001.xml>",
     record="/ExampleRecordSet/ExampleRecord[1]",
     refined="Note",
-    body="no term for a free-text note",
+    body="ex:no-term-for-a-free-text-note",
     severity="sh:Info",
 ):
     target = [f"oa:hasSource {source}"]
@@ -71,7 +73,8 @@ def finding(
         target.append(f'oa:hasSelector [ a oa:XPathSelector ; rdf:value "{record}"{refinement} ]')
     annotation = ["[] a oa:Annotation", f"oa:hasTarget [ {' ; '.join(target)} ]"]
     if body is not None:
-        annotation.append(f'oa:hasBody [ a oa:TextualBody ; rdf:value "{body}" ]')
+        annotation.append(f"oa:hasBody {body}")
+    annotation.append("oa:motivatedBy oa:classifying")
     if severity is not None:
         annotation.append(f"sh:resultSeverity {severity}")
     return PREFIXES + "\n" + " ;\n  ".join(annotation) + " .\n"
@@ -276,7 +279,7 @@ A_FINDING_NAMED_RATHER_THAN_WRITTEN_FOR_ITSELF = (
 )
 
 
-def finding_carrying(body='[ a oa:TextualBody ; rdf:value "no term for a free-text note" ]', selector=None):
+def finding_carrying(body="ex:no-term-for-a-free-text-note", selector=None):
     selector = selector or '[ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ]'
     return (
         PREFIXES
@@ -284,6 +287,7 @@ def finding_carrying(body='[ a oa:TextualBody ; rdf:value "no term for a free-te
 [] a oa:Annotation ;
   oa:hasTarget [ oa:hasSource <../in/example-0001.xml> ; oa:hasSelector {selector} ] ;
   oa:hasBody {body} ;
+  oa:motivatedBy oa:classifying ;
   sh:resultSeverity sh:Info .
 """
     )
@@ -372,13 +376,6 @@ def test_reports_a_refinement_refined_further(package):
     )
 
 
-CODED_PREFIXES = """@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix sh:     <http://www.w3.org/ns/shacl#> .
-@prefix oa:     <http://www.w3.org/ns/oa#> .
-@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
-@prefix ex:     <https://example.org/synthetic-adapter/v1#> .
-"""
-
 A_GAP_OF_THE_SCHEME = "ex:no-term-for-a-free-text-note"
 A_GAP_WHOSE_VALUE_IS_OUTSIDE_A_FIXED_SET = "ex:a-status-outside-the-set-the-vocabulary-fixes"
 
@@ -401,7 +398,7 @@ def coded_finding(
     ]
     if value is not None:
         written.append(f"sh:value {value}")
-    return CODED_PREFIXES + "\n" + " ;\n  ".join(written) + " .\n"
+    return PREFIXES + "\n" + " ;\n  ".join(written) + " .\n"
 
 
 def said_about(package):
