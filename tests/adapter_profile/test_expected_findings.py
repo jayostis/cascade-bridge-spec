@@ -3,6 +3,7 @@ from pathlib import Path
 from rdflib import Graph
 
 import expected_findings
+from _codes import W3C_XML_SCHEMA_RULE_ANCHORS
 from _terms import BRIDGE, MF
 
 FINDINGS = "fixtures/findings/example-0001.ttl"
@@ -435,6 +436,12 @@ def test_reports_a_finding_whose_body_is_the_anchor_of_no_w3c_xml_schema_validat
         "https://www.w3.org/TR/xmlschema-1/#cvc-nonesuch is not a gap of the adapter's bridge:gapScheme, "
         "the anchor of a validation rule in a W3C XML Schema Recommendation, or bridge:schemaRuleUnnamed"
     ) in "\n".join(said_about(package))
+
+
+def test_reports_a_body_that_is_no_code_with_every_anchor_a_body_may_take(package):
+    package.gap_scheme().write(FINDINGS, coded_finding(body="<https://www.w3.org/TR/xmlschema-1/#cvc-nonesuch>"))
+    said = "\n".join(said_about(package))
+    assert [str(anchor) for anchor in W3C_XML_SCHEMA_RULE_ANCHORS if str(anchor) not in said] == []
 
 
 def test_reports_a_finding_whose_body_names_a_rule_in_the_recommendation_that_does_not_define_it(package):

@@ -50,9 +50,12 @@ W3C_XML_SCHEMA_RULE_ANCHORS = frozenset(
 
 BODIES_OF_A_SCHEMA_FAILURE = W3C_XML_SCHEMA_RULE_ANCHORS | {BRIDGE.schemaRuleUnnamed}
 
+THE_ANCHORS = ", ".join(sorted(str(anchor) for anchor in W3C_XML_SCHEMA_RULE_ANCHORS))
+
 NO_GAP_OF_THE_SCHEME = (
     "is not a gap of the adapter's bridge:gapScheme, the anchor of a validation rule "
-    "in a W3C XML Schema Recommendation, or bridge:schemaRuleUnnamed"
+    "in a W3C XML Schema Recommendation, or bridge:schemaRuleUnnamed. The anchors a body "
+    f"may take are {THE_ANCHORS}"
 )
 
 
