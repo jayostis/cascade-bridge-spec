@@ -66,6 +66,18 @@ For each source record of a document, in document order, a Bridge:
    of its own, and an annotation whose query constructed none is about the
    record itself: its target carries the record's selector and no
    `oa:refinedBy`.
+5. adds, where the adapter names a `bridge:sourceAccounting`, one finding for
+   each distinct path of the record that no `bridge:PathEntry` of that file
+   carries as its `bridge:sourcePath`. An adapter naming none gets none.
+
+A path is the element and attribute names from the document element down to the
+node, separated by `/`, an attribute's last step written `@name`, no step
+carrying a position.
+
+A census finding is addressed at the path's first occurrence in the record,
+refined under the record's selector as any other finding is, and carries
+`bridge:pathNotAccounted` as its body, the path as its `sh:value`, and
+`sh:Info` as its `sh:resultSeverity`.
 
 Each annotation a findings query constructs targets a blank node written for
 that one annotation, `[ oa:hasSource bridge:thisRecord ]`; a query says the
