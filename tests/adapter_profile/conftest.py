@@ -1,4 +1,5 @@
 import dataclasses
+import json
 import shutil
 import subprocess
 from pathlib import Path
@@ -13,6 +14,25 @@ import _crate
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURE = ROOT / "fixtures" / "synthetic-adapter"
 MUST = ROOT / "adapter" / "profile" / "must"
+
+GAP_SCHEME_FILE = "vocab/example-gaps.ttl"
+
+A_GAP_SCHEME_OF_TWO_WHOLE_GAPS = """@prefix skos:   <http://www.w3.org/2004/02/skos/core#> .
+@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+@prefix ex:     <https://example.org/synthetic-adapter/v1#> .
+
+ex:gaps a skos:ConceptScheme .
+
+ex:no-term-for-a-free-text-note a skos:Concept ;
+  skos:prefLabel "no term for a free-text note" ;
+  skos:inScheme ex:gaps ;
+  skos:broader bridge:noPredicate .
+
+ex:a-status-outside-the-set-the-vocabulary-fixes a skos:Concept ;
+  skos:prefLabel "a status outside the set the vocabulary fixes" ;
+  skos:inScheme ex:gaps ;
+  skos:broader bridge:valueNotMapped .
+"""
 
 
 class Package:
@@ -35,7 +55,35 @@ class Package:
         return self
 
     def write(self, relative, text):
-        (self.path / relative).write_text(text, encoding="utf-8", newline="")
+        target = self.path / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(text, encoding="utf-8", newline="")
+        if self.tracked:
+            self._git("add", "-A")
+        return self
+
+    def gap_scheme(self, turtle=A_GAP_SCHEME_OF_TWO_WHOLE_GAPS, named=GAP_SCHEME_FILE):
+        """The package's one bridge:gapScheme, whatever it named before."""
+        self.write(named, turtle)
+        crate = self.path / "ro-crate-metadata.json"
+        document = json.loads(crate.read_text(encoding="utf-8"))
+        document["@context"][1]["bridge:gapScheme"] = "bridge:gapScheme"
+        for entity in document["@graph"]:
+            if entity["@id"] == "./":
+                entity["bridge:gapScheme"] = {"@id": named}
+                if {"@id": named} not in entity["hasPart"]:
+                    entity["hasPart"].append({"@id": named})
+        if not any(entity["@id"] == named for entity in document["@graph"]):
+            document["@graph"].append(
+                {
+                    "@id": named,
+                    "@type": "File",
+                    "name": "Gap scheme",
+                    "encodingFormat": "text/turtle",
+                    "license": {"@id": "https://spdx.org/licenses/Apache-2.0"},
+                }
+            )
+        crate.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8", newline="")
         if self.tracked:
             self._git("add", "-A")
         return self

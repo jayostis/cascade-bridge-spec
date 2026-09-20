@@ -1,4 +1,5 @@
-from rdflib import URIRef
+from rdflib import Graph, URIRef
+from rdflib.namespace import RDF, SKOS
 
 import declared_terms
 from _terms import BRIDGE
@@ -18,3 +19,26 @@ def test_reports_a_crate_carrying_a_bridge_term_the_vocabulary_does_not_declare(
 def test_reports_a_test_manifest_carrying_a_bridge_term_the_vocabulary_does_not_declare(crate):
     crate.graph.add((crate.manifest_iri, BRIDGE.entries, URIRef("https://example.org/a-typo")))
     assert "bridge:entries" in "\n".join(declared_terms.undeclared(crate))
+
+
+KINDS_OF_GAP = {
+    BRIDGE.noPredicate,
+    BRIDGE.valueNotMapped,
+    BRIDGE.sourceLacksRequired,
+    BRIDGE.carriedWithLoss,
+    BRIDGE.schemaRuleUnnamed,
+}
+
+
+def test_the_vocabulary_declares_every_kind_of_gap_in_the_scheme_they_belong_to():
+    vocabulary = Graph().parse(declared_terms.VOCABULARY, format="turtle")
+    assert (BRIDGE.gapKinds, RDF.type, SKOS.ConceptScheme) in vocabulary
+    assert set(vocabulary.subjects(SKOS.inScheme, BRIDGE.gapKinds)) == KINDS_OF_GAP
+
+
+def test_the_vocabulary_declares_the_term_by_which_an_adapter_names_its_gap_scheme():
+    assert str(BRIDGE.gapScheme) in declared_terms.declared()
+
+
+def test_the_vocabulary_declares_the_predicate_by_which_a_gap_names_the_term_that_would_close_it():
+    assert str(BRIDGE.closedBy) in declared_terms.declared()
