@@ -93,6 +93,14 @@ def test_reports_an_accounting_that_is_not_a_file_in_the_package(crate):
     assert "which is not a file in this package" in "\n".join(source_accounting.faulty(crate))
 
 
+def test_reports_a_source_path_that_starts_at_the_document_rather_than_at_the_record(package):
+    accounted(package, entry("/ExampleRecordSet/ExampleRecord/Label"))
+    assert (
+        "/ExampleRecordSet/ExampleRecord/Label starts at ExampleRecordSet, where a bridge:sourcePath "
+        "starts at ExampleRecord, the adapter's bridge:elementNameOfEachRecord"
+    ) in said_about(package)
+
+
 def test_reports_two_entries_sharing_a_source_path(package):
     accounted(package, entry(THE_MAPPING_MENTIONS), entry(THE_MAPPING_MENTIONS, verdict=CONSUMED))
     said = said_about(package)

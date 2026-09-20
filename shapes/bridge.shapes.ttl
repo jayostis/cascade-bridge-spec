@@ -394,6 +394,11 @@
     sh:message "An entry carries exactly one bridge:sourcePath, the path it accounts for, a string."
   ] ;
   sh:property [
+    sh:path bridge:sourcePath ;
+    sh:pattern "^(/[^/]+){2,}$" ;
+    sh:message "A bridge:sourcePath starts at the record element and names a node below it: a step for the record element, then one for each element down to the node, an attribute's last step written @name, and no step carrying a position. It is not rooted at the document, and the record element alone is no path."
+  ] ;
+  sh:property [
     sh:path bridge:verdict ;
     sh:minCount 1 ;
     sh:maxCount 1 ;

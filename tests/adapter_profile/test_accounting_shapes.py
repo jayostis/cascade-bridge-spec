@@ -28,6 +28,11 @@ ONE_VERDICT = (
     "bridge:redundantWith, bridge:consumed, bridge:noHome, bridge:ignored."
 )
 ONE_SOURCE_PATH = "An entry carries exactly one bridge:sourcePath, the path it accounts for, a string."
+A_PATH_BELOW_THE_RECORD = (
+    "A bridge:sourcePath starts at the record element and names a node below it: a step for the record "
+    "element, then one for each element down to the node, an attribute's last step written @name, and no "
+    "step carrying a position. It is not rooted at the document, and the record element alone is no path."
+)
 
 
 def entry(path=A_PATH, verdict=CARRIED, names_gap=None, same_fact_as=None, because=None):
@@ -82,6 +87,11 @@ def test_rejects_an_entry_carrying_two_source_paths():
 
 def test_rejects_an_entry_whose_source_path_is_an_iri_rather_than_a_string():
     assert ONE_SOURCE_PATH in said_about(entry(path="<https://example.org/synthetic-adapter/paths/Label>"))
+    assert not said_about(entry())
+
+
+def test_rejects_an_entry_whose_source_path_is_the_record_element_rather_than_a_node_below_it():
+    assert A_PATH_BELOW_THE_RECORD in said_about(entry(path='"/ExampleRecord"'))
     assert not said_about(entry())
 
 

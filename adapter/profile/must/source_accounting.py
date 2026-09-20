@@ -28,6 +28,10 @@ def shortened(term):
     return str(term).replace(str(BRIDGE), "bridge:")
 
 
+def first_step_of(path):
+    return str(path).split("/")[1] if str(path).startswith("/") and "/" in str(path)[1:] else ""
+
+
 def last_step_of(path):
     """The element or attribute a path ends at, as a mapping writes it: a facade-X lift erases the leading @."""
     return str(path).rsplit("/", 1)[-1].removeprefix("@")
@@ -94,8 +98,15 @@ def faulty(crate):
     scheme = scheme_named_by(crate)
     gaps = set(scheme.subjects(RDF.type, SKOS.Concept))
     mentioned = mentioned_by_the_mappings(crate)
+    record = str(crate.graph.value(crate.root, BRIDGE.elementNameOfEachRecord) or "")
 
     for entry, source_path, verdict in entries:
+        first = first_step_of(source_path)
+        if record and first and first != record:
+            yield (
+                f"{source_path} starts at {first}, where a bridge:sourcePath starts at {record}, "
+                "the adapter's bridge:elementNameOfEachRecord"
+            )
         for instead in sorted(accounting.objects(entry, BRIDGE.sameFactAs)):
             if str(instead) == source_path:
                 yield (
