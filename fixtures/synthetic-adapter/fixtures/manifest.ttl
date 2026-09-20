@@ -10,6 +10,7 @@
     <#example-0002>
     <#example-0003>
     <#example-0004>
+    <#example-0005>
     <#example-release-2026-01>
   ) .
 
@@ -45,7 +46,7 @@
 
 <#example-0004> a bridge:IsomorphicConversionTest ;
   mf:name "example-0004" ;
-  rdfs:comment "A record carrying nodes the adapter's bridge:sourceAccounting names nowhere — an element, an attribute of a child element, an attribute of the record element, and an element and an attribute in a namespace: its findings are the census finding for each path, addressed at its first occurrence in the record." ;
+  rdfs:comment "A record carrying nodes the adapter's bridge:sourceAccounting names nowhere — an element, an attribute of a child element, an attribute of the record element, and an attribute in a namespace: its findings are the census finding for each path, addressed at its first occurrence in the record." ;
   mf:action [
     bridge:input <in/example-0004.xml> ;
     bridge:envelope <../ro-crate-metadata.json#envelope-set>
@@ -53,6 +54,18 @@
   mf:result [
     bridge:expectedGraph <expected/example-0004.ttl> ;
     bridge:expectedFindings <findings/example-0004.ttl>
+  ] .
+
+<#example-0005> a bridge:IsomorphicConversionTest ;
+  mf:name "example-0005" ;
+  rdfs:comment "A record standing at a path its entry names a gap for more than once, at another exactly once, at a path in a namespace whose gap declares sh:Warning, at a path whose entry names no gap, and at a path the accounting names nowhere more than once: each is one finding at the path's first occurrence, carrying bridge:occurrences where the path repeats. The gap at /ExampleRecord/Note is reported by its entry and constructed by the findings query, and both findings stand." ;
+  mf:action [
+    bridge:input <in/example-0005.xml> ;
+    bridge:envelope <../ro-crate-metadata.json#envelope-set>
+  ] ;
+  mf:result [
+    bridge:expectedGraph <expected/example-0005.ttl> ;
+    bridge:expectedFindings <findings/example-0005.ttl>
   ] .
 
 <#example-release-2026-01> a bridge:DatasetCompletionTest ;

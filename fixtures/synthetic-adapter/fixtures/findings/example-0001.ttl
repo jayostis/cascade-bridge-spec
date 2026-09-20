@@ -28,3 +28,59 @@
   oa:hasBody ex:no-term-for-a-free-text-note ;
   oa:motivatedBy oa:classifying ;
   sh:resultSeverity sh:Info .
+
+[] a oa:Annotation ;
+  oa:hasTarget [
+    oa:hasSource <../in/example-0001.xml> ;
+    oa:hasSelector [
+      a oa:XPathSelector ;
+      rdf:value "/ExampleRecordSet/ExampleRecord[1]" ;
+      oa:refinedBy [ a oa:XPathSelector ; rdf:value "Label[1]" ]
+    ]
+  ] ;
+  oa:hasBody ex:only-the-first-run-of-a-labels-text-is-carried ;
+  oa:motivatedBy oa:classifying ;
+  sh:value "/ExampleRecord/Label" ;
+  sh:resultSeverity sh:Info .
+
+[] a oa:Annotation ;
+  oa:hasTarget [
+    oa:hasSource <../in/example-0001.xml> ;
+    oa:hasSelector [
+      a oa:XPathSelector ;
+      rdf:value "/ExampleRecordSet/ExampleRecord[1]" ;
+      oa:refinedBy [ a oa:XPathSelector ; rdf:value "Note[1]" ]
+    ]
+  ] ;
+  oa:hasBody ex:no-term-for-a-free-text-note ;
+  oa:motivatedBy oa:classifying ;
+  sh:value "/ExampleRecord/Note" ;
+  sh:resultSeverity sh:Info .
+
+[] a oa:Annotation ;
+  oa:hasTarget [
+    oa:hasSource <../in/example-0001.xml> ;
+    oa:hasSelector [
+      a oa:XPathSelector ;
+      rdf:value "/ExampleRecordSet/ExampleRecord[2]" ;
+      oa:refinedBy [ a oa:XPathSelector ; rdf:value "Label[1]" ]
+    ]
+  ] ;
+  oa:hasBody ex:only-the-first-run-of-a-labels-text-is-carried ;
+  oa:motivatedBy oa:classifying ;
+  sh:value "/ExampleRecord/Label" ;
+  sh:resultSeverity sh:Info .
+
+[] a oa:Annotation ;
+  oa:hasTarget [
+    oa:hasSource <../in/example-0001.xml> ;
+    oa:hasSelector [
+      a oa:XPathSelector ;
+      rdf:value "/ExampleRecordSet/ExampleRecord[2]" ;
+      oa:refinedBy [ a oa:XPathSelector ; rdf:value "Note[1]" ]
+    ]
+  ] ;
+  oa:hasBody ex:no-term-for-a-free-text-note ;
+  oa:motivatedBy oa:classifying ;
+  sh:value "/ExampleRecord/Note" ;
+  sh:resultSeverity sh:Info .

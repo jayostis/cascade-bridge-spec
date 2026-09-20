@@ -2,6 +2,7 @@
 @prefix sh:     <http://www.w3.org/ns/shacl#> .
 @prefix oa:     <http://www.w3.org/ns/oa#> .
 @prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+@prefix ex:     <https://example.org/synthetic-adapter/v1#> .
 
 [] a oa:Annotation ;
   oa:hasTarget [
@@ -63,13 +64,10 @@
     oa:hasSelector [
       a oa:XPathSelector ;
       rdf:value "/ExampleRecordSet/ExampleRecord[1]" ;
-      oa:refinedBy [
-        a oa:XPathSelector ;
-        rdf:value "*[local-name()='Extension' and namespace-uri()='https://example.org/synthetic-adapter/ext/v1'][1]"
-      ]
+      oa:refinedBy [ a oa:XPathSelector ; rdf:value "Label[1]" ]
     ]
   ] ;
-  oa:hasBody bridge:pathNotAccounted ;
+  oa:hasBody ex:only-the-first-run-of-a-labels-text-is-carried ;
   oa:motivatedBy oa:classifying ;
-  sh:value "/ExampleRecord/*[local-name()='Extension' and namespace-uri()='https://example.org/synthetic-adapter/ext/v1']" ;
+  sh:value "/ExampleRecord/Label" ;
   sh:resultSeverity sh:Info .
