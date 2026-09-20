@@ -70,6 +70,11 @@
     sh:message "Each bridge:gapScheme is the adapter's file of skos:Concepts, one for each gap a finding's body names: a crate File entity (schema:MediaObject) by IRI, declared text/turtle."
   ] ;
   sh:property [
+    sh:path bridge:sourceAccounting ;
+    sh:node <#SourceAccounting> ;
+    sh:message "Each bridge:sourceAccounting is the adapter's file of bridge:PathEntry, one for every path of its source: a crate File entity (schema:MediaObject) by IRI, declared text/turtle."
+  ] ;
+  sh:property [
     sh:path bridge:cascadeVocabularyPin ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
@@ -155,6 +160,16 @@
     sh:path schema:encodingFormat ;
     sh:hasValue "text/turtle" ;
     sh:message "A gap scheme is declared text/turtle."
+  ] .
+
+<#SourceAccounting> a sh:NodeShape ;
+  sh:name "Source accounting" ;
+  sh:nodeKind sh:IRI ;
+  sh:class schema:MediaObject ;
+  sh:property [
+    sh:path schema:encodingFormat ;
+    sh:hasValue "text/turtle" ;
+    sh:message "A source accounting is declared text/turtle."
   ] .
 
 <#Query> a sh:NodeShape ;
