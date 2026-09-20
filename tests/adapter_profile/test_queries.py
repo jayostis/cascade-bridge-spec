@@ -215,7 +215,8 @@ A_FINDINGS_QUERY_BINDING_THE_ANNOTATION_TO_A_VARIABLE = findings_query("""  ?not
       oa:hasSource bridge:thisRecord ;
       oa:hasSelector [ a oa:XPathSelector ; rdf:value "Note" ]
     ] ;
-    oa:hasBody [ a oa:TextualBody ; rdf:value "no term for a free-text note" ] ;
+    oa:hasBody ex:no-term-for-a-free-text-note ;
+    oa:motivatedBy oa:classifying ;
     sh:resultSeverity sh:Info .""")
 
 A_FINDINGS_QUERY_WHOSE_BODY_SEVERITY_AND_XPATH_ARE_BOUND = findings_query("""  [] a oa:Annotation ;
@@ -259,9 +260,9 @@ def test_reports_a_findings_query_naming_the_annotation_it_constructs(package):
 
 def test_reports_a_findings_query_binding_the_annotation_to_a_variable(package):
     package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_BINDING_THE_ANNOTATION_TO_A_VARIABLE)
-    assert "?note as an oa:Annotation, where a finding is a blank node written for that one finding" in "\n".join(
-        queries.malformed(package.crate)
-    )
+    said = list(queries.malformed(package.crate))
+    assert len(said) == 1
+    assert "?note as an oa:Annotation, where a finding is a blank node written for that one finding" in said[0]
 
 
 def test_holds_a_findings_query_to_nothing_a_variable_binds(package):
