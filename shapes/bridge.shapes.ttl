@@ -290,8 +290,20 @@
     sh:path oa:hasBody ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
-    sh:node <#FindingBody> ;
-    sh:message "A finding carries exactly one oa:hasBody, the reason."
+    sh:nodeKind sh:IRI ;
+    sh:message "A finding carries exactly one oa:hasBody, an IRI: the code the finding is an instance of, never a sentence."
+  ] ;
+  sh:property [
+    sh:path oa:motivatedBy ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:hasValue oa:classifying ;
+    sh:message "A finding carries exactly one oa:motivatedBy, oa:classifying."
+  ] ;
+  sh:property [
+    sh:path sh:value ;
+    sh:maxCount 1 ;
+    sh:message "A finding carries at most one sh:value, the source value that made it fire."
   ] ;
   sh:property [
     sh:path sh:resultSeverity ;
@@ -337,17 +349,6 @@
         FILTER (?other != ?value)
       }
     """
-  ] .
-
-<#FindingBody> a sh:NodeShape ;
-  sh:class oa:TextualBody ;
-  sh:message "A finding's body is an oa:TextualBody." ;
-  sh:property [
-    sh:path rdf:value ;
-    sh:minCount 1 ;
-    sh:maxCount 1 ;
-    sh:datatype xsd:string ;
-    sh:message "A finding's body carries exactly one rdf:value, the reason, a string."
   ] .
 
 <#RecordSelector> a sh:NodeShape ;
