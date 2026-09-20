@@ -14,5 +14,5 @@
   ] ;
   oa:hasBody bridge:pathNotAccounted ;
   oa:motivatedBy oa:classifying ;
-  sh:value "/ExampleRecordSet/ExampleRecord/Novelty" ;
+  sh:value "/ExampleRecord/Novelty" ;
   sh:resultSeverity sh:Info .

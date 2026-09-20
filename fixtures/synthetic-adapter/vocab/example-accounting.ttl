@@ -2,35 +2,6 @@
 @prefix ex:     <https://example.org/synthetic-adapter/v1#> .
 
 [] a bridge:PathEntry ;
-  bridge:sourcePath "/ExampleRecordSet" ;
-  bridge:verdict bridge:consumed .
-
-[] a bridge:PathEntry ;
-  bridge:sourcePath "/ExampleRecordSet/ExampleRecord" ;
-  bridge:verdict bridge:carried .
-
-[] a bridge:PathEntry ;
-  bridge:sourcePath "/ExampleRecordSet/ExampleRecord/@Accession" ;
-  bridge:verdict bridge:carried .
-
-[] a bridge:PathEntry ;
-  bridge:sourcePath "/ExampleRecordSet/ExampleRecord/@Version" ;
-  bridge:verdict bridge:carried .
-
-[] a bridge:PathEntry ;
-  bridge:sourcePath "/ExampleRecordSet/ExampleRecord/Label" ;
-  bridge:verdict bridge:carried .
-
-[] a bridge:PathEntry ;
-  bridge:sourcePath "/ExampleRecordSet/ExampleRecord/Note" ;
-  bridge:verdict bridge:noHome ;
-  bridge:namesGap ex:no-term-for-a-free-text-note .
-
-[] a bridge:PathEntry ;
-  bridge:sourcePath "/ExampleRecord" ;
-  bridge:verdict bridge:carried .
-
-[] a bridge:PathEntry ;
   bridge:sourcePath "/ExampleRecord/@Accession" ;
   bridge:verdict bridge:carried .
 
@@ -39,8 +10,24 @@
   bridge:verdict bridge:carried .
 
 [] a bridge:PathEntry ;
+  bridge:sourcePath "/ExampleRecord/@SchemaVersion" ;
+  bridge:verdict bridge:ignored ;
+  bridge:because "A schema version is not data about the record." .
+
+[] a bridge:PathEntry ;
+  bridge:sourcePath "/ExampleRecord/AccessionAlias" ;
+  bridge:verdict bridge:redundantWith ;
+  bridge:sameFactAs "/ExampleRecord/@Accession" .
+
+[] a bridge:PathEntry ;
   bridge:sourcePath "/ExampleRecord/Label" ;
-  bridge:verdict bridge:carried .
+  bridge:verdict bridge:carriedInPart ;
+  bridge:namesGap ex:only-the-first-run-of-a-labels-text-is-carried .
+
+[] a bridge:PathEntry ;
+  bridge:sourcePath "/ExampleRecord/Label/Emphasis" ;
+  bridge:verdict bridge:noHome ;
+  bridge:namesGap ex:no-term-for-emphasis-inside-a-label .
 
 [] a bridge:PathEntry ;
   bridge:sourcePath "/ExampleRecord/Note" ;

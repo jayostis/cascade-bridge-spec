@@ -237,9 +237,9 @@
       "@type": "File",
       "name": "Example record XSD, pinned copy",
       "encodingFormat": "application/xml",
-      "contentSize": "629",
-      "sha256": "ed131505090135766030cbfa8fbc50c01e2c41e2cfec0bbe0d4bb9caa1ed4295",
-      "md5": "d95f11b39fa538d6a77afbdb7f4d664a",
+      "contentSize": "956",
+      "sha256": "a6dca3a11bb7dbf22c598a5a1d814aa3ee63a1729322f5679490935ca2f38018",
+      "md5": "4e9812c08c2f76e6e58b04d618785f3f",
       "isBasedOn": {
         "@id": "https://example.org/synthetic-adapter/schema/example-record.xsd"
       },
@@ -272,8 +272,8 @@
       "@type": "File",
       "name": "Source accounting",
       "encodingFormat": "text/turtle",
-      "contentSize": "1461",
-      "sha256": "f54da8eb681a19fd054e4e7ea43b4114be91c14359215fedde1b9ff56b9ea0f9",
+      "contentSize": "1201",
+      "sha256": "7d71950ce868cbdb54c26107eb895574c40b2eacddb04ad7d79b27fb913d7bb7",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       }
@@ -410,8 +410,8 @@
       "@type": "File",
       "name": "Expected findings for example-0004",
       "encodingFormat": "text/turtle",
-      "contentSize": "648",
-      "sha256": "f10582411efa4489a4bf383ad42afaecc3bb14196be1262aeb9b8b0787ea7bf0",
+      "contentSize": "631",
+      "sha256": "7223d9c509d10c007b62b167f317cdbb1c654bde29dff8572b2cd6cb2fb1e201",
       "isBasedOn": {
         "@id": "fixtures/in/example-0004.xml"
       },

@@ -5,12 +5,20 @@
 
   <xs:complexType name="ExampleRecordType">
     <xs:sequence>
-      <xs:element name="Label" type="xs:string"/>
+      <xs:element name="Label" type="LabelType"/>
       <xs:element name="Note" type="xs:string" minOccurs="0"/>
       <xs:element name="Novelty" type="xs:string" minOccurs="0"/>
+      <xs:element name="AccessionAlias" type="xs:string" minOccurs="0"/>
     </xs:sequence>
     <xs:attribute name="Accession" type="xs:string" use="required"/>
     <xs:attribute name="Version" type="xs:positiveInteger" use="required"/>
+    <xs:attribute name="SchemaVersion" type="xs:string"/>
+  </xs:complexType>
+
+  <xs:complexType name="LabelType" mixed="true">
+    <xs:sequence>
+      <xs:element name="Emphasis" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
   </xs:complexType>
 
 </xs:schema>
