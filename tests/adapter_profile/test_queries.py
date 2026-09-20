@@ -232,7 +232,9 @@ A_FINDINGS_QUERY_WHOSE_BODY_SEVERITY_AND_XPATH_ARE_BOUND = findings_query("""  [
 def test_reports_a_findings_query_constructing_a_finding_with_no_body_or_severity(package):
     package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_CONSTRUCTING_A_FINDING_WITH_NO_BODY_OR_SEVERITY)
     said = "\n".join(queries.malformed(package.crate))
-    assert "A finding carries exactly one oa:hasBody, the reason." in said
+    assert (
+        "A finding carries exactly one oa:hasBody, an IRI: the code the finding is an instance of, never a sentence."
+    ) in said
     assert "A finding carries exactly one sh:resultSeverity" in said
 
 
