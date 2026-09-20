@@ -9,6 +9,7 @@
     <#example-0001>
     <#example-0002>
     <#example-0003>
+    <#example-0004>
     <#example-release-2026-01>
   ) .
 
@@ -40,6 +41,18 @@
   mf:result [
     bridge:expectedGraph <expected/example-0003.ttl> ;
     bridge:expectedFindings <findings/example-0003.ttl>
+  ] .
+
+<#example-0004> a bridge:IsomorphicConversionTest ;
+  mf:name "example-0004" ;
+  rdfs:comment "A record carrying an element the adapter's bridge:sourceAccounting names nowhere: its findings are the census finding for that path, addressed at its first occurrence in the record." ;
+  mf:action [
+    bridge:input <in/example-0004.xml> ;
+    bridge:envelope <../ro-crate-metadata.json#envelope-set>
+  ] ;
+  mf:result [
+    bridge:expectedGraph <expected/example-0004.ttl> ;
+    bridge:expectedFindings <findings/example-0004.ttl>
   ] .
 
 <#example-release-2026-01> a bridge:DatasetCompletionTest ;

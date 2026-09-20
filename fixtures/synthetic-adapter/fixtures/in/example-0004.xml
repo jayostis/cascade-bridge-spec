@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ExampleRecordSet>
+  <ExampleRecord Accession="EX000005" Version="1">
+    <Label>a record carrying an element the accounting does not name</Label>
+    <Novelty>the schema allows this element and no entry of the accounting mentions it</Novelty>
+  </ExampleRecord>
+</ExampleRecordSet>

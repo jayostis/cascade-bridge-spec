@@ -1,0 +1,18 @@
+@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix sh:     <http://www.w3.org/ns/shacl#> .
+@prefix oa:     <http://www.w3.org/ns/oa#> .
+@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+[] a oa:Annotation ;
+  oa:hasTarget [
+    oa:hasSource <../in/example-0004.xml> ;
+    oa:hasSelector [
+      a oa:XPathSelector ;
+      rdf:value "/ExampleRecordSet/ExampleRecord[1]" ;
+      oa:refinedBy [ a oa:XPathSelector ; rdf:value "Novelty[1]" ]
+    ]
+  ] ;
+  oa:hasBody bridge:pathNotAccounted ;
+  oa:motivatedBy oa:classifying ;
+  sh:value "/ExampleRecordSet/ExampleRecord/Novelty" ;
+  sh:resultSeverity sh:Info .
