@@ -11,7 +11,7 @@ from rocrate_validator.models import ValidationContext
 from rocrate_validator.requirements.python import PyFunctionCheck, check, requirement
 
 from _codes import scheme_named_by
-from _findings import report_findings
+from _findings import SHAPES, report_findings, unmet
 from _terms import BRIDGE
 
 THE_KIND_A_VERDICT_IMPLIES = {
@@ -81,6 +81,10 @@ def faulty(crate):
     except Exception as error:
         yield f"{path.name} does not parse as Turtle\n{error}"
         return
+
+    shapes = Graph().parse(SHAPES, format="turtle")
+    for message in unmet(accounting, shapes):
+        yield f"{path.name}: {message}"
 
     entries = sorted(entries_of(accounting), key=lambda entry: entry[1])
     accounted = [source_path for _, source_path, _ in entries]

@@ -16,6 +16,7 @@ CRATE = "ro-crate-metadata.json"
 MANIFEST = "fixtures/manifest.ttl"
 EXPECTED = "fixtures/expected/example-0001.ttl"
 FINDINGS = "fixtures/findings/example-0001.ttl"
+ACCOUNTING = "vocab/example-accounting.ttl"
 
 
 def restate_digest(package, relative):
@@ -102,6 +103,15 @@ def term_the_vocabulary_does_not_declare(package):
     )
 
 
+def an_accounting_entry_with_no_verdict(package):
+    package.edit(
+        ACCOUNTING,
+        '  bridge:sourcePath "/ExampleRecord/@Version" ;\n  bridge:verdict bridge:carried .',
+        '  bridge:sourcePath "/ExampleRecord/@Version" .',
+    )
+    restate_digest(package, ACCOUNTING)
+
+
 def accounting_not_named(package):
     crate = package.path / CRATE
     document = json.loads(crate.read_text(encoding="utf-8"))
@@ -175,6 +185,16 @@ def pin_not_a_data_entity(package):
             [],
             [],
             id="a crate naming no accounting passes, as every adapter that exists today does",
+        ),
+        pytest.param(
+            an_accounting_entry_with_no_verdict,
+            False,
+            [
+                "An entry carries exactly one bridge:verdict, one of bridge:carried, bridge:carriedInPart, "
+                "bridge:redundantWith, bridge:consumed, bridge:noHome, bridge:ignored."
+            ],
+            [],
+            id="a shape the accounting does not meet fails the profile, not only a test running the shapes by hand",
         ),
         pytest.param(
             undeclared_context_key,
