@@ -3,7 +3,7 @@ from rdflib.namespace import RDF, SKOS
 
 from _terms import BRIDGE
 
-KINDS_OF_GAP = (
+KINDS_A_GAP_MAY_NAME = (
     BRIDGE.carriedWithLoss,
     BRIDGE.noPredicate,
     BRIDGE.schemaRuleUnnamed,
@@ -11,7 +11,7 @@ KINDS_OF_GAP = (
     BRIDGE.valueNotMapped,
 )
 
-THE_KINDS = ", ".join(str(kind).replace(str(BRIDGE), "bridge:") for kind in KINDS_OF_GAP)
+THE_KINDS_A_GAP_MAY_NAME = ", ".join(str(kind).replace(str(BRIDGE), "bridge:") for kind in KINDS_A_GAP_MAY_NAME)
 
 VALIDATION_RULES_OF_XML_SCHEMA_PART_1 = (
     "cos-st-restricts",

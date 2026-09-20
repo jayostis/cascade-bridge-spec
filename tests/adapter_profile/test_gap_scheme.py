@@ -13,7 +13,7 @@ ex:gaps a skos:ConceptScheme .
 THE_GAP = "https://example.org/synthetic-adapter/v1#no-term-for-a-free-text-note"
 THE_SCHEME = "https://example.org/synthetic-adapter/v1#gaps"
 
-THE_KINDS = (
+THE_KINDS_A_GAP_MAY_NAME = (
     "bridge:carriedWithLoss, bridge:noPredicate, bridge:schemaRuleUnnamed, "
     "bridge:sourceLacksRequired, bridge:valueNotMapped"
 )
@@ -80,17 +80,23 @@ def test_reports_a_gap_that_names_no_scheme(package):
 
 def test_reports_a_gap_that_is_broader_than_no_kind(package):
     package.gap_scheme(scheme_of_one_gap(broader=None))
-    assert f"{THE_GAP} is skos:broader exactly one of {THE_KINDS}" in "\n".join(gap_scheme.faulty(package.crate))
+    assert f"{THE_GAP} is skos:broader exactly one of {THE_KINDS_A_GAP_MAY_NAME}" in "\n".join(
+        gap_scheme.faulty(package.crate)
+    )
 
 
 def test_reports_a_gap_that_is_broader_than_two_kinds(package):
     package.gap_scheme(scheme_of_one_gap(broader="skos:broader bridge:noPredicate, bridge:carriedWithLoss"))
-    assert f"{THE_GAP} is skos:broader exactly one of {THE_KINDS}" in "\n".join(gap_scheme.faulty(package.crate))
+    assert f"{THE_GAP} is skos:broader exactly one of {THE_KINDS_A_GAP_MAY_NAME}" in "\n".join(
+        gap_scheme.faulty(package.crate)
+    )
 
 
 def test_reports_a_gap_whose_kind_is_outside_the_kinds_the_vocabulary_declares(package):
     package.gap_scheme(scheme_of_one_gap(broader="skos:broader ex:a-kind-of-our-own"))
-    assert f"{THE_GAP} is skos:broader exactly one of {THE_KINDS}" in "\n".join(gap_scheme.faulty(package.crate))
+    assert f"{THE_GAP} is skos:broader exactly one of {THE_KINDS_A_GAP_MAY_NAME}" in "\n".join(
+        gap_scheme.faulty(package.crate)
+    )
 
 
 def test_reports_a_closing_term_that_is_a_literal(package):
