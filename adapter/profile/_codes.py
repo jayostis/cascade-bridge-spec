@@ -64,11 +64,9 @@ def accounts_for_its_source(crate):
 
 
 def no_gap_of_the_scheme(crate):
-    admitted = "bridge:schemaRuleUnnamed, bridge:addressNotOneNode, or bridge:pathNotAccounted"
+    admitted = "bridge:schemaRuleUnnamed, or bridge:pathNotAccounted"
     if not accounts_for_its_source(crate):
-        admitted = (
-            "bridge:schemaRuleUnnamed, or bridge:addressNotOneNode, the adapter naming no bridge:sourceAccounting"
-        )
+        admitted = "or bridge:schemaRuleUnnamed, the adapter naming no bridge:sourceAccounting"
     return (
         "is not a gap of the adapter's bridge:gapScheme, the anchor of a validation rule "
         f"in a W3C XML Schema Recommendation, {admitted}. "
@@ -96,4 +94,4 @@ def gaps_of(crate):
 
 def bodies_a_finding_may_carry(crate):
     census = {BRIDGE.pathNotAccounted} if accounts_for_its_source(crate) else set()
-    return gaps_of(crate) | BODIES_OF_A_SCHEMA_FAILURE | {BRIDGE.addressNotOneNode} | census
+    return gaps_of(crate) | BODIES_OF_A_SCHEMA_FAILURE | census
