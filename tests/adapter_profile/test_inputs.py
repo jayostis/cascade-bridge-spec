@@ -42,6 +42,16 @@ def test_reports_a_schema_failure_its_entrys_expected_findings_record_at_a_lesse
     assert "example-0003.xml does not validate against example-set.xsd" in "\n".join(inputs.invalid(package.crate))
 
 
+def test_reports_nothing_for_a_schema_failure_recorded_against_the_same_node_named_another_way(package):
+    package.edit(
+        "fixtures/findings/example-0003.ttl",
+        '"/ExampleRecordSet"',
+        "\"/*[local-name()='ExampleRecordSet']\"",
+        times=2,
+    )
+    assert not [message for message in inputs.invalid(package.crate) if "example-0003" in message]
+
+
 def test_reports_a_schema_failure_its_entrys_expected_findings_record_against_another_node(package):
     package.edit(
         "fixtures/findings/example-0003.ttl",

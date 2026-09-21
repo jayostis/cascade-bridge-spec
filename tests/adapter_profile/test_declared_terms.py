@@ -28,6 +28,7 @@ CONCEPTS_OF_GAP_KINDS = {
     BRIDGE.carriedWithLoss,
     BRIDGE.schemaRuleUnnamed,
     BRIDGE.pathNotAccounted,
+    BRIDGE.addressNotOneNode,
 }
 
 

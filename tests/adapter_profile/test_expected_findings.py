@@ -237,12 +237,14 @@ def test_evaluates_no_selector_for_an_entry_naming_no_input(crate):
     assert not [message for message in expected_findings.faulty(crate) if "selects" in message]
 
 
-def test_reports_a_record_selector_that_names_its_record_another_way(package):
+def test_reports_nothing_for_a_record_selector_that_names_its_record_another_way(package):
     package.write(FINDINGS, finding(record="/ExampleRecordSet/*[local-name()='ExampleRecord'][1]"))
-    assert (
-        "selects the record /ExampleRecordSet/ExampleRecord[1] names, where a record's selector "
-        "is the XPath from the document element to the record"
-    ) in "\n".join(expected_findings.faulty(package.crate))
+    assert not list(expected_findings.faulty(package.crate))
+
+
+def test_reports_nothing_for_a_document_selector_that_names_the_document_element_another_way(package):
+    package.write(FINDINGS, finding(record="/*[local-name()='ExampleRecordSet']", refined=None))
+    assert not list(expected_findings.faulty(package.crate))
 
 
 A_FINDING_WITH_TWO_TARGETS = (
@@ -417,7 +419,7 @@ def test_reports_a_finding_whose_body_is_no_gap_of_the_adapters_gap_scheme(packa
     assert (
         "https://example.org/synthetic-adapter/v1#a-gap-the-scheme-does-not-hold is not a gap of the adapter's "
         "bridge:gapScheme, the anchor of a validation rule in a W3C XML Schema Recommendation, "
-        "bridge:schemaRuleUnnamed, or bridge:pathNotAccounted"
+        "bridge:schemaRuleUnnamed, bridge:addressNotOneNode, or bridge:pathNotAccounted"
     ) in "\n".join(said_about(package))
 
 
@@ -436,6 +438,21 @@ def test_reports_nothing_for_a_finding_whose_body_is_the_concept_a_census_carrie
     assert not said_about(package)
 
 
+def test_reports_nothing_for_a_finding_whose_body_is_the_concept_an_address_the_bridge_cannot_follow_carries(package):
+    package.gap_scheme().write(FINDINGS, coded_finding(body="bridge:addressNotOneNode"))
+    assert not said_about(package)
+
+
+def test_reports_nothing_for_that_concept_where_the_adapter_names_no_source_accounting(package):
+    package.gap_scheme().write(FINDINGS, coded_finding(body="bridge:addressNotOneNode"))
+    package.edit(
+        "ro-crate-metadata.json",
+        '      "bridge:sourceAccounting": {\n        "@id": "vocab/example-accounting.ttl"\n      },\n',
+        "",
+    )
+    assert not said_about(package)
+
+
 def test_reports_the_concept_a_census_carries_where_the_adapter_names_no_source_accounting(package):
     package.gap_scheme().write(FINDINGS, coded_finding(body="bridge:pathNotAccounted"))
     package.edit(
@@ -446,7 +463,7 @@ def test_reports_the_concept_a_census_carries_where_the_adapter_names_no_source_
     assert (
         "https://ns.cascadeprotocol.org/bridge/v1-draft#pathNotAccounted is not a gap of the adapter's "
         "bridge:gapScheme, the anchor of a validation rule in a W3C XML Schema Recommendation, "
-        "or bridge:schemaRuleUnnamed, the adapter naming no bridge:sourceAccounting"
+        "bridge:schemaRuleUnnamed, or bridge:addressNotOneNode, the adapter naming no bridge:sourceAccounting"
     ) in "\n".join(said_about(package))
 
 
@@ -455,7 +472,7 @@ def test_reports_a_finding_whose_body_is_the_anchor_of_no_w3c_xml_schema_validat
     assert (
         "https://www.w3.org/TR/xmlschema-1/#cvc-nonesuch is not a gap of the adapter's bridge:gapScheme, "
         "the anchor of a validation rule in a W3C XML Schema Recommendation, bridge:schemaRuleUnnamed, "
-        "or bridge:pathNotAccounted"
+        "bridge:addressNotOneNode, or bridge:pathNotAccounted"
     ) in "\n".join(said_about(package))
 
 
@@ -470,7 +487,7 @@ def test_reports_a_finding_whose_body_names_a_rule_in_the_recommendation_that_do
     assert (
         "https://www.w3.org/TR/xmlschema-1/#cvc-pattern-valid is not a gap of the adapter's bridge:gapScheme, "
         "the anchor of a validation rule in a W3C XML Schema Recommendation, bridge:schemaRuleUnnamed, "
-        "or bridge:pathNotAccounted"
+        "bridge:addressNotOneNode, or bridge:pathNotAccounted"
     ) in "\n".join(said_about(package))
 
 
