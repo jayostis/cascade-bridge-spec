@@ -31,7 +31,9 @@
 
 [] a bridge:PathEntry ;
   bridge:sourcePath "/ExampleRecord/Status" ;
-  bridge:verdict bridge:consumed .
+  bridge:verdict bridge:consumed ;
+  bridge:lookupIn <example-statuses.ttl> ;
+  bridge:lookupNamesGap ex:a-status-outside-the-set-the-vocabulary-fixes .
 
 [] a bridge:PathEntry ;
   bridge:sourcePath "/ExampleRecord/Note" ;

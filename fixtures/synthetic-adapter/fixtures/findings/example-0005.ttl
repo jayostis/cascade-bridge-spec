@@ -74,3 +74,18 @@
   sh:value "/ExampleRecord/*[local-name()='Extension' and namespace-uri()='https://example.org/synthetic-adapter/ext/v1']" ;
   bridge:occurrences 2 ;
   sh:resultSeverity sh:Info .
+
+[] a oa:Annotation ;
+  oa:hasTarget [
+    oa:hasSource <../in/example-0005.xml> ;
+    oa:hasSelector [
+      a oa:XPathSelector ;
+      rdf:value "/ExampleRecordSet/ExampleRecord[1]" ;
+      oa:refinedBy [ a oa:XPathSelector ; rdf:value "Status[2]" ]
+    ]
+  ] ;
+  oa:hasBody ex:a-status-outside-the-set-the-vocabulary-fixes ;
+  oa:motivatedBy oa:classifying ;
+  sh:value "Retired" ;
+  bridge:occurrences 2 ;
+  sh:resultSeverity sh:Info .

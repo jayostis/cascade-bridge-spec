@@ -1,6 +1,7 @@
 PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
 PREFIX fx:   <http://sparql.xyz/facade-x/ns/>
 PREFIX xyz:  <http://sparql.xyz/facade-x/data/>
 PREFIX ex:   <https://example.org/synthetic-adapter/v1#>
@@ -19,6 +20,14 @@ WHERE {
                   ?accession)) AS ?record)
   BIND(STRDT(?number, xsd:integer) AS ?version)
   OPTIONAL { ?exampleRecord ?slot ?element . ?element a xyz:Label ; rdf:_1 ?label }
-  OPTIONAL { ?exampleRecord ?statusSlot ?statusElement . ?statusElement a xyz:Status ; rdf:_1 ?status }
-  FILTER (!BOUND(?status) || ?status != "withdrawn")
+  OPTIONAL {
+    ?exampleRecord ?statusSlot ?statusElement . ?statusElement a xyz:Status ; rdf:_1 ?status
+    OPTIONAL {
+      ?statusConcept skos:inScheme ex:statuses ;
+        skos:notation ?statusKey ;
+        skos:exactMatch ?statusTerm .
+      FILTER (?statusKey = LCASE(REPLACE(?status, "^\\s+|\\s+$", "")))
+    }
+  }
+  FILTER (!BOUND(?statusTerm) || ?statusTerm != ex:Withdrawn)
 }
