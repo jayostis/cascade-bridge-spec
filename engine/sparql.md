@@ -113,9 +113,10 @@ declares, `sh:Info` where it declares none.
 
 A path is the element and attribute names from the record element down to the
 node, the record element first, separated by `/`, an attribute's last step
-written `@name`, no step carrying a position. A step names a node in a namespace
-as a selector's step does, an attribute's after its `@`. The record element
-itself is no path. A path is the same under every envelope the adapter declares.
+written `@name`, no step carrying a position. A step names a node in no
+namespace by that name, and one in a namespace by `*[local-name()='…' and
+namespace-uri()='…']`, an attribute's after its `@`. The record element itself
+is no path. A path is the same under every envelope the adapter declares.
 
 A census finding is addressed at the path's first occurrence in the record and
 carries `bridge:pathNotAccounted` as its body, the path as its `sh:value`, and
@@ -144,15 +145,15 @@ two annotations share, and a variable bound to a node the lift already holds are
 each one node for more than one finding, so which selector standing on it
 belongs to which finding is unrecoverable.
 
-A record's selector is the XPath from the document element to the record: a
-step for the document element, then one for each element down to and including
-the record, however deep it is. Every step below the document element carries
-`[n]`, its position among its own siblings of that name, counting from 1.
+A record's selector is an XPath selecting the record, and a refinement is an
+XPath relative to the record, selecting one node of it.
 
-A step names an element in no namespace by that name. A step names an element
-in a namespace by `*[local-name()='…' and namespace-uri()='…']`, because an
-XPath carries no prefix bindings and a selector is read where nothing can
-supply them.
+An address a Bridge writes that does not select exactly one node of the
+document it is about carries `bridge:addressNotOneNode` as its body, the
+address as written as its `sh:value`, and `sh:Violation` as its
+`sh:resultSeverity`. It is addressed at the record, refined no further, once
+for each distinct address the record's findings carry. The finding whose
+address it is stands, and a Bridge refuses nothing for it.
 
 A finding a Bridge makes about the document rather than about a record selects
 the document element, and is refined under it as a record's finding is refined
