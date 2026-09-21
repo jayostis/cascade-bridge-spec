@@ -54,3 +54,7 @@ def test_a_record_holding_withdrawn_beside_another_status_is_not_lifted(crate):
 
 def test_a_record_whose_withdrawn_is_spelled_outside_its_key_is_not_lifted(crate):
     assert not len(mapped(crate, " Withdrawn "))
+
+
+def test_a_record_padded_with_a_character_that_is_whitespace_nowhere_xml_calls_whitespace_is_lifted(crate):
+    assert len(mapped(crate, " withdrawn"))

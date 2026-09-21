@@ -222,8 +222,8 @@
       "@type": "File",
       "name": "Mapping",
       "encodingFormat": "application/sparql-query",
-      "contentSize": "1147",
-      "sha256": "f48b801b939afec89b40edbcf36f5036b0211f19f8af94d298aac71c591701f1",
+      "contentSize": "1159",
+      "sha256": "1a441d769df3f507b94d7e198e08be10fd4a8e9c09a1edcbb38e9e2e19886cfd",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       }

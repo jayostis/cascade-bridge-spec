@@ -25,6 +25,6 @@ WHERE {
     ?statusConcept skos:inScheme ex:statuses ;
       skos:notation ?statusKey ;
       skos:exactMatch ex:Withdrawn .
-    FILTER (?statusKey = LCASE(REPLACE(?status, "^\\s+|\\s+$", "")))
+    FILTER (?statusKey = LCASE(REPLACE(?status, "^[ \t\r\n]+|[ \t\r\n]+$", "")))
   }
 }
