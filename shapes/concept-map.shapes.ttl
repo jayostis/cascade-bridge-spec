@@ -43,7 +43,7 @@
   ] ;
   sh:sparql [
     sh:prefixes <> ;
-    sh:message "One key is the skos:notation of one concept of a scheme: two concepts whose notations fold to it leave which Cascade term the phrase maps to unanswerable." ;
+    sh:message "One key is the skos:notation of one concept of a scheme: two concepts whose notations lowercase to it leave which Cascade term the phrase maps to unanswerable." ;
     sh:select """
       SELECT $this ?value WHERE {
         $this skos:inScheme ?scheme ;

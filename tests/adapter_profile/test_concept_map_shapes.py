@@ -85,7 +85,7 @@ def test_rejects_two_concepts_of_one_scheme_carrying_one_notation():
     assert not said_about(concept(), concept(name=ANOTHER_CONCEPT, notation='"live"'))
 
 
-def test_rejects_a_notation_the_case_folding_of_a_value_can_never_equal():
+def test_rejects_a_notation_the_lowercasing_of_a_value_can_never_equal():
     assert A_NOTATION_IS_A_KEY in said_about(concept(notation='"Current"'))
     assert not said_about(concept())
 
