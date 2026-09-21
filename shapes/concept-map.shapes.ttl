@@ -1,0 +1,58 @@
+@prefix sh:   <http://www.w3.org/ns/shacl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+<> a owl:Ontology ;
+  sh:declare [ sh:prefix "skos" ; sh:namespace "http://www.w3.org/2004/02/skos/core#"^^xsd:anyURI ] .
+
+<#ConceptOfALookupTable> a sh:NodeShape ;
+  sh:targetClass skos:Concept ;
+  sh:xone (
+    [
+      sh:property [ sh:path skos:exactMatch ; sh:minCount 1 ; sh:maxCount 1 ; sh:nodeKind sh:IRI ] ;
+      sh:property [ sh:path skos:closeMatch ; sh:maxCount 0 ]
+    ]
+    [
+      sh:property [ sh:path skos:closeMatch ; sh:minCount 1 ; sh:maxCount 1 ; sh:nodeKind sh:IRI ] ;
+      sh:property [ sh:path skos:exactMatch ; sh:maxCount 0 ]
+    ]
+  ) ;
+  sh:message "A concept of a lookup table matches its Cascade term by exactly one skos:exactMatch, or by exactly one skos:closeMatch where the phrase and the term do not mean the same thing, and never by both: the term is named by IRI." ;
+  sh:property [
+    sh:path skos:notation ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:message "A concept of a lookup table carries exactly one skos:notation, the source phrase as its key."
+  ] ;
+  sh:property [
+    sh:path skos:inScheme ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:message "A concept of a lookup table is skos:inScheme exactly one scheme, the one its file carries."
+  ] ;
+  sh:sparql [
+    sh:prefixes <> ;
+    sh:message "A skos:notation is written as the key it is looked up by: the source phrase under SPARQL's LCASE, stripped of leading and trailing space, tab, carriage return and line feed. A value's key can never equal a notation written in any other form." ;
+    sh:select """
+      SELECT $this ?value WHERE {
+        $this skos:notation ?value .
+        FILTER (STR(?value) != LCASE(REPLACE(STR(?value), "^[ \\t\\r\\n]+|[ \\t\\r\\n]+$", "")))
+      }
+    """
+  ] ;
+  sh:sparql [
+    sh:prefixes <> ;
+    sh:message "One key is the skos:notation of one concept of a scheme: two concepts whose notations fold to it leave which Cascade term the phrase maps to unanswerable." ;
+    sh:select """
+      SELECT $this ?value WHERE {
+        $this skos:inScheme ?scheme ;
+              skos:notation ?value .
+        ?other skos:inScheme ?scheme ;
+               skos:notation ?otherValue .
+        FILTER (?other != $this)
+        FILTER (LCASE(REPLACE(STR(?value), "^[ \\t\\r\\n]+|[ \\t\\r\\n]+$", ""))
+                = LCASE(REPLACE(STR(?otherValue), "^[ \\t\\r\\n]+|[ \\t\\r\\n]+$", "")))
+      }
+    """
+  ] .

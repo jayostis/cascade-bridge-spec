@@ -322,6 +322,23 @@ def a_concept_matching_no_cascade_term(package):
     )
 
 
+def a_concept_whose_notation_is_not_the_key_a_value_is_looked_up_by(package):
+    looking_its_status_up(
+        package,
+        concept_map=A_CONCEPT_MAP_OF_THE_THREE_STATUSES.replace('skos:notation "current"', 'skos:notation " Current"'),
+    )
+
+
+def a_concept_in_a_scheme_other_than_the_one_its_file_carries(package):
+    looking_its_status_up(
+        package,
+        concept_map=A_CONCEPT_MAP_OF_THE_THREE_STATUSES.replace(
+            'skos:inScheme ex:statuses ;\n  skos:notation "superseded"',
+            'skos:inScheme ex:status ;\n  skos:notation "superseded"',
+        ),
+    )
+
+
 def two_concepts_of_one_scheme_carrying_one_notation(package):
     looking_its_status_up(
         package,
@@ -521,6 +538,20 @@ def pin_not_a_data_entity(package):
             ["skos:notation"],
             [],
             id="two concepts of one scheme carrying one skos:notation fail the profile",
+        ),
+        pytest.param(
+            a_concept_whose_notation_is_not_the_key_a_value_is_looked_up_by,
+            False,
+            ["skos:notation", "under SPARQL's LCASE"],
+            [],
+            id="a concept whose skos:notation is not already a key fails the profile",
+        ),
+        pytest.param(
+            a_concept_in_a_scheme_other_than_the_one_its_file_carries,
+            False,
+            ["skos:inScheme", "example-statuses.ttl"],
+            [],
+            id="a concept skos:inScheme a scheme other than the one its concept map carries fails the profile",
         ),
         pytest.param(
             a_concept_map_that_is_not_turtle,

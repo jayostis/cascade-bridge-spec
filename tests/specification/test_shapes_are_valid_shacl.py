@@ -5,7 +5,10 @@ from pyshacl import validate
 from rdflib import Graph
 
 ROOT = Path(__file__).resolve().parents[2]
-SHAPES_FILES = [ROOT / "shapes" / "bridge.shapes.ttl", *sorted((ROOT / "adapter" / "profile" / "must").glob("*.ttl"))]
+SHAPES_FILES = [
+    *sorted((ROOT / "shapes").glob("*.ttl")),
+    *sorted((ROOT / "adapter" / "profile" / "must").glob("*.ttl")),
+]
 
 
 @pytest.mark.parametrize("shapes_file", SHAPES_FILES, ids=lambda path: path.relative_to(ROOT).as_posix())

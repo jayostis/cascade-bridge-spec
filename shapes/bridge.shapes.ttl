@@ -6,14 +6,12 @@
 @prefix schema: <http://schema.org/> .
 @prefix mf:     <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .
 @prefix oa:     <http://www.w3.org/ns/oa#> .
-@prefix skos:   <http://www.w3.org/2004/02/skos/core#> .
 @prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
 <> a owl:Ontology ;
   sh:declare [ sh:prefix "rdf" ;    sh:namespace "http://www.w3.org/1999/02/22-rdf-syntax-ns#"^^xsd:anyURI ] ;
   sh:declare [ sh:prefix "mf" ;     sh:namespace "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#"^^xsd:anyURI ] ;
   sh:declare [ sh:prefix "oa" ;     sh:namespace "http://www.w3.org/ns/oa#"^^xsd:anyURI ] ;
-  sh:declare [ sh:prefix "skos" ;   sh:namespace "http://www.w3.org/2004/02/skos/core#"^^xsd:anyURI ] ;
   sh:declare [ sh:prefix "bridge" ; sh:namespace "https://ns.cascadeprotocol.org/bridge/v1-draft#"^^xsd:anyURI ] ;
   sh:declare [ sh:prefix "schema" ; sh:namespace "http://schema.org/"^^xsd:anyURI ] .
 
@@ -453,45 +451,6 @@
     sh:path bridge:lookupNamesGap ;
     sh:minCount 1 ;
     sh:message "An entry naming a bridge:lookupIn names the bridge:lookupNamesGap a value outside that map opens: a lookup is a concept map and the gap a value the map lacks opens, and neither half stands without the other."
-  ] .
-
-<#ConceptOfALookupTable> a sh:NodeShape ;
-  sh:targetClass skos:Concept ;
-  sh:xone (
-    [
-      sh:property [ sh:path skos:exactMatch ; sh:minCount 1 ; sh:maxCount 1 ; sh:nodeKind sh:IRI ] ;
-      sh:property [ sh:path skos:closeMatch ; sh:maxCount 0 ]
-    ]
-    [
-      sh:property [ sh:path skos:closeMatch ; sh:minCount 1 ; sh:maxCount 1 ; sh:nodeKind sh:IRI ] ;
-      sh:property [ sh:path skos:exactMatch ; sh:maxCount 0 ]
-    ]
-  ) ;
-  sh:message "A concept of a lookup table matches its Cascade term by exactly one skos:exactMatch, or by exactly one skos:closeMatch where the phrase and the term do not mean the same thing, and never by both: the term is named by IRI." ;
-  sh:property [
-    sh:path skos:notation ;
-    sh:minCount 1 ;
-    sh:maxCount 1 ;
-    sh:message "A concept of a lookup table carries exactly one skos:notation, the source phrase as its key."
-  ] ;
-  sh:property [
-    sh:path skos:inScheme ;
-    sh:minCount 1 ;
-    sh:maxCount 1 ;
-    sh:message "A concept of a lookup table is skos:inScheme exactly one scheme, the one its file carries."
-  ] ;
-  sh:sparql [
-    sh:prefixes <> ;
-    sh:message "One skos:notation is the key of one concept of a scheme: two concepts carrying it leave which Cascade term the phrase maps to unanswerable." ;
-    sh:select """
-      SELECT $this ?value WHERE {
-        $this skos:inScheme ?scheme ;
-              skos:notation ?value .
-        ?other skos:inScheme ?scheme ;
-               skos:notation ?value .
-        FILTER (?other != $this)
-      }
-    """
   ] .
 
 <#CarriedEntry> a sh:NodeShape ;

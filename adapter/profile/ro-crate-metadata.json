@@ -32,12 +32,18 @@
           "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/shapes/bridge.shapes.ttl"
         },
         {
+          "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/shapes/concept-map.shapes.ttl"
+        },
+        {
           "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/vocab/bridge.ttl"
         }
       ],
       "hasPart": [
         {
           "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/shapes/bridge.shapes.ttl"
+        },
+        {
+          "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/shapes/concept-map.shapes.ttl"
         },
         {
           "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/vocab/bridge.ttl"
@@ -56,6 +62,19 @@
         "@id": "https://spdx.org/licenses/Apache-2.0"
       },
       "description": "The SHACL shapes an adapter's crate and test manifest are validated against as one graph."
+    },
+    {
+      "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/shapes/concept-map.shapes.ttl",
+      "@type": "File",
+      "name": "Cascade Bridge concept map shapes",
+      "encodingFormat": "text/turtle",
+      "conformsTo": {
+        "@id": "http://www.w3.org/ns/shacl#"
+      },
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      },
+      "description": "The SHACL shapes a file a bridge:lookupIn names is validated against on its own."
     },
     {
       "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/vocab/bridge.ttl",

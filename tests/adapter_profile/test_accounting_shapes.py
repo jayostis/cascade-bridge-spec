@@ -299,6 +299,13 @@ def test_rejects_a_concept_map_named_as_a_string_rather_than_by_iri():
     assert not said_about(looks_up())
 
 
+def test_rejects_a_gap_for_a_value_outside_a_concept_map_named_as_a_string_rather_than_by_iri():
+    assert "bridge:lookupNamesGap" in said_about(
+        looks_up(lookup_names_gap='"a-status-outside-the-set-the-vocabulary-fixes"')
+    )
+    assert not said_about(looks_up())
+
+
 def test_rejects_half_a_lookup_on_an_entry_of_every_verdict_and_accepts_both_halves_there():
     for verdict, rest in (
         (CARRIED, {}),

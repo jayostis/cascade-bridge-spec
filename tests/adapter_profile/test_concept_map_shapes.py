@@ -1,6 +1,7 @@
 from rdflib import Graph
 
-from _findings import SHAPES, unmet
+from _findings import unmet
+from lookups import SHAPES
 
 BASE = "https://example.org/synthetic-adapter/vocab/example-statuses.ttl"
 
@@ -14,6 +15,9 @@ A_CONCEPT = "ex:status-current"
 ANOTHER_CONCEPT = "ex:status-live"
 A_CASCADE_TERM = "ex:Current"
 ANOTHER_CASCADE_TERM = "ex:SubmitterLaboratory"
+
+A_NOTATION_IS_A_KEY = "A skos:notation is written as the key it is looked up by"
+ONE_KEY_IS_ONE_CONCEPTS = "One key is the skos:notation of one concept of a scheme"
 
 
 def concept(
@@ -78,6 +82,31 @@ def test_rejects_a_concept_carrying_two_exact_matches():
 def test_rejects_two_concepts_of_one_scheme_carrying_one_notation():
     said = said_about(concept(), concept(name=ANOTHER_CONCEPT, exact_match=ANOTHER_CASCADE_TERM))
     assert "skos:notation" in said
+    assert not said_about(concept(), concept(name=ANOTHER_CONCEPT, notation='"live"'))
+
+
+def test_rejects_a_notation_the_case_folding_of_a_value_can_never_equal():
+    assert A_NOTATION_IS_A_KEY in said_about(concept(notation='"Current"'))
+    assert not said_about(concept())
+
+
+def test_rejects_a_notation_the_whitespace_stripping_of_a_value_can_never_equal():
+    for spelled in ('" current"', '"current "', '"\\tcurrent"', '"current\\r"', '"current\\n"'):
+        assert A_NOTATION_IS_A_KEY in said_about(concept(notation=spelled)), spelled
+    assert not said_about(concept())
+
+
+def test_accepts_a_notation_holding_a_character_that_is_whitespace_nowhere_xml_calls_whitespace():
+    assert not said_about(concept(notation='"\\u00A0current"'))
+
+
+def test_accepts_a_notation_lowercased_as_sparql_lowercases_it_where_case_folding_would_go_further():
+    assert not said_about(concept(notation='"stra\\u00DFe"'))
+
+
+def test_rejects_two_concepts_of_one_scheme_whose_notations_are_one_key_spelled_two_ways():
+    said = said_about(concept(), concept(name=ANOTHER_CONCEPT, notation='"Current"', exact_match=ANOTHER_CASCADE_TERM))
+    assert ONE_KEY_IS_ONE_CONCEPTS in said
     assert not said_about(concept(), concept(name=ANOTHER_CONCEPT, notation='"live"'))
 
 

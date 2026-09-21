@@ -10,8 +10,10 @@ from rocrate_validator.requirements.python import PyFunctionCheck, check, requir
 
 from _codes import scheme_named_by
 from _crate import file_name_of
-from _findings import SHAPES, report_findings, unmet
+from _findings import report_findings, unmet
 from _terms import BRIDGE
+
+SHAPES = Path(__file__).resolve().parents[3] / "shapes" / "concept-map.shapes.ttl"
 
 
 def shortened(term):
@@ -71,6 +73,12 @@ def unreadable(path, shapes):
             "one, the scheme every concept in it is skos:inScheme and the one a lookup reads"
         )
         return
+    for concept in sorted(graph.subjects(RDF.type, SKOS.Concept)):
+        if list(graph.objects(concept, SKOS.inScheme)) != schemes:
+            yield (
+                f"{concept} carries exactly one skos:inScheme, {schemes[0]}, "
+                f"the one skos:ConceptScheme {path.name} carries"
+            )
     for message in unmet(graph, shapes):
         yield f"{path.name}: {message}"
 
