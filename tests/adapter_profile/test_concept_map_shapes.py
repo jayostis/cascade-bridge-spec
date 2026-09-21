@@ -79,3 +79,14 @@ def test_rejects_two_concepts_of_one_scheme_carrying_one_notation():
     said = said_about(concept(), concept(name=ANOTHER_CONCEPT, exact_match=ANOTHER_CASCADE_TERM))
     assert "skos:notation" in said
     assert not said_about(concept(), concept(name=ANOTHER_CONCEPT, notation='"live"'))
+
+
+def test_rejects_a_concept_in_no_scheme_and_a_concept_in_two():
+    assert "skos:inScheme" in said_about(concept(in_scheme=None))
+    assert "skos:inScheme" in said_about(concept(in_scheme="ex:statuses, ex:kinds"))
+    assert not said_about(concept())
+
+
+def test_rejects_a_concept_matching_a_cascade_term_written_as_a_string_rather_than_by_iri():
+    assert "skos:exactMatch" in said_about(concept(exact_match='"Current"'))
+    assert not said_about(concept())
