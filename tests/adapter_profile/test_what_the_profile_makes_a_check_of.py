@@ -7,10 +7,10 @@ ROOT = Path(__file__).resolve().parents[2]
 PROFILE = ROOT / "adapter"
 
 DISCOVERED = (
-    "Every .ttl and .py file under adapter/profile/ whose name does not begin with an underscore is "
-    "discovered by rocrate-validator and run over the crate graph of every adapter whose pull request "
-    "names this repository. Shapes a Python check applies to some other file belong in shapes/. "
-    "A check added or removed on purpose is said here too."
+    "Every .ttl and .py file under adapter/profile/ other than the profile.ttl descriptor, and whose name "
+    "does not begin with an underscore, is discovered by rocrate-validator and run over the crate graph of "
+    "every adapter whose pull request names this repository. Shapes a Python check applies to some other "
+    "file belong in shapes/. A check added or removed on purpose is said here too."
 )
 
 CHECKS = {
