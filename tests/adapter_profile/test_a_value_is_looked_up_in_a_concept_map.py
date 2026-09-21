@@ -36,8 +36,11 @@ def notations_of(crate, concept_map):
     return {str(notation) for notation in graph.objects(None, SKOS.notation)}
 
 
+XML_WHITESPACE = " \t\r\n"
+
+
 def key_of(value):
-    return value.strip().lower()
+    return value.strip(XML_WHITESPACE).lower()
 
 
 def below_the_record(source_path):
@@ -150,7 +153,7 @@ def test_a_lookup_finding_carries_the_value_as_the_record_wrote_it_and_never_the
     source_path, _, _ = the_one_lookup(crate)
     reported = every_value_outside_the_map(crate)
     assert any(value != key_of(value) for _, _, _, _, value, _ in reported), (
-        "every value the vector reports is already its own folded key, so nothing there tells "
+        "every value the vector reports is already its own key, so nothing there tells "
         "the value as the record wrote it from the key it is looked up by"
     )
     for named, graph, _, finding, value, _ in reported:

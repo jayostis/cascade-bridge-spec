@@ -98,9 +98,11 @@ A path's value is the value of an attribute, and the text of an element that has
 no element child. An element with an element child has no value, and a lookup at
 its path reports nothing.
 
-A value's key is the value case-folded and whitespace-trimmed, and a
-`skos:notation` is written in that form. A path the record does not hold, and a
-value whose key is empty, report nothing.
+A value's key is the value under SPARQL's `LCASE`, stripped of leading and
+trailing whitespace, and a `skos:notation` is written in that form. Values are
+distinct by spelling, not by key: a key spelled two ways is two findings, each
+carrying its own spelling and counting only the nodes that hold it. A path the
+record does not hold, and a value whose key is empty, report nothing.
 
 A lookup finding is addressed at its value's first occurrence in the record, as a
 census finding is addressed at its path's, and carries the entry's
@@ -108,9 +110,6 @@ census finding is addressed at its path's, and carries the entry's
 the value as the record wrote it as its `sh:value` — never the key, and never the
 path — and as its `sh:resultSeverity` the `sh:resultSeverity` the gap concept
 declares, `sh:Info` where it declares none.
-
-A `bridge:lookupIn` a crate names and a Bridge cannot read is an error, as a
-`bridge:sourceAccounting` is.
 
 A path is the element and attribute names from the record element down to the
 node, the record element first, separated by `/`, an attribute's last step
@@ -130,8 +129,9 @@ record stand at that path, an `xsd:integer` of 2 or more, omitted where it is 1.
 A lookup finding carries it in the same form, how many nodes of the record hold
 that value at that path.
 
-A `bridge:sourceAccounting` a crate names and a Bridge cannot read is an error,
-as one that does not parse is. Naming none is the silent case.
+A `bridge:sourceAccounting` or `bridge:lookupIn` a crate names and a Bridge
+cannot read is an error, as one that does not parse is. Naming none is the
+silent case.
 
 A gap's kind is the `skos:broader` its concept declares in the adapter's
 `bridge:gapScheme`. One a crate names and a Bridge cannot read or parse is an
