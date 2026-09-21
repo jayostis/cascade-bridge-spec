@@ -15,15 +15,14 @@ HOW_AN_ISOMORPHIC_CONVERSION_TEST_COMPARES = str(
 
 def test_two_addresses_selecting_one_node_of_the_input_are_the_same_finding():
     assert (
-        "two oa:XPathSelector rdf:values match where they select the same node of bridge:input"
+        "two oa:XPathSelector rdf:values are equal when both select the same one node of bridge:input"
         in HOW_AN_ISOMORPHIC_CONVERSION_TEST_COMPARES
     )
 
 
-def test_an_address_selecting_other_than_one_node_of_the_input_is_compared_as_it_is_written():
+def test_an_address_selecting_other_than_one_node_of_the_input_fails_the_entry():
     assert (
-        "one selecting other than exactly one node matches only the same spelling"
-        in HOW_AN_ISOMORPHIC_CONVERSION_TEST_COMPARES
+        "An address selecting no node, or more than one, fails the entry." in HOW_AN_ISOMORPHIC_CONVERSION_TEST_COMPARES
     )
 
 
