@@ -54,6 +54,25 @@ def inside(record, node, etree):
     return False
 
 
+def chosen_by(node, xpath, etree):
+    """The nodes an XPath selects, or None where it is not an XPath selecting nodes."""
+    try:
+        chosen = node.xpath(xpath)
+    except etree.XPathError:
+        return None
+    return chosen if isinstance(chosen, list) else None
+
+
+def on_its_own(record, etree):
+    """The record as a Bridge evaluates a refinement against it: a document of its own, where / reaches the record element."""
+    return etree.fromstring(etree.tostring(record, with_tail=False))
+
+
+def rooted_at_the_document(record, refinement, etree):
+    standing = chosen_by(record, refinement, etree)
+    return bool(standing) and chosen_by(on_its_own(record, etree), refinement, etree) == []
+
+
 def about_the_document(document, node):
     return node is document.getroot()
 
@@ -96,7 +115,7 @@ def unselected(graph, document, document_name, source, record_name, etree):
         if refined is None:
             continue
         refinement = str(graph.value(refined, RDF.value))
-        if refinement.startswith("/"):
+        if rooted_at_the_document(record, refinement, etree):
             yield (
                 f"{refinement} is an XPath rooted at {document_name}, "
                 "where a refinement is relative to the record its selector names"
