@@ -11,7 +11,7 @@ from rocrate_validator.requirements.python import PyFunctionCheck, check, requir
 from _codes import bodies_a_finding_may_carry, no_gap_of_the_scheme
 from _crate import file_name_of
 from _findings import SHAPES, report_findings, unmet
-from _selectors import local_name_of, selector_of
+from _selectors import local_name_of
 from _terms import BRIDGE, MF, OA
 
 
@@ -54,8 +54,8 @@ def inside(record, node, etree):
     return False
 
 
-def about_the_document(document, xpath):
-    return xpath == selector_of(document.getroot())
+def about_the_document(document, node):
+    return node is document.getroot()
 
 
 def unselected(graph, document, document_name, source, record_name, etree):
@@ -85,21 +85,13 @@ def unselected(graph, document, document_name, source, record_name, etree):
                 "where a record's selector selects the record"
             )
             continue
-        if not about_the_document(document, xpath):
-            if record_name and found != record_name:
-                yield (
-                    f"{xpath} selects {found} of {document_name}, where a finding is about the document, "
-                    f"selecting its document element, or about a record, selecting {record_name}, "
-                    "the adapter's bridge:elementNameOfEachRecord"
-                )
-                continue
-            written = selector_of(record)
-            if xpath != written:
-                yield (
-                    f"{xpath} selects the record {written} names, where a record's selector is the XPath "
-                    "from the document element to the record, each step below it carrying its position"
-                )
-                continue
+        if not about_the_document(document, record) and record_name and found != record_name:
+            yield (
+                f"{xpath} selects {found} of {document_name}, where a finding is about the document, "
+                f"selecting its document element, or about a record, selecting {record_name}, "
+                "the adapter's bridge:elementNameOfEachRecord"
+            )
+            continue
         refined = graph.value(selector, OA.refinedBy)
         if refined is None:
             continue

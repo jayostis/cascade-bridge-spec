@@ -40,8 +40,8 @@ def expected_findings_file_of(crate, test):
     return None if findings is None else crate.file_at(findings)
 
 
-def violations_recorded_in(path):
-    """The selectors a findings file records a broken W3C schema rule on, as sh:Violation: the schema failures its adapter expects."""
+def violations_recorded_on(path, document):
+    """The nodes of a document a findings file records a broken W3C schema rule on, as sh:Violation, however each address is spelled: the schema failures its adapter expects."""
     graph = Graph()
     try:
         graph.parse(path, format="turtle")
@@ -55,6 +55,18 @@ def violations_recorded_in(path):
             continue
         target = graph.value(annotation, OA.hasTarget)
         selector = None if target is None else graph.value(target, OA.hasSelector)
-        if selector is not None:
-            recorded.add(str(graph.value(selector, RDF.value)))
+        if selector is None:
+            continue
+        recorded.update(node_selected_by(document, str(graph.value(selector, RDF.value))))
     return recorded
+
+
+def node_selected_by(document, address):
+    """The one element an address selects, as a set, empty where it selects anything else."""
+    try:
+        chosen = document.xpath(address)
+    except Exception:
+        return set()
+    if not isinstance(chosen, list) or len(chosen) != 1 or local_name_of(chosen[0]) is None:
+        return set()
+    return {chosen[0]}
