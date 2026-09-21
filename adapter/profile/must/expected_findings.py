@@ -96,6 +96,12 @@ def unselected(graph, document, document_name, source, record_name, etree):
         if refined is None:
             continue
         refinement = str(graph.value(refined, RDF.value))
+        if refinement.startswith("/"):
+            yield (
+                f"{refinement} is an XPath rooted at {document_name}, "
+                "where a refinement is relative to the record its selector names"
+            )
+            continue
         within = selected(record, refinement, etree, document_name)
         if isinstance(within, Fault):
             yield within
