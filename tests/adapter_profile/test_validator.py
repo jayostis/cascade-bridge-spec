@@ -56,7 +56,7 @@ def expected_graph_not_turtle(package):
 
 
 def a_finding_selecting_no_node(package):
-    package.edit(FINDINGS, '"/ExampleRecordSet/ExampleRecord[2]"', '"/ExampleRecordSet/ExampleRecord[3]"')
+    package.edit(FINDINGS, '"/ExampleRecordSet/ExampleRecord[2]"', '"/ExampleRecordSet/ExampleRecord[3]"', times=2)
     restate_digest(package, FINDINGS)
 
 
@@ -155,6 +155,19 @@ def no_accounting_named_and_no_census_expected(package):
         "  ] .",
         "  ] .",
     )
+    package.edit(
+        MANIFEST,
+        "<#example-0005> a bridge:IsomorphicConversionTest ;",
+        "<#example-0005> a bridge:InputOnlyTest ;",
+    )
+    package.edit(
+        MANIFEST,
+        "  ] ;\n  mf:result [\n"
+        "    bridge:expectedGraph <expected/example-0005.ttl> ;\n"
+        "    bridge:expectedFindings <findings/example-0005.ttl>\n"
+        "  ] .",
+        "  ] .",
+    )
     restate_digest(package, MANIFEST)
     crate = package.path / CRATE
     document = json.loads(crate.read_text(encoding="utf-8"))
@@ -162,6 +175,30 @@ def no_accounting_named_and_no_census_expected(package):
     assert "bridge:sourceAccounting" in root
     del root["bridge:sourceAccounting"]
     crate.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8", newline="")
+
+
+A_FINDING_COUNTING_THE_ONE_NODE_IT_STANDS_FOR = """
+[] a oa:Annotation ;
+  oa:hasTarget [
+    oa:hasSource <../in/example-0001.xml> ;
+    oa:hasSelector [
+      a oa:XPathSelector ;
+      rdf:value "/ExampleRecordSet/ExampleRecord[1]" ;
+      oa:refinedBy [ a oa:XPathSelector ; rdf:value "Note[1]" ]
+    ]
+  ] ;
+  oa:hasBody ex:no-term-for-a-free-text-note ;
+  oa:motivatedBy oa:classifying ;
+  sh:value "/ExampleRecord/Note" ;
+  <https://ns.cascadeprotocol.org/bridge/v1-draft#occurrences> 1 ;
+  sh:resultSeverity sh:Info .
+"""
+
+
+def a_finding_counting_the_one_node_it_stands_for(package):
+    written = (package.path / FINDINGS).read_text(encoding="utf-8")
+    package.write(FINDINGS, written + A_FINDING_COUNTING_THE_ONE_NODE_IT_STANDS_FOR)
+    restate_digest(package, FINDINGS)
 
 
 def profile_not_an_entity(package):
@@ -266,6 +303,13 @@ def pin_not_a_data_entity(package):
             [],
             [],
             id="a source path naming a node in a namespace passes the profile",
+        ),
+        pytest.param(
+            a_finding_counting_the_one_node_it_stands_for,
+            False,
+            ["bridge:occurrences"],
+            [],
+            id="a count of one fails the profile, where a count of one is written by omitting it",
         ),
         pytest.param(
             undeclared_context_key,

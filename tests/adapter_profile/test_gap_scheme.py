@@ -4,6 +4,7 @@ import gap_scheme
 from _terms import BRIDGE
 
 PREFIXES = """@prefix skos:   <http://www.w3.org/2004/02/skos/core#> .
+@prefix sh:     <http://www.w3.org/ns/shacl#> .
 @prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 @prefix ex:     <https://example.org/synthetic-adapter/v1#> .
 
@@ -24,12 +25,34 @@ def scheme_of_one_gap(
     in_scheme="skos:inScheme ex:gaps",
     broader="skos:broader bridge:noPredicate",
     closed_by=None,
+    severity=None,
 ):
     written = ["ex:no-term-for-a-free-text-note a skos:Concept"]
     written += [statement for statement in (label, in_scheme, broader) if statement is not None]
     if closed_by is not None:
         written.append(f"bridge:closedBy {closed_by}")
+    if severity is not None:
+        written.append(f"sh:resultSeverity {severity}")
     return PREFIXES + "\n" + " ;\n  ".join(written) + " .\n"
+
+
+def said_about(package, **gap):
+    package.gap_scheme(scheme_of_one_gap(**gap))
+    return "\n".join(gap_scheme.faulty(package.crate))
+
+
+def test_reports_a_gap_declaring_two_severities(package):
+    said = said_about(package, severity="sh:Warning, sh:Violation")
+    assert THE_GAP in said
+    assert "sh:resultSeverity" in said
+    assert not said_about(package, severity="sh:Warning")
+
+
+def test_reports_a_gap_whose_declared_severity_is_outside_the_three_a_finding_carries(package):
+    said = said_about(package, severity="ex:as-loud-as-we-like")
+    assert THE_GAP in said
+    assert "sh:resultSeverity" in said
+    assert not said_about(package, severity="sh:Violation")
 
 
 def test_reports_an_adapter_that_names_a_findings_query_and_no_gap_scheme(crate):

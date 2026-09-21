@@ -37,3 +37,8 @@
   bridge:sourcePath "/ExampleRecord/Note" ;
   bridge:verdict bridge:noHome ;
   bridge:namesGap ex:no-term-for-a-free-text-note .
+
+[] a bridge:PathEntry ;
+  bridge:sourcePath "/ExampleRecord/*[local-name()='Provenance' and namespace-uri()='https://example.org/synthetic-adapter/ext/v1']" ;
+  bridge:verdict bridge:noHome ;
+  bridge:namesGap ex:no-term-for-provenance-in-an-extension-namespace .

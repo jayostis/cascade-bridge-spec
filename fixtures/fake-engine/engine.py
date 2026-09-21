@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-"""Usage: engine.py [--canned passed|failed|partial|none|garbled] test <adapter directory> --earl <file>
-Usage: engine.py convert <adapter directory> <document> [--out <file>] [--format turtle|ntriples]
-"""
-
 import argparse
 import sys
 from pathlib import Path
@@ -27,6 +23,7 @@ CANNED = {
         "example-0002": "cantTell",
         "example-0003": "passed",
         "example-0004": "passed",
+        "example-0005": "passed",
         "example-release-2026-01": "untested",
     },
     "failed": {
@@ -34,6 +31,7 @@ CANNED = {
         "example-0002": "cantTell",
         "example-0003": "passed",
         "example-0004": "passed",
+        "example-0005": "passed",
         "example-release-2026-01": "untested",
     },
     "partial": {"example-0001": "passed"},
@@ -48,6 +46,22 @@ GRAPH = {
         "<https://example.org/fake-engine/record/1>"
         " <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>"
         " <https://example.org/fake-engine/Record> .\n"
+    ),
+}
+
+FINDINGS = {
+    "turtle": """@prefix oa: <http://www.w3.org/ns/oa#> .
+
+<https://example.org/fake-engine/finding/1> a oa:Annotation ;
+  oa:hasTarget <https://example.org/fake-engine/record/1> .
+""",
+    "ntriples": (
+        "<https://example.org/fake-engine/finding/1>"
+        " <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>"
+        " <http://www.w3.org/ns/oa#Annotation> .\n"
+        "<https://example.org/fake-engine/finding/1>"
+        " <http://www.w3.org/ns/oa#hasTarget>"
+        " <https://example.org/fake-engine/record/1> .\n"
     ),
 }
 
@@ -77,6 +91,8 @@ def convert(args, adapter):
         sys.stdout.write(graph)
     else:
         args.out.write_text(graph, encoding="utf-8")
+    if args.findings is not None:
+        args.findings.write_text(FINDINGS[args.format], encoding="utf-8")
     return 0
 
 
@@ -89,6 +105,7 @@ def main():
     parser.add_argument("--earl", type=Path)
     parser.add_argument("--datasets", action="store_true")
     parser.add_argument("--out", type=Path)
+    parser.add_argument("--findings", type=Path)
     parser.add_argument("--format", choices=tuple(GRAPH), default="turtle")
     args = parser.parse_args()
 

@@ -306,6 +306,13 @@
     sh:message "A finding carries at most one sh:value, what in the source it is about."
   ] ;
   sh:property [
+    sh:path bridge:occurrences ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:integer ;
+    sh:minInclusive 2 ;
+    sh:message "A finding carries at most one bridge:occurrences, how many nodes of the record stand at the path it is about, an xsd:integer of 2 or more: a count of one is written by omitting it."
+  ] ;
+  sh:property [
     sh:path sh:resultSeverity ;
     sh:minCount 1 ;
     sh:maxCount 1 ;

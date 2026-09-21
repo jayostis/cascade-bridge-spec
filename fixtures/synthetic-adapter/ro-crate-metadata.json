@@ -134,6 +134,9 @@
           "@id": "fixtures/in/example-0004.xml"
         },
         {
+          "@id": "fixtures/in/example-0005.xml"
+        },
+        {
           "@id": "fixtures/expected/example-0001.ttl"
         },
         {
@@ -143,6 +146,9 @@
           "@id": "fixtures/expected/example-0004.ttl"
         },
         {
+          "@id": "fixtures/expected/example-0005.ttl"
+        },
+        {
           "@id": "fixtures/findings/example-0001.ttl"
         },
         {
@@ -150,6 +156,9 @@
         },
         {
           "@id": "fixtures/findings/example-0004.ttl"
+        },
+        {
+          "@id": "fixtures/findings/example-0005.ttl"
         },
         {
           "@id": "https://example.org/synthetic-adapter/releases/example-release-2026-01.xml.gz"
@@ -272,8 +281,8 @@
       "@type": "File",
       "name": "Source accounting",
       "encodingFormat": "text/turtle",
-      "contentSize": "1307",
-      "sha256": "197cad05258eacc81aa1c8acab88d71a8adca635559edba9721c2fd45f7c5fae",
+      "contentSize": "1572",
+      "sha256": "d94589a47871bdcd5a8a4209c08eeaba02d20c1d363517472bb192e66a9e5b40",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       }
@@ -371,8 +380,8 @@
       "@type": "File",
       "name": "Expected findings for example-0001",
       "encodingFormat": "text/turtle",
-      "contentSize": "947",
-      "sha256": "53a9ccbf0d735edeb9a670e9e5d526e3b2c2607edab5b63469de767b1b0a84fc",
+      "contentSize": "1763",
+      "sha256": "3e9b085ccd2eff13fbe440c78e368f95b0defd451dff5d795ff7819540af3ef4",
       "isBasedOn": {
         "@id": "fixtures/in/example-0001.xml"
       },
@@ -385,8 +394,8 @@
       "@type": "File",
       "name": "Synthetic input carrying nodes the accounting names nowhere",
       "encodingFormat": "application/xml",
-      "contentSize": "570",
-      "sha256": "e2b5e08456b58d21fb841dda2c8c56844b4c40a0c382b92144ac4c4784366dc6",
+      "contentSize": "473",
+      "sha256": "cb3634c1950d0a75dc03ae12a28539257c97191fa904dedb7c9a3d86355a5566",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       }
@@ -410,10 +419,49 @@
       "@type": "File",
       "name": "Expected findings for example-0004",
       "encodingFormat": "text/turtle",
-      "contentSize": "2401",
-      "sha256": "5f9c4f0761ea2a4763e6c6b64f5726343bb13718423e7acf9f9da3e40f2ffe0f",
+      "contentSize": "1799",
+      "sha256": "5772a6308fed8a74160797d9cdb3343e7bb343b4de78a9b31b6facbe30993e2a",
       "isBasedOn": {
         "@id": "fixtures/in/example-0004.xml"
+      },
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      }
+    },
+    {
+      "@id": "fixtures/in/example-0005.xml",
+      "@type": "File",
+      "name": "Synthetic input whose entries report the gaps they name",
+      "encodingFormat": "application/xml",
+      "contentSize": "692",
+      "sha256": "b48d6bd28bc5158dbfcae9bbe0bae4f2f3a97cda6cbf38bf71a44449d71c6023",
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      }
+    },
+    {
+      "@id": "fixtures/expected/example-0005.ttl",
+      "@type": "File",
+      "name": "Expected graph for example-0005",
+      "encodingFormat": "text/turtle",
+      "contentSize": "344",
+      "sha256": "35629da85777118569216030fe32a3d17bedb9e5c136bd753f9b657a7e6d9f52",
+      "isBasedOn": {
+        "@id": "fixtures/in/example-0005.xml"
+      },
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      }
+    },
+    {
+      "@id": "fixtures/findings/example-0005.ttl",
+      "@type": "File",
+      "name": "Expected findings for example-0005",
+      "encodingFormat": "text/turtle",
+      "contentSize": "2746",
+      "sha256": "22c8704ad78ceb60069a998713fe4841cc68f268ea4bc5a4f90d3162c90c51e5",
+      "isBasedOn": {
+        "@id": "fixtures/in/example-0005.xml"
       },
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"

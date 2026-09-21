@@ -4,11 +4,16 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from rdflib import Graph, URIRef
-from rdflib.namespace import RDF, SKOS
+from rdflib.namespace import RDF, SH, SKOS
 from rocrate_validator.models import ValidationContext
 from rocrate_validator.requirements.python import PyFunctionCheck, check, requirement
 
-from _codes import KINDS_A_GAP_MAY_NAME, THE_KINDS_A_GAP_MAY_NAME
+from _codes import (
+    KINDS_A_GAP_MAY_NAME,
+    SEVERITIES_A_GAP_MAY_DECLARE,
+    THE_KINDS_A_GAP_MAY_NAME,
+    THE_SEVERITIES_A_GAP_MAY_DECLARE,
+)
 from _findings import report_findings
 from _terms import BRIDGE
 
@@ -57,6 +62,9 @@ def faulty(crate):
         closing = list(scheme.objects(gap, BRIDGE.closedBy))
         if len(closing) > 1 or not all(isinstance(term, URIRef) for term in closing):
             yield f"{gap} names at most one bridge:closedBy, the Cascade term that would close it, by IRI"
+        declared = list(scheme.objects(gap, SH.resultSeverity))
+        if len(declared) > 1 or any(severity not in SEVERITIES_A_GAP_MAY_DECLARE for severity in declared):
+            yield f"{gap} declares at most one sh:resultSeverity, one of {THE_SEVERITIES_A_GAP_MAY_DECLARE}"
 
 
 @requirement(name="Gap scheme")

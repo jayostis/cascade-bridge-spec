@@ -7,7 +7,14 @@ from compatibility_tool.judge import judge_report
 from compatibility_world import SYNTHETIC_ADAPTER
 
 MANIFEST = (SYNTHETIC_ADAPTER / "fixtures" / "manifest.ttl").resolve().as_uri()
-EVERY_TEST = ("example-0001", "example-0002", "example-0003", "example-0004", "example-release-2026-01")
+EVERY_TEST = (
+    "example-0001",
+    "example-0002",
+    "example-0003",
+    "example-0004",
+    "example-0005",
+    "example-release-2026-01",
+)
 
 
 def earl(tmp_path, outcomes):
@@ -22,21 +29,27 @@ def earl(tmp_path, outcomes):
 
 
 def test_a_report_with_every_test_passed_or_undecided_holds(tmp_path):
-    report = earl(tmp_path, dict(zip(EVERY_TEST, ("passed", "cantTell", "passed", "passed", "untested"), strict=True)))
+    report = earl(
+        tmp_path, dict(zip(EVERY_TEST, ("passed", "cantTell", "passed", "passed", "passed", "untested"), strict=True))
+    )
     verdict = judge_report(report, SYNTHETIC_ADAPTER)
     assert verdict.holds
-    assert verdict.tally == {"passed": 3, "cantTell": 1, "untested": 1}
-    assert verdict.describe() == "1 cantTell, 3 passed, 1 untested, covering all 5 of the manifest's tests"
+    assert verdict.tally == {"passed": 4, "cantTell": 1, "untested": 1}
+    assert verdict.describe() == "1 cantTell, 4 passed, 1 untested, covering all 6 of the manifest's tests"
 
 
 @pytest.mark.parametrize("outcome", ["failed", "inapplicable"])
 def test_a_report_with_a_failing_outcome_does_not_hold(tmp_path, outcome):
-    report = earl(tmp_path, dict(zip(EVERY_TEST, (outcome, "passed", "passed", "passed", "passed"), strict=True)))
+    report = earl(
+        tmp_path, dict(zip(EVERY_TEST, (outcome, "passed", "passed", "passed", "passed", "passed"), strict=True))
+    )
     assert not judge_report(report, SYNTHETIC_ADAPTER).holds
 
 
 def test_an_outcome_outside_earls_five_does_not_hold(tmp_path):
-    report = earl(tmp_path, dict(zip(EVERY_TEST, ("passed", "passed", "passed", "passed", "sortOf"), strict=True)))
+    report = earl(
+        tmp_path, dict(zip(EVERY_TEST, ("passed", "passed", "passed", "passed", "passed", "sortOf"), strict=True))
+    )
     verdict = judge_report(report, SYNTHETIC_ADAPTER)
     assert not verdict.holds
     assert verdict.unknown == ["sortOf"]
@@ -49,6 +62,7 @@ def test_a_report_missing_tests_of_the_manifest_does_not_hold(tmp_path):
         "example-0002",
         "example-0003",
         "example-0004",
+        "example-0005",
         "example-release-2026-01",
     ]
 

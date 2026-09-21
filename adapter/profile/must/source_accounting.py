@@ -14,9 +14,9 @@ from _codes import scheme_named_by
 from _findings import SHAPES, report_findings, unmet
 from _terms import BRIDGE
 
-THE_KIND_A_VERDICT_IMPLIES = {
-    BRIDGE.carriedInPart: BRIDGE.carriedWithLoss,
-    BRIDGE.noHome: BRIDGE.noPredicate,
+THE_KINDS_A_VERDICT_MAY_NAME = {
+    BRIDGE.carriedInPart: (BRIDGE.carriedWithLoss, BRIDGE.valueNotMapped),
+    BRIDGE.noHome: (BRIDGE.noPredicate, BRIDGE.sourceLacksRequired),
 }
 
 VERDICTS_CLAIMING_CARRIAGE = (BRIDGE.carried, BRIDGE.carriedInPart)
@@ -163,15 +163,16 @@ def faulty(crate):
                     "which is no gap of the adapter's bridge:gapScheme"
                 )
                 continue
-            wanted = THE_KIND_A_VERDICT_IMPLIES.get(verdict)
+            wanted = THE_KINDS_A_VERDICT_MAY_NAME.get(verdict)
             if wanted is None:
                 continue
             kinds = set(scheme.objects(gap, SKOS.broader))
-            if wanted not in kinds:
+            if kinds.isdisjoint(wanted):
                 yield (
                     f"{source_path} names {gap}, which is skos:broader "
                     f"{', '.join(sorted(shortened(kind) for kind in kinds)) or 'nothing'}, where an entry whose "
-                    f"verdict is {shortened(verdict)} names a gap skos:broader {shortened(wanted)}"
+                    f"verdict is {shortened(verdict)} names a gap skos:broader one of "
+                    f"{' or '.join(shortened(kind) for kind in wanted)}"
                 )
         if verdict not in VERDICTS_CLAIMING_CARRIAGE or mentioned is None or steps is None:
             continue

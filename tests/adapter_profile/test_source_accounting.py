@@ -27,11 +27,17 @@ ex:a-status-outside-the-set-the-vocabulary-fixes a skos:Concept ;
   skos:prefLabel "a status outside the set the vocabulary fixes" ;
   skos:inScheme ex:gaps ;
   skos:broader bridge:valueNotMapped .
+
+ex:no-source-for-the-curation-date-a-shape-requires a skos:Concept ;
+  skos:prefLabel "no source for the curation date a shape requires" ;
+  skos:inScheme ex:gaps ;
+  skos:broader bridge:sourceLacksRequired .
 """
 
 A_GAP_WITH_NO_PREDICATE = "ex:no-term-for-a-free-text-note"
 A_GAP_CARRIED_WITH_LOSS = "ex:only-the-first-note-is-carried"
 A_GAP_OF_A_VALUE_NOT_MAPPED = "ex:a-status-outside-the-set-the-vocabulary-fixes"
+A_GAP_OF_A_SOURCE_LACKING_WHAT_A_SHAPE_REQUIRES = "ex:no-source-for-the-curation-date-a-shape-requires"
 
 THE_VERSION = "/ExampleRecord/@Version"
 THE_MAPPING_MENTIONS = "/ExampleRecord/Label"
@@ -207,6 +213,36 @@ def test_reports_a_no_home_entry_whose_gap_is_of_a_kind_the_verdict_does_not_imp
     said = said_about(package)
     assert "bridge:noPredicate" in said
     assert A_GAP_OF_A_VALUE_NOT_MAPPED.removeprefix("ex:") in said
+
+
+def test_reports_nothing_for_a_no_home_entry_naming_a_gap_of_a_source_lacking_what_a_shape_requires(package):
+    accounted(
+        package,
+        entry(NO_QUERY_MENTIONS, verdict=NO_HOME, names_gap=A_GAP_OF_A_SOURCE_LACKING_WHAT_A_SHAPE_REQUIRES),
+    )
+    assert not said_about(package)
+
+
+def test_reports_nothing_for_a_carried_in_part_entry_naming_a_gap_of_a_value_not_mapped(package):
+    accounted(
+        package,
+        entry(THE_MAPPING_MENTIONS, verdict=CARRIED_IN_PART, names_gap=A_GAP_OF_A_VALUE_NOT_MAPPED),
+    )
+    assert not said_about(package)
+
+
+def test_reports_a_no_home_entry_naming_a_gap_carried_with_loss_and_a_carried_in_part_entry_naming_one_with_no_predicate(
+    package,
+):
+    accounted(package, entry(NO_QUERY_MENTIONS, verdict=NO_HOME, names_gap=A_GAP_CARRIED_WITH_LOSS))
+    assert A_GAP_CARRIED_WITH_LOSS.removeprefix("ex:") in said_about(package)
+
+    accounted(package, entry(THE_MAPPING_MENTIONS, verdict=CARRIED_IN_PART, names_gap=A_GAP_WITH_NO_PREDICATE))
+    assert A_GAP_WITH_NO_PREDICATE.removeprefix("ex:") in said_about(package)
+
+
+def test_reports_nothing_for_the_accounting_the_synthetic_adapter_commits(crate):
+    assert not list(source_accounting.faulty(crate))
 
 
 def test_reports_a_carried_in_part_entry_whose_gap_is_of_a_kind_the_verdict_does_not_imply(package):
