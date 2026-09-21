@@ -117,20 +117,33 @@ def test_reports_a_refined_selector_that_selects_more_than_one_node_of_its_recor
 def test_reports_a_refined_selector_that_selects_a_node_of_another_record(package):
     package.write(
         FINDINGS,
-        finding(record="/ExampleRecordSet/ExampleRecord[2]", refined="/ExampleRecordSet/ExampleRecord[1]/Note"),
+        finding(record="/ExampleRecordSet/ExampleRecord[2]", refined="../ExampleRecord[1]/Note"),
     )
     assert (
-        "/ExampleRecordSet/ExampleRecord[1]/Note selects a node of example-0001.xml outside "
+        "../ExampleRecord[1]/Note selects a node of example-0001.xml outside "
         "/ExampleRecordSet/ExampleRecord[2], where a refinement selects a node of the record"
     ) in "\n".join(expected_findings.faulty(package.crate))
 
 
-def test_reports_nothing_for_a_refined_selector_that_names_its_own_record_from_the_document_root(package):
+def test_reports_a_refined_selector_that_names_its_own_record_from_the_document_root(package):
     package.write(
         FINDINGS,
         finding(record="/ExampleRecordSet/ExampleRecord[2]", refined="/ExampleRecordSet/ExampleRecord[2]/Note"),
     )
-    assert not list(expected_findings.faulty(package.crate))
+    assert (
+        "/ExampleRecordSet/ExampleRecord[2]/Note is an XPath rooted at example-0001.xml, "
+        "where a refinement is relative to the record its selector names"
+    ) in "\n".join(expected_findings.faulty(package.crate))
+
+
+def test_reports_a_refined_selector_rooted_at_the_document_once_though_it_also_leaves_its_record(package):
+    package.write(
+        FINDINGS,
+        finding(record="/ExampleRecordSet/ExampleRecord[2]", refined="/ExampleRecordSet/ExampleRecord[1]/Note"),
+    )
+    said = list(expected_findings.faulty(package.crate))
+    assert len(said) == 1, said
+    assert "where a refinement is relative to the record its selector names" in said[0]
 
 
 def test_reports_nothing_for_a_refined_selector_that_selects_an_attribute(package):
