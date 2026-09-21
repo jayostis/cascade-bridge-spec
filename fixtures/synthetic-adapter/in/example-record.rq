@@ -20,14 +20,11 @@ WHERE {
                   ?accession)) AS ?record)
   BIND(STRDT(?number, xsd:integer) AS ?version)
   OPTIONAL { ?exampleRecord ?slot ?element . ?element a xyz:Label ; rdf:_1 ?label }
-  OPTIONAL {
-    ?exampleRecord ?statusSlot ?statusElement . ?statusElement a xyz:Status ; rdf:_1 ?status
-    OPTIONAL {
-      ?statusConcept skos:inScheme ex:statuses ;
-        skos:notation ?statusKey ;
-        skos:exactMatch ?statusTerm .
-      FILTER (?statusKey = LCASE(REPLACE(?status, "^\\s+|\\s+$", "")))
-    }
+  FILTER NOT EXISTS {
+    ?exampleRecord ?statusSlot ?statusElement . ?statusElement a xyz:Status ; rdf:_1 ?status .
+    ?statusConcept skos:inScheme ex:statuses ;
+      skos:notation ?statusKey ;
+      skos:exactMatch ex:Withdrawn .
+    FILTER (?statusKey = LCASE(REPLACE(?status, "^\\s+|\\s+$", "")))
   }
-  FILTER (!BOUND(?statusTerm) || ?statusTerm != ex:Withdrawn)
 }
