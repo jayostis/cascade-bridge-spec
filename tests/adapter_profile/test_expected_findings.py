@@ -136,6 +136,26 @@ def test_reports_a_refined_selector_that_names_its_own_record_from_the_document_
     ) in "\n".join(expected_findings.faulty(package.crate))
 
 
+def test_reports_a_refined_selector_rooted_at_the_document_behind_leading_whitespace(package):
+    package.write(
+        FINDINGS,
+        finding(record="/ExampleRecordSet/ExampleRecord[2]", refined=" /ExampleRecordSet/ExampleRecord[2]/Note"),
+    )
+    assert (
+        "is an XPath rooted at example-0001.xml, where a refinement is relative to the record its selector names"
+    ) in "\n".join(expected_findings.faulty(package.crate))
+
+
+def test_reports_a_refined_selector_rooted_at_the_document_inside_parentheses(package):
+    package.write(
+        FINDINGS,
+        finding(record="/ExampleRecordSet/ExampleRecord[2]", refined="(/ExampleRecordSet/ExampleRecord[2]/Note)"),
+    )
+    assert (
+        "is an XPath rooted at example-0001.xml, where a refinement is relative to the record its selector names"
+    ) in "\n".join(expected_findings.faulty(package.crate))
+
+
 def test_reports_a_refined_selector_rooted_at_the_document_once_though_it_also_leaves_its_record(package):
     package.write(
         FINDINGS,

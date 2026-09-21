@@ -13,11 +13,18 @@ HOW_AN_ISOMORPHIC_CONVERSION_TEST_COMPARES = str(
 )
 
 
-def test_two_addresses_selecting_one_node_of_the_input_are_the_same_finding():
+def test_two_addresses_selecting_the_same_one_node_are_the_same_finding():
     assert (
-        "two oa:XPathSelector rdf:values are equal when both select the same one node of bridge:input"
+        "two oa:XPathSelector rdf:values are equal when both select the same one node"
         in HOW_AN_ISOMORPHIC_CONVERSION_TEST_COMPARES
     )
+
+
+def test_a_records_selector_is_compared_against_the_input_and_a_refinement_against_its_record():
+    assert (
+        "a record's selector evaluated against bridge:input, a refinement against the node its record's "
+        "selector selects"
+    ) in HOW_AN_ISOMORPHIC_CONVERSION_TEST_COMPARES
 
 
 def test_an_address_selecting_other_than_one_node_of_the_input_fails_the_entry():
@@ -43,14 +50,21 @@ def test_a_records_selector_selects_the_record_and_a_refinement_a_node_of_that_r
 
 def test_a_bridge_reports_an_address_of_its_own_that_selects_no_one_node():
     assert (
-        "An address a Bridge writes that does not select exactly one node of the document it is about carries "
+        "An address a Bridge writes that selects no node, or more than one, carries "
         "`bridge:addressNotOneNode` as its body, the address as written as its `sh:value`, and `sh:Violation` as "
         "its `sh:resultSeverity`."
     ) in CONTRACT
 
 
-def test_that_finding_is_addressed_at_the_record_once_for_each_distinct_address():
-    assert "addressed at the record, refined no further, once for each distinct address" in CONTRACT
+def test_that_finding_selects_the_document_element_and_is_refined_no_further():
+    assert "It selects the document element, refined no further" in CONTRACT
+
+
+def test_that_finding_is_written_once_for_each_distinct_address_of_a_record_and_of_the_document():
+    assert (
+        "once for each distinct address the findings written for one record carry and once for each "
+        "distinct address the findings about the document carry"
+    ) in CONTRACT
 
 
 def test_a_bridge_reports_such_an_address_and_refuses_nothing_for_it():
