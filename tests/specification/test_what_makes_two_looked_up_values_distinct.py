@@ -14,5 +14,7 @@ def test_one_key_spelled_two_ways_is_two_findings_each_carrying_its_own_spelling
 
 
 def test_a_key_is_what_sparqls_lcase_and_stripping_the_whitespace_the_lift_names_give():
-    assert "A value's key is the value under SPARQL's `LCASE`, stripped of leading and trailing whitespace" in CONTRACT
+    assert (
+        "A value's key is the value under SPARQL's `LCASE`, stripped of leading and trailing XML whitespace" in CONTRACT
+    )
     assert "Whitespace is XML's `S` production, and no other character." in CONTRACT

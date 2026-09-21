@@ -99,7 +99,7 @@ no element child. An element with an element child has no value, and a lookup at
 its path reports nothing.
 
 A value's key is the value under SPARQL's `LCASE`, stripped of leading and
-trailing whitespace, and a `skos:notation` is written in that form. Values are
+trailing XML whitespace, and a `skos:notation` is written in that form. Values are
 distinct by spelling, not by key: a key spelled two ways is two findings, each
 carrying its own spelling and counting only the nodes that hold it. A path the
 record does not hold, and a value whose key is empty, report nothing.
