@@ -49,6 +49,22 @@ GRAPH = {
     ),
 }
 
+FINDINGS = {
+    "turtle": """@prefix oa: <http://www.w3.org/ns/oa#> .
+
+<https://example.org/fake-engine/finding/1> a oa:Annotation ;
+  oa:hasTarget <https://example.org/fake-engine/record/1> .
+""",
+    "ntriples": (
+        "<https://example.org/fake-engine/finding/1>"
+        " <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>"
+        " <http://www.w3.org/ns/oa#Annotation> .\n"
+        "<https://example.org/fake-engine/finding/1>"
+        " <http://www.w3.org/ns/oa#hasTarget>"
+        " <https://example.org/fake-engine/record/1> .\n"
+    ),
+}
+
 
 def test(args, adapter):
     print(f"fake engine: testing {adapter}, report canned {args.canned}")
@@ -75,6 +91,8 @@ def convert(args, adapter):
         sys.stdout.write(graph)
     else:
         args.out.write_text(graph, encoding="utf-8")
+    if args.findings is not None:
+        args.findings.write_text(FINDINGS[args.format], encoding="utf-8")
     return 0
 
 
@@ -87,6 +105,7 @@ def main():
     parser.add_argument("--earl", type=Path)
     parser.add_argument("--datasets", action="store_true")
     parser.add_argument("--out", type=Path)
+    parser.add_argument("--findings", type=Path)
     parser.add_argument("--format", choices=tuple(GRAPH), default="turtle")
     args = parser.parse_args()
 

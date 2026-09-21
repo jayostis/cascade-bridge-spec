@@ -40,6 +40,29 @@ def test_convert_writes_the_graph_to_the_file_out_names_instead(tmp_path):
     assert Graph().parse(written, format="turtle")
 
 
+@pytest.mark.parametrize("declared", FORMATS)
+def test_convert_writes_the_findings_to_the_file_findings_names_and_never_to_standard_output(tmp_path, declared):
+    graph, findings = tmp_path / "graph", tmp_path / "findings"
+    run = engine(
+        "convert",
+        str(ADAPTER),
+        str(DOCUMENT),
+        "--out",
+        str(graph),
+        "--findings",
+        str(findings),
+        "--format",
+        declared,
+    )
+    assert run.stdout == ""
+    assert Graph().parse(findings, format=FORMATS[declared])
+
+
+def test_convert_writes_no_findings_file_when_it_is_not_asked_for(tmp_path):
+    engine("convert", str(ADAPTER), str(DOCUMENT), "--out", str(tmp_path / "graph"))
+    assert list(tmp_path.iterdir()) == [tmp_path / "graph"]
+
+
 def test_convert_exits_non_zero_and_writes_no_graph_when_the_document_is_not_one(tmp_path):
     run = subprocess.run(
         [sys.executable, str(ENGINE), "convert", str(ADAPTER), str(tmp_path / "absent.xml")],
