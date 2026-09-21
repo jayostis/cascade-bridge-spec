@@ -352,8 +352,8 @@
       "@type": "File",
       "name": "Expected findings for example-0003",
       "encodingFormat": "text/turtle",
-      "contentSize": "910",
-      "sha256": "e7d8576fee6ee3c17fbc35a7e438c4b03a025b43e8aaa4c765e64abe6c53e7f7",
+      "contentSize": "911",
+      "sha256": "cc0ee72d8506e0550b192d1ebff4f5407db01f8a54d586c1e038bd71e9ab3acf",
       "isBasedOn": {
         "@id": "fixtures/in/example-0003.xml"
       },
@@ -419,8 +419,8 @@
       "@type": "File",
       "name": "Expected findings for example-0004",
       "encodingFormat": "text/turtle",
-      "contentSize": "1798",
-      "sha256": "9bb8b8f01e749d3f52e3fb339abd6ae3947fdaf4539f41b48d8359e80ab7eafb",
+      "contentSize": "1799",
+      "sha256": "5772a6308fed8a74160797d9cdb3343e7bb343b4de78a9b31b6facbe30993e2a",
       "isBasedOn": {
         "@id": "fixtures/in/example-0004.xml"
       },
