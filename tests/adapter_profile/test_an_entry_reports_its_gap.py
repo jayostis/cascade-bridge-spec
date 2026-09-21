@@ -2,7 +2,7 @@ from lxml import etree
 from rdflib import Graph, Literal
 from rdflib.namespace import RDF, SH, SKOS, XSD
 
-from _codes import scheme_named_by
+from _codes import KINDS_A_GAP_MAY_NAME, scheme_named_by
 from _selectors import selector_of, step_of
 from _terms import BRIDGE, MF, OA
 
@@ -154,6 +154,11 @@ def every(reported):
     found = list(reported)
     assert found, "no record of the synthetic adapter's inputs stands at a path whose entry names a reporting gap"
     return found
+
+
+def test_the_kinds_that_report_and_the_kinds_that_report_nothing_are_every_gap_kind_between_them():
+    assert set(KINDS_AN_ENTRY_REPORTS).isdisjoint(KINDS_AN_ENTRY_REPORTS_NOTHING_OF)
+    assert set(KINDS_AN_ENTRY_REPORTS) | set(KINDS_AN_ENTRY_REPORTS_NOTHING_OF) == set(KINDS_A_GAP_MAY_NAME)
 
 
 def test_an_entry_whose_verdict_names_a_reporting_gap_is_expected_once_per_distinct_path_per_record(crate):
