@@ -1,6 +1,6 @@
 # shapes — Agent Context
 
-Holds for `bridge.shapes.ttl` and the shapes in `../adapter/profile/must/`.
+Holds for every shapes file here and for the shapes in `../adapter/profile/must/`.
 
 - **A shape meant to reject something has a test that sees it reject it.**
 - **Every constraint's `sh:message` says what was wanted**, and an `sh:in` set

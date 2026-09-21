@@ -4,6 +4,8 @@
     <Label>a label carrying emphasis<Emphasis>here</Emphasis> and <Emphasis>here</Emphasis></Label>
     <Note>a note an entry reports and the findings query constructs, neither deduplicating the other</Note>
     <Status>current</Status>
+    <Status>Retired</Status>
+    <Status>Retired</Status>
     <ext:Provenance>submitted by a curator</ext:Provenance>
     <ext:Extension>an element in a namespace no entry of the accounting mentions</ext:Extension>
     <ext:Extension>a second of them, so the census counts what it stands for</ext:Extension>

@@ -14,6 +14,7 @@
       "bridge:mapping": "bridge:mapping",
       "bridge:findingsQuery": "bridge:findingsQuery",
       "bridge:gapScheme": "bridge:gapScheme",
+      "bridge:table": "bridge:table",
       "bridge:sourceAccounting": "bridge:sourceAccounting",
       "bridge:detectQuery": "bridge:detectQuery",
       "bridge:testManifest": "bridge:testManifest",
@@ -87,6 +88,11 @@
       "bridge:gapScheme": {
         "@id": "vocab/example-gaps.ttl"
       },
+      "bridge:table": [
+        {
+          "@id": "vocab/example-statuses.ttl"
+        }
+      ],
       "bridge:sourceAccounting": {
         "@id": "vocab/example-accounting.ttl"
       },
@@ -111,6 +117,9 @@
         },
         {
           "@id": "vocab/example-accounting.ttl"
+        },
+        {
+          "@id": "vocab/example-statuses.ttl"
         },
         {
           "@id": "schema/example-record.xsd"
@@ -213,8 +222,8 @@
       "@type": "File",
       "name": "Mapping",
       "encodingFormat": "application/sparql-query",
-      "contentSize": "945",
-      "sha256": "e9b17fa91b16ab4084a83cc684759da943eeb70fc37a5b186d996eb635791bce",
+      "contentSize": "1159",
+      "sha256": "1a441d769df3f507b94d7e198e08be10fd4a8e9c09a1edcbb38e9e2e19886cfd",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       }
@@ -246,9 +255,9 @@
       "@type": "File",
       "name": "Example record XSD, pinned copy",
       "encodingFormat": "application/xml",
-      "contentSize": "1281",
-      "sha256": "797adbc05938b7a66b13673c89095af80df24cd622003203934563ecf6217ff2",
-      "md5": "4c318ccf7f0cc46ae843604bed8229bd",
+      "contentSize": "1303",
+      "sha256": "36727dcea2e46c67080434f07ff6991265aa3f1210e733f9acb6478f9d1f0a04",
+      "md5": "0141d49fb6a3fecad34ff942206b4487",
       "isBasedOn": {
         "@id": "https://example.org/synthetic-adapter/schema/example-record.xsd"
       },
@@ -281,8 +290,22 @@
       "@type": "File",
       "name": "Source accounting",
       "encodingFormat": "text/turtle",
-      "contentSize": "1572",
-      "sha256": "d94589a47871bdcd5a8a4209c08eeaba02d20c1d363517472bb192e66a9e5b40",
+      "contentSize": "1690",
+      "sha256": "92746aba540842655a19a76950e34df501afe6ad711a302daad78685c531c758",
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      }
+    },
+    {
+      "@id": "vocab/example-statuses.ttl",
+      "@type": "File",
+      "name": "Status table",
+      "encodingFormat": "text/turtle",
+      "contentSize": "541",
+      "sha256": "0df6c1fc930f79b09d6fecc3ae2edce0fa7482c32edb358881caf4f2076d04dc",
+      "isBasedOn": {
+        "@id": "https://example.org/synthetic-adapter/vocabulary/statuses"
+      },
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       }
@@ -433,8 +456,8 @@
       "@type": "File",
       "name": "Synthetic input whose entries report the gaps they name",
       "encodingFormat": "application/xml",
-      "contentSize": "692",
-      "sha256": "b48d6bd28bc5158dbfcae9bbe0bae4f2f3a97cda6cbf38bf71a44449d71c6023",
+      "contentSize": "750",
+      "sha256": "bb8b1961a7d3de5ca529e4760a0734a04f4ac40472e46c1c8b999de912862a06",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       }
@@ -458,8 +481,8 @@
       "@type": "File",
       "name": "Expected findings for example-0005",
       "encodingFormat": "text/turtle",
-      "contentSize": "2746",
-      "sha256": "22c8704ad78ceb60069a998713fe4841cc68f268ea4bc5a4f90d3162c90c51e5",
+      "contentSize": "3186",
+      "sha256": "bb629d742c9bd8f218ad87da21d8b373b4d889708856e19b74094e18018cbfc7",
       "isBasedOn": {
         "@id": "fixtures/in/example-0005.xml"
       },

@@ -1,0 +1,19 @@
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix ex:   <https://example.org/synthetic-adapter/v1#> .
+
+ex:statuses a skos:ConceptScheme .
+
+ex:status-current a skos:Concept ;
+  skos:inScheme ex:statuses ;
+  skos:notation "current" ;
+  skos:exactMatch ex:Current .
+
+ex:status-superseded a skos:Concept ;
+  skos:inScheme ex:statuses ;
+  skos:notation "superseded" ;
+  skos:exactMatch ex:Superseded .
+
+ex:status-withdrawn a skos:Concept ;
+  skos:inScheme ex:statuses ;
+  skos:notation "withdrawn" ;
+  skos:exactMatch ex:Withdrawn .

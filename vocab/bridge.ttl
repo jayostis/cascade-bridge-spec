@@ -145,6 +145,18 @@ bridge:namesGap a owl:ObjectProperty ;
   rdfs:domain bridge:PathEntry ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
+bridge:lookupIn a owl:ObjectProperty ;
+  rdfs:label "lookup in"@en ;
+  rdfs:comment "The bridge:table the values at the entry's path are looked up in, by the key each value folds to."@en ;
+  rdfs:domain bridge:PathEntry ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:lookupNamesGap a owl:ObjectProperty ;
+  rdfs:label "lookup names gap"@en ;
+  rdfs:comment "The gap of the adapter's bridge:gapScheme a value outside the entry's bridge:lookupIn opens."@en ;
+  rdfs:domain bridge:PathEntry ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
 bridge:sameFactAs a owl:DatatypeProperty ;
   rdfs:label "same fact as"@en ;
   rdfs:comment "The bridge:sourcePath that carries the fact instead."@en ;

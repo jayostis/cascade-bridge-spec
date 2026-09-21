@@ -71,7 +71,10 @@ For each source record of a document, in document order, a Bridge:
    carries as its `bridge:sourcePath`;
 6. adds, where the adapter names a `bridge:sourceAccounting`, one finding for
    each distinct path of the record whose `bridge:PathEntry` carries a verdict a
-   Bridge reports from and names a gap of a kind that reports.
+   Bridge reports from and names a gap of a kind that reports;
+7. adds, for each `bridge:PathEntry` declaring a `bridge:lookupIn`, one finding
+   for each distinct value the record holds at that entry's path whose key no
+   concept of that file's scheme carries as its `skos:notation`.
 
 A record's findings are the union of what its queries construct and what its
 entries emit. Where both report a gap at one node, both findings stand.
@@ -80,13 +83,33 @@ A Bridge reports from an entry whose verdict is `bridge:carriedInPart` or
 `bridge:noHome`, and from no other. A gap of kind `bridge:noPredicate` or
 `bridge:sourceLacksRequired` is true of the path, and the entry naming it
 reports it. A gap of kind `bridge:carriedWithLoss`, `bridge:valueNotMapped` or
-`bridge:schemaRuleUnnamed` is true of what a record holds at the path, which an
-entry cannot name, and reports nothing.
+`bridge:schemaRuleUnnamed` is true of what a record holds at the path, which a
+verdict cannot name, and reports nothing.
 
 A finding an entry reports is addressed as a census finding is, and carries the
 gap as its body, `oa:classifying` as its `oa:motivatedBy`, the path as its
 `sh:value`, and as its `sh:resultSeverity` the `sh:resultSeverity` the gap
 concept declares, `sh:Info` where it declares none.
+
+An entry's `bridge:lookupIn` and `bridge:lookupNamesGap` are read whatever its
+verdict is, and an entry naming a `bridge:namesGap` as well reports from both.
+
+A path's value is the value of an attribute, and the text of an element that has
+no element child. An element with an element child has no value, and a lookup at
+its path reports nothing.
+
+A value's key is the value under SPARQL's `LCASE`, stripped of leading and
+trailing XML whitespace, and a `skos:notation` is written in that form. Values are
+distinct by spelling, not by key: a key spelled two ways is two findings, each
+carrying its own spelling and counting only the nodes that hold it. A path the
+record does not hold, and a value whose key is empty, report nothing.
+
+A lookup finding is addressed at its value's first occurrence in the record, as a
+census finding is addressed at its path's, and carries the entry's
+`bridge:lookupNamesGap` as its body, `oa:classifying` as its `oa:motivatedBy`,
+the value as the record wrote it as its `sh:value` — never the key, and never the
+path — and as its `sh:resultSeverity` the `sh:resultSeverity` the gap concept
+declares, `sh:Info` where it declares none.
 
 A path is the element and attribute names from the record element down to the
 node, the record element first, separated by `/`, an attribute's last step
@@ -103,9 +126,12 @@ element is refined no further.
 
 A finding addressed at a path carries `bridge:occurrences`, how many nodes of the
 record stand at that path, an `xsd:integer` of 2 or more, omitted where it is 1.
+A lookup finding carries it in the same form, how many nodes of the record hold
+that value at that path.
 
-A `bridge:sourceAccounting` a crate names and a Bridge cannot read is an error,
-as one that does not parse is. Naming none is the silent case.
+A `bridge:sourceAccounting` or `bridge:lookupIn` a crate names and a Bridge
+cannot read is an error, as one that does not parse is. Naming none is the
+silent case.
 
 A gap's kind is the `skos:broader` its concept declares in the adapter's
 `bridge:gapScheme`. One a crate names and a Bridge cannot read or parse is an

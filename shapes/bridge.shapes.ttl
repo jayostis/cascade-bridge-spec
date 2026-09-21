@@ -417,6 +417,40 @@
     sh:maxCount 1 ;
     sh:in ( bridge:carried bridge:carriedInPart bridge:redundantWith bridge:consumed bridge:noHome bridge:ignored ) ;
     sh:message "An entry carries exactly one bridge:verdict, one of bridge:carried, bridge:carriedInPart, bridge:redundantWith, bridge:consumed, bridge:noHome, bridge:ignored."
+  ] ;
+  sh:property [
+    sh:path bridge:lookupIn ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "An entry carries at most one bridge:lookupIn, the concept map the values at its path are looked up in: a bridge:table of the crate, by IRI."
+  ] ;
+  sh:property [
+    sh:path bridge:lookupNamesGap ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "An entry carries at most one bridge:lookupNamesGap, the gap a value outside its bridge:lookupIn opens: a gap of the adapter's bridge:gapScheme, by IRI."
+  ] .
+
+<#EntryLookingItsValuesUp> a sh:NodeShape ;
+  sh:target [
+    a sh:SPARQLTarget ;
+    sh:prefixes <> ;
+    sh:select """
+      SELECT ?this WHERE {
+        ?this a bridge:PathEntry .
+        { ?this bridge:lookupIn ?map } UNION { ?this bridge:lookupNamesGap ?gap }
+      }
+    """
+  ] ;
+  sh:property [
+    sh:path bridge:lookupIn ;
+    sh:minCount 1 ;
+    sh:message "An entry naming a bridge:lookupNamesGap names the bridge:lookupIn that gap is a value outside: a lookup is a concept map and the gap a value the map lacks opens, and neither half stands without the other."
+  ] ;
+  sh:property [
+    sh:path bridge:lookupNamesGap ;
+    sh:minCount 1 ;
+    sh:message "An entry naming a bridge:lookupIn names the bridge:lookupNamesGap a value outside that map opens: a lookup is a concept map and the gap a value the map lacks opens, and neither half stands without the other."
   ] .
 
 <#CarriedEntry> a sh:NodeShape ;

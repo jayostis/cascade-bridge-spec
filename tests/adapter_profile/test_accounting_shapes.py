@@ -13,6 +13,9 @@ THE_PATH_THAT_CARRIES_THE_FACT = '"/ExampleRecord/@Accession"'
 ANOTHER_PATH_THAT_CARRIES_IT = '"/ExampleRecord/@Version"'
 A_GAP = "ex:no-term-for-a-free-text-note"
 ANOTHER_GAP = "ex:only-the-first-note-is-carried"
+A_GAP_OF_A_VALUE_NOT_MAPPED = "ex:a-status-outside-the-set-the-vocabulary-fixes"
+A_CONCEPT_MAP = "<https://example.org/synthetic-adapter/vocab/example-statuses.ttl>"
+ANOTHER_CONCEPT_MAP = "<https://example.org/synthetic-adapter/vocab/example-kinds.ttl>"
 A_REASON = '"A schema location is not data about the record."'
 ANOTHER_REASON = '"A record identifier is not data about the record either."'
 
@@ -31,7 +34,16 @@ ONE_SOURCE_PATH = "An entry carries exactly one bridge:sourcePath, the path it a
 AN_ENTRY_IS_TYPED = "A subject of a bridge:sourcePath is a bridge:PathEntry."
 
 
-def entry(path=A_PATH, verdict=CARRIED, names_gap=None, same_fact_as=None, because=None, typed=True):
+def entry(
+    path=A_PATH,
+    verdict=CARRIED,
+    names_gap=None,
+    same_fact_as=None,
+    because=None,
+    typed=True,
+    lookup_in=None,
+    lookup_names_gap=None,
+):
     written = ["a bridge:PathEntry"] if typed else []
     written += [
         f"{predicate} {value}"
@@ -41,6 +53,8 @@ def entry(path=A_PATH, verdict=CARRIED, names_gap=None, same_fact_as=None, becau
             ("bridge:namesGap", names_gap),
             ("bridge:sameFactAs", same_fact_as),
             ("bridge:because", because),
+            ("bridge:lookupIn", lookup_in),
+            ("bridge:lookupNamesGap", lookup_names_gap),
         )
         if value is not None
     ]
@@ -254,3 +268,53 @@ def test_rejects_an_ignored_entry_that_names_the_path_carrying_the_same_fact():
         entry(verdict=IGNORED, because=A_REASON, same_fact_as=THE_PATH_THAT_CARRIES_THE_FACT)
     )
     assert not said_about(entry(verdict=IGNORED, because=A_REASON))
+
+
+def looks_up(verdict=CONSUMED, lookup_in=A_CONCEPT_MAP, lookup_names_gap=A_GAP_OF_A_VALUE_NOT_MAPPED, **rest):
+    return entry(verdict=verdict, lookup_in=lookup_in, lookup_names_gap=lookup_names_gap, **rest)
+
+
+def test_rejects_an_entry_naming_a_concept_map_and_no_gap_for_a_value_outside_it():
+    assert "bridge:lookupNamesGap" in said_about(looks_up(lookup_names_gap=None))
+    assert not said_about(looks_up())
+
+
+def test_rejects_an_entry_naming_a_gap_for_a_value_outside_a_concept_map_it_names_nowhere():
+    assert "bridge:lookupIn" in said_about(looks_up(lookup_in=None))
+    assert not said_about(looks_up())
+
+
+def test_rejects_an_entry_naming_two_concept_maps():
+    assert "bridge:lookupIn" in said_about(looks_up(lookup_in=f"{A_CONCEPT_MAP}, {ANOTHER_CONCEPT_MAP}"))
+    assert not said_about(looks_up())
+
+
+def test_rejects_an_entry_naming_two_gaps_for_a_value_outside_its_concept_map():
+    assert "bridge:lookupNamesGap" in said_about(looks_up(lookup_names_gap=f"{A_GAP_OF_A_VALUE_NOT_MAPPED}, {A_GAP}"))
+    assert not said_about(looks_up())
+
+
+def test_rejects_a_concept_map_named_as_a_string_rather_than_by_iri():
+    assert "bridge:lookupIn" in said_about(looks_up(lookup_in='"vocab/example-statuses.ttl"'))
+    assert not said_about(looks_up())
+
+
+def test_rejects_a_gap_for_a_value_outside_a_concept_map_named_as_a_string_rather_than_by_iri():
+    assert "bridge:lookupNamesGap" in said_about(
+        looks_up(lookup_names_gap='"a-status-outside-the-set-the-vocabulary-fixes"')
+    )
+    assert not said_about(looks_up())
+
+
+def test_rejects_half_a_lookup_on_an_entry_of_every_verdict_and_accepts_both_halves_there():
+    for verdict, rest in (
+        (CARRIED, {}),
+        (CARRIED_IN_PART, {"names_gap": A_GAP}),
+        (REDUNDANT_WITH, {"same_fact_as": THE_PATH_THAT_CARRIES_THE_FACT}),
+        (CONSUMED, {}),
+        (NO_HOME, {"names_gap": A_GAP}),
+        (IGNORED, {"because": A_REASON}),
+    ):
+        assert "bridge:lookupIn" in said_about(looks_up(verdict=verdict, lookup_in=None, **rest)), verdict
+        assert "bridge:lookupNamesGap" in said_about(looks_up(verdict=verdict, lookup_names_gap=None, **rest)), verdict
+        assert not said_about(looks_up(verdict=verdict, **rest)), verdict
