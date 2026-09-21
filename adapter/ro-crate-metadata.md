@@ -11,6 +11,3 @@ Two things the shapes cannot make obvious:
   `schema:conformsTo` matches nothing.
 - **Every `bridge:` key must also be in `@context`.** JSON-LD expands it from the
   prefix alone, so only RO-Crate 1.2's own check fails.
-
-A lookup table that maps source phrases to Cascade terms is a concept map: write
-it as SKOS in Turtle.
