@@ -279,7 +279,7 @@ bridge:documentSchema a owl:ObjectProperty ;
 bridge:IsomorphicConversionTest a owl:Class ;
   rdfs:subClassOf mf:ManifestEntry ;
   rdfs:label "Isomorphic conversion test"@en ;
-  rdfs:comment "Run the mapping on bridge:input. The produced graph must be isomorphic to bridge:expectedGraph (blank nodes relabelled, IRIs and literals exact) after every triple whose predicate is a bridge:stampPredicate is removed from both sides. The produced findings must be isomorphic to bridge:expectedFindings in the same way, save that two oa:XPathSelector rdf:values match where they select the same node of bridge:input, and one selecting other than exactly one node matches only the same spelling. A finding produced twice is two blank nodes and counts twice."@en ;
+  rdfs:comment "Run the mapping on bridge:input. The produced graph must be isomorphic to bridge:expectedGraph (blank nodes relabelled, IRIs and literals exact) after every triple whose predicate is a bridge:stampPredicate is removed from both sides. The produced findings must be isomorphic to bridge:expectedFindings in the same way, except that two oa:XPathSelector rdf:values are equal when both select the same one node of bridge:input. An address selecting no node, or more than one, fails the entry. A finding produced twice is two blank nodes and counts twice."@en ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
 bridge:InputOnlyTest a owl:Class ;
