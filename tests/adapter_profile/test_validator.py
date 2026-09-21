@@ -201,6 +201,140 @@ def a_finding_counting_the_one_node_it_stands_for(package):
     restate_digest(package, FINDINGS)
 
 
+STATUSES = "vocab/example-statuses.ttl"
+
+THE_STATUS_ENTRY = (
+    '[] a bridge:PathEntry ;\n  bridge:sourcePath "/ExampleRecord/Status" ;\n  bridge:verdict bridge:consumed .'
+)
+
+A_LOOKUP_IN_THE_STATUSES = (
+    "bridge:lookupIn <example-statuses.ttl> ;\n  bridge:lookupNamesGap ex:a-status-outside-the-set-the-vocabulary-fixes"
+)
+
+A_CONCEPT_MAP_OF_THE_THREE_STATUSES = """@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix ex:   <https://example.org/synthetic-adapter/v1#> .
+
+ex:statuses a skos:ConceptScheme .
+
+ex:status-current a skos:Concept ;
+  skos:inScheme ex:statuses ;
+  skos:notation "current" ;
+  skos:exactMatch ex:Current .
+
+ex:status-superseded a skos:Concept ;
+  skos:inScheme ex:statuses ;
+  skos:notation "superseded" ;
+  skos:exactMatch ex:Superseded .
+
+ex:status-withdrawn a skos:Concept ;
+  skos:inScheme ex:statuses ;
+  skos:notation "withdrawn" ;
+  skos:closeMatch ex:Withdrawn .
+"""
+
+
+def describe_turtle(package, relative, name, as_table):
+    crate = package.path / CRATE
+    document = json.loads(crate.read_text(encoding="utf-8"))
+    root = next(entity for entity in document["@graph"] if entity["@id"] == "./")
+    root["hasPart"].append({"@id": relative})
+    if as_table:
+        document["@context"][1]["bridge:table"] = "bridge:table"
+        root["bridge:table"] = {"@id": relative}
+    document["@graph"].append(
+        {
+            "@id": relative,
+            "@type": "File",
+            "name": name,
+            "encodingFormat": "text/turtle",
+            "isBasedOn": {"@id": "https://example.org/synthetic-adapter/vocabulary/statuses"},
+            "license": {"@id": "https://spdx.org/licenses/Apache-2.0"},
+        }
+    )
+    crate.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8", newline="")
+
+
+def looking_its_status_up(
+    package,
+    concept_map=A_CONCEPT_MAP_OF_THE_THREE_STATUSES,
+    lookup=A_LOOKUP_IN_THE_STATUSES,
+    as_table=True,
+):
+    package.write(STATUSES, concept_map)
+    describe_turtle(package, STATUSES, "Statuses", as_table)
+    package.edit(ACCOUNTING, THE_STATUS_ENTRY, f"{THE_STATUS_ENTRY.removesuffix(' .')} ;\n  {lookup} .")
+    restate_digest(package, ACCOUNTING)
+
+
+def a_lookup_in_a_concept_map_no_bridge_table_names(package):
+    looking_its_status_up(package, as_table=False)
+
+
+def a_lookup_naming_no_gap(package):
+    looking_its_status_up(package, lookup="bridge:lookupIn <example-statuses.ttl>")
+
+
+def a_gap_for_a_value_outside_a_concept_map_the_entry_names_nowhere(package):
+    looking_its_status_up(package, lookup="bridge:lookupNamesGap ex:a-status-outside-the-set-the-vocabulary-fixes")
+
+
+def a_lookup_naming_a_gap_of_a_kind_other_than_a_value_not_mapped(package):
+    looking_its_status_up(
+        package,
+        lookup="bridge:lookupIn <example-statuses.ttl> ;\n  bridge:lookupNamesGap ex:no-term-for-a-free-text-note",
+    )
+
+
+def a_lookup_naming_a_gap_the_gap_scheme_does_not_declare(package):
+    looking_its_status_up(
+        package,
+        lookup="bridge:lookupIn <example-statuses.ttl> ;\n  bridge:lookupNamesGap ex:a-gap-the-scheme-does-not-hold",
+    )
+
+
+def a_concept_map_carrying_two_concept_schemes(package):
+    looking_its_status_up(
+        package,
+        concept_map=A_CONCEPT_MAP_OF_THE_THREE_STATUSES + "\nex:statuses-of-our-own a skos:ConceptScheme .\n",
+    )
+
+
+def a_concept_map_carrying_no_concept_scheme(package):
+    looking_its_status_up(
+        package,
+        concept_map=A_CONCEPT_MAP_OF_THE_THREE_STATUSES.replace("ex:statuses a skos:ConceptScheme .\n\n", ""),
+    )
+
+
+def a_concept_carrying_two_notations(package):
+    looking_its_status_up(
+        package,
+        concept_map=A_CONCEPT_MAP_OF_THE_THREE_STATUSES.replace(
+            'skos:notation "current"', 'skos:notation "current", "Current"'
+        ),
+    )
+
+
+def a_concept_matching_no_cascade_term(package):
+    looking_its_status_up(
+        package,
+        concept_map=A_CONCEPT_MAP_OF_THE_THREE_STATUSES.replace(" ;\n  skos:exactMatch ex:Current .", " ."),
+    )
+
+
+def two_concepts_of_one_scheme_carrying_one_notation(package):
+    looking_its_status_up(
+        package,
+        concept_map=A_CONCEPT_MAP_OF_THE_THREE_STATUSES.replace(
+            'skos:notation "superseded"', 'skos:notation "current"'
+        ),
+    )
+
+
+def a_concept_map_that_is_not_turtle(package):
+    looking_its_status_up(package, concept_map="ex:statuses a skos:ConceptScheme .\n")
+
+
 def profile_not_an_entity(package):
     package.edit(CRATE, '      "@type": ["CreativeWork", "Profile"],', '      "@type": "CreativeWork",')
 
@@ -310,6 +444,90 @@ def pin_not_a_data_entity(package):
             ["bridge:occurrences"],
             [],
             id="a count of one fails the profile, where a count of one is written by omitting it",
+        ),
+        pytest.param(
+            looking_its_status_up,
+            True,
+            [],
+            [],
+            id="an entry looking its path's values up in a concept map the crate declares a table passes the profile",
+        ),
+        pytest.param(
+            a_lookup_in_a_concept_map_no_bridge_table_names,
+            False,
+            ["bridge:table", "example-statuses.ttl"],
+            [],
+            id="a bridge:lookupIn naming a file no bridge:table names fails the profile",
+        ),
+        pytest.param(
+            a_lookup_naming_no_gap,
+            False,
+            ["bridge:lookupNamesGap"],
+            [],
+            id="a bridge:lookupIn with no bridge:lookupNamesGap fails the profile",
+        ),
+        pytest.param(
+            a_gap_for_a_value_outside_a_concept_map_the_entry_names_nowhere,
+            False,
+            ["bridge:lookupIn"],
+            [],
+            id="a bridge:lookupNamesGap with no bridge:lookupIn fails the profile",
+        ),
+        pytest.param(
+            a_lookup_naming_a_gap_of_a_kind_other_than_a_value_not_mapped,
+            False,
+            ["bridge:valueNotMapped", "no-term-for-a-free-text-note"],
+            [],
+            id="a bridge:lookupNamesGap naming a gap of another kind fails the profile",
+        ),
+        pytest.param(
+            a_lookup_naming_a_gap_the_gap_scheme_does_not_declare,
+            False,
+            ["bridge:lookupNamesGap", "a-gap-the-scheme-does-not-hold"],
+            [],
+            id="a bridge:lookupNamesGap naming a gap of no scheme of the adapter fails the profile",
+        ),
+        pytest.param(
+            a_concept_map_carrying_two_concept_schemes,
+            False,
+            ["example-statuses.ttl", "skos:ConceptScheme"],
+            [],
+            id="a concept map carrying two skos:ConceptSchemes fails the profile",
+        ),
+        pytest.param(
+            a_concept_map_carrying_no_concept_scheme,
+            False,
+            ["example-statuses.ttl", "skos:ConceptScheme"],
+            [],
+            id="a concept map carrying no skos:ConceptScheme fails the profile",
+        ),
+        pytest.param(
+            a_concept_carrying_two_notations,
+            False,
+            ["skos:notation"],
+            [],
+            id="a concept carrying two skos:notation fails the profile",
+        ),
+        pytest.param(
+            a_concept_matching_no_cascade_term,
+            False,
+            ["skos:exactMatch", "skos:closeMatch"],
+            [],
+            id="a concept matching no Cascade term fails the profile",
+        ),
+        pytest.param(
+            two_concepts_of_one_scheme_carrying_one_notation,
+            False,
+            ["skos:notation"],
+            [],
+            id="two concepts of one scheme carrying one skos:notation fail the profile",
+        ),
+        pytest.param(
+            a_concept_map_that_is_not_turtle,
+            False,
+            ["example-statuses.ttl", "does not parse as Turtle"],
+            [],
+            id="a concept map that is not Turtle fails the profile",
         ),
         pytest.param(
             undeclared_context_key,
