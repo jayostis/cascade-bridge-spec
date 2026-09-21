@@ -125,8 +125,8 @@ def an_accounting_entry_padded_with_whitespace(package):
 def an_accounting_entry_carrying_no_type(package):
     package.edit(
         ACCOUNTING,
-        '[] a bridge:PathEntry ;\n  bridge:sourcePath "/ExampleRecord/Status" ;\n  bridge:verdict bridge:consumed .',
-        '[] bridge:sourcePath "/ExampleRecord/Status" ;\n  bridge:verdict bridge:consumed .',
+        '[] a bridge:PathEntry ;\n  bridge:sourcePath "/ExampleRecord/Status" ;',
+        '[] bridge:sourcePath "/ExampleRecord/Status" ;',
     )
     restate_digest(package, ACCOUNTING)
 
@@ -203,10 +203,6 @@ def a_finding_counting_the_one_node_it_stands_for(package):
 
 STATUSES = "vocab/example-statuses.ttl"
 
-THE_STATUS_ENTRY = (
-    '[] a bridge:PathEntry ;\n  bridge:sourcePath "/ExampleRecord/Status" ;\n  bridge:verdict bridge:consumed .'
-)
-
 A_LOOKUP_IN_THE_STATUSES = (
     "bridge:lookupIn <example-statuses.ttl> ;\n  bridge:lookupNamesGap ex:a-status-outside-the-set-the-vocabulary-fixes"
 )
@@ -237,10 +233,14 @@ def describe_turtle(package, relative, name, as_table):
     crate = package.path / CRATE
     document = json.loads(crate.read_text(encoding="utf-8"))
     root = next(entity for entity in document["@graph"] if entity["@id"] == "./")
-    root["hasPart"].append({"@id": relative})
+    if {"@id": relative} not in root["hasPart"]:
+        root["hasPart"].append({"@id": relative})
     if as_table:
         document["@context"][1]["bridge:table"] = "bridge:table"
         root["bridge:table"] = {"@id": relative}
+    else:
+        root.pop("bridge:table", None)
+    document["@graph"] = [entity for entity in document["@graph"] if entity["@id"] != relative]
     document["@graph"].append(
         {
             "@id": relative,
@@ -262,7 +262,7 @@ def looking_its_status_up(
 ):
     package.write(STATUSES, concept_map)
     describe_turtle(package, STATUSES, "Statuses", as_table)
-    package.edit(ACCOUNTING, THE_STATUS_ENTRY, f"{THE_STATUS_ENTRY.removesuffix(' .')} ;\n  {lookup} .")
+    package.edit(ACCOUNTING, A_LOOKUP_IN_THE_STATUSES, lookup)
     restate_digest(package, ACCOUNTING)
 
 
