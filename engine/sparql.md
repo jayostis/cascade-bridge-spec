@@ -83,18 +83,16 @@ A Bridge reports from an entry whose verdict is `bridge:carriedInPart` or
 `bridge:noHome`, and from no other. A gap of kind `bridge:noPredicate` or
 `bridge:sourceLacksRequired` is true of the path, and the entry naming it
 reports it. A gap of kind `bridge:carriedWithLoss`, `bridge:valueNotMapped` or
-`bridge:schemaRuleUnnamed` is true of what a record holds at the path, which an
-entry cannot name, and reports nothing.
+`bridge:schemaRuleUnnamed` is true of what a record holds at the path, which a
+verdict cannot name, and reports nothing.
 
 A finding an entry reports is addressed as a census finding is, and carries the
 gap as its body, `oa:classifying` as its `oa:motivatedBy`, the path as its
 `sh:value`, and as its `sh:resultSeverity` the `sh:resultSeverity` the gap
 concept declares, `sh:Info` where it declares none.
 
-A lookup is not a verdict. An entry's `bridge:lookupIn` and
-`bridge:lookupNamesGap` are read whatever its verdict is, a `bridge:valueNotMapped`
-gap is reported from the lookup and never from the verdict, and an entry naming a
-`bridge:namesGap` as well reports from both.
+An entry's `bridge:lookupIn` and `bridge:lookupNamesGap` are read whatever its
+verdict is, and an entry naming a `bridge:namesGap` as well reports from both.
 
 A path's value is the value of an attribute, and the text of an element that has
 no element child. An element with an element child has no value, and a lookup at
