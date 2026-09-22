@@ -253,7 +253,7 @@ bridge:pathNotAccounted a skos:Concept ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
 bridge:predicateNotDeclared a skos:Concept ;
-  skos:prefLabel "a predicate of the produced graph no ontology at the adapter's vocabulary pin declares"@en ;
+  skos:prefLabel "a predicate of the produced graph, other than rdf:type and one the adapter stamps, that no ontology at the adapter's vocabulary pin declares"@en ;
   skos:inScheme bridge:gapKinds ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
