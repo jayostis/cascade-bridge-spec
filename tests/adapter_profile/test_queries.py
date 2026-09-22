@@ -179,11 +179,30 @@ def test_reports_nothing_when_the_adapter_names_no_query(crate):
     assert not list(queries.malformed(crate))
 
 
-A_FINDINGS_QUERY_CONSTRUCTING_A_FINDING_WITH_NO_BODY_OR_SEVERITY = findings_query("""  [] a oa:Annotation ;
+A_FINDINGS_QUERY_CONSTRUCTING_A_FINDING_WITH_NO_BODY = findings_query("""  [] a oa:Annotation ;
     oa:hasTarget [
       oa:hasSource bridge:thisRecord ;
       oa:hasSelector [ a oa:XPathSelector ; rdf:value "Note" ]
-    ] .""")
+    ] ;
+    oa:motivatedBy oa:classifying ;
+    sh:resultSeverity sh:Info .""")
+
+A_FINDINGS_QUERY_CONSTRUCTING_A_FINDING_WITH_NO_SEVERITY = findings_query("""  [] a oa:Annotation ;
+    oa:hasTarget [
+      oa:hasSource bridge:thisRecord ;
+      oa:hasSelector [ a oa:XPathSelector ; rdf:value "Note" ]
+    ] ;
+    oa:hasBody ex:no-term-for-a-free-text-note ;
+    oa:motivatedBy oa:classifying .""")
+
+A_FINDINGS_QUERY_CONSTRUCTING_TWO_SEVERITIES = findings_query("""  [] a oa:Annotation ;
+    oa:hasTarget [
+      oa:hasSource bridge:thisRecord ;
+      oa:hasSelector [ a oa:XPathSelector ; rdf:value "Note" ]
+    ] ;
+    oa:hasBody ex:no-term-for-a-free-text-note ;
+    oa:motivatedBy oa:classifying ;
+    sh:resultSeverity sh:Info, sh:Warning .""")
 
 A_FINDINGS_QUERY_CONSTRUCTING_A_SEVERITY_OUTSIDE_THE_SCALE = findings_query("""  [] a oa:Annotation ;
     oa:hasTarget [
@@ -230,13 +249,23 @@ A_FINDINGS_QUERY_WHOSE_BODY_SEVERITY_AND_XPATH_ARE_BOUND = findings_query("""  [
   ?selector a oa:XPathSelector ; rdf:value ?xpath .""")
 
 
-def test_reports_a_findings_query_constructing_a_finding_with_no_body_or_severity(package):
-    package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_CONSTRUCTING_A_FINDING_WITH_NO_BODY_OR_SEVERITY)
-    said = "\n".join(queries.malformed(package.crate))
+def test_reports_a_findings_query_constructing_a_finding_with_no_body(package):
+    package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_CONSTRUCTING_A_FINDING_WITH_NO_BODY)
     assert (
         "A finding carries exactly one oa:hasBody, an IRI: the code the finding is an instance of, never a sentence."
-    ) in said
-    assert "A finding carries exactly one sh:resultSeverity" in said
+    ) in "\n".join(queries.malformed(package.crate))
+
+
+def test_reports_nothing_for_a_findings_query_constructing_a_finding_with_no_severity(package):
+    package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_CONSTRUCTING_A_FINDING_WITH_NO_SEVERITY)
+    assert not list(queries.malformed(package.crate))
+
+
+def test_reports_a_findings_query_constructing_two_severities(package):
+    package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_CONSTRUCTING_TWO_SEVERITIES)
+    assert "A finding carries exactly one sh:resultSeverity, one of sh:Info, sh:Warning, sh:Violation." in "\n".join(
+        queries.malformed(package.crate)
+    )
 
 
 def test_reports_a_findings_query_constructing_a_severity_outside_the_scale(package):
