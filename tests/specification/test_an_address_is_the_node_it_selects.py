@@ -22,8 +22,8 @@ def test_two_addresses_selecting_the_same_one_node_are_the_same_finding():
 
 def test_a_records_selector_is_compared_against_the_input_and_a_refinement_against_its_record():
     assert (
-        "a record's selector evaluated against bridge:input, a refinement against the node its record's "
-        "selector selects"
+        "a record's selector evaluated against bridge:input, a refinement against the record that selector "
+        "selects, read as a document of its own"
     ) in HOW_AN_ISOMORPHIC_CONVERSION_TEST_COMPARES
 
 
@@ -60,10 +60,14 @@ def test_that_finding_selects_the_document_element_and_is_refined_no_further():
     assert "It selects the document element, refined no further" in CONTRACT
 
 
-def test_that_finding_is_written_once_for_each_distinct_address_of_a_record_and_of_the_document():
+def test_that_finding_is_written_once_for_each_distinct_address_an_adapter_wrote_for_one_record():
+    assert "once for each distinct address a findings query wrote for one record" in CONTRACT
+
+
+def test_a_bridge_does_not_follow_an_address_it_built_from_its_own_walk():
     assert (
-        "once for each distinct address the findings written for one record carry and once for each "
-        "distinct address the findings about the document carry"
+        "An address a Bridge builds from a walk it made itself, a record's selector among them, names the node "
+        "that walk stood on and is not followed."
     ) in CONTRACT
 
 
