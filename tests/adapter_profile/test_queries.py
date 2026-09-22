@@ -282,6 +282,27 @@ def test_reports_nothing_for_a_findings_query_constructing_no_selector(package):
     assert not list(queries.malformed(package.crate))
 
 
+A_FINDINGS_QUERY_CONSTRUCTING_A_SELECTOR_THAT_IS_ITSELF_REFINED = findings_query("""  [] a oa:Annotation ;
+    oa:hasTarget [
+      oa:hasSource bridge:thisRecord ;
+      oa:hasSelector [
+        a oa:XPathSelector ;
+        rdf:value "Note" ;
+        oa:refinedBy [ a oa:XPathSelector ; rdf:value "@kind" ]
+      ]
+    ] ;
+    oa:hasBody ex:no-term-for-a-free-text-note ;
+    oa:motivatedBy oa:classifying ;
+    sh:resultSeverity sh:Warning .""")
+
+
+def test_reports_a_findings_query_constructing_a_selector_that_is_itself_refined(package):
+    package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_CONSTRUCTING_A_SELECTOR_THAT_IS_ITSELF_REFINED)
+    assert "example-findings.rq: A selector refining a record's selector is refined no further." in "\n".join(
+        queries.malformed(package.crate)
+    )
+
+
 A_FINDINGS_QUERY_CONSTRUCTING_A_TEXTUAL_BODY = findings_query("""  [] a oa:Annotation ;
     oa:hasTarget [
       oa:hasSource bridge:thisRecord ;
