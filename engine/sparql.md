@@ -79,6 +79,12 @@ For each source record of a document, in document order, a Bridge:
 A record's findings are the union of what its queries construct and what its
 entries emit. Where both report a gap at one node, both findings stand.
 
+A finding a `bridge:findingsQuery` constructs carries as its `sh:resultSeverity`
+the one the query constructed for it, the `sh:resultSeverity` the gap concept its
+body names declares where the query constructed none, and `sh:Info` where that
+concept declares none, where its body is no concept of the adapter's
+`bridge:gapScheme`, or where it carries no body.
+
 A Bridge reports from an entry whose verdict is `bridge:carriedInPart` or
 `bridge:noHome`, and from no other. A gap of kind `bridge:noPredicate` or
 `bridge:sourceLacksRequired` is true of the path, and the entry naming it

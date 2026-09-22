@@ -18,7 +18,8 @@ ex:no-term-for-emphasis-inside-a-label a skos:Concept ;
 ex:only-the-first-run-of-a-labels-text-is-carried a skos:Concept ;
   skos:prefLabel "only the first run of a label's text is carried" ;
   skos:inScheme ex:gaps ;
-  skos:broader bridge:carriedWithLoss .
+  skos:broader bridge:carriedWithLoss ;
+  sh:resultSeverity sh:Warning .
 
 ex:a-status-outside-the-set-the-vocabulary-fixes a skos:Concept ;
   skos:prefLabel "a status outside the set the vocabulary fixes" ;
@@ -30,3 +31,14 @@ ex:no-term-for-provenance-in-an-extension-namespace a skos:Concept ;
   skos:inScheme ex:gaps ;
   skos:broader bridge:noPredicate ;
   sh:resultSeverity sh:Warning .
+
+ex:only-the-latest-status-is-carried a skos:Concept ;
+  skos:prefLabel "only the latest status is carried" ;
+  skos:inScheme ex:gaps ;
+  skos:broader bridge:carriedWithLoss ;
+  sh:resultSeverity sh:Warning .
+
+ex:the-record-names-no-submitter a skos:Concept ;
+  skos:prefLabel "the record names no submitter" ;
+  skos:inScheme ex:gaps ;
+  skos:broader bridge:sourceLacksRequired .

@@ -1,0 +1,33 @@
+PREFIX rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX sh:     <http://www.w3.org/ns/shacl#>
+PREFIX oa:     <http://www.w3.org/ns/oa#>
+PREFIX fx:     <http://sparql.xyz/facade-x/ns/>
+PREFIX xyz:    <http://sparql.xyz/facade-x/data/>
+PREFIX bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#>
+PREFIX ex:     <https://example.org/synthetic-adapter/v1#>
+
+CONSTRUCT {
+  [] a oa:Annotation ;
+    oa:hasTarget [
+      oa:hasSource bridge:thisRecord ;
+      oa:hasSelector [ a oa:XPathSelector ; rdf:value "Label" ]
+    ] ;
+    oa:hasBody ex:only-the-first-run-of-a-labels-text-is-carried ;
+    oa:motivatedBy oa:classifying ;
+    sh:resultSeverity sh:Violation .
+  [] a oa:Annotation ;
+    oa:hasTarget [
+      oa:hasSource bridge:thisRecord ;
+      oa:hasSelector [ a oa:XPathSelector ; rdf:value "Status" ]
+    ] ;
+    oa:hasBody ex:only-the-latest-status-is-carried ;
+    oa:motivatedBy oa:classifying .
+  [] a oa:Annotation ;
+    oa:hasTarget [ oa:hasSource bridge:thisRecord ] ;
+    oa:hasBody ex:the-record-names-no-submitter ;
+    oa:motivatedBy oa:classifying .
+}
+WHERE {
+  ?record a fx:root, xyz:ExampleRecord ;
+    xyz:SchemaVersion ?schemaVersion .
+}

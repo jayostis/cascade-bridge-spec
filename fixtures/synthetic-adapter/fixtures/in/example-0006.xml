@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ExampleRecordSet>
+  <ExampleRecord Accession="EX000007" Version="1" SchemaVersion="1.0">
+    <Label>a record whose findings query writes a severity over its gap concept's, takes a second from the concept, and leaves a third to neither</Label>
+    <Status>current</Status>
+  </ExampleRecord>
+</ExampleRecordSet>

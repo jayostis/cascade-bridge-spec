@@ -17,7 +17,7 @@ def engine_beside_adapter(world, canned="passed", **overrides):
 def test_an_entry_whose_engine_passes_its_adapter_holds(world):
     said = world.tool(engine_beside_adapter(world))
     assert "fake engine: testing" in said
-    assert "holds; 1 cantTell, 4 passed, 1 untested" in said
+    assert "holds; 1 cantTell, 5 passed, 1 untested" in said
     assert "does not hold" not in said
 
 
@@ -26,7 +26,7 @@ def test_an_entry_whose_engine_passes_its_adapter_holds(world):
     [
         pytest.param(
             "failed",
-            ["does not hold; 1 cantTell, 1 failed, 3 passed, 1 untested"],
+            ["does not hold; 1 cantTell, 1 failed, 4 passed, 1 untested"],
             id="a report with a failure, though the engine exits 0",
         ),
         pytest.param(
@@ -42,8 +42,8 @@ def test_an_entry_whose_engine_passes_its_adapter_holds(world):
         pytest.param(
             "partial",
             [
-                "does not hold; 1 passed; 5 of the manifest's 6 tests have no outcome: "
-                "example-0002, example-0003, example-0004, example-0005, example-release-2026-01"
+                "does not hold; 1 passed; 6 of the manifest's 7 tests have no outcome: "
+                "example-0002, example-0003, example-0004, example-0005, example-0006, example-release-2026-01"
             ],
             id="a report missing entries of the manifest, though none failed",
         ),

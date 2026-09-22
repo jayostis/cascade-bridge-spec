@@ -1,0 +1,9 @@
+@prefix ex:   <https://example.org/synthetic-adapter/v1#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+<https://example.org/synthetic-adapter/record/EX000007>
+  a ex:Record ;
+  ex:accession "EX000007" ;
+  ex:version "1"^^xsd:integer ;
+  rdfs:label "a record whose findings query writes a severity over its gap concept's, takes a second from the concept, and leaves a third to neither" .
