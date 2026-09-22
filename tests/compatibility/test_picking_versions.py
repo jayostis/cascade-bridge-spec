@@ -84,14 +84,27 @@ def test_a_named_pull_request_closed_without_merging_fails_the_check_naming_it(w
     assert "closed without merging" in said
 
 
-def test_a_cycle_of_named_pull_requests_fails_the_check_naming_them(world):
-    world.pull_request("adapter", 7, body=depends_on("engine", 1))
+def test_a_named_pull_request_naming_the_pull_request_under_test_back_is_merged_into_the_branch_it_targets(world):
+    world.pull_request("adapter", 7, body=depends_on("engine", 1), fill=lambda path: (path / "NOTICE").write_text("7"))
     engine, event = engine_under_test(world, body=depends_on("adapter", 7))
 
-    said = world.tool(engine, 1, **world.ci(event=event))
+    world.tool(engine, **world.ci(event=event))
 
-    assert "adapter/pull/7" in said
-    assert "cycle" in said
+    assert world.record()["repositories"]["adapter"]["how"] == "pull request #7 merged into main"
+    assert "| pull request #7 merged into main |" in world.table()
+    assert (world.workspace / "adapter" / "NOTICE").read_text() == "7"
+
+
+def test_a_cycle_of_three_through_the_pull_request_under_test_picks_each_named_pull_request(world):
+    world.pull_request("adapter", 7, body=depends_on("cascade-bridge-spec", 3))
+    world.pull_request("cascade-bridge-spec", 3, body=depends_on("engine", 1))
+    engine, event = engine_under_test(world, body=depends_on("adapter", 7))
+
+    world.tool(engine, **world.ci(event=event))
+
+    repositories = world.record()["repositories"]
+    assert repositories["adapter"]["how"] == "pull request #7 merged into main"
+    assert repositories["cascade-bridge-spec"]["how"] == "pull request #3 merged into main"
 
 
 def test_a_merged_named_pull_request_adds_nothing_and_the_matching_branch_is_used(world):
