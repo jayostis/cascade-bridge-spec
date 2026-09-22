@@ -18,7 +18,8 @@ MUST = ROOT / "adapter" / "profile" / "must"
 GAP_SCHEME_FILE = "vocab/example-gaps.ttl"
 SOURCE_ACCOUNTING_FILE = "vocab/example-accounting.ttl"
 
-A_GAP_SCHEME_OF_TWO_WHOLE_GAPS = """@prefix skos:   <http://www.w3.org/2004/02/skos/core#> .
+A_GAP_SCHEME_WHOSE_GAPS_ARE_WHOLE = """@prefix skos:   <http://www.w3.org/2004/02/skos/core#> .
+@prefix sh:     <http://www.w3.org/ns/shacl#> .
 @prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 @prefix ex:     <https://example.org/synthetic-adapter/v1#> .
 
@@ -33,6 +34,22 @@ ex:a-status-outside-the-set-the-vocabulary-fixes a skos:Concept ;
   skos:prefLabel "a status outside the set the vocabulary fixes" ;
   skos:inScheme ex:gaps ;
   skos:broader bridge:valueNotMapped .
+
+ex:only-the-first-run-of-a-labels-text-is-carried a skos:Concept ;
+  skos:prefLabel "only the first run of a label's text is carried" ;
+  skos:inScheme ex:gaps ;
+  skos:broader bridge:carriedWithLoss .
+
+ex:only-the-latest-status-is-carried a skos:Concept ;
+  skos:prefLabel "only the latest status is carried" ;
+  skos:inScheme ex:gaps ;
+  skos:broader bridge:carriedWithLoss ;
+  sh:resultSeverity sh:Warning .
+
+ex:the-record-names-no-submitter a skos:Concept ;
+  skos:prefLabel "the record names no submitter" ;
+  skos:inScheme ex:gaps ;
+  skos:broader bridge:sourceLacksRequired .
 """
 
 
@@ -88,7 +105,7 @@ class Package:
             self._git("add", "-A")
         return self
 
-    def gap_scheme(self, turtle=A_GAP_SCHEME_OF_TWO_WHOLE_GAPS, named=GAP_SCHEME_FILE):
+    def gap_scheme(self, turtle=A_GAP_SCHEME_WHOSE_GAPS_ARE_WHOLE, named=GAP_SCHEME_FILE):
         """The package's one bridge:gapScheme, whatever it named before."""
         self.write(named, turtle)
         return self._named_turtle("bridge:gapScheme", named, "Gap scheme")

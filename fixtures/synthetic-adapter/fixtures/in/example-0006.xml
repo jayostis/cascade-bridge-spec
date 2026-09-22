@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ExampleRecordSet>
+  <ExampleRecord Accession="EX000007" Version="1" SchemaVersion="1.0">
+    <Label>a record the findings query writes one severity for and leaves two to the gap scheme</Label>
+    <Status>current</Status>
+  </ExampleRecord>
+</ExampleRecordSet>

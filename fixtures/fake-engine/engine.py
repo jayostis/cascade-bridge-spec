@@ -24,6 +24,7 @@ CANNED = {
         "example-0003": "passed",
         "example-0004": "passed",
         "example-0005": "passed",
+        "example-0006": "passed",
         "example-release-2026-01": "untested",
     },
     "failed": {
@@ -32,6 +33,7 @@ CANNED = {
         "example-0003": "passed",
         "example-0004": "passed",
         "example-0005": "passed",
+        "example-0006": "passed",
         "example-release-2026-01": "untested",
     },
     "partial": {"example-0001": "passed"},

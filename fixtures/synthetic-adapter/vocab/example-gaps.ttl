@@ -30,3 +30,14 @@ ex:no-term-for-provenance-in-an-extension-namespace a skos:Concept ;
   skos:inScheme ex:gaps ;
   skos:broader bridge:noPredicate ;
   sh:resultSeverity sh:Warning .
+
+ex:only-the-latest-status-is-carried a skos:Concept ;
+  skos:prefLabel "only the latest status is carried" ;
+  skos:inScheme ex:gaps ;
+  skos:broader bridge:carriedWithLoss ;
+  sh:resultSeverity sh:Warning .
+
+ex:the-record-names-no-submitter a skos:Concept ;
+  skos:prefLabel "the record names no submitter" ;
+  skos:inScheme ex:gaps ;
+  skos:broader bridge:sourceLacksRequired .

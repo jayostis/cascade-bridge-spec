@@ -11,6 +11,7 @@
     <#example-0003>
     <#example-0004>
     <#example-0005>
+    <#example-0006>
     <#example-release-2026-01>
   ) .
 
@@ -66,6 +67,18 @@
   mf:result [
     bridge:expectedGraph <expected/example-0005.ttl> ;
     bridge:expectedFindings <findings/example-0005.ttl>
+  ] .
+
+<#example-0006> a bridge:IsomorphicConversionTest ;
+  mf:name "example-0006" ;
+  rdfs:comment "A record whose findings query writes a severity for one gap, leaves the second to the sh:resultSeverity its gap concept declares, and leaves the third to neither: the three findings carry sh:Violation, sh:Warning and sh:Info." ;
+  mf:action [
+    bridge:input <in/example-0006.xml> ;
+    bridge:envelope <../ro-crate-metadata.json#envelope-set>
+  ] ;
+  mf:result [
+    bridge:expectedGraph <expected/example-0006.ttl> ;
+    bridge:expectedFindings <findings/example-0006.ttl>
   ] .
 
 <#example-release-2026-01> a bridge:DatasetCompletionTest ;
