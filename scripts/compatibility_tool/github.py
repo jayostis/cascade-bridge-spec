@@ -111,6 +111,20 @@ class Api:
             return None
         return found
 
+    def check_runs(self, path, commit):
+        runs = []
+        page = 1
+        while True:
+            try:
+                answer = self.get(f"repos/{path}/commits/{commit}/check-runs?per_page=100&page={page}")
+            except urllib.error.HTTPError as error:
+                raise Stop(f"{path}'s checks on {commit} could not be read: {unreadable(error).said}") from error
+            found = answer.get("check_runs") or []
+            runs.extend(found)
+            if not found or len(runs) >= answer.get("total_count", 0):
+                return runs
+            page += 1
+
 
 @dataclass(frozen=True)
 class Event:

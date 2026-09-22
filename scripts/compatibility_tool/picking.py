@@ -63,10 +63,7 @@ def follow(api, event, counterparts, specification):
         pull, path = walking.pop(0)
         for named in named_in(pull.get("body")):
             if named in path:
-                raise Stop(
-                    f"{' -> '.join(step.label for step in path)} -> {named.label} is a cycle of pull requests, "
-                    "and a Depends-On: line goes one way"
-                )
+                continue
             unused = unused_where(named, event, merged_into)
             if named not in reached:
                 found = api.pull_request(named, refuse=unused is None)
