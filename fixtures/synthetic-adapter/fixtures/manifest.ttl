@@ -71,7 +71,7 @@
 
 <#example-0006> a bridge:IsomorphicConversionTest ;
   mf:name "example-0006" ;
-  rdfs:comment "A record whose findings query writes a severity for one gap, leaves the second to the sh:resultSeverity its gap concept declares, and leaves the third to neither: the three findings carry sh:Violation, sh:Warning and sh:Info." ;
+  rdfs:comment "A record whose findings query writes a severity for one gap whose concept declares another, leaves the second to the sh:resultSeverity its gap concept declares, and leaves the third to neither: the three findings carry sh:Violation, sh:Warning and sh:Info." ;
   mf:action [
     bridge:input <in/example-0006.xml> ;
     bridge:envelope <../ro-crate-metadata.json#envelope-set>

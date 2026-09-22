@@ -6,4 +6,4 @@
   a ex:Record ;
   ex:accession "EX000007" ;
   ex:version "1"^^xsd:integer ;
-  rdfs:label "a record the findings query writes one severity for and leaves two to the gap scheme" .
+  rdfs:label "a record whose findings query writes a severity over its gap concept's, takes a second from the concept, and leaves a third to neither" .

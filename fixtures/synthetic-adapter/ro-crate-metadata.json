@@ -521,8 +521,8 @@
       "@type": "File",
       "name": "Synthetic input whose findings query writes one severity of three",
       "encodingFormat": "application/xml",
-      "contentSize": "301",
-      "sha256": "cef885b7c0353be77c31a7109e1eb9ce4f9a1727a28cca13f3f133d9f6147230",
+      "contentSize": "351",
+      "sha256": "96139a4870365d43f6baf45dc1acd98215c3060911ce4d5d70f7d128dbc29ace",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       }
@@ -532,8 +532,8 @@
       "@type": "File",
       "name": "Expected graph for example-0006",
       "encodingFormat": "text/turtle",
-      "contentSize": "403",
-      "sha256": "68019b4fa12b480d55ece0d9898ae9298e5e0d59b2e97277d9a003e094c87810",
+      "contentSize": "453",
+      "sha256": "33ecea51265e7bd56015ae06ec1d8e6c0d2ea308088f5d05a750aab7a7b6d116",
       "isBasedOn": {
         "@id": "fixtures/in/example-0006.xml"
       },
