@@ -40,10 +40,12 @@ Descriptions are read without credentials, so every repository a run reads must
 be public, and the reads a run makes share GitHub's hourly allowance for the
 address it runs from.
 
-A pull request merges only once every pull request it names directly has merged.
-
-**A `Depends-On:` line goes one way**, as in Zuul without
-[circular dependencies](https://zuul-ci.org/docs/zuul/latest/config/queue.html).
+A pull request merges only once every pull request it names directly has merged,
+or names it back, directly or through others, and has passed every check but its
+own merge gate. Pull requests naming each other are how a breaking change across
+an engine and an adapter lands, as Zuul's
+[circular dependencies](https://zuul-ci.org/docs/zuul/latest/config/queue.html)
+allow.
 
 ## Where this departs from Zuul
 
@@ -59,8 +61,11 @@ GitHub Actions cannot reproduce these, so a person or an agent does it by hand:
 - **A repository's state is not frozen across a run's jobs**, so two checks of
   one pull request can read different descriptions and branches. Rerun both
   rather than trusting a mixed pair.
-- **A cycle is refused rather than merged as one unit.** Split the change into
-  backward-compatible steps, each leaving every default branch green.
+- **A person merges a cycle's pull requests one after another**, and a default
+  branch is red between the first merge and the last.
+- **A cycle's members name their merge gate's job alike**, as
+  [the workflow an adapter and an engine both run](#the-workflow-an-adapter-and-an-engine-both-run)
+  does (`ready-to-merge`): each gate discounts that job on the others.
 - **A pull request named in the repository under test is merged into nothing**,
   which its row says: the run checks that repository out as the pull request
   under test, and the merge gate still holds this one until that one merges.
@@ -82,7 +87,7 @@ These are chosen, and could be otherwise:
   no adapter and no engine. A change to what an adapter or a Bridge must do is
   tried from a no-op pull request in one, naming this one on a `Depends-On:`
   line, before it merges.
-- **The merge gate reads the pull requests named directly**, and each of those
+- **The merge gate waits on the pull requests named directly**, and each of those
   is held by its own repository's gate, so a chain merges from its end.
 - **A named pull request closed without merging fails the check** rather than
   taking the dependent out of the queue. Cut the `Depends-On:` line; editing the
@@ -90,12 +95,6 @@ These are chosen, and could be otherwise:
 - **A counterpart is named by the repository under test**, not by a tenant, and
   not transitively: what a counterpart itself must pass with is its own run's
   business.
-- **A breaking change across an engine and an adapter leaves one of the two
-  red.** Each is the other's counterpart, and a `Depends-On:` line goes one way,
-  so only one pull request can name the other and run against it. Name the
-  adapter's from the engine's, so what is proven before anything merges is the
-  engine against the adapter's new form; the adapter's own check stays red until
-  that engine merges, as its default branch would be anyway.
 - **A run is aimed at no version.** There is no `override-checkout`. A pull
   request matches the branch it *targets*, so cutting one name in each
   repository pairs nothing while the work is in review: name each pull request
