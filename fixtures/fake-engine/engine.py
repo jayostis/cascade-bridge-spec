@@ -70,6 +70,8 @@ FINDINGS = {
 
 def test(args, adapter):
     print(f"fake engine: testing {adapter}, report canned {args.canned}")
+    if args.vocabularies is not None:
+        print(f"fake engine: vocabularies {args.vocabularies}")
     if args.earl is None or args.canned == "none":
         return 0
     if args.canned == "garbled":
@@ -105,6 +107,7 @@ def main():
     parser.add_argument("adapter", type=Path)
     parser.add_argument("document", type=Path, nargs="?")
     parser.add_argument("--earl", type=Path)
+    parser.add_argument("--vocabularies", type=Path)
     parser.add_argument("--datasets", action="store_true")
     parser.add_argument("--out", type=Path)
     parser.add_argument("--findings", type=Path)

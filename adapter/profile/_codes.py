@@ -58,6 +58,45 @@ BODIES_OF_A_SCHEMA_FAILURE = W3C_XML_SCHEMA_RULE_ANCHORS | {BRIDGE.schemaRuleUnn
 
 THE_ANCHORS = ", ".join(sorted(str(anchor) for anchor in W3C_XML_SCHEMA_RULE_ANCHORS))
 
+CONSTRAINT_COMPONENTS_OF_SHACL = (
+    "And",
+    "Class",
+    "Closed",
+    "Datatype",
+    "Disjoint",
+    "Equals",
+    "HasValue",
+    "In",
+    "LanguageIn",
+    "LessThan",
+    "LessThanOrEquals",
+    "MaxCount",
+    "MaxExclusive",
+    "MaxInclusive",
+    "MaxLength",
+    "MinCount",
+    "MinExclusive",
+    "MinInclusive",
+    "MinLength",
+    "Node",
+    "NodeKind",
+    "Not",
+    "Or",
+    "Pattern",
+    "Property",
+    "QualifiedMaxCount",
+    "QualifiedMinCount",
+    "SPARQL",
+    "UniqueLang",
+    "Xone",
+)
+
+SHACL_CONSTRAINT_COMPONENTS = frozenset(SH[f"{name}ConstraintComponent"] for name in CONSTRAINT_COMPONENTS_OF_SHACL)
+
+THE_CONSTRAINT_COMPONENTS = ", ".join(f"sh:{name}ConstraintComponent" for name in CONSTRAINT_COMPONENTS_OF_SHACL)
+
+BODIES_OF_AN_OUTPUT_VALIDATION_FINDING = SHACL_CONSTRAINT_COMPONENTS | {BRIDGE.predicateNotDeclared}
+
 
 def accounts_for_its_source(crate):
     return (crate.root, BRIDGE.sourceAccounting, None) in crate.graph
@@ -69,8 +108,10 @@ def no_gap_of_the_scheme(crate):
         admitted = "or bridge:schemaRuleUnnamed, the adapter naming no bridge:sourceAccounting"
     return (
         "is not a gap of the adapter's bridge:gapScheme, the anchor of a validation rule "
-        f"in a W3C XML Schema Recommendation, {admitted}. "
-        f"The anchors a body may take are {THE_ANCHORS}"
+        f"in a W3C XML Schema Recommendation, {admitted}. A finding about the produced graph "
+        "takes the SHACL constraint component that failed, or bridge:predicateNotDeclared. "
+        f"The anchors a body may take are {THE_ANCHORS}. "
+        f"The constraint components it may take are {THE_CONSTRAINT_COMPONENTS}"
     )
 
 
@@ -94,4 +135,4 @@ def gaps_of(crate):
 
 def bodies_a_finding_may_carry(crate):
     census = {BRIDGE.pathNotAccounted} if accounts_for_its_source(crate) else set()
-    return gaps_of(crate) | BODIES_OF_A_SCHEMA_FAILURE | census
+    return gaps_of(crate) | BODIES_OF_A_SCHEMA_FAILURE | BODIES_OF_AN_OUTPUT_VALIDATION_FINDING | census

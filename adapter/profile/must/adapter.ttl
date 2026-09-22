@@ -88,6 +88,12 @@
     sh:message "The adapter carries at least one bridge:vocabulary, a namespace IRI."
   ] ;
   sh:property [
+    sh:path bridge:vocabularyFile ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "The adapter carries at least one bridge:vocabularyFile, the path of an ontology or shapes file it is read against, in the repository its bridge:cascadeVocabularyPin names, at the commit it pins."
+  ] ;
+  sh:property [
     sh:path bridge:sourceMediaType ;
     sh:minCount 1 ;
     sh:maxCount 1 ;

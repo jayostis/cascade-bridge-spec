@@ -53,6 +53,13 @@ bridge:vocabulary a owl:ObjectProperty ;
   rdfs:domain bridge:Adapter ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
+bridge:vocabularyFile a owl:DatatypeProperty ;
+  rdfs:label "vocabulary file"@en ;
+  rdfs:comment "The path, in Cascade's spec repository at the vocabulary pin, of an ontology or shapes file the adapter is read against."@en ;
+  rdfs:domain bridge:Adapter ;
+  rdfs:range xsd:string ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
 bridge:sourceMediaType a owl:DatatypeProperty ;
   rdfs:label "source media type"@en ;
   rdfs:domain bridge:Adapter ;
@@ -242,6 +249,11 @@ bridge:schemaRuleUnnamed a skos:Concept ;
 
 bridge:pathNotAccounted a skos:Concept ;
   skos:prefLabel "a path of the record the adapter's bridge:sourceAccounting does not carry"@en ;
+  skos:inScheme bridge:gapKinds ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:predicateNotDeclared a skos:Concept ;
+  skos:prefLabel "a predicate of the produced graph no ontology at the adapter's vocabulary pin declares"@en ;
   skos:inScheme bridge:gapKinds ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 

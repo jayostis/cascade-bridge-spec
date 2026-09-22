@@ -8,7 +8,7 @@ adapter contributes data to them through these terms.
 |---|---|---|
 | read and chunk | **Splitter** | `bridge:elementNameOfEachRecord` |
 | transform | **Message Translator** | `bridge:mapping`, `bridge:table` |
-| Cascade RDF as target | **Canonical Data Model** | `bridge:vocabulary`, `bridge:cascadeVocabularyPin` |
+| Cascade RDF as target | **Canonical Data Model** | `bridge:vocabulary`, `bridge:cascadeVocabularyPin`, `bridge:vocabularyFile` |
 | link within the batch | **Aggregator** | nothing: the mapping emits the links, the Bridge resolves them |
 | stamp | **Message History** | `bridge:stampPredicate`; it receives the stamp |
 | check, validate | **Message Validator** | `bridge:sourceSchema`, `bridge:documentSchema` |

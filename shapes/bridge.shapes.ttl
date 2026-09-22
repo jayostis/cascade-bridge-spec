@@ -320,6 +320,45 @@
     sh:message "A finding carries exactly one sh:resultSeverity, one of sh:Info, sh:Warning, sh:Violation."
   ] .
 
+<#OutputValidationFinding> a sh:NodeShape ;
+  sh:targetSubjectsOf sh:resultPath, sh:focusNode ;
+  sh:property [
+    sh:path sh:resultPath ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "A finding about the produced graph carries at most one sh:resultPath, by IRI: the predicate the SHACL result that made it stands on."
+  ] ;
+  sh:property [
+    sh:path sh:focusNode ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "A finding about the produced graph carries at most one sh:focusNode, and carries it only where the node the SHACL result is about is an IRI: a blank node of the produced graph names nothing a reader can follow."
+  ] ;
+  sh:property [
+    sh:path ( oa:hasTarget oa:hasSelector oa:refinedBy ) ;
+    sh:maxCount 0 ;
+    sh:message "A finding about the produced graph selects the record its result came from, refined no further: which node broke is sh:focusNode and sh:resultPath, not a place in the source."
+  ] .
+
+<#UndeclaredPredicateFinding> a sh:NodeShape ;
+  sh:target [
+    a sh:SPARQLTarget ;
+    sh:prefixes <> ;
+    sh:select """
+      SELECT ?this WHERE { ?this oa:hasBody bridge:predicateNotDeclared }
+    """
+  ] ;
+  sh:property [
+    sh:path sh:resultPath ;
+    sh:minCount 1 ;
+    sh:message "A finding whose body is bridge:predicateNotDeclared carries the predicate no ontology declares as its sh:resultPath."
+  ] ;
+  sh:property [
+    sh:path sh:resultSeverity ;
+    sh:hasValue sh:Violation ;
+    sh:message "A finding whose body is bridge:predicateNotDeclared carries sh:resultSeverity sh:Violation: a predicate outside every ontology the adapter is pinned to leaves the graph unreadable."
+  ] .
+
 <#FindingTarget> a sh:NodeShape ;
   sh:property [
     sh:path oa:hasSource ;
