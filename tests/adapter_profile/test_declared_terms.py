@@ -29,6 +29,7 @@ CONCEPTS_OF_GAP_KINDS = {
     BRIDGE.schemaRuleUnnamed,
     BRIDGE.pathNotAccounted,
     BRIDGE.addressNotOneNode,
+    BRIDGE.predicateNotDeclared,
 }
 
 
