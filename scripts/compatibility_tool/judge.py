@@ -133,6 +133,13 @@ def result_cell(entry):
     return f"{'✅ holds' if entry.holds else '❌ does not hold'}: {entry.result}".replace("|", "\\|")
 
 
+def version_cell(entry):
+    """The vocabulary is at the adapter's pin unless a Depends-On: line named a pull request of it instead."""
+    if entry.role is Role.VOCABULARY and entry.from_named_pull_requests:
+        return f"Depends-On: {entry.how}"
+    return entry.how
+
+
 def table(record):
     lines = [
         f"### Compatibility of {record.directory.name}",
@@ -145,7 +152,9 @@ def table(record):
         commit = entry.commit or "—"
         shown = linked(f"`{commit[:7]}`", f"{repository}/commit/{commit}") if entry.commit else "—"
         edits = ", with uncommitted edits" if entry.uncommitted_edits else ""
-        lines.append(f"| [{entry.name}]({repository}) | {entry.how}{edits} | {shown} | {result_cell(entry)} |")
+        lines.append(
+            f"| [{entry.name}]({repository}) | {version_cell(entry)}{edits} | {shown} | {result_cell(entry)} |"
+        )
     if any(entry.from_named_pull_requests for entry in record.used):
         lines += [
             "",

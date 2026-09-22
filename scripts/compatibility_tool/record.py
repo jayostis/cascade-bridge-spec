@@ -12,6 +12,7 @@ RECORD = "record.json"
 class Role(Enum):
     UNDER_TEST = "under test"
     SPECIFICATION = "specification"
+    VOCABULARY = "vocabulary"
     COUNTERPART = "counterpart"
     NOT_USED = "not used"
 
@@ -91,6 +92,10 @@ class Record:
     @property
     def counterparts(self):
         return [entry for entry in self.used if entry.role is Role.COUNTERPART]
+
+    @property
+    def vocabularies(self):
+        return next((entry.path for entry in self.used if entry.role is Role.VOCABULARY), None)
 
     def key(self, entry):
         """A name, owner/name where two repositories share one, or the pull request where two rows share that."""

@@ -5,7 +5,7 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
-from compatibility_tool import bootstrap, engines, github, judge, picking, placing, ready, validate
+from compatibility_tool import bootstrap, engines, github, judge, picking, placing, ready, validate, vocabularies
 from compatibility_tool.console import Status, Stop, report
 from compatibility_tool.document import counterparts, is_adapter, problems, read_file
 from compatibility_tool.record import Record, Role
@@ -67,12 +67,23 @@ def compatibility(directory, options, event, api, spec):
         return Status.FAIL
 
     reached = picking.follow(api, event, listed, options.spec_repository) if options.mode == "ci" else []
+    counterpart_rows = []
     for url in listed:
         if options.mode == "local":
-            used.append(placing.locally(directory, url, Role.COUNTERPART))
+            counterpart_rows.append(placing.locally(directory, url, Role.COUNTERPART))
         else:
             into = directory.parent / github.repository_name(url)
-            used.append(placing.in_ci(url, reached, event, into, Role.COUNTERPART))
+            counterpart_rows.append(placing.in_ci(url, reached, event, into, Role.COUNTERPART))
+    used += counterpart_rows
+
+    # A checked-out adapter is what names the vocabulary, so a Depends-On: line of it is reached only now.
+    reading = vocabularies.read_from(directory, counterpart_rows)
+    if reading is not None and options.mode == "ci":
+        reached = picking.follow(api, event, [*listed, reading.url], options.spec_repository)
+    vocabulary = None if reading is None else vocabularies.place(directory, reading, options, event, reached)
+    if vocabulary is not None:
+        used.append(vocabulary)
+
     used += placing.not_used(reached)
     for entry in used:
         if entry.role is Role.COUNTERPART:
@@ -81,8 +92,12 @@ def compatibility(directory, options, event, api, spec):
     record.save(options.results)
     for entry in used:
         report(True, entry.describe())
+    if vocabulary is not None and options.mode == "local":
+        vocabularies.compared(vocabulary, reading)
 
     status = validate.validate(directory, document, spec)
+    if status is not Status.FAIL and vocabulary is not None:
+        status = vocabularies.check(directory, vocabulary, reading)
     if status is not Status.FAIL:
         engines.run(directory, record, options)
         status = judge.judge(record, options)
@@ -121,7 +136,7 @@ def main(usage, argv=None):
         print(f"Check:      {args.check} ({options.mode})")
         print()
         status = (
-            ready.check(event, api)
+            ready.check(directory, options, event, api)
             if args.check == "ready-to-merge"
             else compatibility(directory, options, event, api, spec)
         )
