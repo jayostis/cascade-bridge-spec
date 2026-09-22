@@ -47,8 +47,8 @@ THE_ACCESSION = "/ExampleRecord/@Accession"
 
 A_PATH_IS_STEPS = (
     "is written in steps this lint cannot read, where a step of a bridge:sourcePath follows a /, and is an "
-    "element's name or, for a node in a namespace, the step an oa:XPathSelector writes for it, an attribute's "
-    "step that form after an @, and no step carries a position"
+    "element's name or, for a node in a namespace, *[local-name()='name' and namespace-uri()='uri'], an "
+    "attribute's step that form after an @, and no step carries a position"
 )
 
 AN_EXTENSION_NAMESPACE = "https://example.org/synthetic-adapter/ext/v1"

@@ -117,20 +117,53 @@ def test_reports_a_refined_selector_that_selects_more_than_one_node_of_its_recor
 def test_reports_a_refined_selector_that_selects_a_node_of_another_record(package):
     package.write(
         FINDINGS,
-        finding(record="/ExampleRecordSet/ExampleRecord[2]", refined="/ExampleRecordSet/ExampleRecord[1]/Note"),
+        finding(record="/ExampleRecordSet/ExampleRecord[2]", refined="../ExampleRecord[1]/Note"),
     )
     assert (
-        "/ExampleRecordSet/ExampleRecord[1]/Note selects a node of example-0001.xml outside "
+        "../ExampleRecord[1]/Note selects a node of example-0001.xml outside "
         "/ExampleRecordSet/ExampleRecord[2], where a refinement selects a node of the record"
     ) in "\n".join(expected_findings.faulty(package.crate))
 
 
-def test_reports_nothing_for_a_refined_selector_that_names_its_own_record_from_the_document_root(package):
+def test_reports_a_refined_selector_that_names_its_own_record_from_the_document_root(package):
     package.write(
         FINDINGS,
         finding(record="/ExampleRecordSet/ExampleRecord[2]", refined="/ExampleRecordSet/ExampleRecord[2]/Note"),
     )
-    assert not list(expected_findings.faulty(package.crate))
+    assert (
+        "/ExampleRecordSet/ExampleRecord[2]/Note is an XPath rooted at example-0001.xml, "
+        "where a refinement is relative to the record its selector names"
+    ) in "\n".join(expected_findings.faulty(package.crate))
+
+
+def test_reports_a_refined_selector_rooted_at_the_document_behind_leading_whitespace(package):
+    package.write(
+        FINDINGS,
+        finding(record="/ExampleRecordSet/ExampleRecord[2]", refined=" /ExampleRecordSet/ExampleRecord[2]/Note"),
+    )
+    assert (
+        "is an XPath rooted at example-0001.xml, where a refinement is relative to the record its selector names"
+    ) in "\n".join(expected_findings.faulty(package.crate))
+
+
+def test_reports_a_refined_selector_rooted_at_the_document_inside_parentheses(package):
+    package.write(
+        FINDINGS,
+        finding(record="/ExampleRecordSet/ExampleRecord[2]", refined="(/ExampleRecordSet/ExampleRecord[2]/Note)"),
+    )
+    assert (
+        "is an XPath rooted at example-0001.xml, where a refinement is relative to the record its selector names"
+    ) in "\n".join(expected_findings.faulty(package.crate))
+
+
+def test_reports_a_refined_selector_rooted_at_the_document_once_though_it_also_leaves_its_record(package):
+    package.write(
+        FINDINGS,
+        finding(record="/ExampleRecordSet/ExampleRecord[2]", refined="/ExampleRecordSet/ExampleRecord[1]/Note"),
+    )
+    said = list(expected_findings.faulty(package.crate))
+    assert len(said) == 1, said
+    assert "where a refinement is relative to the record its selector names" in said[0]
 
 
 def test_reports_nothing_for_a_refined_selector_that_selects_an_attribute(package):
@@ -237,12 +270,14 @@ def test_evaluates_no_selector_for_an_entry_naming_no_input(crate):
     assert not [message for message in expected_findings.faulty(crate) if "selects" in message]
 
 
-def test_reports_a_record_selector_that_names_its_record_another_way(package):
+def test_reports_nothing_for_a_record_selector_that_names_its_record_another_way(package):
     package.write(FINDINGS, finding(record="/ExampleRecordSet/*[local-name()='ExampleRecord'][1]"))
-    assert (
-        "selects the record /ExampleRecordSet/ExampleRecord[1] names, where a record's selector "
-        "is the XPath from the document element to the record"
-    ) in "\n".join(expected_findings.faulty(package.crate))
+    assert not list(expected_findings.faulty(package.crate))
+
+
+def test_reports_nothing_for_a_document_selector_that_names_the_document_element_another_way(package):
+    package.write(FINDINGS, finding(record="/*[local-name()='ExampleRecordSet']", refined=None))
+    assert not list(expected_findings.faulty(package.crate))
 
 
 A_FINDING_WITH_TWO_TARGETS = (
@@ -434,6 +469,15 @@ def test_reports_nothing_for_a_finding_whose_body_is_the_concept_for_a_schema_fa
 def test_reports_nothing_for_a_finding_whose_body_is_the_concept_a_census_carries(package):
     package.gap_scheme().write(FINDINGS, coded_finding(body="bridge:pathNotAccounted"))
     assert not said_about(package)
+
+
+def test_reports_the_concept_an_address_selecting_other_than_one_node_carries(package):
+    package.gap_scheme().write(FINDINGS, coded_finding(body="bridge:addressNotOneNode"))
+    assert (
+        "https://ns.cascadeprotocol.org/bridge/v1-draft#addressNotOneNode is not a gap of the adapter's "
+        "bridge:gapScheme, the anchor of a validation rule in a W3C XML Schema Recommendation, "
+        "bridge:schemaRuleUnnamed, or bridge:pathNotAccounted"
+    ) in "\n".join(said_about(package))
 
 
 def test_reports_the_concept_a_census_carries_where_the_adapter_names_no_source_accounting(package):

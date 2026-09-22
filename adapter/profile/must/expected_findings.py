@@ -11,7 +11,7 @@ from rocrate_validator.requirements.python import PyFunctionCheck, check, requir
 from _codes import bodies_a_finding_may_carry, no_gap_of_the_scheme
 from _crate import file_name_of
 from _findings import SHAPES, report_findings, unmet
-from _selectors import local_name_of, selector_of
+from _selectors import local_name_of
 from _terms import BRIDGE, MF, OA
 
 
@@ -54,8 +54,27 @@ def inside(record, node, etree):
     return False
 
 
-def about_the_document(document, xpath):
-    return xpath == selector_of(document.getroot())
+def chosen_by(node, xpath, etree):
+    """The nodes an XPath selects, or None where it is not an XPath selecting nodes."""
+    try:
+        chosen = node.xpath(xpath)
+    except etree.XPathError:
+        return None
+    return chosen if isinstance(chosen, list) else None
+
+
+def on_its_own(record, etree):
+    """The record as a Bridge evaluates a refinement against it: a document of its own, where / reaches the record element."""
+    return etree.fromstring(etree.tostring(record, with_tail=False))
+
+
+def rooted_at_the_document(record, refinement, etree):
+    standing = chosen_by(record, refinement, etree)
+    return bool(standing) and chosen_by(on_its_own(record, etree), refinement, etree) == []
+
+
+def about_the_document(document, node):
+    return node is document.getroot()
 
 
 def unselected(graph, document, document_name, source, record_name, etree):
@@ -85,25 +104,23 @@ def unselected(graph, document, document_name, source, record_name, etree):
                 "where a record's selector selects the record"
             )
             continue
-        if not about_the_document(document, xpath):
-            if record_name and found != record_name:
-                yield (
-                    f"{xpath} selects {found} of {document_name}, where a finding is about the document, "
-                    f"selecting its document element, or about a record, selecting {record_name}, "
-                    "the adapter's bridge:elementNameOfEachRecord"
-                )
-                continue
-            written = selector_of(record)
-            if xpath != written:
-                yield (
-                    f"{xpath} selects the record {written} names, where a record's selector is the XPath "
-                    "from the document element to the record, each step below it carrying its position"
-                )
-                continue
+        if not about_the_document(document, record) and record_name and found != record_name:
+            yield (
+                f"{xpath} selects {found} of {document_name}, where a finding is about the document, "
+                f"selecting its document element, or about a record, selecting {record_name}, "
+                "the adapter's bridge:elementNameOfEachRecord"
+            )
+            continue
         refined = graph.value(selector, OA.refinedBy)
         if refined is None:
             continue
         refinement = str(graph.value(refined, RDF.value))
+        if rooted_at_the_document(record, refinement, etree):
+            yield (
+                f"{refinement} is an XPath rooted at {document_name}, "
+                "where a refinement is relative to the record its selector names"
+            )
+            continue
         within = selected(record, refinement, etree, document_name)
         if isinstance(within, Fault):
             yield within
