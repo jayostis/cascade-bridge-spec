@@ -151,10 +151,11 @@ XPath relative to the record, selecting one node of it.
 An address a Bridge writes that selects no node, or more than one, carries
 `bridge:addressNotOneNode` as its body, the address as written as its
 `sh:value`, and `sh:Violation` as its `sh:resultSeverity`. It selects the
-document element, refined no further, once for each distinct address the
-findings written for one record carry and once for each distinct address the
-findings about the document carry. The finding whose address it is stands, and
-a Bridge refuses nothing for it. The adapter profile refuses an expected
+document element, refined no further, once for each distinct address a
+findings query wrote for one record. An address a Bridge builds from a walk it
+made itself, a record's selector among them, names the node that walk stood on
+and is not followed. The finding whose address it is stands, and a Bridge
+refuses nothing for it. The adapter profile refuses an expected
 findings file holding such an address, so no oracle carries
 `bridge:addressNotOneNode`: an adapter whose mapping writes an address its own
 input does not resolve to one node fixes the address, and the body is what a
