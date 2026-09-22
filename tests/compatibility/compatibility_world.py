@@ -14,6 +14,36 @@ SYNTHETIC_ADAPTER = ROOT / "fixtures" / "synthetic-adapter"
 FAKE_ENGINE = ROOT / "fixtures" / "fake-engine"
 CONTEXT_IRI = "https://ns.cascadeprotocol.org/bridge/v1-draft/compatibility.jsonld"
 OWNER = "jayostis"
+CRATE = "ro-crate-metadata.json"
+
+VOCABULARY = "spec"
+VOCABULARY_OWNER = "the-cascade-protocol"
+VOCABULARY_PATH = f"{VOCABULARY_OWNER}/{VOCABULARY}"
+VOCABULARY_URL = f"https://github.com/{VOCABULARY_PATH}"
+VOCABULARY_NAMESPACE = "https://example.org/synthetic-adapter/v1#"
+AN_ONTOLOGY = "ontologies/example/v1/example.ttl"
+ITS_SHAPES = "ontologies/example/v1/example.shapes.ttl"
+VOCABULARY_FILES = (AN_ONTOLOGY, ITS_SHAPES)
+CRATES_NAMING_THE_VOCABULARY = (("adapter", "."), ("cascade-bridge-spec", "fixtures/synthetic-adapter"))
+
+THE_ONTOLOGY = """@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix ex:  <https://example.org/synthetic-adapter/v1#> .
+
+<https://example.org/synthetic-adapter/v1#> a owl:Ontology .
+
+ex:Record a owl:Class .
+
+ex:status a owl:ObjectProperty .
+"""
+
+THE_SHAPES = """@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix sh:  <http://www.w3.org/ns/shacl#> .
+
+<> a owl:Ontology .
+
+<#Record> a sh:NodeShape ;
+  sh:targetClass <https://example.org/synthetic-adapter/v1#Record> .
+"""
 
 SETTINGS = (
     "user.name=compatibility tests",
@@ -31,8 +61,8 @@ def git(*args, cwd=None):
     return run.stdout.strip()
 
 
-def publish(origins, name, fill):
-    path = origins / OWNER / name
+def publish(origins, name, fill, owner=OWNER):
+    path = origins / owner / name
     path.mkdir(parents=True)
     fill(path)
     git("init", "-q", "-b", "main", str(path))
@@ -49,10 +79,37 @@ def specification(path):
     shutil.copy(ROOT / "pyproject.toml", path / "pyproject.toml")
 
 
+def vocabulary(path):
+    """the-cascade-protocol/spec as this world serves it: the ontologies and shapes an adapter names files of."""
+    for relative, body in ((AN_ONTOLOGY, THE_ONTOLOGY), (ITS_SHAPES, THE_SHAPES)):
+        written = path / relative
+        written.parent.mkdir(parents=True, exist_ok=True)
+        written.write_text(body, encoding="utf-8", newline="")
+
+
+def name_vocabulary(crate_file, url, commit, files=VOCABULARY_FILES):
+    """An adapter's crate, naming the-cascade-protocol/spec at a commit and the files it reads there."""
+    document = json.loads(crate_file.read_text(encoding="utf-8"))
+    document["@context"][1]["bridge:vocabularyFile"] = "bridge:vocabularyFile"
+    root = next(entity for entity in document["@graph"] if entity["@id"] == "./")
+    named = f"{url}/commit/{commit}"
+    was = root["bridge:cascadeVocabularyPin"]["@id"]
+    root["bridge:cascadeVocabularyPin"] = {"@id": named}
+    root["bridge:vocabularyFile"] = list(files)
+    root["hasPart"] = [{"@id": named} if part == {"@id": was} else part for part in root["hasPart"]]
+    for entity in document["@graph"]:
+        if entity["@id"] == was:
+            entity["@id"] = named
+            entity["codeRepository"] = {"@id": url}
+            entity["version"] = commit
+    crate_file.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8", newline="")
+
+
 def publish_origins(origins):
     origins.mkdir(parents=True)
     commits = {}
     commits["cascade-bridge-spec"] = publish(origins, "cascade-bridge-spec", specification)
+    commits[VOCABULARY] = publish(origins, VOCABULARY, vocabulary, owner=VOCABULARY_OWNER)
     commits["adapter"] = publish(
         origins, "adapter", lambda path: shutil.copytree(SYNTHETIC_ADAPTER, path, dirs_exist_ok=True)
     )
@@ -209,13 +266,22 @@ class World:
         copy = self.root / "origins"
         shutil.copytree(self.origins, copy)
         self.origins = copy
+        return self.pin_vocabularies()
+
+    def pin_vocabularies(self, commit=None, files=VOCABULARY_FILES):
+        """Every adapter crate in these origins names this world's the-cascade-protocol/spec at a commit of it."""
+        for name, relative in CRATES_NAMING_THE_VOCABULARY:
+            origin = self.origin(name)
+            name_vocabulary(origin / relative / CRATE, VOCABULARY_URL, commit or self.commits[VOCABULARY], files)
+            git("add", "-A", cwd=origin)
+            git("commit", "-q", "--allow-empty", "-m", "the vocabulary this adapter reads", cwd=origin)
         return self
 
     def url(self, name):
-        return (self.origins / OWNER / name).as_uri()
+        return self.origin(name).as_uri()
 
     def origin(self, name):
-        return self.origins / OWNER / name
+        return self.origins / (VOCABULARY_OWNER if name == VOCABULARY else OWNER) / name
 
     def clone(self, name):
         path = self.workspace / name

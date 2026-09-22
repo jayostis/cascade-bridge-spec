@@ -2,6 +2,8 @@
 
 import pytest
 
+from compatibility_world import CRATE, VOCABULARY, VOCABULARY_PATH, VOCABULARY_URL, git, name_vocabulary
+from compatibility_world import write_compatibility as compatibility_file
 from test_picking_versions import depends_on, engine_under_test
 
 GATE = "ready-to-merge"
@@ -193,6 +195,39 @@ def test_ready_to_merge_finds_no_cycle_through_a_merged_pull_request(world):
     said = world.tool(engine, 1, check="ready-to-merge", **world.ci(event=event, gate=GATE))
 
     assert "adapter/pull/7 has not merged" in said
+
+
+def merged_into_main(world, name, number):
+    """A pull request that has merged, and the merge commit its target now holds."""
+    head = world.pull_request(
+        name, number, state="closed", merged=True, fill=lambda path: (path / f"FROM-{number}").write_text(f"{number}\n")
+    )
+    git("merge", "--no-edit", "-q", head, cwd=world.origin(name))
+    return git("rev-parse", "HEAD", cwd=world.origin(name))
+
+
+def adapter_under_test(world, body=""):
+    world.pull_request("adapter", 1, body=body)
+    adapter = world.clone("adapter")
+    compatibility_file(adapter, {"mustPassWith": [world.url("engine")]})
+    return adapter, world.event(1, "adapter")
+
+
+def test_ready_to_merge_waits_for_the_pin_to_contain_a_merged_vocabulary_pull_request(world):
+    merge = merged_into_main(world, VOCABULARY, 5)
+    body = f"Some description.\n\nDepends-On: https://github.com/{VOCABULARY_PATH}/pull/5\n"
+    adapter, event = adapter_under_test(world, body=body)
+    variables = world.ci(repository="adapter", event=event)
+
+    said = world.tool(adapter, 1, check="ready-to-merge", **variables)
+
+    assert f"{VOCABULARY_PATH}/pull/5" in said
+    assert "bridge:cascadeVocabularyPin" in said
+    assert world.commits[VOCABULARY] in said
+
+    name_vocabulary(adapter / CRATE, VOCABULARY_URL, merge)
+
+    assert f"{VOCABULARY_PATH}/pull/5 has merged" in world.tool(adapter, check="ready-to-merge", **variables)
 
 
 def test_ready_to_merge_fails_a_cycle_member_named_through_another_whose_check_did_not_succeed(world):

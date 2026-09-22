@@ -4,12 +4,13 @@ import sys
 
 import pytest
 
-from compatibility_world import engine_document, git, write_compatibility
+from compatibility_world import VOCABULARY, engine_document, git, write_compatibility
 
 
 def engine_beside_adapter(world, canned="passed", **overrides):
     engine = world.engine([world.url("adapter")], canned, **overrides)
     world.clone("adapter")
+    world.clone(VOCABULARY)
     git("remote", "set-url", "origin", "https://example.invalid/gone.git", cwd=world.workspace / "adapter")
     return engine
 
@@ -67,6 +68,7 @@ def test_a_counterpart_engine_stating_no_command_is_not_run_rather_than_refused(
     adapter = world.clone("adapter")
     write_compatibility(adapter, {"mustPassWith": [world.url("engine")]})
     engine = world.clone("engine")
+    world.clone(VOCABULARY)
     write_compatibility(engine, engine_document([], command=None))
     said = world.tool(adapter, 1)
     assert "states no setup and command" in said
