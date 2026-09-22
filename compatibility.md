@@ -42,7 +42,8 @@ address it runs from.
 
 A pull request merges only once every pull request it names directly has merged,
 or names it back, directly or through others, and has passed every check but its
-own merge gate. Pull requests naming each other are how a breaking change across
+own merge gate. A cycle merges only once every pull request it names outside
+itself has merged. Pull requests naming each other are how a breaking change across
 an engine and an adapter lands, as Zuul's
 [circular dependencies](https://zuul-ci.org/docs/zuul/latest/config/queue.html)
 allow.
@@ -63,9 +64,9 @@ GitHub Actions cannot reproduce these, so a person or an agent does it by hand:
   rather than trusting a mixed pair.
 - **A person merges a cycle's pull requests one after another**, and a default
   branch is red between the first merge and the last.
-- **A cycle's members name their merge gate's job alike**, as
+- **A cycle's members give their merge gate the same check name**, as
   [the workflow an adapter and an engine both run](#the-workflow-an-adapter-and-an-engine-both-run)
-  does (`ready-to-merge`): each gate discounts that job on the others.
+  does (`ready-to-merge`): each gate discounts that check on the others.
 - **A pull request named in the repository under test is merged into nothing**,
   which its row says: the run checks that repository out as the pull request
   under test, and the merge gate still holds this one until that one merges.

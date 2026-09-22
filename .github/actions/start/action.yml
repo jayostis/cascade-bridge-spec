@@ -86,6 +86,7 @@ runs:
         ENTRY_POINT: ${{ steps.specification.outputs.entry-point }}
         SPEC_REPOSITORY: ${{ steps.specification.outputs.repository }}
         RESULTS: ${{ runner.temp }}/compatibility-${{ inputs.check }}
+        CASCADE_CHECK_RUN_ID: ${{ job.check_run_id }}
         # Emptied, not omitted: a caller that sets either at workflow or job level
         # would otherwise hand it to the version the run picked, which for a named
         # pull request is that pull request's own code. Descriptions are read as a

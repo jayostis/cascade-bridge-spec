@@ -125,6 +125,12 @@ class Api:
                 return runs
             page += 1
 
+    def check_run(self, path, identifier):
+        try:
+            return self.get(f"repos/{path}/check-runs/{identifier}")
+        except urllib.error.HTTPError as error:
+            raise Stop(f"{path}'s check run {identifier} could not be read: {unreadable(error).said}") from error
+
 
 @dataclass(frozen=True)
 class Event:
