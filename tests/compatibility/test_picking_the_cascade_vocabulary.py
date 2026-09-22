@@ -1,8 +1,23 @@
 """Which version of the-cascade-protocol/spec a run reads an adapter's vocabularies at, and what it does with it."""
 
+import shutil
 from pathlib import Path
 
-from compatibility_world import VOCABULARY, VOCABULARY_FILES, VOCABULARY_PATH, git
+import pytest
+
+from compatibility_tool import vocabularies
+from compatibility_tool.console import Stop
+from compatibility_tool.record import Role, Row
+from compatibility_world import (
+    CRATE,
+    SYNTHETIC_ADAPTER,
+    VOCABULARY,
+    VOCABULARY_FILES,
+    VOCABULARY_PATH,
+    VOCABULARY_URL,
+    git,
+    name_vocabulary,
+)
 from test_picking_versions import depends_on, engine_under_test
 
 GIVEN = "fake engine: vocabularies "
@@ -98,3 +113,16 @@ def test_an_engines_run_picks_the_vocabulary_from_the_counterpart_adapters_pin(w
 
     assert row(world).get("commit") == later
     assert (given_to_the_engine(said) / "LATER").is_file()
+
+
+def test_two_adapters_naming_different_commits_stop_the_run_naming_both(tmp_path):
+    """One run checks one version out, so every adapter it pairs names one."""
+    paired = []
+    for commit in ("a" * 40, "b" * 40):
+        adapter = tmp_path / commit[0]
+        shutil.copytree(SYNTHETIC_ADAPTER, adapter)
+        name_vocabulary(adapter / CRATE, VOCABULARY_URL, commit)
+        paired.append(Row(adapter.name, VOCABULARY_URL, commit, "", Role.COUNTERPART, path=adapter))
+
+    with pytest.raises(Stop, match="name one bridge:cascadeVocabularyPin"):
+        vocabularies.read_from(tmp_path, paired)
