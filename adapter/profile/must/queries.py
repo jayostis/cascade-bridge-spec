@@ -49,11 +49,15 @@ def constructs(template):
     return graph, set(standing_for.values())
 
 
-def shapes_less_the_selector_the_bridge_adds():
-    """A finding whose query constructs no selector is about the record itself."""
+def shapes_less_the_record_selector_the_bridge_adds():
+    """A finding whose query constructs no selector is about the record itself, and the selector one
+    does construct is the refinement a Bridge moves under the record's."""
     shapes = Graph().parse(SHAPES, format="turtle")
+    refinement = URIRef(f"{SHAPES.as_uri()}#RefinedSelector")
     for constraint in shapes.subjects(SH.path, OA.hasSelector):
         shapes.remove((constraint, SH.minCount, None))
+        shapes.remove((constraint, SH.node, None))
+        shapes.add((constraint, SH.node, refinement))
     return shapes
 
 
@@ -107,7 +111,7 @@ def malformed(crate):
                     f"{name} constructs {body} as a finding's body, where a body a findings query "
                     "constructs as a constant is a gap of the adapter's bridge:gapScheme"
                 )
-        shapes = shapes_less_the_selector_the_bridge_adds()
+        shapes = shapes_less_the_record_selector_the_bridge_adds()
         constructed_graph, standing_for = constructs(template)
         for message in unmet(constructed_graph, shapes, standing_for):
             yield f"{name}: {message}"
