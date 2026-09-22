@@ -151,15 +151,15 @@ def behind(directory, named, api, into):
         if entry.path != path:
             continue
         pull = api.pull_request(entry)
-        head = pull.get("head", {}).get("sha")
-        if not pull.get("merged") or not head or contains(reading, head, into):
+        on_target = pull.get("merge_commit_sha") or pull.get("head", {}).get("sha")
+        if not pull.get("merged") or not on_target or contains(reading, on_target, into):
             continue
-        yield f"{entry.label} merged at {head}, and the adapter's {PIN}, {reading.commit}, does not contain it"
+        yield f"{entry.label} merged at {on_target}, and the adapter's {PIN}, {reading.commit}, does not contain it"
 
 
 def contains(reading, commit, into):
     picking.remove(into)
     git.init(into)
-    if not all(git.fetched(reading.url, wanted, into) for wanted in (reading.commit, commit)):
-        return False
+    for wanted in (reading.commit, commit):
+        git.fetch(reading.url, wanted, into)
     return git.holds(into, reading.commit, commit)

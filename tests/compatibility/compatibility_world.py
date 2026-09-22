@@ -157,9 +157,14 @@ class PullRequests:
             "merged": merged,
             "base": {"ref": base},
             "head": {"sha": head or ""},
+            "merge_commit_sha": None,
         }
         self.by_repository.setdefault(repository, {})[number] = pull
         return pull
+
+    def merged_as(self, repository, number, commit):
+        """The commit the target branch holds once the pull request merged, however it was merged."""
+        self.get(repository, number)["merge_commit_sha"] = commit
 
     def get(self, repository, number):
         return self.by_repository.get(repository, {}).get(number)

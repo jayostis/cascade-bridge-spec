@@ -93,10 +93,6 @@ def fetch(url, ref, path):
     return git("rev-parse", "FETCH_HEAD", cwd=path).stdout.strip()
 
 
-def fetched(url, ref, path):
-    return git("fetch", "--quiet", url, ref, cwd=path).returncode == 0
-
-
 def holds(path, commit, other):
     return git("merge-base", "--is-ancestor", other, commit, cwd=path).returncode == 0
 
