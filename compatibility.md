@@ -71,6 +71,10 @@ GitHub Actions cannot reproduce these, so a person or an agent does it by hand:
   which its row says: the run checks that repository out as the pull request
   under test, and the merge gate still holds this one until that one merges.
   Land it first, or fold its changes into this pull request.
+- **A change to which pull requests a run follows is tried once it has merged.**
+  The default branch's copy follows them to pick the version, before that version
+  runs anything, so a run refuses on the rules of the day whatever a pull request
+  proposes. What it would newly accept is reachable only from the default branch.
 
 These are chosen, and could be otherwise:
 
