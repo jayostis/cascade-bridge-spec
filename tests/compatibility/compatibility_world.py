@@ -6,6 +6,7 @@ import sys
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
+from urllib.parse import parse_qs, urlsplit
 
 ROOT = Path(__file__).resolve().parents[2]
 TOOL = ROOT / "scripts" / "compatibility.py"
@@ -86,6 +87,7 @@ class PullRequests:
         self.by_repository = {}
         self.comments = []
         self.refusals = {}
+        self.check_runs_by_commit = {}
 
     def refuse(self, repository, number, status, headers=None):
         self.refusals[(repository, number)] = (status, dict(headers or {}))
@@ -105,6 +107,22 @@ class PullRequests:
     def get(self, repository, number):
         return self.by_repository.get(repository, {}).get(number)
 
+    def check_run(self, repository, commit, name, status="completed", conclusion="success"):
+        runs = self.check_runs_by_commit.setdefault((repository, commit), [])
+        runs.append(
+            {
+                "id": len(runs) + 1,
+                "name": name,
+                "head_sha": commit,
+                "status": status,
+                "conclusion": conclusion if status == "completed" else None,
+            }
+        )
+
+    def check_runs(self, repository, commit, page, per_page):
+        runs = self.check_runs_by_commit.get((repository, commit), [])
+        return {"total_count": len(runs), "check_runs": runs[(page - 1) * per_page : page * per_page]}
+
 
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, *arguments):
@@ -121,10 +139,16 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(payload)
 
     def parts(self):
-        return self.path.strip("/").split("/")
+        return urlsplit(self.path).path.strip("/").split("/")
+
+    def query(self, name, default):
+        return int(parse_qs(urlsplit(self.path).query).get(name, [default])[0])
 
     def do_GET(self):
         parts = self.parts()
+        if len(parts) == 6 and parts[0] == "repos" and parts[3] == "commits" and parts[5] == "check-runs":
+            page, per_page = self.query("page", 1), self.query("per_page", 30)
+            return self.answer(200, self.server.pull_requests.check_runs(parts[2], parts[4], page, per_page))
         if len(parts) == 5 and parts[0] == "repos" and parts[3] == "pulls":
             refusal = self.server.pull_requests.refusals.get((parts[2], int(parts[4])))
             if refusal:
@@ -249,12 +273,13 @@ class World:
             "GITHUB_REF_NAME",
             "GITHUB_STEP_SUMMARY",
             "GITHUB_TOKEN",
+            "GITHUB_JOB",
         ):
             environment.pop(name, None)
         environment.update({key: str(value) for key, value in extra.items()})
         return environment
 
-    def ci(self, repository="engine", event=None, branch="main"):
+    def ci(self, repository="engine", event=None, branch="main", job=None):
         """The variables a workflow run gives the tooling."""
         variables = {
             "CI": "true",
@@ -268,6 +293,8 @@ class World:
         }
         if event is not None:
             variables["GITHUB_EVENT_PATH"] = str(event)
+        if job is not None:
+            variables["GITHUB_JOB"] = job
         return variables
 
     def tool(self, subject, expected=0, check=None, interpreter=(sys.executable,), arguments=(), **variables):

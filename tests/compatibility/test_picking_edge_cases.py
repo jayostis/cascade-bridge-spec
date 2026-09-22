@@ -27,16 +27,16 @@ def test_a_named_pull_request_in_the_repository_under_test_is_listed_as_not_used
     assert "not used" in table
 
 
-def test_a_cycle_between_two_named_pull_requests_fails_the_check(world):
-    """Both are reached from the pull request under test, and the cycle is the edge between them."""
+def test_a_cycle_between_two_named_pull_requests_picks_both(world):
     world.pull_request("adapter", 7, body=depends_on("cascade-bridge-spec", 3))
     world.pull_request("cascade-bridge-spec", 3, body=depends_on("adapter", 7))
     engine, event = engine_under_test(world, body=depends_on("cascade-bridge-spec", 3) + depends_on("adapter", 7))
 
-    said = world.tool(engine, 1, **world.ci(event=event))
+    world.tool(engine, **world.ci(event=event))
 
-    assert "cycle" in said
-    assert "adapter/pull/7" in said and "cascade-bridge-spec/pull/3" in said
+    repositories = world.record()["repositories"]
+    assert repositories["adapter"]["how"] == "pull request #7 merged into main"
+    assert repositories["cascade-bridge-spec"]["how"] == "pull request #3 merged into main"
 
 
 def test_the_branch_a_pull_request_targets_is_read_when_the_job_runs(world):
