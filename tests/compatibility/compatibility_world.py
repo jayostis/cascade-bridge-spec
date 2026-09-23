@@ -127,12 +127,22 @@ def write_compatibility(directory, document):
     (directory / "compatibility.json").write_text(json.dumps(body, indent=2) + "\n", encoding="utf-8", newline="")
 
 
-def engine_document(must_pass_with, canned="passed", **overrides):
-    document = {
+def a_host(name="native", canned="passed", **overrides):
+    host = {
+        "name": name,
         "setup": [sys.executable, "-c", "pass"],
         "command": [sys.executable, "engine.py", "--canned", canned],
-        "mustPassWith": must_pass_with,
     }
+    host.update(overrides)
+    return {key: value for key, value in host.items() if value is not None}
+
+
+def engine_document(must_pass_with, canned="passed", host=(), **overrides):
+    """One host, native, unless hosts are given; a setup or command override is that one host's."""
+    if host == ():
+        in_the_host = {key: overrides.pop(key) for key in ("setup", "command") if key in overrides}
+        host = [a_host(canned=canned, **in_the_host)]
+    document = {"host": host, "mustPassWith": must_pass_with}
     document.update(overrides)
     return {key: value for key, value in document.items() if value is not None}
 

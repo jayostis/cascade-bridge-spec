@@ -7,8 +7,9 @@ FILE = "compatibility.json"
 CRATE = "ro-crate-metadata.json"
 CONTEXT_IRI = "https://ns.cascadeprotocol.org/bridge/v1-draft/compatibility.jsonld"
 
-ENGINE_KEYS = ("setup", "command")
-TOP_KEYS = {"@context", "mustPassWith", *ENGINE_KEYS}
+VECTORS = ("setup", "command")
+HOST_KEYS = {"name", *VECTORS}
+TOP_KEYS = {"@context", "host", "mustPassWith", *VECTORS}
 PICKED_WHEN_THE_CHECK_RUNS = "which version of it is picked when the check runs"
 
 
@@ -46,11 +47,29 @@ def counterparts(document):
     return [entry for entry in listed if isinstance(entry, str)] if isinstance(listed, list) else []
 
 
+def hosts(document):
+    listed = (document or {}).get("host")
+    return listed if isinstance(listed, list) else []
+
+
+def vector_problems(node):
+    return [
+        f"{key} is an argument vector, written as a JSON array of strings"
+        for key in VECTORS
+        if key in node and not isinstance(node[key], list)
+    ]
+
+
 def problems_json_ld_hides_from_shacl(document):
     problems = [f"{key} is not a key the context defines" for key in document if key not in TOP_KEYS]
-    for key in ENGINE_KEYS:
-        if key in document and not isinstance(document[key], list):
-            problems.append(f"{key} is an argument vector, written as a JSON array of strings")
+    problems += vector_problems(document)
+    listed = document.get("host", [])
+    if not isinstance(listed, list) or not all(isinstance(host, dict) for host in listed):
+        problems.append("host is a list of hosts, written as a JSON array of objects, even of one")
+    for host in hosts(document):
+        if isinstance(host, dict):
+            problems += [f"{key} is not a key a host carries" for key in host if key not in HOST_KEYS]
+            problems += vector_problems(host)
     listed = document.get("mustPassWith")
     if "mustPassWith" in document and not isinstance(listed, list):
         problems.append("mustPassWith is a list of repositories, written as a JSON array, even of one")
@@ -82,14 +101,18 @@ def name_clashes(directory, urls):
 
 
 def form_problem(directory, document):
-    carried = [key for key in ENGINE_KEYS if key in document]
+    carried = [key for key in ("host", *VECTORS) if key in document]
     if is_adapter(directory) and carried:
         return (
             f"{directory} holds {CRATE}, so it is an adapter, and an adapter's "
             f"{FILE} carries no {', '.join(carried)}: it is run rather than running anything"
         )
-    if not is_adapter(directory) and len(carried) != len(ENGINE_KEYS):
-        return f"{directory} holds no {CRATE}, so it is an engine, and an engine's {FILE} carries setup and command"
+    if is_adapter(directory):
+        return None
+    if not hosts(document):
+        return f"{directory} holds no {CRATE}, so it is an engine, and an engine's {FILE} names at least one host"
+    if not all(isinstance(host, dict) and all(key in host for key in VECTORS) for host in hosts(document)):
+        return f"{directory} holds no {CRATE}, so it is an engine, and each host of it carries setup and command"
     return None
 
 

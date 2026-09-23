@@ -3,7 +3,7 @@ import subprocess
 from pathlib import Path
 
 from compatibility_tool.console import report
-from compatibility_tool.document import is_adapter, read_file
+from compatibility_tool.document import hosts, is_adapter, read_file
 
 
 def executable(argv, cwd):
@@ -25,45 +25,65 @@ def execute(argv, cwd):
     return run.returncode
 
 
-def vectors(engine):
-    document = read_file(engine) or {}
-    setup, command = document.get("setup"), document.get("command")
+def vectors(host):
+    setup, command = host.get("setup"), host.get("command")
     if isinstance(setup, list) and setup and isinstance(command, list) and command:
         return setup, command
     return None
+
+
+def unrunnable(listed):
+    names = [host.get("name") if isinstance(host, dict) else None for host in listed]
+    if not names:
+        return "names no host"
+    if not all(isinstance(name, str) for name in names):
+        return "lists a host with no name"
+    repeated = sorted({name for name in names if names.count(name) > 1})
+    return f"names more than one host {', '.join(repeated)}" if repeated else None
 
 
 def run(directory, record, options):
     reports = options.results / "earl"
     shutil.rmtree(reports, ignore_errors=True)
     reports.mkdir(parents=True)
-    print("Each engine on each adapter")
+    print("Each adapter on each host of each engine")
     adapter_side = is_adapter(directory)
     set_up = {}
-    for entry in record.counterparts:
-        engine, adapter = (entry.path, directory) if adapter_side else (directory, entry.path)
-        entry.adapter = adapter
-        found = vectors(engine)
-        if found is None:
-            report(False, f"{engine} states no setup and command, so {entry.name} was not run")
+    for pairing in record.counterparts:
+        engine, adapter = (pairing.path, directory) if adapter_side else (directory, pairing.path)
+        pairing.adapter = adapter
+        listed = hosts(read_file(engine))
+        problem = unrunnable(listed)
+        if problem:
+            report(False, f"{engine} {problem}, so {pairing.name} was not run")
             continue
-        setup, command = found
-        if engine not in set_up:
-            print(f"  setup {' '.join(setup)}   (in {engine})")
-            set_up[engine] = execute(setup, engine) == 0
-            if not set_up[engine]:
-                report(False, f"the setup failed in {engine}")
-        if not set_up[engine]:
-            report(False, f"{entry.name} was not run: its engine's setup failed")
-            continue
-        earl = reports / f"{entry.name}.ttl"
-        argv = [*command, "test", str(adapter), "--earl", str(earl)]
-        if record.vocabularies is not None:
-            argv += ["--vocabularies", str(record.vocabularies)]
-        print(f"  run   {' '.join(argv)}   (in {engine})")
-        status = execute(argv, engine)
-        if status is None:
-            continue
-        entry.report = earl
-        wrote = f"its report is {earl}" if earl.is_file() else "it wrote no report"
-        report(True, f"{entry.name} ran, exit status {status}, which nothing relies on; {wrote}")
+        found = {host["name"]: host for host in listed}
+        for index, entry in enumerate(record.on_each_host(pairing, found), 1):
+            earl = reports / f"{entry.name}-on-host-{index}.ttl"
+            run_on_host(entry, engine, found[entry.host], set_up, earl, record)
+
+
+def run_on_host(entry, engine, host, set_up, earl, record):
+    found = vectors(host)
+    if found is None:
+        report(False, f"{engine} states no setup and command for {entry.host}, so {entry.name} was not run on it")
+        return
+    setup, command = found
+    if (engine, entry.host) not in set_up:
+        print(f"  setup {' '.join(setup)}   (in {engine}, for {entry.host})")
+        set_up[engine, entry.host] = execute(setup, engine) == 0
+        if not set_up[engine, entry.host]:
+            report(False, f"the setup for {entry.host} failed in {engine}")
+    if not set_up[engine, entry.host]:
+        report(False, f"{entry.name} was not run on {entry.host}: its setup failed")
+        return
+    argv = [*command, "test", str(entry.adapter), "--earl", str(earl)]
+    if record.vocabularies is not None:
+        argv += ["--vocabularies", str(record.vocabularies)]
+    print(f"  run   {' '.join(argv)}   (in {engine}, on {entry.host})")
+    status = execute(argv, engine)
+    if status is None:
+        return
+    entry.report = earl
+    wrote = f"its report is {earl}" if earl.is_file() else "it wrote no report"
+    report(True, f"{entry.name} ran on {entry.host}, exit status {status}, which nothing relies on; {wrote}")

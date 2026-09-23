@@ -125,12 +125,16 @@ def linked(text, url):
     return f"[{text}]({url})" if url.startswith("https://") else text
 
 
+def cell(text):
+    return text.replace("|", "\\|")
+
+
 def result_cell(entry):
     if entry.role is Role.NOT_USED:
         return "not used"
     if entry.holds is None:
         return "—"
-    return f"{'✅ holds' if entry.holds else '❌ does not hold'}: {entry.result}".replace("|", "\\|")
+    return cell(f"{'✅ holds' if entry.holds else '❌ does not hold'}: {entry.result}")
 
 
 def version_cell(entry):
@@ -144,16 +148,17 @@ def table(record):
     lines = [
         f"### Compatibility of {record.directory.name}",
         "",
-        "| repository | version | commit | result |",
-        "|---|---|---|---|",
+        "| repository | engine host | version | commit | result |",
+        "|---|---|---|---|---|",
     ]
     for entry in record.used:
         repository = entry.repository.removesuffix(".git")
         commit = entry.commit or "—"
         shown = linked(f"`{commit[:7]}`", f"{repository}/commit/{commit}") if entry.commit else "—"
         edits = ", with uncommitted edits" if entry.uncommitted_edits else ""
+        host = cell(entry.host or "—")
         lines.append(
-            f"| [{entry.name}]({repository}) | {version_cell(entry)}{edits} | {shown} | {result_cell(entry)} |"
+            f"| [{entry.name}]({repository}) | {host} | {version_cell(entry)}{edits} | {shown} | {result_cell(entry)} |"
         )
     if any(entry.from_named_pull_requests for entry in record.used):
         lines += [
