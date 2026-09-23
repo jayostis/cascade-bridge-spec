@@ -60,3 +60,6 @@ for changing the directory it sits in, and only that.
 - A change to `vocab/`, `shapes/`, `adapter/profile/`, `engine/sparql.md`,
   `engine/command.md`, `pinning.md` or `compatibility.md` changes what every
   adapter and Bridge must do; its commit message says why.
+- A pull request description never puts a closing keyword (`closes`, `fixes`,
+  `resolves`) before an issue it does not close: GitHub closes it whatever the
+  rest of the sentence says.
