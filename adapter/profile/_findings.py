@@ -10,17 +10,19 @@ from _terms import BRIDGE
 SHAPES = Path(__file__).resolve().parents[2] / "shapes" / "bridge.shapes.ttl"
 
 
-def named(node, graph):
+def named(node, graph, within=frozenset()):
     """How a reader finds the node in the file: its IRI, an entry's bridge:sourcePath, or what a blank node states."""
     if not isinstance(node, BNode):
         return str(node)
     paths = list(graph.objects(node, BRIDGE.sourcePath))
     if len(paths) == 1:
         return str(paths[0])
+    within = within | {node}
     stated = sorted(
-        f"{predicate.n3(graph.namespace_manager)} {value.n3(graph.namespace_manager)}"
+        f"{predicate.n3(graph.namespace_manager)} "
+        + (named(value, graph, within) if isinstance(value, BNode) else value.n3(graph.namespace_manager))
         for predicate, value in graph.predicate_objects(node)
-        if not isinstance(value, BNode)
+        if value not in within
     )
     return f"[ {' ; '.join(stated)} ]"
 
@@ -42,15 +44,16 @@ def unmet(graph, shapes, standing_for=frozenset()):
     def said_by(result):
         narrower = [detail for detail in report.objects(result, SH.detail) if not about_a_binding(detail)]
         if not narrower:
-            yield str(report.value(result, SH.resultMessage) or "").strip()
+            yield report.value(result, SH.focusNode), str(report.value(result, SH.resultMessage) or "").strip()
         for detail in narrower:
             yield from said_by(detail)
 
     for found in report.objects(None, SH.result):
         if not about_a_binding(found):
-            node = named(report.value(found, SH.focusNode), graph)
-            for message in said_by(found):
-                yield f"{node}: {message}"
+            outer = report.value(found, SH.focusNode)
+            for broken, message in said_by(found):
+                where = [named(outer, graph)] + ([named(broken, graph)] if broken != outer else [])
+                yield f"{': '.join(where)}: {message}"
 
 
 def report_findings(check, context, find):

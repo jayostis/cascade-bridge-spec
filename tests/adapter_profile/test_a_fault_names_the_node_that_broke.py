@@ -85,3 +85,40 @@ def test_a_fault_over_the_clinvar_accounting_names_the_source_path_of_the_entry_
     assert len(faults) == 1, faults
     assert A_NO_HOME_ENTRY_NAMES_ONE_GAP in faults[0]
     assert THE_ENTRY_THAT_BREAKS_IT in faults[0]
+
+
+THE_FIRST_RECORD = "/ExampleRecordSet/ExampleRecord[1]"
+THE_SECOND_RECORD = "/ExampleRecordSet/ExampleRecord[2]"
+
+TWO_ALIKE_FINDINGS_WHOSE_TARGETS_NAME_NO_SOURCE = f"""
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix sh:  <http://www.w3.org/ns/shacl#> .
+@prefix oa:  <http://www.w3.org/ns/oa#> .
+
+[] a oa:Annotation ;
+  oa:hasTarget [
+    oa:hasSelector [ a oa:XPathSelector ; rdf:value "{THE_FIRST_RECORD}" ]
+  ] ;
+  oa:hasBody ex:no-term-for-a-free-text-note ;
+  oa:motivatedBy oa:classifying ;
+  sh:resultSeverity sh:Info .
+
+[] a oa:Annotation ;
+  oa:hasTarget [
+    oa:hasSelector [ a oa:XPathSelector ; rdf:value "{THE_SECOND_RECORD}" ]
+  ] ;
+  oa:hasBody ex:no-term-for-a-free-text-note ;
+  oa:motivatedBy oa:classifying ;
+  sh:resultSeverity sh:Info .
+"""
+
+A_TARGET_NAMES_ONE_SOURCE = "A finding's target names exactly one oa:hasSource by IRI"
+
+
+def test_a_fault_found_through_a_nested_shape_names_the_nested_node_that_broke_it():
+    faults = faults_over(TWO_ALIKE_FINDINGS_WHOSE_TARGETS_NAME_NO_SOURCE)
+
+    assert len(faults) == 2, faults
+    assert all(A_TARGET_NAMES_ONE_SOURCE in fault for fault in faults), faults
+    named = [[record for record in (THE_FIRST_RECORD, THE_SECOND_RECORD) if record in fault] for fault in faults]
+    assert sorted(named) == [[THE_FIRST_RECORD], [THE_SECOND_RECORD]], faults
