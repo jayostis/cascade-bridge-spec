@@ -53,7 +53,7 @@ WHERE {
     BIND (STRAFTER(STR(?entry), STR(?adapter)) AS ?withinAdapter)
     ?assertion earl:test ?test ;
       earl:result/earl:outcome ?outcome .
-    FILTER (?outcome NOT IN (earl:cantTell, earl:failed, earl:inapplicable))
+    FILTER (?outcome IN (earl:passed, earl:untested))
     FILTER (?test = ?entry
       || (?withinAdapter != "" && (STR(?test) = ?withinAdapter || STRENDS(STR(?test), CONCAT("/", ?withinAdapter)))))
     BIND (IF(isLITERAL(?outcome), CONCAT("\"", STR(?outcome), "\""),
