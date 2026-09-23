@@ -100,3 +100,19 @@ def test_a_crate_naming_its_test_manifest_in_a_one_element_array_is_judged_by_th
     crate_path.write_text(json.dumps(crate), encoding="utf-8")
     verdict = judge_report(earl(tmp_path, dict.fromkeys(EVERY_TEST, "passed")), adapter)
     assert verdict.holds, verdict.describe()
+
+
+def test_a_report_giving_an_input_only_entry_passed_does_not_hold(tmp_path):
+    report = earl(
+        tmp_path,
+        dict(zip(EVERY_TEST, ("passed", "passed", "passed", "passed", "passed", "passed", "untested"), strict=True)),
+    )
+    assert not judge_report(report, SYNTHETIC_ADAPTER).holds
+
+
+def test_a_report_giving_an_adapter_that_cannot_be_prepared_cant_tell_does_not_hold(tmp_path):
+    adapter = tmp_path / "adapter"
+    shutil.copytree(SYNTHETIC_ADAPTER, adapter)
+    (adapter / "in" / "example-record.rq").unlink()
+    report = earl(tmp_path, dict.fromkeys(EVERY_TEST, "cantTell"))
+    assert not judge_report(report, adapter).holds
