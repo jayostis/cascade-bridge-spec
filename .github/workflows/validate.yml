@@ -68,6 +68,17 @@ jobs:
         with:
           path: cascade-bridge-spec/fixtures/synthetic-adapter
 
+  # A cycle's members discount the check that shares their own gate's name, and
+  # the name is the job's: run here under any other name and a pull request of
+  # this repository waits on gates that are waiting on it.
+  ready-to-merge:
+    name: ready-to-merge
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: cascade-bridge-spec
+
       - name: start action (merge gate) on the synthetic adapter
         uses: ./cascade-bridge-spec/.github/actions/start
         with:
