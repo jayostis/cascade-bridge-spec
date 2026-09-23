@@ -4,6 +4,7 @@ import shutil
 import pytest
 from rdflib import Graph
 
+from compatibility_tool import judge
 from compatibility_tool.judge import judge_report
 from compatibility_world import ROOT, SYNTHETIC_ADAPTER
 
@@ -47,7 +48,11 @@ def test_a_report_with_a_failing_outcome_does_not_hold(tmp_path, outcome):
         tmp_path,
         dict(zip(EVERY_TEST, (outcome, "passed", "passed", "passed", "passed", "passed", "passed"), strict=True)),
     )
-    assert not judge_report(report, SYNTHETIC_ADAPTER).holds
+    verdict = judge_report(report, SYNTHETIC_ADAPTER)
+    assert not verdict.holds
+    assert verdict.faults == [
+        f"example-0001 is reported {outcome}: a report that holds gives only passed, cantTell or untested"
+    ]
 
 
 def test_an_outcome_outside_earls_five_does_not_hold(tmp_path):
@@ -57,20 +62,15 @@ def test_an_outcome_outside_earls_five_does_not_hold(tmp_path):
     )
     verdict = judge_report(report, SYNTHETIC_ADAPTER)
     assert not verdict.holds
-    assert verdict.unknown == ["sortOf"]
+    assert verdict.faults == [
+        "example-release-2026-01 is reported sortOf, and sortOf is not one of EARL's five outcomes"
+    ]
 
 
 def test_a_report_missing_tests_of_the_manifest_does_not_hold(tmp_path):
     verdict = judge_report(earl(tmp_path, {"example-0001": "passed"}), SYNTHETIC_ADAPTER)
     assert not verdict.holds
-    assert [entry.rsplit("#", 1)[-1] for entry in verdict.missing] == [
-        "example-0002",
-        "example-0003",
-        "example-0004",
-        "example-0005",
-        "example-0006",
-        "example-release-2026-01",
-    ]
+    assert verdict.faults == [f"{test} has no outcome" for test in EVERY_TEST if test != "example-0001"]
 
 
 @pytest.mark.parametrize(
@@ -108,36 +108,44 @@ def test_a_report_giving_an_input_only_entry_passed_does_not_hold(tmp_path):
         tmp_path,
         dict(zip(EVERY_TEST, ("passed", "passed", "passed", "passed", "passed", "passed", "untested"), strict=True)),
     )
-    assert not judge_report(report, SYNTHETIC_ADAPTER).holds
+    verdict = judge_report(report, SYNTHETIC_ADAPTER)
+    assert not verdict.holds
+    assert verdict.faults == ["input-only example-0002 is reported passed, not cantTell"]
 
 
-REPORT_DOES_NOT_HOLD = ROOT / "engine" / "report-does-not-hold.rq"
+FAULTS_OF_A_REPORT = ROOT / "engine" / "faults-of-a-report.rq"
 EVERY_PARSED_REPORT = [
-    pytest.param(
-        ("passed", "cantTell", "passed", "passed", "passed", "passed", "untested"), True, id="passed or undecided"
-    ),
-    pytest.param(("failed", "passed", "passed", "passed", "passed", "passed", "passed"), False, id="failed"),
-    pytest.param(
-        ("inapplicable", "passed", "passed", "passed", "passed", "passed", "passed"), False, id="inapplicable"
-    ),
-    pytest.param(
-        ("passed", "passed", "passed", "passed", "passed", "passed", "sortOf"), False, id="outside EARL's five"
-    ),
-    pytest.param(("passed",), False, id="missing tests of the manifest"),
-    pytest.param((), False, id="no outcome"),
-    pytest.param(
-        ("passed", "passed", "passed", "passed", "passed", "passed", "untested"), False, id="input-only passed"
-    ),
+    pytest.param(("passed", "cantTell", "passed", "passed", "passed", "passed", "untested"), id="passed or undecided"),
+    pytest.param(("failed", "passed", "passed", "passed", "passed", "passed", "passed"), id="failed"),
+    pytest.param(("inapplicable", "passed", "passed", "passed", "passed", "passed", "passed"), id="inapplicable"),
+    pytest.param(("passed", "passed", "passed", "passed", "passed", "passed", "sortOf"), id="outside EARL's five"),
+    pytest.param(("passed",), id="missing tests of the manifest"),
+    pytest.param((), id="no outcome"),
+    pytest.param(("passed", "passed", "passed", "passed", "passed", "passed", "untested"), id="input-only passed"),
 ]
 
 
-@pytest.mark.parametrize("outcomes, holds", EVERY_PARSED_REPORT)
-def test_the_report_does_not_hold_query_run_alone_gives_the_judges_verdict(tmp_path, outcomes, holds):
+@pytest.mark.parametrize("outcomes", EVERY_PARSED_REPORT)
+def test_the_faults_of_a_report_query_run_alone_gives_the_faults_the_judge_prints(tmp_path, outcomes):
     report = earl(tmp_path, dict(zip(EVERY_TEST, outcomes, strict=False)))
     graph = Graph().parse(report, format="turtle")
     graph.parse(MANIFEST, format="turtle", publicID=MANIFEST)
-    assert graph.query(REPORT_DOES_NOT_HOLD.read_text(encoding="utf-8")).askAnswer is not holds
-    assert judge_report(report, SYNTHETIC_ADAPTER).holds is holds
+    rows = [str(row.fault) for row in graph.query(FAULTS_OF_A_REPORT.read_text(encoding="utf-8"))]
+    verdict = judge_report(report, SYNTHETIC_ADAPTER)
+    assert verdict.faults == rows
+    assert verdict.holds is not rows
+    for fault in rows:
+        assert fault in verdict.describe()
+
+
+def test_a_fault_only_the_query_knows_is_what_the_judge_prints(tmp_path, monkeypatch):
+    query = tmp_path / "faults.rq"
+    query.write_text('SELECT ?entry ?fault { BIND ("a rule written only in the query" AS ?fault) }', encoding="utf-8")
+    monkeypatch.setattr(judge, "FAULTS_OF_A_REPORT", query)
+    report = earl(tmp_path, dict.fromkeys(EVERY_TEST, "passed") | {"example-0002": "cantTell"})
+    verdict = judge_report(report, SYNTHETIC_ADAPTER)
+    assert not verdict.holds
+    assert verdict.describe() == "1 cantTell, 6 passed; a rule written only in the query"
 
 
 @pytest.mark.parametrize("outcome", ["passed", "untested"])
