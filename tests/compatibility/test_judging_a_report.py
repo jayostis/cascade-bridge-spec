@@ -133,7 +133,7 @@ def test_the_faults_of_a_report_query_run_alone_gives_the_faults_the_judge_print
     rows = [str(row.fault) for row in graph.query(FAULTS_OF_A_REPORT.read_text(encoding="utf-8"))]
     verdict = judge_report(report, SYNTHETIC_ADAPTER)
     assert verdict.faults == rows
-    assert verdict.holds is not rows
+    assert verdict.holds == (not rows)
     for fault in rows:
         assert fault in verdict.describe()
 
@@ -174,3 +174,39 @@ def test_a_report_giving_inapplicable_says_what_a_report_that_holds_gives(tmp_pa
     verdict = judge_report(report, SYNTHETIC_ADAPTER)
     assert not verdict.holds
     assert "a report that holds gives only passed, cantTell or untested" in verdict.describe()
+
+
+def test_a_report_recording_no_outcome_is_that_one_fault(tmp_path):
+    verdict = judge_report(earl(tmp_path, {}), SYNTHETIC_ADAPTER)
+    assert verdict.faults == ["its report records no outcome"]
+
+
+@pytest.mark.parametrize("outcome", ["failed", "inapplicable"])
+def test_an_input_only_entry_reported_failing_is_one_fault(tmp_path, outcome):
+    report = earl(tmp_path, dict.fromkeys(EVERY_TEST, "passed") | {"example-0002": outcome})
+    verdict = judge_report(report, SYNTHETIC_ADAPTER)
+    assert verdict.faults == [
+        f"example-0002 is reported {outcome}: a report that holds gives only passed, cantTell or untested"
+    ]
+
+
+def test_a_manifest_entry_without_a_fragment_is_named_by_its_iri(tmp_path):
+    manifest = tmp_path / "manifest.ttl"
+    manifest.write_text(
+        "@prefix mf: <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .\n"
+        "@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .\n"
+        "<> mf:entries ( <cases/one.ttl> <cases/two.ttl> ) .\n"
+        "<cases/two.ttl> a bridge:InputOnlyTest .\n",
+        encoding="utf-8",
+    )
+    one, two = (f"{tmp_path.as_uri()}/cases/{case}.ttl" for case in ("one", "two"))
+    report = tmp_path / "report.ttl"
+    report.write_text(
+        "@prefix earl: <http://www.w3.org/ns/earl#> .\n"
+        f"[] earl:test <{two}> ; earl:result [ earl:outcome earl:passed ] .\n",
+        encoding="utf-8",
+    )
+    graph = Graph().parse(report, format="turtle")
+    graph.parse(manifest, format="turtle", publicID=manifest.as_uri())
+    rows = [str(row.fault) for row in graph.query(FAULTS_OF_A_REPORT.read_text(encoding="utf-8"))]
+    assert rows == [f"{one} has no outcome", f"input-only {two} is reported passed, not cantTell"]
