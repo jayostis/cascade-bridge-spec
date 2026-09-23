@@ -13,12 +13,6 @@ KINDS_A_GAP_MAY_NAME = (
 
 THE_KINDS_A_GAP_MAY_NAME = ", ".join(str(kind).replace(str(BRIDGE), "bridge:") for kind in KINDS_A_GAP_MAY_NAME)
 
-SEVERITIES_A_GAP_MAY_DECLARE = (SH.Info, SH.Warning, SH.Violation)
-
-THE_SEVERITIES_A_GAP_MAY_DECLARE = ", ".join(
-    str(severity).replace(str(SH), "sh:") for severity in SEVERITIES_A_GAP_MAY_DECLARE
-)
-
 VALIDATION_RULES_OF_XML_SCHEMA_PART_1 = (
     "cos-st-restricts",
     "cvc-assess-attr",
