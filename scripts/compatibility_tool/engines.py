@@ -58,6 +58,8 @@ def run(directory, record, options):
             continue
         earl = reports / f"{entry.name}.ttl"
         argv = [*command, "test", str(adapter), "--earl", str(earl)]
+        if record.vocabularies is not None:
+            argv += ["--vocabularies", str(record.vocabularies)]
         print(f"  run   {' '.join(argv)}   (in {engine})")
         status = execute(argv, engine)
         if status is None:

@@ -71,11 +71,41 @@ def clone_branch(url, path, branch):
     return path
 
 
+def clone_at(url, path, commit):
+    """The repository cloned and left detached at one commit; false where it holds no such commit."""
+    run = git("clone", "--quiet", "--no-checkout", url, str(path))
+    if run.returncode != 0:
+        raise unreachable(url, run)
+    return git("checkout", "--quiet", "--detach", commit, cwd=path).returncode == 0
+
+
+def init(path):
+    run = git("init", "--quiet", str(path))
+    if run.returncode != 0:
+        raise Stop(f"{path} could not be made a repository to read from (git: {first_line(run.stderr)})")
+    return path
+
+
 def fetch(url, ref, path):
     run = git("fetch", "--quiet", url, ref, cwd=path)
     if run.returncode != 0:
         raise unreachable(url, run)
     return git("rev-parse", "FETCH_HEAD", cwd=path).stdout.strip()
+
+
+def holds(path, commit, other):
+    return git("merge-base", "--is-ancestor", other, commit, cwd=path).returncode == 0
+
+
+def blob(path, commit, relative):
+    """The bytes one file stands as at a commit, or None where the commit or the file is not there."""
+    run = subprocess.run(
+        ["git", "cat-file", "blob", f"{commit}:{relative}"],
+        cwd=path,
+        capture_output=True,
+        env=dict(os.environ, GIT_TERMINAL_PROMPT="0", **IDENTITY),
+    )
+    return run.stdout if run.returncode == 0 else None
 
 
 def merge(path, commit, name):

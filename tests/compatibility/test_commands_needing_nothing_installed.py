@@ -3,6 +3,7 @@
 import subprocess
 import sys
 
+from compatibility_world import VOCABULARY
 from test_picking_versions import depends_on, engine_under_test
 
 WITHOUT_SITE_PACKAGES = (sys.executable, "-S")
@@ -25,6 +26,7 @@ def test_the_merge_gate_runs_with_no_package_installed(world):
 def test_a_check_with_the_validators_missing_names_what_is_missing(world):
     engine = world.engine([world.url("adapter")])
     world.clone("adapter")
+    world.clone(VOCABULARY)
 
     said = world.tool(engine, 1, interpreter=WITHOUT_SITE_PACKAGES)
 

@@ -2,7 +2,7 @@
 
 import pytest
 
-from compatibility_world import write_compatibility
+from compatibility_world import VOCABULARY, write_compatibility
 
 PICKED_WHEN_THE_CHECK_RUNS = "picked when the check runs"
 
@@ -11,11 +11,13 @@ def adapter_naming_engine(world):
     adapter = world.clone("adapter")
     write_compatibility(adapter, {"mustPassWith": [world.url("engine")]})
     world.clone("engine")
+    world.clone(VOCABULARY)
     return adapter
 
 
 def test_an_engines_file_naming_its_counterpart_by_repository_url_passes(world):
     world.clone("adapter")
+    world.clone(VOCABULARY)
     said = world.tool(world.engine([world.url("adapter")]))
     assert "1 counterpart: 1 hold" in said
 
@@ -26,7 +28,9 @@ def test_an_adapters_file_naming_its_counterpart_by_repository_url_passes(world)
 
 
 def test_an_adapter_with_no_compatibility_json_is_nothing_to_check_not_a_pass(world):
-    said = world.tool(world.clone("adapter"))
+    adapter = world.clone("adapter")
+    world.clone(VOCABULARY)
+    said = world.tool(adapter)
     assert "lists no counterpart: nothing to check" in said
     assert "\nPASS\n" not in said
 

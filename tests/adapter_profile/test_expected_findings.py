@@ -557,6 +557,40 @@ def test_reports_a_finding_about_the_document_whose_refinement_selects_more_than
     ]
 
 
+def output_validation_finding(body, severity="sh:Violation"):
+    """A finding about the produced graph: its body the SHACL result's code, pointed at the record, refined no further."""
+    return (
+        PREFIXES
+        + f"""
+[] a oa:Annotation ;
+  oa:hasTarget [ oa:hasSource <../in/example-0001.xml> ;
+                 oa:hasSelector [ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ] ] ;
+  oa:hasBody {body} ;
+  oa:motivatedBy oa:classifying ;
+  sh:resultPath ex:status ;
+  sh:focusNode ex:record-1 ;
+  sh:resultSeverity {severity} .
+"""
+    )
+
+
+def test_reports_nothing_for_a_finding_whose_body_is_the_shacl_constraint_component_that_failed(package):
+    package.gap_scheme().write(FINDINGS, output_validation_finding("sh:MinCountConstraintComponent"))
+    assert not said_about(package)
+
+
+def test_reports_nothing_for_a_finding_whose_body_is_the_gap_a_predicate_no_ontology_declares_opens(package):
+    package.gap_scheme().write(FINDINGS, output_validation_finding("bridge:predicateNotDeclared"))
+    assert not said_about(package)
+
+
+def test_reports_a_finding_whose_body_is_the_name_of_no_shacl_constraint_component(package):
+    package.gap_scheme().write(FINDINGS, output_validation_finding("sh:NonesuchConstraintComponent"))
+    assert "http://www.w3.org/ns/shacl#NonesuchConstraintComponent is not a gap of the adapter's" in "\n".join(
+        said_about(package)
+    )
+
+
 EXAMPLE_0003 = Path(__file__).resolve().parents[2] / "fixtures/synthetic-adapter/fixtures/findings/example-0003.ttl"
 
 

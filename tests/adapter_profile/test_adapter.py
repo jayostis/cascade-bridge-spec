@@ -35,6 +35,17 @@ def test_reports_a_crate_that_names_no_cascade_vocabulary_pin(crate, shape_file_
     assert "bridge:cascadeVocabularyPin" in shape_file_messages(crate, "adapter.ttl")
 
 
+def test_reports_a_crate_that_names_no_vocabulary_file(crate, shape_file_messages):
+    crate.graph.remove((crate.root, BRIDGE.vocabularyFile, None))
+    assert "bridge:vocabularyFile" in shape_file_messages(crate, "adapter.ttl")
+
+
+def test_the_adapter_names_an_ontology_and_a_shapes_file_of_the_cascade_vocabulary(crate):
+    named = sorted(str(value) for value in crate.graph.objects(crate.root, BRIDGE.vocabularyFile))
+    assert [name for name in named if name.endswith(".shapes.ttl")], named
+    assert [name for name in named if not name.endswith(".shapes.ttl")], named
+
+
 def test_reports_a_crate_whose_gap_scheme_is_no_file_entity_in_it(crate, shape_file_messages):
     crate.graph.remove((crate.graph.value(crate.root, BRIDGE.gapScheme), None, None))
     assert "a crate File entity (schema:MediaObject) by IRI, declared text/turtle" in shape_file_messages(

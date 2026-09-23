@@ -26,6 +26,13 @@ def test_test_writes_the_earl_report_to_the_file_it_is_given(tmp_path):
     assert Graph().parse(report, format="turtle")
 
 
+def test_test_says_the_vocabularies_directory_it_was_given(tmp_path):
+    vocabularies = tmp_path / "spec"
+    vocabularies.mkdir()
+    run = engine("test", str(ADAPTER), "--vocabularies", str(vocabularies))
+    assert f"fake engine: vocabularies {vocabularies}" in run.stdout
+
+
 @pytest.mark.parametrize("declared", FORMATS)
 def test_convert_writes_one_graph_to_standard_output_and_says_the_rest_on_standard_error(declared):
     run = engine("convert", str(ADAPTER), str(DOCUMENT), "--format", declared)

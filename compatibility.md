@@ -33,8 +33,17 @@ Picked when the run starts, as Zuul checks out a job's required projects
   request under test targets, or the one a push, manual or scheduled run is on;
 - otherwise the default branch.
 
+[`the-cascade-protocol/spec`](https://github.com/the-cascade-protocol/spec) is
+picked by its own rule: the commit an adapter's `bridge:cascadeVocabularyPin`
+names, unless a [`Depends-On:`](https://zuul-ci.org/docs/zuul/latest/gating.html)
+line names a pull request of it, which is merged into the branch it targets
+instead.
+
 A local run uses every sibling checkout as it is on disk, uncommitted edits
-included.
+included, `spec` among them; `bridge:cascadeVocabularyPin` governs a CI run
+alone, and no option changes either. A local run says which of the files the
+adapter names differ from the bytes the pinned commit holds, and nothing stops
+where it holds no such commit.
 
 Descriptions are read without credentials, so every repository a run reads must
 be public, and the reads a run makes share GitHub's hourly allowance for the
