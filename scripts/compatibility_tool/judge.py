@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from compatibility_tool import packages
+from compatibility_tool.bootstrap import SPEC_ROOT
 from compatibility_tool.console import Status, Stop, first_line, note, report
 from compatibility_tool.document import CRATE, crate_root, referenced_id
 from compatibility_tool.record import Role
@@ -10,7 +11,7 @@ from compatibility_tool.record import Role
 EARL = "http://www.w3.org/ns/earl#"
 MF = "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#"
 OUTCOMES = {"passed", "failed", "cantTell", "inapplicable", "untested"}
-NOT_HOLDING = {"failed", "inapplicable"}
+REPORT_DOES_NOT_HOLD = SPEC_ROOT / "engine" / "report-does-not-hold.rq"
 
 
 def graph_of(path, **arguments):
@@ -20,6 +21,7 @@ def graph_of(path, **arguments):
 @dataclass
 class Verdict:
     unjudged: str | None = None
+    holds: bool = False
     tally: dict[str, int] = field(default_factory=dict)
     unreadable_manifest: str | None = None
     expected: list[str] = field(default_factory=list)
@@ -28,16 +30,6 @@ class Verdict:
     @property
     def unknown(self):
         return sorted(name for name in self.tally if name not in OUTCOMES)
-
-    @property
-    def holds(self):
-        return (
-            self.unjudged is None
-            and self.unreadable_manifest is None
-            and not self.unknown
-            and not self.missing
-            and not NOT_HOLDING & self.tally.keys()
-        )
 
     def describe(self):
         if self.unjudged is not None:
@@ -53,15 +45,17 @@ class Verdict:
         return f"{said}, covering all {len(self.expected)} of the manifest's tests"
 
 
-def manifest_entries_relative_to_adapter(adapter):
-    URIRef = packages.installed("rdflib").URIRef
-    adapter = adapter.resolve()
+def read_test_manifest(adapter):
     _, root = crate_root(adapter)
     named = referenced_id(root, "bridge:testManifest")
     if not named:
         raise Stop(f"{adapter / CRATE} names no bridge:testManifest")
     path = adapter / named
-    graph = graph_of(path, format="turtle", publicID=path.as_uri())
+    return path, graph_of(path, format="turtle", publicID=path.as_uri())
+
+
+def manifest_entries_relative_to_adapter(adapter, path, graph):
+    URIRef = packages.installed("rdflib").URIRef
     listed = graph.value(URIRef(path.as_uri()), URIRef(MF + "entries"))
     prefix = adapter.as_uri() + "/"
     return [str(entry).removeprefix(prefix) for entry in graph.items(listed)] if listed else []
@@ -86,8 +80,10 @@ def judge_report(path, adapter):
     if not tally:
         return Verdict(unjudged="its report records no outcome")
 
+    adapter = adapter.resolve()
     try:
-        expected = manifest_entries_relative_to_adapter(adapter)
+        manifest_path, manifest = read_test_manifest(adapter)
+        expected = manifest_entries_relative_to_adapter(adapter, manifest_path, manifest)
     except Exception as error:
         return Verdict(tally=tally, unreadable_manifest=first_line(str(error)))
     tested = set()
@@ -95,7 +91,8 @@ def judge_report(path, adapter):
         if graph.value(result, URIRef(EARL + "outcome")) is not None:
             tested.update(str(test) for test in graph.objects(assertion, URIRef(EARL + "test")))
     missing = [entry for entry in expected if not any(test == entry or test.endswith("/" + entry) for test in tested)]
-    return Verdict(tally=tally, expected=expected, missing=missing)
+    does_not_hold = (graph + manifest).query(REPORT_DOES_NOT_HOLD.read_text(encoding="utf-8")).askAnswer
+    return Verdict(tally=tally, expected=expected, missing=missing, holds=not does_not_hold)
 
 
 def judge(record, options):
