@@ -46,7 +46,7 @@ def test_a_report_with_every_test_passed_or_undecided_holds(tmp_path):
 def test_a_report_with_a_failing_outcome_does_not_hold(tmp_path, outcome):
     report = earl(
         tmp_path,
-        dict(zip(EVERY_TEST, (outcome, "passed", "passed", "passed", "passed", "passed", "passed"), strict=True)),
+        dict(zip(EVERY_TEST, (outcome, "cantTell", "passed", "passed", "passed", "passed", "passed"), strict=True)),
     )
     verdict = judge_report(report, SYNTHETIC_ADAPTER)
     assert not verdict.holds
@@ -58,7 +58,7 @@ def test_a_report_with_a_failing_outcome_does_not_hold(tmp_path, outcome):
 def test_an_outcome_outside_earls_five_does_not_hold(tmp_path):
     report = earl(
         tmp_path,
-        dict(zip(EVERY_TEST, ("passed", "passed", "passed", "passed", "passed", "passed", "sortOf"), strict=True)),
+        dict(zip(EVERY_TEST, ("passed", "cantTell", "passed", "passed", "passed", "passed", "sortOf"), strict=True)),
     )
     verdict = judge_report(report, SYNTHETIC_ADAPTER)
     assert not verdict.holds

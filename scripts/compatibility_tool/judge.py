@@ -10,10 +10,7 @@ from compatibility_tool.record import Role
 
 EARL = "http://www.w3.org/ns/earl#"
 MF = "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#"
-BRIDGE = "https://ns.cascadeprotocol.org/bridge/v1-draft#"
-OUTCOMES = {"passed", "failed", "cantTell", "inapplicable", "untested"}
-OUTCOMES_OF_A_REPORT_THAT_HOLDS = {"passed", "cantTell", "untested"}
-REPORT_DOES_NOT_HOLD = SPEC_ROOT / "engine" / "report-does-not-hold.rq"
+FAULTS_OF_A_REPORT = SPEC_ROOT / "engine" / "faults-of-a-report.rq"
 
 
 def graph_of(path, **arguments):
@@ -26,47 +23,29 @@ def outcome_name(outcome):
     return outcome.n3()
 
 
-def is_entry(test, entry):
-    return test == entry or test.endswith("/" + entry)
-
-
 @dataclass
 class Verdict:
     unjudged: str | None = None
-    holds: bool = False
     tally: dict[str, int] = field(default_factory=dict)
     unreadable_manifest: str | None = None
-    expected: list[str] = field(default_factory=list)
-    missing: list[str] = field(default_factory=list)
-    input_only_not_cant_tell: dict[str, str] = field(default_factory=dict)
+    tests: int = 0
+    faults: list[str] = field(default_factory=list)
 
     @property
-    def unknown(self):
-        return sorted(name for name in self.tally if name not in OUTCOMES)
+    def holds(self):
+        return self.unjudged is None and self.unreadable_manifest is None and not self.faults
 
     def describe(self):
         if self.unjudged is not None:
             return self.unjudged
         said = ", ".join(f"{count} {name}" for name, count in sorted(self.tally.items()))
-        if self.unknown:
-            said += f"; {', '.join(self.unknown)} is not one of EARL's five outcomes"
         if self.unreadable_manifest is not None:
-            return f"{said}; the adapter's test manifest could not be read: {self.unreadable_manifest}"
-        causes = []
-        if self.missing:
-            names = ", ".join(entry.rsplit("#", 1)[-1] for entry in self.missing)
-            causes.append(f"{len(self.missing)} of the manifest's {len(self.expected)} tests have no outcome: {names}")
-        else:
-            said += f", covering all {len(self.expected)} of the manifest's tests"
-        if any(name in OUTCOMES - OUTCOMES_OF_A_REPORT_THAT_HOLDS for name in self.tally):
-            causes.append("a report that holds gives only passed, cantTell or untested")
-        causes += [
-            f"input-only {entry.rsplit('#', 1)[-1]} is reported {outcome}, not cantTell"
-            for entry, outcome in sorted(self.input_only_not_cant_tell.items())
-        ]
-        if not self.holds and not causes and not self.unknown:
-            causes.append(f"{REPORT_DOES_NOT_HOLD.relative_to(SPEC_ROOT).as_posix()} finds it does not hold")
-        return "; ".join([said, *causes])
+            return "; ".join(
+                filter(None, [said, f"the adapter's test manifest could not be read: {self.unreadable_manifest}"])
+            )
+        if not self.faults:
+            said += f", covering all {self.tests} of the manifest's tests"
+        return "; ".join(filter(None, [said, *self.faults]))
 
 
 def read_test_manifest(adapter):
@@ -78,15 +57,13 @@ def read_test_manifest(adapter):
     return path, graph_of(path, format="turtle", publicID=path.as_uri())
 
 
-def manifest_entries_relative_to_adapter(adapter, path, graph):
+def count_of_tests(path, graph):
     URIRef = packages.installed("rdflib").URIRef
     listed = graph.value(URIRef(path.as_uri()), URIRef(MF + "entries"))
-    prefix = adapter.as_uri() + "/"
-    return [str(entry).removeprefix(prefix) for entry in graph.items(listed)] if listed else []
+    return len(list(graph.items(listed))) if listed else 0
 
 
 def judge_report(path, adapter):
-    URIRef = packages.installed("rdflib").URIRef
     if path is None:
         return Verdict(unjudged="it was not run")
     if not path.is_file():
@@ -98,42 +75,20 @@ def judge_report(path, adapter):
     except Exception as error:
         return Verdict(unjudged=f"its report does not parse as Turtle: {first_line(str(error))}")
     tally = {}
-    for outcome in graph.objects(None, URIRef(EARL + "outcome")):
+    for outcome in graph.objects(None, packages.installed("rdflib").URIRef(EARL + "outcome")):
         name = outcome_name(outcome)
         tally[name] = tally.get(name, 0) + 1
-    if not tally:
-        return Verdict(unjudged="its report records no outcome")
 
     adapter = adapter.resolve()
     try:
         manifest_path, manifest = read_test_manifest(adapter)
-        expected = manifest_entries_relative_to_adapter(adapter, manifest_path, manifest)
     except Exception as error:
         return Verdict(tally=tally, unreadable_manifest=first_line(str(error)))
-    reported = []
-    for assertion, result in graph.subject_objects(URIRef(EARL + "result")):
-        outcome = graph.value(result, URIRef(EARL + "outcome"))
-        if outcome is not None:
-            reported += [(str(test), outcome_name(outcome)) for test in graph.objects(assertion, URIRef(EARL + "test"))]
-    missing = [entry for entry in expected if not any(is_entry(test, entry) for test, _ in reported)]
-    input_only = {
-        str(entry).removeprefix(adapter.as_uri() + "/")
-        for entry in manifest.subjects(packages.installed("rdflib").RDF.type, URIRef(BRIDGE + "InputOnlyTest"))
-    }
-    input_only_not_cant_tell = {
-        entry: outcome
-        for entry in expected
-        if entry in input_only
-        for test, outcome in reported
-        if is_entry(test, entry) and outcome != "cantTell"
-    }
-    does_not_hold = (graph + manifest).query(REPORT_DOES_NOT_HOLD.read_text(encoding="utf-8")).askAnswer
+    rows = (graph + manifest).query(FAULTS_OF_A_REPORT.read_text(encoding="utf-8"))
     return Verdict(
         tally=tally,
-        expected=expected,
-        missing=missing,
-        input_only_not_cant_tell=input_only_not_cant_tell,
-        holds=not does_not_hold,
+        tests=count_of_tests(manifest_path, manifest),
+        faults=[str(row.fault) for row in rows],
     )
 
 

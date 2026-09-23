@@ -1,0 +1,64 @@
+PREFIX earl: <http://www.w3.org/ns/earl#>
+PREFIX mf: <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#>
+
+SELECT DISTINCT ?entry ?fault
+WHERE {
+  {
+    FILTER NOT EXISTS { ?anyResult earl:outcome ?anyOutcome }
+    BIND ("its report records no outcome" AS ?fault)
+  }
+  UNION
+  {
+    ?result earl:outcome ?outcome .
+    FILTER (?outcome IN (earl:failed, earl:inapplicable))
+    OPTIONAL { ?assertion earl:result ?result ; earl:test ?entry }
+    BIND (COALESCE(IF(CONTAINS(STR(?entry), "#"), STRAFTER(STR(?entry), "#"), STR(?entry)), "a result naming no test") AS ?name)
+    BIND (CONCAT(?name, " is reported ", STRAFTER(STR(?outcome), STR(earl:)),
+      ": a report that holds gives only passed, cantTell or untested") AS ?fault)
+  }
+  UNION
+  {
+    ?result earl:outcome ?outcome .
+    FILTER (?outcome NOT IN (earl:passed, earl:failed, earl:cantTell, earl:inapplicable, earl:untested))
+    OPTIONAL { ?assertion earl:result ?result ; earl:test ?entry }
+    BIND (COALESCE(IF(CONTAINS(STR(?entry), "#"), STRAFTER(STR(?entry), "#"), STR(?entry)), "a result naming no test") AS ?name)
+    BIND (IF(isLITERAL(?outcome), CONCAT("\"", STR(?outcome), "\""),
+      IF(isBLANK(?outcome), "a blank node",
+        IF(STRSTARTS(STR(?outcome), STR(earl:)), STRAFTER(STR(?outcome), STR(earl:)), CONCAT("<", STR(?outcome), ">"))))
+      AS ?reported)
+    BIND (CONCAT(?name, " is reported ", ?reported, ", and ", ?reported, " is not one of EARL's five outcomes") AS ?fault)
+  }
+  UNION
+  {
+    ?manifest mf:entries/rdf:rest*/rdf:first ?entry .
+    OPTIONAL { ?manifest bridge:adapter ?adapter }
+    BIND (STRAFTER(STR(?entry), STR(?adapter)) AS ?withinAdapter)
+    FILTER NOT EXISTS {
+      ?assertion earl:test ?test ;
+        earl:result/earl:outcome ?anyOutcome .
+      FILTER (?test = ?entry
+        || (?withinAdapter != "" && (STR(?test) = ?withinAdapter || STRENDS(STR(?test), CONCAT("/", ?withinAdapter)))))
+    }
+    BIND (CONCAT(STRAFTER(STR(?entry), "#"), " has no outcome") AS ?fault)
+  }
+  UNION
+  {
+    ?manifest mf:entries/rdf:rest*/rdf:first ?entry .
+    ?entry a bridge:InputOnlyTest .
+    OPTIONAL { ?manifest bridge:adapter ?adapter }
+    BIND (STRAFTER(STR(?entry), STR(?adapter)) AS ?withinAdapter)
+    ?assertion earl:test ?test ;
+      earl:result/earl:outcome ?outcome .
+    FILTER (?outcome != earl:cantTell)
+    FILTER (?test = ?entry
+      || (?withinAdapter != "" && (STR(?test) = ?withinAdapter || STRENDS(STR(?test), CONCAT("/", ?withinAdapter)))))
+    BIND (IF(isLITERAL(?outcome), CONCAT("\"", STR(?outcome), "\""),
+      IF(isBLANK(?outcome), "a blank node",
+        IF(STRSTARTS(STR(?outcome), STR(earl:)), STRAFTER(STR(?outcome), STR(earl:)), CONCAT("<", STR(?outcome), ">"))))
+      AS ?reported)
+    BIND (CONCAT("input-only ", STRAFTER(STR(?entry), "#"), " is reported ", ?reported, ", not cantTell") AS ?fault)
+  }
+}
+ORDER BY ?entry ?fault
