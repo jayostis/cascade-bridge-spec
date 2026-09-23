@@ -141,6 +141,34 @@ def an_accounting_entry_for_a_node_in_a_namespace(package):
     restate_digest(package, ACCOUNTING)
 
 
+A_NAMESPACED_SOURCE_PATH = (
+    "/ExampleRecord/*[local-name()='Provenance' and namespace-uri()='https://example.org/synthetic-adapter/ext/v1']"
+)
+THE_NAMESPACED_ENTRY_NAMING_ITS_GAP = (
+    f'  bridge:sourcePath "{A_NAMESPACED_SOURCE_PATH}" ;\n'
+    "  bridge:verdict bridge:noHome ;\n"
+    "  bridge:namesGap ex:no-term-for-provenance-in-an-extension-namespace ."
+)
+
+
+def a_namespaced_entry_whose_verdict_is_no_home_naming_no_gap(package):
+    package.edit(
+        ACCOUNTING,
+        THE_NAMESPACED_ENTRY_NAMING_ITS_GAP,
+        f'  bridge:sourcePath "{A_NAMESPACED_SOURCE_PATH}" ;\n  bridge:verdict bridge:noHome .',
+    )
+    restate_digest(package, ACCOUNTING)
+
+
+def a_namespaced_entry_carried_where_no_mapping_mentions_it(package):
+    package.edit(
+        ACCOUNTING,
+        THE_NAMESPACED_ENTRY_NAMING_ITS_GAP,
+        f'  bridge:sourcePath "{A_NAMESPACED_SOURCE_PATH}" ;\n  bridge:verdict bridge:carried .',
+    )
+    restate_digest(package, ACCOUNTING)
+
+
 def no_accounting_named_and_no_census_expected(package):
     package.edit(
         MANIFEST,
@@ -454,6 +482,23 @@ def pin_not_a_data_entity(package):
             [],
             [],
             id="a source path naming a node in a namespace passes the profile",
+        ),
+        pytest.param(
+            a_namespaced_entry_whose_verdict_is_no_home_naming_no_gap,
+            False,
+            [
+                "An entry whose verdict is bridge:noHome names exactly one bridge:namesGap",
+                A_NAMESPACED_SOURCE_PATH,
+            ],
+            [],
+            id="a shape's fault over a namespaced source path reports the path as written",
+        ),
+        pytest.param(
+            a_namespaced_entry_carried_where_no_mapping_mentions_it,
+            False,
+            [f"{A_NAMESPACED_SOURCE_PATH} is bridge:carried, where no bridge:mapping of this adapter mentions"],
+            [],
+            id="a lint's fault quoting a namespaced source path reports the path as written",
         ),
         pytest.param(
             a_finding_counting_the_one_node_it_stands_for,
