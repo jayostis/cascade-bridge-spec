@@ -9,7 +9,7 @@ from rdflib.namespace import RDF, SH
 from rocrate_validator.models import ValidationContext
 from rocrate_validator.requirements.python import PyFunctionCheck, check, requirement
 
-from _findings import report_findings
+from _findings import named, report_findings
 
 SHAPES = Path(__file__).resolve().parents[3] / "shapes" / "bridge.shapes.ttl"
 
@@ -24,7 +24,7 @@ def violations(crate):
     for found in report.subjects(RDF.type, SH.ValidationResult):
         path = report.value(found, SH.resultPath)
         message = str(report.value(found, SH.resultMessage) or "").strip()
-        yield f"{path or '-'}: {message}"
+        yield f"{named(report.value(found, SH.focusNode), crate.graph)}: {path or '-'}: {message}"
 
 
 @requirement(name="Cascade Bridge shapes")

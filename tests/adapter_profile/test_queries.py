@@ -327,9 +327,14 @@ A_FINDINGS_QUERY_CONSTRUCTING_A_SELECTOR_THAT_IS_ITSELF_REFINED = findings_query
 
 def test_reports_a_findings_query_constructing_a_selector_that_is_itself_refined(package):
     package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_CONSTRUCTING_A_SELECTOR_THAT_IS_ITSELF_REFINED)
-    assert "example-findings.rq: A selector refining a record's selector is refined no further." in "\n".join(
-        queries.malformed(package.crate)
-    )
+    said = list(queries.malformed(package.crate))
+    assert [
+        fault
+        for fault in said
+        if fault.startswith("example-findings.rq: ")
+        and "https://example.org/synthetic-adapter/v1#no-term-for-a-free-text-note" in fault
+        and fault.endswith(": A selector refining a record's selector is refined no further.")
+    ], said
 
 
 A_FINDINGS_QUERY_CONSTRUCTING_A_TEXTUAL_BODY = findings_query("""  [] a oa:Annotation ;
