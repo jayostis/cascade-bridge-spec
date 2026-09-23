@@ -35,6 +35,9 @@
           "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/shapes/concept-map.shapes.ttl"
         },
         {
+          "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/shapes/gap-scheme.shapes.ttl"
+        },
+        {
           "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/vocab/bridge.ttl"
         }
       ],
@@ -44,6 +47,9 @@
         },
         {
           "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/shapes/concept-map.shapes.ttl"
+        },
+        {
+          "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/shapes/gap-scheme.shapes.ttl"
         },
         {
           "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/vocab/bridge.ttl"
@@ -75,6 +81,19 @@
         "@id": "https://spdx.org/licenses/Apache-2.0"
       },
       "description": "The SHACL shapes a file a bridge:lookupIn names is validated against on its own."
+    },
+    {
+      "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/shapes/gap-scheme.shapes.ttl",
+      "@type": "File",
+      "name": "Cascade Bridge gap scheme shapes",
+      "encodingFormat": "text/turtle",
+      "conformsTo": {
+        "@id": "http://www.w3.org/ns/shacl#"
+      },
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      },
+      "description": "The SHACL shapes the file a bridge:gapScheme names is validated against on its own."
     },
     {
       "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/vocab/bridge.ttl",

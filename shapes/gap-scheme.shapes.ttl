@@ -1,0 +1,14 @@
+@prefix sh:   <http://www.w3.org/ns/shacl#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+<> a owl:Ontology .
+
+<#Gap> a sh:NodeShape ;
+  sh:targetClass skos:Concept ;
+  sh:property [
+    sh:path sh:resultSeverity ;
+    sh:maxCount 1 ;
+    sh:in ( sh:Info sh:Warning sh:Violation ) ;
+    sh:message "A gap declares at most one sh:resultSeverity, one of sh:Info, sh:Warning, sh:Violation."
+  ] .
