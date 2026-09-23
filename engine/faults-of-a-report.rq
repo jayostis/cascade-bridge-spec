@@ -32,6 +32,7 @@ WHERE {
   }
   UNION
   {
+    FILTER EXISTS { ?anyResult earl:outcome ?anyOutcome }
     ?manifest mf:entries/rdf:rest*/rdf:first ?entry .
     OPTIONAL { ?manifest bridge:adapter ?adapter }
     BIND (STRAFTER(STR(?entry), STR(?adapter)) AS ?withinAdapter)
@@ -41,7 +42,8 @@ WHERE {
       FILTER (?test = ?entry
         || (?withinAdapter != "" && (STR(?test) = ?withinAdapter || STRENDS(STR(?test), CONCAT("/", ?withinAdapter)))))
     }
-    BIND (CONCAT(STRAFTER(STR(?entry), "#"), " has no outcome") AS ?fault)
+    BIND (IF(CONTAINS(STR(?entry), "#"), STRAFTER(STR(?entry), "#"), STR(?entry)) AS ?name)
+    BIND (CONCAT(?name, " has no outcome") AS ?fault)
   }
   UNION
   {
@@ -51,14 +53,15 @@ WHERE {
     BIND (STRAFTER(STR(?entry), STR(?adapter)) AS ?withinAdapter)
     ?assertion earl:test ?test ;
       earl:result/earl:outcome ?outcome .
-    FILTER (?outcome != earl:cantTell)
+    FILTER (?outcome NOT IN (earl:cantTell, earl:failed, earl:inapplicable))
     FILTER (?test = ?entry
       || (?withinAdapter != "" && (STR(?test) = ?withinAdapter || STRENDS(STR(?test), CONCAT("/", ?withinAdapter)))))
     BIND (IF(isLITERAL(?outcome), CONCAT("\"", STR(?outcome), "\""),
       IF(isBLANK(?outcome), "a blank node",
         IF(STRSTARTS(STR(?outcome), STR(earl:)), STRAFTER(STR(?outcome), STR(earl:)), CONCAT("<", STR(?outcome), ">"))))
       AS ?reported)
-    BIND (CONCAT("input-only ", STRAFTER(STR(?entry), "#"), " is reported ", ?reported, ", not cantTell") AS ?fault)
+    BIND (IF(CONTAINS(STR(?entry), "#"), STRAFTER(STR(?entry), "#"), STR(?entry)) AS ?name)
+    BIND (CONCAT("input-only ", ?name, " is reported ", ?reported, ", not cantTell") AS ?fault)
   }
 }
 ORDER BY ?entry ?fault
