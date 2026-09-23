@@ -99,7 +99,7 @@ def test_a_crate_naming_its_test_manifest_in_a_one_element_array_is_judged_by_th
     root = next(node for node in crate["@graph"] if node["@id"] == "./")
     root["bridge:testManifest"] = [root["bridge:testManifest"]]
     crate_path.write_text(json.dumps(crate), encoding="utf-8")
-    verdict = judge_report(earl(tmp_path, dict.fromkeys(EVERY_TEST, "passed")), adapter)
+    verdict = judge_report(earl(tmp_path, dict.fromkeys(EVERY_TEST, "passed") | {"example-0002": "cantTell"}), adapter)
     assert verdict.holds, verdict.describe()
 
 
