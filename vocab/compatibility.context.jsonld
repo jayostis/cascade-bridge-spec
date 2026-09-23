@@ -3,6 +3,13 @@
     "@version": 1.1,
     "@base": null,
     "bridge": "https://ns.cascadeprotocol.org/bridge/v1-draft#",
+    "host": {
+      "@id": "bridge:host",
+      "@container": "@set",
+      "@context": {
+        "name": "http://schema.org/name"
+      }
+    },
     "setup": {
       "@id": "bridge:setup",
       "@container": "@list"

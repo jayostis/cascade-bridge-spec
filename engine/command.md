@@ -22,9 +22,10 @@ those entries are reported without being run.
 no report does not hold.
 
 An engine states how to run it in its `compatibility.json`
-([`../compatibility.md`](../compatibility.md)): `setup` and `command` as argument
-vectors, and the tooling appends `test`, the adapter directory, `--earl` and the
-report file, and `--vocabularies` and the checkout it picked, to `command`.
+([`../compatibility.md`](../compatibility.md)): a `setup` and a `command` for each
+host, as argument vectors, and the tooling appends `test`, the adapter directory,
+`--earl` and the report file, and `--vocabularies` and the checkout it picked, to
+each host's `command`.
 
 ## `convert`
 

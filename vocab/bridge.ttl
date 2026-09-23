@@ -358,14 +358,19 @@ bridge:stampPredicate a owl:ObjectProperty ;
 
 # Compatibility terms, the keys of a compatibility.json
 
+bridge:host a owl:ObjectProperty ;
+  rdfs:label "host"@en ;
+  rdfs:comment "One way an engine ships and is run, such as natively or in a JavaScript runtime."@en ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
 bridge:setup a owl:ObjectProperty ;
   rdfs:label "setup"@en ;
-  rdfs:comment "The argument vector that prepares an engine to run, run without a shell in the engine's checkout."@en ;
+  rdfs:comment "The argument vector that prepares a host of an engine to run, run without a shell in the engine's checkout."@en ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
 bridge:command a owl:ObjectProperty ;
   rdfs:label "command"@en ;
-  rdfs:comment "The argument vector that runs an engine's test command (engine/command.md), run without a shell in the engine's checkout."@en ;
+  rdfs:comment "The argument vector that runs an engine's test command (engine/command.md) on a host, run without a shell in the engine's checkout."@en ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
 bridge:mustPassWith a owl:ObjectProperty ;

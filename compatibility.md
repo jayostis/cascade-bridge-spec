@@ -1,8 +1,9 @@
 # Compatibility between engines and adapters
 
 An engine commits a `compatibility.json` at its root, and an adapter may, naming
-the adapters (in an engine) or engines (in an adapter) it must pass with.
-**Every entry that does not hold blocks the merge.**
+the adapters (in an engine) or engines (in an adapter) it must pass with, and an
+engine names each host it ships to. **Every adapter that does not hold on a host
+blocks the merge.**
 
 Its keys are [`vocab/compatibility.context.jsonld`](vocab/compatibility.context.jsonld),
 each a `bridge:` term in [`vocab/bridge.ttl`](vocab/bridge.ttl), checked by the
@@ -12,8 +13,10 @@ An engine's file:
 ```json
 {
   "@context": "https://ns.cascadeprotocol.org/bridge/v1-draft/compatibility.jsonld",
-  "setup": ["npm", "ci"],
-  "command": ["node", "packages/bridge-cli/src/cli.ts"],
+  "host": [
+    { "name": "native", "setup": ["cargo", "build", "--release"], "command": ["cargo", "run", "--release", "--"] },
+    { "name": "node", "setup": ["sh", "hosts/node/setup.sh"], "command": ["node", "hosts/node/cli.mjs"] }
+  ],
   "mustPassWith": ["https://github.com/example-org/example-adapter"]
 }
 ```

@@ -699,37 +699,67 @@
   ] .
 
 <#Compatibility> a sh:NodeShape ;
-  sh:targetSubjectsOf bridge:setup, bridge:command, bridge:mustPassWith ;
-  sh:xone ( <#EngineCompatibility> <#AdapterCompatibility> ) ;
-  sh:message "A compatibility.json is an engine's, carrying exactly one setup and one command, or an adapter's, carrying neither." ;
+  sh:targetSubjectsOf bridge:host, bridge:mustPassWith ;
   sh:property [
     sh:path bridge:mustPassWith ;
     sh:nodeKind sh:IRI ;
     sh:message "Each mustPassWith entry is a repository URL; which version of it the pairing uses is picked when the check runs."
+  ] ;
+  sh:property [
+    sh:path bridge:host ;
+    sh:node <#Host> ;
+    sh:message "Each host of an engine is a JSON object carrying a name, a setup and a command."
+  ] ;
+  sh:sparql [
+    sh:prefixes <> ;
+    sh:message "Each host of an engine has a name no other host of it has: {?value} names more than one." ;
+    sh:select """
+      SELECT $this ?value WHERE {
+        $this bridge:host ?one, ?other .
+        ?one schema:name ?value .
+        ?other schema:name ?value .
+        FILTER (?one != ?other)
+      }
+    """
   ] .
 
-<#EngineCompatibility> a sh:NodeShape ;
+<#SetupAndCommandInAHost> a sh:NodeShape ;
+  sh:targetSubjectsOf bridge:setup, bridge:command ;
+  sh:property [
+    sh:path [ sh:inversePath bridge:host ] ;
+    sh:minCount 1 ;
+    sh:message "A setup and a command belong to a host, in an engine's list of hosts, never at the top of a compatibility.json."
+  ] .
+
+<#Host> a sh:NodeShape ;
+  sh:property [
+    sh:path schema:name ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "A host carries exactly one name, a string."
+  ] ;
   sh:property [
     sh:path bridge:setup ;
     sh:minCount 1 ;
-    sh:maxCount 1
+    sh:maxCount 1 ;
+    sh:message "A host carries exactly one setup."
   ] ;
   sh:property [
     sh:path ( bridge:setup [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ;
     sh:minCount 1 ;
-    sh:datatype xsd:string
+    sh:datatype xsd:string ;
+    sh:message "A host's setup is an argument vector, a JSON array of one or more strings."
   ] ;
   sh:property [
     sh:path bridge:command ;
     sh:minCount 1 ;
-    sh:maxCount 1
+    sh:maxCount 1 ;
+    sh:message "A host carries exactly one command."
   ] ;
   sh:property [
     sh:path ( bridge:command [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ;
     sh:minCount 1 ;
-    sh:datatype xsd:string
+    sh:datatype xsd:string ;
+    sh:message "A host's command is an argument vector, a JSON array of one or more strings."
   ] .
-
-<#AdapterCompatibility> a sh:NodeShape ;
-  sh:property [ sh:path bridge:setup ; sh:maxCount 0 ] ;
-  sh:property [ sh:path bridge:command ; sh:maxCount 0 ] .
