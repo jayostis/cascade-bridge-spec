@@ -12,3 +12,8 @@ the manifest's `<../>` is the crate's root entity.
 **Report in EARL**: one `earl:Assertion` per entry, `earl:test` the entry's IRI,
 `earl:subject` the Bridge, `earl:mode earl:automatic`, and an `earl:TestResult`
 carrying the `earl:outcome`. A report is never written back to the adapter.
+
+Every entry is `earl:inapplicable` when the adapter requires a profile the
+Bridge does not offer, and `earl:failed` when the adapter cannot be prepared.
+Otherwise an entry of a type the Bridge does not know is `earl:inapplicable`,
+and one that cannot be run is `earl:failed`.
