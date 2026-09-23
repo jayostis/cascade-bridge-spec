@@ -59,3 +59,38 @@ def test_the_table_has_a_row_for_each_host(world):
     assert len(rows) == 2
     assert any("native" in row and "✅ holds" in row for row in rows)
     assert any("node" in row and "❌ does not hold" in row for row in rows)
+
+
+def adapter_naming_an_engine_with(world, hosts):
+    adapter = world.clone("adapter")
+    write_compatibility(adapter, {"mustPassWith": [world.url("engine")]})
+    engine = world.clone("engine")
+    world.clone(VOCABULARY)
+    write_compatibility(engine, {"host": hosts, "mustPassWith": []})
+    return adapter
+
+
+def test_a_counterpart_engine_listing_a_host_with_no_name_is_not_run_rather_than_run_on_the_named_one(world):
+    unnamed = {key: value for key, value in a_host(canned="failed").items() if key != "name"}
+    said = world.tool(adapter_naming_an_engine_with(world, [a_host("native"), unnamed]), 1)
+
+    assert "a host with no name" in said
+    assert "does not hold; it was not run" in said
+    assert ": holds" not in said
+
+
+def test_a_counterpart_engine_naming_two_hosts_alike_is_not_run_rather_than_run_on_one_of_them(world):
+    said = world.tool(adapter_naming_an_engine_with(world, [a_host("native", canned="failed"), a_host("native")]), 1)
+
+    assert "more than one host native" in said
+    assert "does not hold; it was not run" in said
+    assert ": holds" not in said
+
+
+def test_a_host_whose_name_is_no_file_name_is_still_run_and_judged_by_its_report(world):
+    said = world.tool(engine_beside_adapter(world, host=[a_host("node/22")]))
+
+    [holding] = judged(world, said, "holds")
+    assert "node/22" in holding
+    [entry] = entries(world)
+    assert entry["holds"] is True

@@ -32,8 +32,14 @@ def vectors(host):
     return None
 
 
-def named_hosts(engine):
-    return [host for host in hosts(read_file(engine)) if isinstance(host, dict) and isinstance(host.get("name"), str)]
+def unrunnable(listed):
+    names = [host.get("name") if isinstance(host, dict) else None for host in listed]
+    if not names:
+        return "names no host"
+    if not all(isinstance(name, str) for name in names):
+        return "lists a host with no name"
+    repeated = sorted({name for name in names if names.count(name) > 1})
+    return f"names more than one host {', '.join(repeated)}" if repeated else None
 
 
 def run(directory, record, options):
@@ -46,15 +52,18 @@ def run(directory, record, options):
     for pairing in record.counterparts:
         engine, adapter = (pairing.path, directory) if adapter_side else (directory, pairing.path)
         pairing.adapter = adapter
-        found = {host["name"]: host for host in named_hosts(engine)}
-        if not found:
-            report(False, f"{engine} names no host, so {pairing.name} was not run")
+        listed = hosts(read_file(engine))
+        problem = unrunnable(listed)
+        if problem:
+            report(False, f"{engine} {problem}, so {pairing.name} was not run")
             continue
-        for entry in record.on_each_host(pairing, found):
-            run_on_host(entry, engine, found[entry.host], set_up, reports, record)
+        found = {host["name"]: host for host in listed}
+        for index, entry in enumerate(record.on_each_host(pairing, found), 1):
+            earl = reports / f"{entry.name}-on-host-{index}.ttl"
+            run_on_host(entry, engine, found[entry.host], set_up, earl, record)
 
 
-def run_on_host(entry, engine, host, set_up, reports, record):
+def run_on_host(entry, engine, host, set_up, earl, record):
     found = vectors(host)
     if found is None:
         report(False, f"{engine} states no setup and command for {entry.host}, so {entry.name} was not run on it")
@@ -68,7 +77,6 @@ def run_on_host(entry, engine, host, set_up, reports, record):
     if not set_up[engine, entry.host]:
         report(False, f"{entry.name} was not run on {entry.host}: its setup failed")
         return
-    earl = reports / f"{entry.name}-on-{entry.host}.ttl"
     argv = [*command, "test", str(entry.adapter), "--earl", str(earl)]
     if record.vocabularies is not None:
         argv += ["--vocabularies", str(record.vocabularies)]
