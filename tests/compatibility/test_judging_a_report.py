@@ -138,3 +138,31 @@ def test_the_report_does_not_hold_query_run_alone_gives_the_judges_verdict(tmp_p
     graph.parse(MANIFEST, format="turtle", publicID=MANIFEST)
     assert graph.query(REPORT_DOES_NOT_HOLD.read_text(encoding="utf-8")).askAnswer is not holds
     assert judge_report(report, SYNTHETIC_ADAPTER).holds is holds
+
+
+@pytest.mark.parametrize("outcome", ["passed", "untested"])
+def test_a_report_not_giving_an_input_only_entry_cant_tell_says_which_entry(tmp_path, outcome):
+    report = earl(tmp_path, dict.fromkeys(EVERY_TEST, "passed") | {"example-0002": outcome})
+    verdict = judge_report(report, SYNTHETIC_ADAPTER)
+    assert not verdict.holds
+    assert f"input-only example-0002 is reported {outcome}, not cantTell" in verdict.describe()
+
+
+def test_an_outcome_written_as_a_literal_is_not_one_of_earls_five(tmp_path):
+    report = earl(tmp_path, dict.fromkeys(EVERY_TEST, "passed") | {"example-0002": "cantTell"})
+    report.write_text(
+        report.read_text(encoding="utf-8").replace("earl:outcome earl:passed", 'earl:outcome "passed"', 1),
+        encoding="utf-8",
+    )
+    verdict = judge_report(report, SYNTHETIC_ADAPTER)
+    assert not verdict.holds
+    assert '"passed" is not one of EARL\'s five outcomes' in verdict.describe()
+
+
+def test_a_report_giving_inapplicable_says_what_a_report_that_holds_gives(tmp_path):
+    report = earl(
+        tmp_path, dict.fromkeys(EVERY_TEST, "passed") | {"example-0001": "inapplicable", "example-0002": "cantTell"}
+    )
+    verdict = judge_report(report, SYNTHETIC_ADAPTER)
+    assert not verdict.holds
+    assert "a report that holds gives only passed, cantTell or untested" in verdict.describe()
