@@ -2,7 +2,7 @@
 
 import pytest
 
-from compatibility_world import VOCABULARY, write_compatibility
+from compatibility_world import VOCABULARY, a_host, write_compatibility
 
 PICKED_WHEN_THE_CHECK_RUNS = "picked when the check runs"
 
@@ -50,8 +50,8 @@ def test_a_key_the_context_does_not_define_is_refused_naming_it(world):
 @pytest.mark.parametrize(
     "overrides, says",
     [
-        pytest.param({"setup": None}, "carries setup and command", id="an engine's file carrying no setup"),
-        pytest.param({"command": None}, "carries setup and command", id="an engine's file carrying no command"),
+        pytest.param({"setup": None}, "carries setup and command", id="a host carrying no setup"),
+        pytest.param({"command": None}, "carries setup and command", id="a host carrying no command"),
         pytest.param({"setup": "cargo build"}, "argument vector", id="an argument vector written as a string"),
         pytest.param({"mustPassWith": "https://example.org/x"}, "written as a JSON array", id="entries not a list"),
     ],
@@ -59,6 +59,28 @@ def test_a_key_the_context_does_not_define_is_refused_naming_it(world):
 def test_a_file_of_neither_form_is_refused(world, overrides, says):
     said = world.tool(world.engine([world.url("adapter")], **overrides), 1)
     assert says in said
+
+
+def refusals(world, said):
+    return [line.replace(str(world.root), "") for line in said.splitlines() if line.startswith("  FAIL  ")]
+
+
+def test_an_engines_file_naming_two_hosts_passes_the_shapes(world):
+    world.clone("adapter")
+    world.clone(VOCABULARY)
+    said = world.tool(world.engine([world.url("adapter")], host=[a_host("native"), a_host("node")]))
+    assert "compatibility.json against the shapes" in said
+
+
+@pytest.mark.parametrize(
+    "host",
+    [pytest.param(None, id="no host key"), pytest.param([], id="an empty list of hosts")],
+)
+def test_an_engines_file_naming_no_host_is_refused_saying_an_engine_names_one(world, host):
+    said = world.tool(world.engine([world.url("adapter")], host=host), 1)
+    refused = refusals(world, said)
+    assert any("host" in line for line in refused), said
+    assert not any("not a key the context defines" in line for line in refused), said
 
 
 def test_an_adapters_file_carrying_setup_or_command_is_refused(world):
