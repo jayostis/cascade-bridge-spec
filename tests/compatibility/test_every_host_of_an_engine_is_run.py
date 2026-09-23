@@ -16,6 +16,13 @@ def judged(world, said, verdict):
     return [line.replace(str(world.root), "") for line in said.splitlines() if f": {verdict}" in line]
 
 
+def table_rows(world):
+    lines = [
+        [cell.strip() for cell in line.split("|")[1:-1]] for line in world.table().splitlines() if line.startswith("| ")
+    ]
+    return [dict(zip(lines[0], row, strict=True)) for row in lines[1:]]
+
+
 def test_an_adapter_failing_on_the_second_host_only_is_two_entries_and_the_run_fails(world):
     said = world.tool(engine_beside_adapter(world, host=native_and_node(on_node="failed")), 1)
 
@@ -55,10 +62,21 @@ def test_the_table_has_a_row_for_each_host(world):
 
     world.tool(engine, 1, **world.ci(event=world.event(1)))
 
-    rows = [line for line in world.table().splitlines() if "hold" in line]
-    assert len(rows) == 2
-    assert any("native" in row and "✅ holds" in row for row in rows)
-    assert any("node" in row and "❌ does not hold" in row for row in rows)
+    rows = [row for row in table_rows(world) if "hold" in row["result"]]
+    assert sorted((row["engine host"], row["result"].split(":")[0]) for row in rows) == [
+        ("native", "✅ holds"),
+        ("node", "❌ does not hold"),
+    ]
+
+
+def test_a_row_run_on_no_host_says_so_in_the_engine_host_column(world):
+    world.pull_request("engine", 1)
+    engine = world.engine([world.url("adapter")], host=native_and_node())
+
+    world.tool(engine, **world.ci(event=world.event(1)))
+
+    specification = next(row for row in table_rows(world) if row["repository"].startswith("[cascade-bridge-spec]"))
+    assert specification["engine host"] == "—"
 
 
 def adapter_naming_an_engine_with(world, hosts):
