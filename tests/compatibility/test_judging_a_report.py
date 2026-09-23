@@ -250,3 +250,19 @@ def test_the_faults_of_a_report_on_a_manifest_of_hundreds_of_entries_are_found_i
     rows = [str(row.fault) for row in graph.query(FAULTS_OF_A_REPORT.read_text(encoding="utf-8"))]
     assert rows == [f"{entries[-1]} has no outcome"]
     assert time.perf_counter() - started < 10
+
+
+def test_a_report_recording_no_outcome_says_so_when_the_manifest_cannot_be_read(tmp_path):
+    adapter = tmp_path / "adapter"
+    shutil.copytree(SYNTHETIC_ADAPTER, adapter)
+    crate_path = adapter / "ro-crate-metadata.json"
+    crate = json.loads(crate_path.read_text(encoding="utf-8"))
+    del next(node for node in crate["@graph"] if node["@id"] == "./")["bridge:testManifest"]
+    crate_path.write_text(json.dumps(crate), encoding="utf-8")
+    verdict = judge_report(earl(tmp_path, {}), adapter)
+    assert not verdict.holds
+    assert verdict.describe() == (
+        "its report records no outcome; "
+        f"the adapter's test manifest could not be read: {adapter.resolve() / 'ro-crate-metadata.json'} "
+        "names no bridge:testManifest"
+    )
