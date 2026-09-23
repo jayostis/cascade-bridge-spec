@@ -130,7 +130,7 @@ def result_cell(entry):
         return "not used"
     if entry.holds is None:
         return "—"
-    return f"{'✅ holds' if entry.holds else '❌ does not hold'}: {entry.result}".replace("|", "\\|")
+    return f"{'✅ holds' if entry.holds else '❌ does not hold'}{entry.on_host}: {entry.result}".replace("|", "\\|")
 
 
 def version_cell(entry):
