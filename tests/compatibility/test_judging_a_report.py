@@ -2,9 +2,10 @@ import json
 import shutil
 
 import pytest
+from rdflib import Graph
 
 from compatibility_tool.judge import judge_report
-from compatibility_world import SYNTHETIC_ADAPTER
+from compatibility_world import ROOT, SYNTHETIC_ADAPTER
 
 MANIFEST = (SYNTHETIC_ADAPTER / "fixtures" / "manifest.ttl").resolve().as_uri()
 EVERY_TEST = (
@@ -108,3 +109,32 @@ def test_a_report_giving_an_input_only_entry_passed_does_not_hold(tmp_path):
         dict(zip(EVERY_TEST, ("passed", "passed", "passed", "passed", "passed", "passed", "untested"), strict=True)),
     )
     assert not judge_report(report, SYNTHETIC_ADAPTER).holds
+
+
+REPORT_HOLDS = ROOT / "engine" / "report-holds.rq"
+EVERY_PARSED_REPORT = [
+    pytest.param(
+        ("passed", "cantTell", "passed", "passed", "passed", "passed", "untested"), True, id="passed or undecided"
+    ),
+    pytest.param(("failed", "passed", "passed", "passed", "passed", "passed", "passed"), False, id="failed"),
+    pytest.param(
+        ("inapplicable", "passed", "passed", "passed", "passed", "passed", "passed"), False, id="inapplicable"
+    ),
+    pytest.param(
+        ("passed", "passed", "passed", "passed", "passed", "passed", "sortOf"), False, id="outside EARL's five"
+    ),
+    pytest.param(("passed",), False, id="missing tests of the manifest"),
+    pytest.param((), False, id="no outcome"),
+    pytest.param(
+        ("passed", "passed", "passed", "passed", "passed", "passed", "untested"), False, id="input-only passed"
+    ),
+]
+
+
+@pytest.mark.parametrize("outcomes, holds", EVERY_PARSED_REPORT)
+def test_the_report_holds_query_run_alone_gives_the_judges_verdict(tmp_path, outcomes, holds):
+    report = earl(tmp_path, dict(zip(EVERY_TEST, outcomes, strict=False)))
+    graph = Graph().parse(report, format="turtle")
+    graph.parse(MANIFEST, format="turtle", publicID=MANIFEST)
+    assert graph.query(REPORT_HOLDS.read_text(encoding="utf-8")).askAnswer is holds
+    assert judge_report(report, SYNTHETIC_ADAPTER).holds is holds
