@@ -252,6 +252,35 @@ def test_the_faults_of_a_report_on_a_manifest_of_hundreds_of_entries_are_found_i
     assert time.perf_counter() - started < 30
 
 
+def test_the_faults_of_a_report_on_hundreds_of_input_only_entries_are_found_in_seconds(tmp_path):
+    entries = [f"case-{number:04}" for number in range(500)]
+    manifest = tmp_path / "adapter" / "fixtures" / "manifest.ttl"
+    manifest.parent.mkdir(parents=True)
+    manifest.write_text(
+        "@prefix mf: <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .\n"
+        "@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .\n"
+        f"<> bridge:adapter <../> ; mf:entries ( {' '.join(f'<#{entry}>' for entry in entries)} ) .\n"
+        + "".join(f"<#{entry}> a bridge:InputOnlyTest .\n" for entry in entries),
+        encoding="utf-8",
+    )
+    report = tmp_path / "report.ttl"
+    report.write_text(
+        "@prefix earl: <http://www.w3.org/ns/earl#> .\n"
+        + "".join(
+            f"[] earl:test <file:///elsewhere/adapter/fixtures/manifest.ttl#{entry}> ; "
+            f"earl:result [ earl:outcome earl:{'passed' if entry == entries[-1] else 'cantTell'} ] .\n"
+            for entry in entries
+        ),
+        encoding="utf-8",
+    )
+    graph = Graph().parse(report, format="turtle")
+    graph.parse(manifest, format="turtle", publicID=manifest.as_uri())
+    started = time.perf_counter()
+    rows = [str(row.fault) for row in graph.query(FAULTS_OF_A_REPORT.read_text(encoding="utf-8"))]
+    assert rows == [f"input-only {entries[-1]} is reported passed, not cantTell"]
+    assert time.perf_counter() - started < 30
+
+
 def test_a_report_recording_no_outcome_says_so_when_the_manifest_cannot_be_read(tmp_path):
     adapter = tmp_path / "adapter"
     shutil.copytree(SYNTHETIC_ADAPTER, adapter)
