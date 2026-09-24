@@ -18,11 +18,10 @@ GATE = "ready-to-merge"
 
 
 def test_ready_to_merge_fails_while_a_named_pull_request_is_open_naming_it(world):
-    head = world.pull_request("adapter", 7)
-    world.pull_requests.check_run("adapter", head, "compatibility")
+    world.pull_request("adapter", 7)
     engine, event = world.engine_under_test(body=depends_on("adapter", 7))
 
-    said = world.tool(engine, 1, check="ready-to-merge", **world.ci(event=event, gate=GATE))
+    said = world.tool(engine, 1, check="ready-to-merge", **world.ci(event=event))
 
     assert "adapter/pull/7" in said
     assert "has not merged" in said
@@ -265,7 +264,7 @@ def test_ready_to_merge_takes_a_pin_at_what_a_squash_merge_left_on_the_target(wo
 
 
 def test_ready_to_merge_says_why_a_pin_could_not_be_read_rather_than_that_it_contains_nothing(world):
-    merged_into_main(world, VOCABULARY, 5)
+    merged(world, VOCABULARY, 5)
     body = depends_on(VOCABULARY, 5, owner=VOCABULARY_OWNER)
     adapter, event = adapter_under_test(world, body=body)
     name_vocabulary(adapter / CRATE, VOCABULARY_URL, "0" * 40)

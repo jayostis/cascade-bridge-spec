@@ -33,7 +33,6 @@ def test_a_cycle_between_two_named_pull_requests_picks_both(world):
 def test_the_branch_a_pull_request_targets_is_read_when_the_job_runs(world):
     """An event file is frozen at the event that started the run; the API is not."""
     world.branch("adapter", "stable/x", fill=lambda path: (path / "STABLE").write_text("stable\n"))
-    world.branch("cascade-bridge-spec", "stable/x")
     engine, event = world.engine_under_test()
     world.pull_requests.get("engine", 1)["base"]["ref"] = "stable/x"
 
@@ -62,7 +61,6 @@ def test_a_pull_request_the_api_does_not_serve_in_such_a_repository_never_fails_
 
 
 def test_two_repositories_of_one_name_each_keep_their_row(world):
-    world.pull_request("adapter", 7)
     engine, event = world.engine_under_test(body=depends_on("adapter", 9, owner="elsewhere"))
     world.pull_requests.open("adapter", 9, base="main")
 

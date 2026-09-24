@@ -84,8 +84,6 @@ def test_a_vocabulary_pull_request_closed_without_merging_fails_the_check_naming
 
 def test_a_branch_of_the_vocabulary_matching_the_pull_requests_target_is_not_picked(world):
     world.branch(VOCABULARY, "stable/x", fill=lambda path: (path / "STABLE").write_text("stable\n"))
-    world.branch("adapter", "stable/x")
-    world.branch("cascade-bridge-spec", "stable/x")
     engine, event = world.engine_under_test(base="stable/x")
 
     said = world.tool(engine, **world.ci(event=event, branch="stable/x"))
