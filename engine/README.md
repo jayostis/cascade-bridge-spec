@@ -8,6 +8,7 @@ An engine (a Cascade Bridge) runs adapters.
 | the rules the lift follows | [`sparql.md`](sparql.md) |
 | how each test type is judged | the test types' `rdfs:comment` in [`../vocab/bridge.ttl`](../vocab/bridge.ttl) |
 | an adapter to run | [`../fixtures/synthetic-adapter/`](../fixtures/synthetic-adapter/) |
+| the checkout its `bridge:cascadeVocabularyPin` names, to pass as `--vocabularies` | [`../fixtures/synthetic-vocabularies/`](../fixtures/synthetic-vocabularies/) |
 | the commands you must offer | [`command.md`](command.md) |
 | the smallest thing that meets them | [`../fixtures/fake-engine/engine.py`](../fixtures/fake-engine/engine.py) |
 | loading and reporting a test manifest | [`executing.md`](executing.md) |

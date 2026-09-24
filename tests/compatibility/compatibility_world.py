@@ -18,6 +18,7 @@ from compatibility_tool import bootstrap, cli, validate
 ROOT = Path(__file__).resolve().parents[2]
 TOOL = ROOT / "scripts" / "compatibility.py"
 SYNTHETIC_ADAPTER = ROOT / "fixtures" / "synthetic-adapter"
+SYNTHETIC_VOCABULARIES = ROOT / "fixtures" / "synthetic-vocabularies"
 FAKE_ENGINE = ROOT / "fixtures" / "fake-engine"
 CONTEXT_IRI = "https://ns.cascadeprotocol.org/bridge/v1-draft/compatibility.jsonld"
 OWNER = "jayostis"
@@ -34,25 +35,6 @@ AN_ONTOLOGY = "ontologies/example/v1/example.ttl"
 ITS_SHAPES = "ontologies/example/v1/example.shapes.ttl"
 VOCABULARY_FILES = (AN_ONTOLOGY, ITS_SHAPES)
 CRATES_NAMING_THE_VOCABULARY = (("adapter", "."), ("cascade-bridge-spec", "fixtures/synthetic-adapter"))
-
-THE_ONTOLOGY = """@prefix owl: <http://www.w3.org/2002/07/owl#> .
-@prefix ex:  <https://example.org/synthetic-adapter/v1#> .
-
-<https://example.org/synthetic-adapter/v1#> a owl:Ontology .
-
-ex:Record a owl:Class .
-
-ex:status a owl:ObjectProperty .
-"""
-
-THE_SHAPES = """@prefix owl: <http://www.w3.org/2002/07/owl#> .
-@prefix sh:  <http://www.w3.org/ns/shacl#> .
-
-<> a owl:Ontology .
-
-<#Record> a sh:NodeShape ;
-  sh:targetClass <https://example.org/synthetic-adapter/v1#Record> .
-"""
 
 SETTINGS = (
     "user.name=compatibility tests",
@@ -90,10 +72,7 @@ def specification(path):
 
 def vocabulary(path):
     """the-cascade-protocol/spec as this world serves it: the ontologies and shapes an adapter names files of."""
-    for relative, body in ((AN_ONTOLOGY, THE_ONTOLOGY), (ITS_SHAPES, THE_SHAPES)):
-        written = path / relative
-        written.parent.mkdir(parents=True, exist_ok=True)
-        written.write_text(body, encoding="utf-8", newline="")
+    shutil.copytree(SYNTHETIC_VOCABULARIES, path, dirs_exist_ok=True)
 
 
 def name_vocabulary(crate_file, url, commit, files=VOCABULARY_FILES):
