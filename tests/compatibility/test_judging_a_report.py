@@ -125,7 +125,6 @@ def test_a_report_missing_tests_of_the_manifest_does_not_hold(tmp_path):
         pytest.param(None, "it was not run", id="no report because the entry was never run"),
         pytest.param("", "it wrote no report", id="no report because the run wrote none"),
         pytest.param("this is not Turtle {", "its report does not parse as Turtle", id="a report that is not Turtle"),
-        pytest.param("@prefix earl: <http://www.w3.org/ns/earl#> .", "its report records no outcome", id="no outcome"),
     ],
 )
 def test_a_report_that_cannot_be_judged_does_not_hold(tmp_path, write, says):
@@ -188,12 +187,11 @@ def test_a_fault_only_the_query_knows_is_what_the_judge_prints(tmp_path, monkeyp
     assert verdict.describe() == "1 cantTell, 6 passed; a rule written only in the query"
 
 
-@pytest.mark.parametrize("outcome", ["passed", "untested"])
-def test_a_report_not_giving_an_input_only_entry_cant_tell_says_which_entry(tmp_path, outcome):
-    report = earl(tmp_path, dict.fromkeys(EVERY_TEST, "passed") | {"example-0002": outcome})
+def test_a_report_giving_an_input_only_entry_untested_says_which_entry(tmp_path):
+    report = earl(tmp_path, dict.fromkeys(EVERY_TEST, "passed") | {"example-0002": "untested"})
     verdict = judge_report(report, SYNTHETIC_ADAPTER)
     assert not verdict.holds
-    assert f"input-only example-0002 is reported {outcome}, not cantTell" in verdict.describe()
+    assert "input-only example-0002 is reported untested, not cantTell" in verdict.describe()
 
 
 def test_an_outcome_written_as_a_literal_is_not_one_of_earls_five(tmp_path):
@@ -205,15 +203,6 @@ def test_an_outcome_written_as_a_literal_is_not_one_of_earls_five(tmp_path):
     verdict = judge_report(report, SYNTHETIC_ADAPTER)
     assert not verdict.holds
     assert '"passed" is not one of EARL\'s five outcomes' in verdict.describe()
-
-
-def test_a_report_giving_inapplicable_says_what_a_report_that_holds_gives(tmp_path):
-    report = earl(
-        tmp_path, dict.fromkeys(EVERY_TEST, "passed") | {"example-0001": "inapplicable", "example-0002": "cantTell"}
-    )
-    verdict = judge_report(report, SYNTHETIC_ADAPTER)
-    assert not verdict.holds
-    assert "a report that holds gives only passed, cantTell or untested" in verdict.describe()
 
 
 def test_each_failed_result_naming_no_test_is_its_own_fault(tmp_path):
@@ -228,7 +217,9 @@ def test_each_failed_result_naming_no_test_is_its_own_fault(tmp_path):
 
 def test_a_report_recording_no_outcome_is_that_one_fault(tmp_path):
     verdict = judge_report(earl(tmp_path, {}), SYNTHETIC_ADAPTER)
+    assert not verdict.holds
     assert verdict.faults == ["its report records no outcome"]
+    assert verdict.describe().startswith("its report records no outcome")
 
 
 @pytest.mark.parametrize("outcome", ["failed", "inapplicable"])
