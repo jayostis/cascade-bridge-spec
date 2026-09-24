@@ -30,7 +30,7 @@ each host's `command`.
 ## `convert`
 
 ```
-convert <adapter directory> <document> [--out <file>] [--findings <file>] [--format turtle|ntriples]
+convert <adapter directory> <document> [--out <file>] [--findings <file>] [--format turtle|ntriples] [--vocabularies <directory>]
 ```
 
 It runs the adapter over every record of `<document>`, a source document the
@@ -42,6 +42,9 @@ the graph and nothing else.
 `--findings` writes the union of every record's findings as one graph, in the
 same format, to `<file>` and never on standard output. They are the findings a
 `bridge:expectedFindings` file is compared against. Omitting it changes nothing.
+
+`--vocabularies` means what it means to `test`. A run on an adapter naming a
+`bridge:vocabularyFile` without it produces no graph.
 
 **The exit code is the whole of what a caller learns**, because `convert` writes
 no report: zero when the graph was produced, non-zero when it was not, and
