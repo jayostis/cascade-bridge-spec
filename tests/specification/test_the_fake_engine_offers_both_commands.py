@@ -77,6 +77,15 @@ def test_convert_exits_non_zero_and_writes_no_graph_when_the_document_is_not_one
     assert run.stdout == ""
 
 
-def test_convert_exits_non_zero_and_writes_no_graph_without_the_vocabularies_its_adapter_names():
-    run = engine("convert", str(ADAPTER), str(DOCUMENT), succeeds=False)
+def test_convert_writes_the_graph_without_the_vocabularies_its_adapter_names():
+    run = engine("convert", str(ADAPTER), str(DOCUMENT))
+    assert Graph().parse(data=run.stdout, format="turtle")
+
+
+def test_convert_asked_for_findings_without_the_vocabularies_its_adapter_names_exits_non_zero_and_writes_nothing(
+    tmp_path,
+):
+    findings = tmp_path / "findings"
+    run = engine("convert", str(ADAPTER), str(DOCUMENT), "--findings", str(findings), succeeds=False)
     assert run.stdout == ""
+    assert not findings.exists()

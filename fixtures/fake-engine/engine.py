@@ -95,7 +95,7 @@ def convert(args, adapter):
     if args.document is None or not args.document.is_file():
         print(f"fake engine: {args.document} is not a document to convert", file=sys.stderr)
         return 2
-    if args.vocabularies is None and names_a_vocabulary_file(adapter):
+    if args.findings is not None and args.vocabularies is None and names_a_vocabulary_file(adapter):
         print(f"fake engine: {adapter} names a bridge:vocabularyFile and no --vocabularies was given", file=sys.stderr)
         return 2
     print(f"fake engine: converting {args.document} with {adapter}; detect answered true", file=sys.stderr)

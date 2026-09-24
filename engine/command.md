@@ -41,12 +41,13 @@ the graph and nothing else.
 
 `--findings` writes the union of every record's findings as one graph, in the
 same format, to `<file>` and never on standard output. They are the findings a
-`bridge:expectedFindings` file is compared against. Omitting it changes nothing.
+`bridge:expectedFindings` file is compared against. It never changes the graph.
 
 `--vocabularies` names a checkout of the repository the adapter's
 `bridge:cascadeVocabularyPin` names, at the commit it pins, where each of its
-`bridge:vocabularyFile` paths is read from. A run on an adapter naming a
-`bridge:vocabularyFile` without it produces no graph.
+`bridge:vocabularyFile` paths is read from. Without it, on an adapter naming a
+`bridge:vocabularyFile`, a run writes the graph without validating it against
+those files, and one given `--findings` produces nothing.
 
 **The exit code is the whole of what a caller learns**, because `convert` writes
 no report: zero when the graph was produced, non-zero when it was not, and

@@ -20,8 +20,8 @@ def test_the_findings_written_are_the_ones_an_oracle_is_compared_against():
     assert "bridge:expectedFindings" in CONVERT
 
 
-def test_omitting_it_changes_nothing():
-    assert "Omitting it changes nothing" in CONVERT
+def test_it_never_changes_the_graph():
+    assert "It never changes the graph." in CONVERT
 
 
 def test_convert_reads_the_vocabularies_at_the_commit_the_adapter_pins():
@@ -31,5 +31,12 @@ def test_convert_reads_the_vocabularies_at_the_commit_the_adapter_pins():
     )
 
 
-def test_without_the_vocabularies_an_adapter_names_convert_produces_no_graph():
-    assert "A run on an adapter naming a `bridge:vocabularyFile` without it produces no graph." in CONVERT
+def test_without_the_vocabularies_an_adapter_names_convert_writes_the_graph_unvalidated_against_them():
+    assert (
+        "Without it, on an adapter naming a `bridge:vocabularyFile`, a run writes the graph without validating it "
+        "against those files" in CONVERT
+    )
+
+
+def test_without_the_vocabularies_an_adapter_names_convert_asked_for_findings_produces_nothing():
+    assert "and one given `--findings` produces nothing." in CONVERT
