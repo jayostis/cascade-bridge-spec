@@ -1,12 +1,19 @@
+import contextlib
+import io
 import json
 import os
 import shutil
 import subprocess
 import sys
+import tempfile
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
+
+import pytest
+
+from compatibility_tool import bootstrap, cli, validate
 
 ROOT = Path(__file__).resolve().parents[2]
 TOOL = ROOT / "scripts" / "compatibility.py"
@@ -400,18 +407,49 @@ class World:
             variables["CASCADE_CHECK_RUN_ID"] = own
         return variables
 
-    def tool(self, subject, expected=0, check=None, interpreter=(sys.executable,), arguments=(), **variables):
-        argv = [*interpreter, str(TOOL), str(subject), "--results", str(self.results), *arguments]
+    def tool(self, subject, expected=0, check=None, interpreter=None, arguments=(), in_a_process=False, **variables):
+        """The tool's run, in this Python unless the test is about a process: then as a caller's workflow starts it.
+
+        In this Python the run does not hop to the version it picks, which holds this checkout's code, and does not
+        lint an adapter with rocrate-validator; a run in a process does both.
+        """
+        argv = [str(subject), "--results", str(self.results), *arguments]
         if check:
             argv += ["--check", check]
         if variables.get("CI") == "true":  # start passes it as an argument, and sets no variable
             argv += ["--spec-repository", self.url("cascade-bridge-spec")]
-        run = subprocess.run(
-            argv, capture_output=True, encoding="utf-8", errors="replace", env=self.environment(**variables)
-        )
-        said = run.stdout + run.stderr
-        assert run.returncode == expected, f"exited {run.returncode}, {expected} expected\n{said}"
+        environment = self.environment(**variables)
+        if in_a_process or interpreter:
+            run = subprocess.run(
+                [*(interpreter or (sys.executable,)), str(TOOL), *argv],
+                capture_output=True,
+                encoding="utf-8",
+                errors="replace",
+                env=environment,
+            )
+            status, said = run.returncode, run.stdout + run.stderr
+        else:
+            status, said = self.in_this_python(argv, environment)
+        assert status == expected, f"exited {status}, {expected} expected\n{said}"
         return said
+
+    def in_this_python(self, argv, environment):
+        printed = io.TextIOWrapper(io.BytesIO(), encoding="utf-8", errors="replace")
+        was = dict(os.environ)
+        try:
+            os.environ.clear()
+            os.environ.update(environment)
+            with pytest.MonkeyPatch.context() as patch, contextlib.redirect_stdout(printed):
+                patch.setattr(sys, "stderr", printed)
+                patch.setattr(tempfile, "tempdir", None)
+                patch.setattr(bootstrap, "hop", lambda spec, directory, options: None)
+                patch.setattr(validate, "lint_adapter", lambda directory, spec: True)
+                status = cli.main("", argv)
+        finally:
+            os.environ.clear()
+            os.environ.update(was)
+        printed.flush()
+        return status, printed.buffer.getvalue().decode("utf-8", errors="replace")
 
     def record(self):
         return json.loads((self.results / "record.json").read_text(encoding="utf-8"))
