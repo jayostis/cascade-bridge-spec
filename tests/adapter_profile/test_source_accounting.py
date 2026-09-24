@@ -98,6 +98,11 @@ def said_about(package):
     return "\n".join(source_accounting.faulty(package.crate))
 
 
+def test_reports_an_entry_carrying_no_verdict_by_the_shape_it_breaks(package):
+    accounted(package, entry(THE_MAPPING_MENTIONS).replace(" ;\n  bridge:verdict bridge:carried", ""))
+    assert "An entry carries exactly one bridge:verdict" in said_about(package)
+
+
 def test_reports_nothing_for_an_adapter_naming_no_accounting(crate):
     crate.graph.remove((crate.root, BRIDGE.sourceAccounting, None))
     assert not list(source_accounting.faulty(crate))
