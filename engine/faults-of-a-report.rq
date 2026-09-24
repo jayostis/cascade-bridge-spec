@@ -75,21 +75,49 @@ WHERE {
   }
   UNION
   {
-    ?manifest mf:entries/rdf:rest*/rdf:first ?entry .
-    ?entry a bridge:InputOnlyTest .
-    OPTIONAL { ?manifest bridge:adapter ?adapter }
-    BIND (STRAFTER(STR(?entry), STR(?adapter)) AS ?withinAdapter)
-    ?assertion earl:test ?test ;
-      earl:result/earl:outcome ?outcome .
-    FILTER (?outcome IN (earl:passed, earl:untested))
-    FILTER (?test = ?entry
-      || (?withinAdapter != "" && (STR(?test) = ?withinAdapter || STRENDS(STR(?test), CONCAT("/", ?withinAdapter)))))
-    BIND (IF(isLITERAL(?outcome), CONCAT("\"", STR(?outcome), "\""),
-      IF(isBLANK(?outcome), "a blank node",
-        IF(STRSTARTS(STR(?outcome), STR(earl:)), STRAFTER(STR(?outcome), STR(earl:)), CONCAT("<", STR(?outcome), ">"))))
-      AS ?reported)
+    {
+      SELECT ?entry ?outcome WHERE {
+        {
+          ?manifest mf:entries/rdf:rest*/rdf:first ?entry .
+          ?entry a bridge:InputOnlyTest .
+          VALUES ?outcome { earl:passed earl:untested }
+          BIND (1 AS ?listed)
+          BIND (0 AS ?reported)
+        }
+        UNION
+        {
+          ?assertion earl:test ?entry ;
+            earl:result/earl:outcome ?outcome .
+          FILTER (?outcome IN (earl:passed, earl:untested))
+          BIND (0 AS ?listed)
+          BIND (1 AS ?reported)
+        }
+        UNION
+        {
+          ?manifest bridge:adapter ?adapter .
+          {
+            SELECT DISTINCT ?slashes WHERE {
+              ?listing mf:entries/rdf:rest*/rdf:first ?listedEntry ;
+                bridge:adapter ?listingAdapter .
+              BIND (STRAFTER(STR(?listedEntry), STR(?listingAdapter)) AS ?within)
+              BIND (STRLEN(?within) - STRLEN(REPLACE(?within, "/", "")) AS ?slashes)
+            }
+          }
+          ?assertion earl:test ?test ;
+            earl:result/earl:outcome ?outcome .
+          FILTER (?outcome IN (earl:passed, earl:untested))
+          BIND (REPLACE(STR(?test), CONCAT("^.*/(([^/]*/){", STR(?slashes), "}[^/]*)$"), "$1") AS ?withinAdapter)
+          FILTER (?withinAdapter != "")
+          BIND (IRI(CONCAT(STR(?adapter), ?withinAdapter)) AS ?entry)
+          BIND (0 AS ?listed)
+          BIND (1 AS ?reported)
+        }
+      }
+      GROUP BY ?entry ?outcome
+      HAVING (MAX(?listed) = 1 && MAX(?reported) = 1)
+    }
     BIND (IF(CONTAINS(STR(?entry), "#"), STRAFTER(STR(?entry), "#"), STR(?entry)) AS ?name)
-    BIND (CONCAT("input-only ", ?name, " is reported ", ?reported, ", not cantTell") AS ?fault)
+    BIND (CONCAT("input-only ", ?name, " is reported ", STRAFTER(STR(?outcome), STR(earl:)), ", not cantTell") AS ?fault)
   }
 }
 ORDER BY ?entry ?fault
