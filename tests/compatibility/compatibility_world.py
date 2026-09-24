@@ -137,12 +137,12 @@ def origin_of(origins, name):
     return origins / (VOCABULARY_OWNER if name == VOCABULARY else OWNER) / name
 
 
-def pin_vocabulary(origins, commit, files=VOCABULARY_FILES):
+def pin_vocabulary(origins, commit):
     """Every adapter crate in these origins names this world's the-cascade-protocol/spec at a commit of it."""
     heads = {}
     for name, relative in CRATES_NAMING_THE_VOCABULARY:
         origin = origin_of(origins, name)
-        name_vocabulary(origin / relative / CRATE, VOCABULARY_URL, commit, files)
+        name_vocabulary(origin / relative / CRATE, VOCABULARY_URL, commit)
         git("add", "-A", cwd=origin)
         git("commit", "-q", "--allow-empty", "-m", "the vocabulary this adapter reads", cwd=origin)
         heads[name] = git("rev-parse", "HEAD", cwd=origin)
@@ -179,7 +179,6 @@ class PullRequests:
 
     def __init__(self):
         self.by_repository = {}
-        self.comments = []
         self.refusals = {}
         self.check_runs_by_commit = {}
 
@@ -266,14 +265,6 @@ class Handler(BaseHTTPRequestHandler):
             return self.answer(200 if pull else 404, pull or {"message": "Not Found"})
         return self.answer(404, {"message": "Not Found"})
 
-    def do_POST(self):
-        parts = self.parts()
-        body = self.rfile.read(int(self.headers.get("Content-Length", 0))).decode("utf-8")
-        if len(parts) == 6 and parts[3] == "issues" and parts[5] == "comments":
-            self.server.pull_requests.comments.append((parts[2], int(parts[4]), json.loads(body)["body"]))
-            return self.answer(201, {"id": len(self.server.pull_requests.comments)})
-        return self.answer(404, {"message": "Not Found"})
-
 
 class Api:
     def __init__(self, pull_requests):
@@ -293,7 +284,8 @@ class Api:
 class World:
     def __init__(self, root, origins, commits, pull_requests, api_url):
         self.root = root
-        self.origins = origins
+        self.origins = root / "origins"
+        shutil.copytree(origins, self.origins)
         self.commits = dict(commits)
         self.pull_requests = pull_requests
         self.api_url = api_url
@@ -304,14 +296,8 @@ class World:
         self.temporary.mkdir()
         self.summary = root / "summary.md"
 
-    def own_origins(self):
-        copy = self.root / "origins"
-        shutil.copytree(self.origins, copy)
-        self.origins = copy
-        return self
-
-    def pin_vocabularies(self, commit, files=VOCABULARY_FILES):
-        self.commits.update(pin_vocabulary(self.origins, commit, files))
+    def pin_vocabularies(self, commit):
+        self.commits.update(pin_vocabulary(self.origins, commit))
         return self
 
     def url(self, name):
@@ -359,7 +345,7 @@ class World:
         return engine
 
     def event(self, number, repository="engine"):
-        pull = self.pull_requests.get(repository, number) or {"base": {"ref": "main"}}
+        pull = self.pull_requests.get(repository, number)
         path = self.root / "event.json"
         body = {"pull_request": {"number": number, "base": {"ref": pull["base"]["ref"]}}}
         path.write_text(json.dumps(body), encoding="utf-8")
@@ -410,13 +396,13 @@ class World:
             variables["CASCADE_CHECK_RUN_ID"] = own
         return variables
 
-    def tool(self, subject, expected=0, check=None, interpreter=None, arguments=(), in_a_process=False, **variables):
+    def tool(self, subject, expected=0, check=None, interpreter=None, in_a_process=False, **variables):
         """The tool's run, in this Python unless the test is about a process: then as a caller's workflow starts it.
 
         In this Python the run does not hop to the version it picks, which holds this checkout's code, and does not
         lint an adapter with rocrate-validator; a run in a process does both.
         """
-        argv = [str(subject), "--results", str(self.results), *arguments]
+        argv = [str(subject), "--results", str(self.results)]
         if check:
             argv += ["--check", check]
         if variables.get("CI") == "true":  # start passes it as an argument, and sets no variable
@@ -463,7 +449,3 @@ class World:
     def table_in_results(self):
         written = self.results / "table.md"
         return written.read_text(encoding="utf-8") if written.exists() else ""
-
-
-def current_branch(path):
-    return git("symbolic-ref", "--short", "HEAD", cwd=path)

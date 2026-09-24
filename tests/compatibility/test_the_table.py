@@ -26,12 +26,11 @@ def test_only_a_counterparts_row_says_whether_it_holds(world):
     assert "holds" not in rows["[cascade-bridge-spec](" + world.url("cascade-bridge-spec") + ")"]
 
 
-def test_the_run_posts_no_comment_and_writes_the_table_to_the_results(world):
+def test_the_run_writes_the_table_to_the_results(world):
     engine, event = engine_under_test(world)
 
     world.tool(engine, **world.ci(event=event))
 
-    assert world.pull_requests.comments == []
     assert "[adapter]" in world.table_in_results()
 
 
@@ -44,7 +43,6 @@ def test_a_run_with_no_token_picks_a_version_and_writes_the_table(world):
 
     assert world.record()["repositories"]["cascade-bridge-spec"]["how"] == MATCHING
     assert "[adapter]" in world.table_in_results()
-    assert world.pull_requests.comments == []
 
 
 def test_a_run_that_used_a_named_pull_request_says_the_pass_is_as_fresh_as_it_is(world):

@@ -1,6 +1,6 @@
 """A local run uses every sibling as it is on disk, fetching nothing."""
 
-from compatibility_world import VOCABULARY, current_branch, git, write_compatibility
+from compatibility_world import VOCABULARY, git, write_compatibility
 
 
 def nowhere(world):
@@ -23,7 +23,7 @@ def test_a_sibling_on_another_branch_with_uncommitted_edits_is_used_as_it_is(wor
 
     assert "feat/next" in said
     assert "uncommitted edits" in said
-    assert current_branch(adapter) == "feat/next"
+    assert git("symbolic-ref", "--short", "HEAD", cwd=adapter) == "feat/next"
     assert world.record()["repositories"]["adapter"]["how"] == "the sibling's working tree, on feat/next"
 
 
@@ -47,7 +47,7 @@ def test_a_local_run_stops_with_the_git_clone_command_for_a_missing_sibling(worl
     assert "Traceback" not in said
 
 
-def test_a_local_run_writes_no_comment_and_no_table(world):
+def test_a_local_run_writes_no_table(world):
     engine = world.engine([world.url("adapter")])
     world.clone("adapter")
     world.clone(VOCABULARY)
@@ -55,7 +55,6 @@ def test_a_local_run_writes_no_comment_and_no_table(world):
 
     world.tool(engine)
 
-    assert world.pull_requests.comments == []
     assert world.table() == ""
 
 
