@@ -18,10 +18,11 @@ GATE = "ready-to-merge"
 
 
 def test_ready_to_merge_fails_while_a_named_pull_request_is_open_naming_it(world):
-    world.pull_request("adapter", 7)
+    head = world.pull_request("adapter", 7)
+    world.pull_requests.check_run("adapter", head, "compatibility")
     engine, event = world.engine_under_test(body=depends_on("adapter", 7))
 
-    said = world.tool(engine, 1, check="ready-to-merge", **world.ci(event=event))
+    said = world.tool(engine, 1, check="ready-to-merge", **world.ci(event=event, gate=GATE))
 
     assert "adapter/pull/7" in said
     assert "has not merged" in said
