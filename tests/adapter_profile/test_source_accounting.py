@@ -12,37 +12,12 @@ from adapter_profile_world import (
     REDUNDANT_WITH,
 )
 
-A_SCHEME_HOLDING_A_GAP_OF_EACH_KIND_A_VERDICT_IMPLIES = """@prefix skos:   <http://www.w3.org/2004/02/skos/core#> .
-@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
-@prefix ex:     <https://example.org/synthetic-adapter/v1#> .
-
-ex:gaps a skos:ConceptScheme .
-
-ex:no-term-for-a-free-text-note a skos:Concept ;
-  skos:prefLabel "no term for a free-text note" ;
-  skos:inScheme ex:gaps ;
-  skos:broader bridge:noPredicate .
-
-ex:only-the-first-note-is-carried a skos:Concept ;
-  skos:prefLabel "only the first note is carried" ;
-  skos:inScheme ex:gaps ;
-  skos:broader bridge:carriedWithLoss .
-
-ex:a-status-outside-the-set-the-vocabulary-fixes a skos:Concept ;
-  skos:prefLabel "a status outside the set the vocabulary fixes" ;
-  skos:inScheme ex:gaps ;
-  skos:broader bridge:valueNotMapped .
-
-ex:no-source-for-the-curation-date-a-shape-requires a skos:Concept ;
-  skos:prefLabel "no source for the curation date a shape requires" ;
-  skos:inScheme ex:gaps ;
-  skos:broader bridge:sourceLacksRequired .
-"""
+ACCOUNTING = "vocab/example-accounting.ttl"
 
 A_GAP_WITH_NO_PREDICATE = "ex:no-term-for-a-free-text-note"
-A_GAP_CARRIED_WITH_LOSS = "ex:only-the-first-note-is-carried"
+A_GAP_CARRIED_WITH_LOSS = "ex:only-the-first-run-of-a-labels-text-is-carried"
 A_GAP_OF_A_VALUE_NOT_MAPPED = "ex:a-status-outside-the-set-the-vocabulary-fixes"
-A_GAP_OF_A_SOURCE_LACKING_WHAT_A_SHAPE_REQUIRES = "ex:no-source-for-the-curation-date-a-shape-requires"
+A_GAP_OF_A_SOURCE_LACKING_WHAT_A_SHAPE_REQUIRES = "ex:the-record-names-no-submitter"
 
 THE_VERSION = "/ExampleRecord/@Version"
 THE_MAPPING_MENTIONS = "/ExampleRecord/Label"
@@ -87,9 +62,7 @@ def accounting(*entries):
 
 
 def accounted(package, *entries):
-    return package.gap_scheme(A_SCHEME_HOLDING_A_GAP_OF_EACH_KIND_A_VERDICT_IMPLIES).source_accounting(
-        accounting(*entries)
-    )
+    return package.write(ACCOUNTING, accounting(*entries))
 
 
 def said_about(package):

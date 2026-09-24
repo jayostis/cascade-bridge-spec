@@ -3,6 +3,8 @@ from rdflib import URIRef
 import gap_scheme
 from _terms import BRIDGE
 
+GAP_SCHEME = "vocab/example-gaps.ttl"
+
 PREFIXES = """@prefix skos:   <http://www.w3.org/2004/02/skos/core#> .
 @prefix sh:     <http://www.w3.org/ns/shacl#> .
 @prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
@@ -37,7 +39,7 @@ def scheme_of_one_gap(
 
 
 def said_about(package, **gap):
-    package.gap_scheme(scheme_of_one_gap(**gap))
+    package.write(GAP_SCHEME, scheme_of_one_gap(**gap))
     return "\n".join(gap_scheme.faulty(package.crate))
 
 
@@ -87,14 +89,14 @@ def test_reports_nothing_for_an_adapter_that_names_neither_a_findings_query_nor_
 
 
 def test_reports_a_gap_carrying_no_preferred_label(package):
-    package.gap_scheme(scheme_of_one_gap(label=None))
+    package.write(GAP_SCHEME, scheme_of_one_gap(label=None))
     assert f"{THE_GAP} carries exactly one skos:prefLabel, the sentence a finding no longer carries" in "\n".join(
         gap_scheme.faulty(package.crate)
     )
 
 
 def test_reports_a_gap_that_names_no_scheme(package):
-    package.gap_scheme(scheme_of_one_gap(in_scheme=None))
+    package.write(GAP_SCHEME, scheme_of_one_gap(in_scheme=None))
     assert (
         f"{THE_GAP} carries exactly one skos:inScheme, {THE_SCHEME}, "
         "the one skos:ConceptScheme example-gaps.ttl carries"
@@ -102,42 +104,42 @@ def test_reports_a_gap_that_names_no_scheme(package):
 
 
 def test_reports_a_gap_that_is_broader_than_no_kind(package):
-    package.gap_scheme(scheme_of_one_gap(broader=None))
+    package.write(GAP_SCHEME, scheme_of_one_gap(broader=None))
     assert f"{THE_GAP} is skos:broader exactly one of {THE_KINDS_A_GAP_MAY_NAME}" in "\n".join(
         gap_scheme.faulty(package.crate)
     )
 
 
 def test_reports_a_gap_that_is_broader_than_two_kinds(package):
-    package.gap_scheme(scheme_of_one_gap(broader="skos:broader bridge:noPredicate, bridge:carriedWithLoss"))
+    package.write(GAP_SCHEME, scheme_of_one_gap(broader="skos:broader bridge:noPredicate, bridge:carriedWithLoss"))
     assert f"{THE_GAP} is skos:broader exactly one of {THE_KINDS_A_GAP_MAY_NAME}" in "\n".join(
         gap_scheme.faulty(package.crate)
     )
 
 
 def test_reports_a_gap_whose_kind_is_outside_the_kinds_the_vocabulary_declares(package):
-    package.gap_scheme(scheme_of_one_gap(broader="skos:broader ex:a-kind-of-our-own"))
+    package.write(GAP_SCHEME, scheme_of_one_gap(broader="skos:broader ex:a-kind-of-our-own"))
     assert f"{THE_GAP} is skos:broader exactly one of {THE_KINDS_A_GAP_MAY_NAME}" in "\n".join(
         gap_scheme.faulty(package.crate)
     )
 
 
 def test_reports_a_gap_whose_kind_is_the_concept_a_census_carries(package):
-    package.gap_scheme(scheme_of_one_gap(broader="skos:broader bridge:pathNotAccounted"))
+    package.write(GAP_SCHEME, scheme_of_one_gap(broader="skos:broader bridge:pathNotAccounted"))
     assert f"{THE_GAP} is skos:broader exactly one of {THE_KINDS_A_GAP_MAY_NAME}" in "\n".join(
         gap_scheme.faulty(package.crate)
     )
 
 
 def test_reports_a_closing_term_that_is_a_literal(package):
-    package.gap_scheme(scheme_of_one_gap(closed_by='"genomics:assertionDate"'))
+    package.write(GAP_SCHEME, scheme_of_one_gap(closed_by='"genomics:assertionDate"'))
     assert (f"{THE_GAP} names at most one bridge:closedBy, the Cascade term that would close it, by IRI") in "\n".join(
         gap_scheme.faulty(package.crate)
     )
 
 
 def test_reports_nothing_for_a_gap_carrying_a_label_its_scheme_one_kind_and_a_closing_term(package):
-    package.gap_scheme(scheme_of_one_gap(closed_by="<https://ns.cascadeprotocol.org/genomics/v1#assertionDate>"))
+    package.write(GAP_SCHEME, scheme_of_one_gap(closed_by="<https://ns.cascadeprotocol.org/genomics/v1#assertionDate>"))
     assert not list(gap_scheme.faulty(package.crate))
 
 
@@ -155,7 +157,7 @@ A_SECOND_CONCEPT_SCHEME = "\nex:gaps-of-our-own a skos:ConceptScheme .\n"
 
 
 def test_reports_a_gap_scheme_file_carrying_no_concept_scheme(package):
-    package.gap_scheme(A_SCHEME_FILE_NAMING_NO_CONCEPT_SCHEME)
+    package.write(GAP_SCHEME, A_SCHEME_FILE_NAMING_NO_CONCEPT_SCHEME)
     assert (
         "example-gaps.ttl carries 0 skos:ConceptSchemes, where a gap scheme carries exactly one, "
         "the scheme every gap in it is skos:inScheme"
@@ -163,7 +165,7 @@ def test_reports_a_gap_scheme_file_carrying_no_concept_scheme(package):
 
 
 def test_reports_a_gap_scheme_file_carrying_two_concept_schemes(package):
-    package.gap_scheme(scheme_of_one_gap() + A_SECOND_CONCEPT_SCHEME)
+    package.write(GAP_SCHEME, scheme_of_one_gap() + A_SECOND_CONCEPT_SCHEME)
     assert (
         "example-gaps.ttl carries 2 skos:ConceptSchemes, where a gap scheme carries exactly one, "
         "the scheme every gap in it is skos:inScheme"
@@ -171,7 +173,7 @@ def test_reports_a_gap_scheme_file_carrying_two_concept_schemes(package):
 
 
 def test_reports_a_gap_that_names_a_scheme_other_than_the_one_its_file_carries(package):
-    package.gap_scheme(scheme_of_one_gap(in_scheme="skos:inScheme ex:something-else"))
+    package.write(GAP_SCHEME, scheme_of_one_gap(in_scheme="skos:inScheme ex:something-else"))
     assert (
         f"{THE_GAP} carries exactly one skos:inScheme, {THE_SCHEME}, "
         "the one skos:ConceptScheme example-gaps.ttl carries"
@@ -179,13 +181,14 @@ def test_reports_a_gap_that_names_a_scheme_other_than_the_one_its_file_carries(p
 
 
 def test_reports_a_gap_naming_two_closing_terms(package):
-    package.gap_scheme(
+    package.write(
+        GAP_SCHEME,
         scheme_of_one_gap(
             closed_by=(
                 "<https://ns.cascadeprotocol.org/genomics/v1#assertionDate>, "
                 "<https://ns.cascadeprotocol.org/genomics/v1#assertionNote>"
             )
-        )
+        ),
     )
     assert (f"{THE_GAP} names at most one bridge:closedBy, the Cascade term that would close it, by IRI") in "\n".join(
         gap_scheme.faulty(package.crate)
@@ -193,5 +196,5 @@ def test_reports_a_gap_naming_two_closing_terms(package):
 
 
 def test_reports_a_gap_scheme_that_does_not_parse_as_turtle(package):
-    package.gap_scheme("ex:gaps a skos:ConceptScheme .\n")
+    package.write(GAP_SCHEME, "ex:gaps a skos:ConceptScheme .\n")
     assert "example-gaps.ttl does not parse as Turtle" in "\n".join(gap_scheme.faulty(package.crate))

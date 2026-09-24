@@ -435,12 +435,12 @@ def said_about(package):
 
 
 def test_reports_nothing_for_a_finding_whose_body_is_a_gap_of_the_adapters_gap_scheme(package):
-    package.gap_scheme().write(FINDINGS, coded_finding())
+    package.write(FINDINGS, coded_finding())
     assert not said_about(package)
 
 
 def test_reports_a_finding_whose_body_is_no_gap_of_the_adapters_gap_scheme(package):
-    package.gap_scheme().write(FINDINGS, coded_finding(body="ex:a-gap-the-scheme-does-not-hold"))
+    package.write(FINDINGS, coded_finding(body="ex:a-gap-the-scheme-does-not-hold"))
     assert (
         "https://example.org/synthetic-adapter/v1#a-gap-the-scheme-does-not-hold is not a gap of the adapter's "
         "bridge:gapScheme, the anchor of a validation rule in a W3C XML Schema Recommendation, "
@@ -449,22 +449,22 @@ def test_reports_a_finding_whose_body_is_no_gap_of_the_adapters_gap_scheme(packa
 
 
 def test_reports_nothing_for_a_finding_whose_body_is_the_anchor_of_a_w3c_xml_schema_validation_rule(package):
-    package.gap_scheme().write(FINDINGS, coded_finding(body="<https://www.w3.org/TR/xmlschema-1/#cvc-complex-type>"))
+    package.write(FINDINGS, coded_finding(body="<https://www.w3.org/TR/xmlschema-1/#cvc-complex-type>"))
     assert not said_about(package)
 
 
 def test_reports_nothing_for_a_finding_whose_body_is_the_concept_for_a_schema_failure_w3c_names_no_rule_for(package):
-    package.gap_scheme().write(FINDINGS, coded_finding(body="bridge:schemaRuleUnnamed"))
+    package.write(FINDINGS, coded_finding(body="bridge:schemaRuleUnnamed"))
     assert not said_about(package)
 
 
 def test_reports_nothing_for_a_finding_whose_body_is_the_concept_a_census_carries(package):
-    package.gap_scheme().write(FINDINGS, coded_finding(body="bridge:pathNotAccounted"))
+    package.write(FINDINGS, coded_finding(body="bridge:pathNotAccounted"))
     assert not said_about(package)
 
 
 def test_reports_the_concept_an_address_selecting_other_than_one_node_carries(package):
-    package.gap_scheme().write(FINDINGS, coded_finding(body="bridge:addressNotOneNode"))
+    package.write(FINDINGS, coded_finding(body="bridge:addressNotOneNode"))
     assert (
         "https://ns.cascadeprotocol.org/bridge/v1-draft#addressNotOneNode is not a gap of the adapter's "
         "bridge:gapScheme, the anchor of a validation rule in a W3C XML Schema Recommendation, "
@@ -473,7 +473,7 @@ def test_reports_the_concept_an_address_selecting_other_than_one_node_carries(pa
 
 
 def test_reports_the_concept_a_census_carries_where_the_adapter_names_no_source_accounting(package):
-    package.gap_scheme().write(FINDINGS, coded_finding(body="bridge:pathNotAccounted"))
+    package.write(FINDINGS, coded_finding(body="bridge:pathNotAccounted"))
     package.edit(
         "ro-crate-metadata.json",
         '      "bridge:sourceAccounting": {\n        "@id": "vocab/example-accounting.ttl"\n      },\n',
@@ -487,7 +487,7 @@ def test_reports_the_concept_a_census_carries_where_the_adapter_names_no_source_
 
 
 def test_reports_a_finding_whose_body_is_the_anchor_of_no_w3c_xml_schema_validation_rule(package):
-    package.gap_scheme().write(FINDINGS, coded_finding(body="<https://www.w3.org/TR/xmlschema-1/#cvc-nonesuch>"))
+    package.write(FINDINGS, coded_finding(body="<https://www.w3.org/TR/xmlschema-1/#cvc-nonesuch>"))
     assert (
         "https://www.w3.org/TR/xmlschema-1/#cvc-nonesuch is not a gap of the adapter's bridge:gapScheme, "
         "the anchor of a validation rule in a W3C XML Schema Recommendation, bridge:schemaRuleUnnamed, "
@@ -496,13 +496,13 @@ def test_reports_a_finding_whose_body_is_the_anchor_of_no_w3c_xml_schema_validat
 
 
 def test_reports_a_body_that_is_no_code_with_every_anchor_a_body_may_take(package):
-    package.gap_scheme().write(FINDINGS, coded_finding(body="<https://www.w3.org/TR/xmlschema-1/#cvc-nonesuch>"))
+    package.write(FINDINGS, coded_finding(body="<https://www.w3.org/TR/xmlschema-1/#cvc-nonesuch>"))
     said = "\n".join(said_about(package))
     assert [str(anchor) for anchor in W3C_XML_SCHEMA_RULE_ANCHORS if str(anchor) not in said] == []
 
 
 def test_reports_a_finding_whose_body_names_a_rule_in_the_recommendation_that_does_not_define_it(package):
-    package.gap_scheme().write(FINDINGS, coded_finding(body="<https://www.w3.org/TR/xmlschema-1/#cvc-pattern-valid>"))
+    package.write(FINDINGS, coded_finding(body="<https://www.w3.org/TR/xmlschema-1/#cvc-pattern-valid>"))
     assert (
         "https://www.w3.org/TR/xmlschema-1/#cvc-pattern-valid is not a gap of the adapter's bridge:gapScheme, "
         "the anchor of a validation rule in a W3C XML Schema Recommendation, bridge:schemaRuleUnnamed, "
@@ -511,31 +511,29 @@ def test_reports_a_finding_whose_body_names_a_rule_in_the_recommendation_that_do
 
 
 def test_reports_nothing_for_a_finding_whose_gap_is_a_value_outside_a_fixed_set_carrying_no_source_value(package):
-    package.gap_scheme().write(FINDINGS, coded_finding(body=A_GAP_WHOSE_VALUE_IS_OUTSIDE_A_FIXED_SET))
+    package.write(FINDINGS, coded_finding(body=A_GAP_WHOSE_VALUE_IS_OUTSIDE_A_FIXED_SET))
     assert not said_about(package)
 
 
 def test_reports_nothing_for_a_finding_carrying_the_source_value_that_made_it_fire_where_its_gap_is_of_another_kind(
     package,
 ):
-    package.gap_scheme().write(FINDINGS, coded_finding(value='"a free-text note"'))
+    package.write(FINDINGS, coded_finding(value='"a free-text note"'))
     assert not said_about(package)
 
 
 def test_reports_nothing_for_a_finding_whose_gap_is_a_value_outside_a_fixed_set_carrying_that_value(package):
-    package.gap_scheme().write(
-        FINDINGS, coded_finding(body=A_GAP_WHOSE_VALUE_IS_OUTSIDE_A_FIXED_SET, value='"provisional"')
-    )
+    package.write(FINDINGS, coded_finding(body=A_GAP_WHOSE_VALUE_IS_OUTSIDE_A_FIXED_SET, value='"provisional"'))
     assert not said_about(package)
 
 
 def test_reports_nothing_for_a_finding_about_the_document_refined_to_one_element_under_the_document_element(package):
-    package.gap_scheme().write(FINDINGS, coded_finding(record="/ExampleRecordSet", refined="ExampleRecord[1]"))
+    package.write(FINDINGS, coded_finding(record="/ExampleRecordSet", refined="ExampleRecord[1]"))
     assert not said_about(package)
 
 
 def test_reports_a_finding_about_the_document_whose_refinement_selects_no_element(package):
-    package.gap_scheme().write(FINDINGS, coded_finding(record="/ExampleRecordSet", refined="Absent"))
+    package.write(FINDINGS, coded_finding(record="/ExampleRecordSet", refined="Absent"))
     assert said_about(package) == [
         "example-0001: example-0001.ttl: Absent selects no node of example-0001.xml, "
         "where a finding selects exactly one"
@@ -543,7 +541,7 @@ def test_reports_a_finding_about_the_document_whose_refinement_selects_no_elemen
 
 
 def test_reports_a_finding_about_the_document_whose_refinement_selects_more_than_one_element(package):
-    package.gap_scheme().write(FINDINGS, coded_finding(record="/ExampleRecordSet", refined="*"))
+    package.write(FINDINGS, coded_finding(record="/ExampleRecordSet", refined="*"))
     assert said_about(package) == [
         "example-0001: example-0001.ttl: * selects 2 nodes of example-0001.xml, where a finding selects exactly one"
     ]
@@ -567,17 +565,17 @@ def output_validation_finding(body, severity="sh:Violation"):
 
 
 def test_reports_nothing_for_a_finding_whose_body_is_the_shacl_constraint_component_that_failed(package):
-    package.gap_scheme().write(FINDINGS, output_validation_finding("sh:MinCountConstraintComponent"))
+    package.write(FINDINGS, output_validation_finding("sh:MinCountConstraintComponent"))
     assert not said_about(package)
 
 
 def test_reports_nothing_for_a_finding_whose_body_is_the_gap_a_predicate_no_ontology_declares_opens(package):
-    package.gap_scheme().write(FINDINGS, output_validation_finding("bridge:predicateNotDeclared"))
+    package.write(FINDINGS, output_validation_finding("bridge:predicateNotDeclared"))
     assert not said_about(package)
 
 
 def test_reports_a_finding_whose_body_is_the_name_of_no_shacl_constraint_component(package):
-    package.gap_scheme().write(FINDINGS, output_validation_finding("sh:NonesuchConstraintComponent"))
+    package.write(FINDINGS, output_validation_finding("sh:NonesuchConstraintComponent"))
     assert "http://www.w3.org/ns/shacl#NonesuchConstraintComponent is not a gap of the adapter's" in "\n".join(
         said_about(package)
     )
