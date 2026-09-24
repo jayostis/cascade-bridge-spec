@@ -40,9 +40,8 @@ class Verdict:
             return self.unjudged
         said = ", ".join(f"{count} {name}" for name, count in sorted(self.tally.items()))
         if self.unreadable_manifest is not None:
-            return "; ".join(
-                filter(None, [said, f"the adapter's test manifest could not be read: {self.unreadable_manifest}"])
-            )
+            unread = f"the adapter's test manifest could not be read: {self.unreadable_manifest}"
+            return "; ".join(filter(None, [said, *self.faults, unread]))
         if not self.faults:
             said += f", covering all {self.tests} of the manifest's tests"
         return "; ".join(filter(None, [said, *self.faults]))
@@ -83,13 +82,16 @@ def judge_report(path, adapter):
     try:
         manifest_path, manifest = read_test_manifest(adapter)
     except Exception as error:
-        return Verdict(tally=tally, unreadable_manifest=first_line(str(error)))
-    rows = (graph + manifest).query(FAULTS_OF_A_REPORT.read_text(encoding="utf-8"))
+        return Verdict(tally=tally, unreadable_manifest=first_line(str(error)), faults=faults_of(graph))
     return Verdict(
         tally=tally,
         tests=count_of_tests(manifest_path, manifest),
-        faults=[str(row.fault) for row in rows],
+        faults=faults_of(graph + manifest),
     )
+
+
+def faults_of(graph):
+    return [str(row.fault) for row in graph.query(FAULTS_OF_A_REPORT.read_text(encoding="utf-8"))]
 
 
 def judge(record, options):
