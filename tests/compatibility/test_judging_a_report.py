@@ -10,6 +10,7 @@ from compatibility_tool.judge import judge_report
 from compatibility_world import ROOT, SYNTHETIC_ADAPTER
 
 MANIFEST = (SYNTHETIC_ADAPTER / "fixtures" / "manifest.ttl").resolve().as_uri()
+FAULTS_OF_A_REPORT = ROOT / "engine" / "faults-of-a-report.rq"
 EVERY_TEST = (
     "example-0001",
     "example-0002",
@@ -19,6 +20,7 @@ EVERY_TEST = (
     "example-0006",
     "example-release-2026-01",
 )
+HUNDREDS_OF_ENTRIES = [f"case-{number:04}" for number in range(500)]
 
 
 def earl(tmp_path, outcomes):
@@ -30,6 +32,49 @@ def earl(tmp_path, outcomes):
     path = tmp_path / "report.ttl"
     path.write_text("@prefix earl: <http://www.w3.org/ns/earl#> .\n" + assertions, encoding="utf-8")
     return path
+
+
+def faults_the_query_finds(report, manifest):
+    graph = Graph().parse(report, format="turtle")
+    graph.parse(manifest, format="turtle", publicID=manifest)
+    return [str(row.fault) for row in graph.query(FAULTS_OF_A_REPORT.read_text(encoding="utf-8"))]
+
+
+def manifest_of(tmp_path, entries, input_only=()):
+    manifest = tmp_path / "adapter" / "fixtures" / "manifest.ttl"
+    manifest.parent.mkdir(parents=True)
+    manifest.write_text(
+        "@prefix mf: <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .\n"
+        "@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .\n"
+        f"<> bridge:adapter <../> ; mf:entries ( {' '.join(f'<#{entry}>' for entry in entries)} ) .\n"
+        + "".join(f"<#{entry}> a bridge:InputOnlyTest .\n" for entry in input_only),
+        encoding="utf-8",
+    )
+    return manifest.as_uri()
+
+
+def report_from_elsewhere(tmp_path, outcomes):
+    report = tmp_path / "report.ttl"
+    report.write_text(
+        "@prefix earl: <http://www.w3.org/ns/earl#> .\n"
+        + "".join(
+            f"[] earl:test <file:///elsewhere/adapter/fixtures/manifest.ttl#{entry}> ; "
+            f"earl:result [ earl:outcome earl:{outcome} ] .\n"
+            for entry, outcome in outcomes.items()
+        ),
+        encoding="utf-8",
+    )
+    return report
+
+
+def adapter_whose_crate_root(tmp_path, change):
+    adapter = tmp_path / "adapter"
+    shutil.copytree(SYNTHETIC_ADAPTER, adapter)
+    crate_path = adapter / "ro-crate-metadata.json"
+    crate = json.loads(crate_path.read_text(encoding="utf-8"))
+    change(next(node for node in crate["@graph"] if node["@id"] == "./"))
+    crate_path.write_text(json.dumps(crate), encoding="utf-8")
+    return adapter
 
 
 def test_a_report_with_every_test_passed_or_undecided_holds(tmp_path):
@@ -93,13 +138,10 @@ def test_a_report_that_cannot_be_judged_does_not_hold(tmp_path, write, says):
 
 
 def test_a_crate_naming_its_test_manifest_in_a_one_element_array_is_judged_by_that_manifest(tmp_path):
-    adapter = tmp_path / "adapter"
-    shutil.copytree(SYNTHETIC_ADAPTER, adapter)
-    crate_path = adapter / "ro-crate-metadata.json"
-    crate = json.loads(crate_path.read_text(encoding="utf-8"))
-    root = next(node for node in crate["@graph"] if node["@id"] == "./")
-    root["bridge:testManifest"] = [root["bridge:testManifest"]]
-    crate_path.write_text(json.dumps(crate), encoding="utf-8")
+    def in_an_array(root):
+        root["bridge:testManifest"] = [root["bridge:testManifest"]]
+
+    adapter = adapter_whose_crate_root(tmp_path, in_an_array)
     verdict = judge_report(earl(tmp_path, dict.fromkeys(EVERY_TEST, "passed") | {"example-0002": "cantTell"}), adapter)
     assert verdict.holds, verdict.describe()
 
@@ -114,7 +156,6 @@ def test_a_report_giving_an_input_only_entry_passed_does_not_hold(tmp_path):
     assert verdict.faults == ["input-only example-0002 is reported passed, not cantTell"]
 
 
-FAULTS_OF_A_REPORT = ROOT / "engine" / "faults-of-a-report.rq"
 EVERY_PARSED_REPORT = [
     pytest.param(("passed", "cantTell", "passed", "passed", "passed", "passed", "untested"), id="passed or undecided"),
     pytest.param(("failed", "passed", "passed", "passed", "passed", "passed", "passed"), id="failed"),
@@ -129,9 +170,7 @@ EVERY_PARSED_REPORT = [
 @pytest.mark.parametrize("outcomes", EVERY_PARSED_REPORT)
 def test_the_faults_of_a_report_query_run_alone_gives_the_faults_the_judge_prints(tmp_path, outcomes):
     report = earl(tmp_path, dict(zip(EVERY_TEST, outcomes, strict=False)))
-    graph = Graph().parse(report, format="turtle")
-    graph.parse(MANIFEST, format="turtle", publicID=MANIFEST)
-    rows = [str(row.fault) for row in graph.query(FAULTS_OF_A_REPORT.read_text(encoding="utf-8"))]
+    rows = faults_the_query_finds(report, MANIFEST)
     verdict = judge_report(report, SYNTHETIC_ADAPTER)
     assert verdict.faults == rows
     assert verdict.holds == (not rows)
@@ -217,9 +256,7 @@ def test_a_manifest_entry_without_a_fragment_is_named_by_its_iri(tmp_path):
         f"[] earl:test <{two}> ; earl:result [ earl:outcome earl:passed ] .\n",
         encoding="utf-8",
     )
-    graph = Graph().parse(report, format="turtle")
-    graph.parse(manifest, format="turtle", publicID=manifest.as_uri())
-    rows = [str(row.fault) for row in graph.query(FAULTS_OF_A_REPORT.read_text(encoding="utf-8"))]
+    rows = faults_the_query_finds(report, manifest.as_uri())
     assert rows == [f"{one} has no outcome", f"input-only {two} is reported passed, not cantTell"]
 
 
@@ -235,69 +272,26 @@ def test_an_input_only_entry_reported_outside_earls_five_is_one_fault(tmp_path, 
 
 
 def test_the_faults_of_a_report_on_a_manifest_of_hundreds_of_entries_are_found_in_seconds(tmp_path):
-    entries = [f"case-{number:04}" for number in range(500)]
-    manifest = tmp_path / "adapter" / "fixtures" / "manifest.ttl"
-    manifest.parent.mkdir(parents=True)
-    manifest.write_text(
-        "@prefix mf: <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .\n"
-        "@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .\n"
-        f"<> bridge:adapter <../> ; mf:entries ( {' '.join(f'<#{entry}>' for entry in entries)} ) .\n",
-        encoding="utf-8",
-    )
-    report = tmp_path / "report.ttl"
-    report.write_text(
-        "@prefix earl: <http://www.w3.org/ns/earl#> .\n"
-        + "".join(
-            f"[] earl:test <file:///elsewhere/adapter/fixtures/manifest.ttl#{entry}> ; "
-            "earl:result [ earl:outcome earl:passed ] .\n"
-            for entry in entries[:-1]
-        ),
-        encoding="utf-8",
-    )
-    graph = Graph().parse(report, format="turtle")
-    graph.parse(manifest, format="turtle", publicID=manifest.as_uri())
+    manifest = manifest_of(tmp_path, HUNDREDS_OF_ENTRIES)
+    report = report_from_elsewhere(tmp_path, dict.fromkeys(HUNDREDS_OF_ENTRIES[:-1], "passed"))
     started = time.perf_counter()
-    rows = [str(row.fault) for row in graph.query(FAULTS_OF_A_REPORT.read_text(encoding="utf-8"))]
-    assert rows == [f"{entries[-1]} has no outcome"]
+    rows = faults_the_query_finds(report, manifest)
+    assert rows == [f"{HUNDREDS_OF_ENTRIES[-1]} has no outcome"]
     assert time.perf_counter() - started < 30
 
 
 def test_the_faults_of_a_report_on_hundreds_of_input_only_entries_are_found_in_seconds(tmp_path):
-    entries = [f"case-{number:04}" for number in range(500)]
-    manifest = tmp_path / "adapter" / "fixtures" / "manifest.ttl"
-    manifest.parent.mkdir(parents=True)
-    manifest.write_text(
-        "@prefix mf: <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .\n"
-        "@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .\n"
-        f"<> bridge:adapter <../> ; mf:entries ( {' '.join(f'<#{entry}>' for entry in entries)} ) .\n"
-        + "".join(f"<#{entry}> a bridge:InputOnlyTest .\n" for entry in entries),
-        encoding="utf-8",
-    )
-    report = tmp_path / "report.ttl"
-    report.write_text(
-        "@prefix earl: <http://www.w3.org/ns/earl#> .\n"
-        + "".join(
-            f"[] earl:test <file:///elsewhere/adapter/fixtures/manifest.ttl#{entry}> ; "
-            f"earl:result [ earl:outcome earl:{'passed' if entry == entries[-1] else 'cantTell'} ] .\n"
-            for entry in entries
-        ),
-        encoding="utf-8",
-    )
-    graph = Graph().parse(report, format="turtle")
-    graph.parse(manifest, format="turtle", publicID=manifest.as_uri())
+    manifest = manifest_of(tmp_path, HUNDREDS_OF_ENTRIES, input_only=HUNDREDS_OF_ENTRIES)
+    outcomes = dict.fromkeys(HUNDREDS_OF_ENTRIES[:-1], "cantTell") | {HUNDREDS_OF_ENTRIES[-1]: "passed"}
+    report = report_from_elsewhere(tmp_path, outcomes)
     started = time.perf_counter()
-    rows = [str(row.fault) for row in graph.query(FAULTS_OF_A_REPORT.read_text(encoding="utf-8"))]
-    assert rows == [f"input-only {entries[-1]} is reported passed, not cantTell"]
+    rows = faults_the_query_finds(report, manifest)
+    assert rows == [f"input-only {HUNDREDS_OF_ENTRIES[-1]} is reported passed, not cantTell"]
     assert time.perf_counter() - started < 30
 
 
 def test_a_report_recording_no_outcome_says_so_when_the_manifest_cannot_be_read(tmp_path):
-    adapter = tmp_path / "adapter"
-    shutil.copytree(SYNTHETIC_ADAPTER, adapter)
-    crate_path = adapter / "ro-crate-metadata.json"
-    crate = json.loads(crate_path.read_text(encoding="utf-8"))
-    del next(node for node in crate["@graph"] if node["@id"] == "./")["bridge:testManifest"]
-    crate_path.write_text(json.dumps(crate), encoding="utf-8")
+    adapter = adapter_whose_crate_root(tmp_path, lambda root: root.pop("bridge:testManifest"))
     verdict = judge_report(earl(tmp_path, {}), adapter)
     assert not verdict.holds
     assert verdict.describe() == (
