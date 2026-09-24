@@ -1,12 +1,13 @@
 import sys
 from pathlib import Path
+from urllib.parse import urljoin, urlparse
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from rocrate_validator.models import ValidationContext
 from rocrate_validator.requirements.python import PyFunctionCheck, check, requirement
 
-from _crate import file_name_of
+from _crate import file_name_of, path_of
 from _findings import report_findings
 from _selectors import expected_findings_file_of, violations_recorded_on
 from _terms import BRIDGE, MF, SCHEMA
@@ -15,6 +16,12 @@ XSD_MEDIA_TYPES = {"application/xml", "text/xml"}
 JSON_SCHEMA_MEDIA_TYPES = {"application/json", "application/schema+json"}
 DOCUMENT_SCHEMA = "the envelope's bridge:documentSchema"
 SOURCE_SCHEMA = "the adapter's bridge:sourceSchema"
+XML_SCHEMA = "http://www.w3.org/2001/XMLSchema"
+W3C_SCHEMAS = Path(__file__).resolve().parents[1] / "w3c"
+SUPPLIED_BY_THE_BRIDGE = {
+    "http://www.w3.org/XML/1998/namespace": W3C_SCHEMAS / "xml.xsd",
+    "http://www.w3.org/1999/xlink": W3C_SCHEMAS / "xlink.xsd",
+}
 
 
 def records_of(document, element_name):
@@ -30,6 +37,39 @@ def committed_inputs(crate):
         if source is None:
             continue
         yield test, source, crate.graph.value(action, BRIDGE.envelope)
+
+
+def local_file(url):
+    scheme = urlparse(url).scheme
+    if scheme == "file":
+        return path_of(url).resolve()
+    if len(scheme) <= 1:
+        return Path(url).resolve()
+    return None
+
+
+def resolving_in(etree, package, refused):
+    """Fetches nothing: a file outside the package is refused, and a W3C schema the package ships no copy of is the Bridge's."""
+
+    def in_package(path):
+        return path is not None and path.is_file() and path.is_relative_to(package)
+
+    class InPackage(etree.Resolver):
+        def resolve(self, url, public_id, context):
+            path = local_file(url)
+            if not (in_package(path) or path in SUPPLIED_BY_THE_BRIDGE.values()):
+                refused.append(url)
+                return self.resolve_string("<refused/>", context)
+            document = etree.parse(str(path))
+            for imported in document.iter(f"{{{XML_SCHEMA}}}import"):
+                supplied = SUPPLIED_BY_THE_BRIDGE.get(imported.get("namespace"))
+                location = imported.get("schemaLocation")
+                shipped = None if location is None else local_file(urljoin(path.as_uri(), location))
+                if supplied is not None and not in_package(shipped):
+                    imported.set("schemaLocation", supplied.as_uri())
+            return self.resolve_string(etree.tostring(document), context, base_url=path.as_uri())
+
+    return InPackage()
 
 
 class XsdSchemas:
@@ -61,10 +101,16 @@ class XsdSchemas:
             )
         if media_type not in XSD_MEDIA_TYPES:
             return f"{path.name} is declared {media_type}, which this lint cannot validate against"
+        refused = []
+        parser = self.etree.XMLParser(no_network=True)
+        parser.resolvers.add(resolving_in(self.etree, self.crate.adapter.resolve(), refused))
         try:
-            return self.etree.XMLSchema(self.etree.parse(str(path)))
+            compiled = self.etree.XMLSchema(self.etree.parse(str(path), parser))
         except self.etree.Error as error:
-            return f"{path.name} is declared XML and does not compile as an XSD 1.0 schema: {error}"
+            compiled = f"{path.name} is declared XML and does not compile as an XSD 1.0 schema: {error}"
+        if refused:
+            return "\n".join(f"{path.name} names {url}, which is not a file in this package" for url in refused)
+        return compiled
 
 
 def measured_against(xsd, schema_iri, declared_by, nodes, name, recorded):
