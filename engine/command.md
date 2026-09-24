@@ -43,7 +43,9 @@ the graph and nothing else.
 same format, to `<file>` and never on standard output. They are the findings a
 `bridge:expectedFindings` file is compared against. Omitting it changes nothing.
 
-`--vocabularies` means what it means to `test`. A run on an adapter naming a
+`--vocabularies` names a checkout of the repository the adapter's
+`bridge:cascadeVocabularyPin` names, at the commit it pins, where each of its
+`bridge:vocabularyFile` paths is read from. A run on an adapter naming a
 `bridge:vocabularyFile` without it produces no graph.
 
 **The exit code is the whole of what a caller learns**, because `convert` writes

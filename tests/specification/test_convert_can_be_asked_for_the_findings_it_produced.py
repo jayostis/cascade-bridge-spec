@@ -24,8 +24,11 @@ def test_omitting_it_changes_nothing():
     assert "Omitting it changes nothing" in CONVERT
 
 
-def test_convert_reads_the_vocabularies_as_test_does():
-    assert "`--vocabularies` means what it means to `test`." in CONVERT
+def test_convert_reads_the_vocabularies_at_the_commit_the_adapter_pins():
+    assert (
+        "`--vocabularies` names a checkout of the repository the adapter's `bridge:cascadeVocabularyPin` names, "
+        "at the commit it pins, where each of its `bridge:vocabularyFile` paths is read from." in CONVERT
+    )
 
 
 def test_without_the_vocabularies_an_adapter_names_convert_produces_no_graph():
