@@ -4,7 +4,14 @@ from rdflib.namespace import RDF, SH
 import expected_findings
 from _codes import W3C_XML_SCHEMA_RULE_ANCHORS
 from _terms import BRIDGE, MF, OA
-from adapter_profile_world import FIXTURE, PREFIXES_OF_FINDINGS, selected_by
+from adapter_profile_world import (
+    FIXTURE,
+    PREFIXES_OF_FINDINGS,
+    a_finding,
+    an_output_validation_finding,
+    findings_file,
+    selected_by,
+)
 
 FINDINGS = "fixtures/findings/example-0001.ttl"
 
@@ -54,24 +61,8 @@ A_STRAY_SELECTOR_AND_NO_FINDING = (
 )
 
 
-def finding(
-    source="<../in/example-0001.xml>",
-    record="/ExampleRecordSet/ExampleRecord[1]",
-    refined="Note",
-    body="ex:no-term-for-a-free-text-note",
-    severity="sh:Info",
-):
-    target = [f"oa:hasSource {source}"]
-    if record is not None:
-        refinement = "" if refined is None else f' ; oa:refinedBy [ a oa:XPathSelector ; rdf:value "{refined}" ]'
-        target.append(f'oa:hasSelector [ a oa:XPathSelector ; rdf:value "{record}"{refinement} ]')
-    annotation = ["[] a oa:Annotation", f"oa:hasTarget [ {' ; '.join(target)} ]"]
-    if body is not None:
-        annotation.append(f"oa:hasBody {body}")
-    annotation.append("oa:motivatedBy oa:classifying")
-    if severity is not None:
-        annotation.append(f"sh:resultSeverity {severity}")
-    return PREFIXES_OF_FINDINGS + "\n" + " ;\n  ".join(annotation) + " .\n"
+def a_findings_file(**written):
+    return findings_file(a_finding(**{"refined": "Note", **written}))
 
 
 def test_reports_nothing_for_findings_that_select_the_node_each_one_is_about(crate):
@@ -90,17 +81,17 @@ def test_reports_expected_findings_that_are_not_a_file_in_the_package(package):
 
 
 def test_reports_a_finding_that_selects_nothing(package):
-    package.write(FINDINGS, finding(record="/ExampleRecordSet/ExampleRecord[3]"))
+    package.write(FINDINGS, a_findings_file(record="/ExampleRecordSet/ExampleRecord[3]"))
     assert "selects no node of example-0001.xml" in "\n".join(expected_findings.faulty(package.crate))
 
 
 def test_reports_a_refined_selector_that_selects_no_node_of_its_record(package):
-    package.write(FINDINGS, finding(refined="Absent"))
+    package.write(FINDINGS, a_findings_file(refined="Absent"))
     assert "selects no node of example-0001.xml" in "\n".join(expected_findings.faulty(package.crate))
 
 
 def test_reports_a_refined_selector_that_selects_more_than_one_node_of_its_record(package):
-    package.write(FINDINGS, finding(refined="*"))
+    package.write(FINDINGS, a_findings_file(refined="*"))
     assert "selects 2 nodes of example-0001.xml, where a finding selects exactly one" in "\n".join(
         expected_findings.faulty(package.crate)
     )
@@ -109,7 +100,7 @@ def test_reports_a_refined_selector_that_selects_more_than_one_node_of_its_recor
 def test_reports_a_refined_selector_that_selects_a_node_of_another_record(package):
     package.write(
         FINDINGS,
-        finding(record="/ExampleRecordSet/ExampleRecord[2]", refined="../ExampleRecord[1]/Note"),
+        a_findings_file(record="/ExampleRecordSet/ExampleRecord[2]", refined="../ExampleRecord[1]/Note"),
     )
     assert (
         "../ExampleRecord[1]/Note selects a node of example-0001.xml outside "
@@ -120,7 +111,7 @@ def test_reports_a_refined_selector_that_selects_a_node_of_another_record(packag
 def test_reports_a_refined_selector_that_names_its_own_record_from_the_document_root(package):
     package.write(
         FINDINGS,
-        finding(record="/ExampleRecordSet/ExampleRecord[2]", refined="/ExampleRecordSet/ExampleRecord[2]/Note"),
+        a_findings_file(record="/ExampleRecordSet/ExampleRecord[2]", refined="/ExampleRecordSet/ExampleRecord[2]/Note"),
     )
     assert (
         "/ExampleRecordSet/ExampleRecord[2]/Note is an XPath rooted at example-0001.xml, "
@@ -131,7 +122,9 @@ def test_reports_a_refined_selector_that_names_its_own_record_from_the_document_
 def test_reports_a_refined_selector_rooted_at_the_document_behind_leading_whitespace(package):
     package.write(
         FINDINGS,
-        finding(record="/ExampleRecordSet/ExampleRecord[2]", refined=" /ExampleRecordSet/ExampleRecord[2]/Note"),
+        a_findings_file(
+            record="/ExampleRecordSet/ExampleRecord[2]", refined=" /ExampleRecordSet/ExampleRecord[2]/Note"
+        ),
     )
     assert (
         "is an XPath rooted at example-0001.xml, where a refinement is relative to the record its selector names"
@@ -141,7 +134,9 @@ def test_reports_a_refined_selector_rooted_at_the_document_behind_leading_whites
 def test_reports_a_refined_selector_rooted_at_the_document_inside_parentheses(package):
     package.write(
         FINDINGS,
-        finding(record="/ExampleRecordSet/ExampleRecord[2]", refined="(/ExampleRecordSet/ExampleRecord[2]/Note)"),
+        a_findings_file(
+            record="/ExampleRecordSet/ExampleRecord[2]", refined="(/ExampleRecordSet/ExampleRecord[2]/Note)"
+        ),
     )
     assert (
         "is an XPath rooted at example-0001.xml, where a refinement is relative to the record its selector names"
@@ -151,7 +146,7 @@ def test_reports_a_refined_selector_rooted_at_the_document_inside_parentheses(pa
 def test_reports_a_refined_selector_rooted_at_the_document_once_though_it_also_leaves_its_record(package):
     package.write(
         FINDINGS,
-        finding(record="/ExampleRecordSet/ExampleRecord[2]", refined="/ExampleRecordSet/ExampleRecord[1]/Note"),
+        a_findings_file(record="/ExampleRecordSet/ExampleRecord[2]", refined="/ExampleRecordSet/ExampleRecord[1]/Note"),
     )
     said = list(expected_findings.faulty(package.crate))
     assert len(said) == 1, said
@@ -159,31 +154,31 @@ def test_reports_a_refined_selector_rooted_at_the_document_once_though_it_also_l
 
 
 def test_reports_nothing_for_a_refined_selector_that_selects_an_attribute(package):
-    package.write(FINDINGS, finding(refined="@Version"))
+    package.write(FINDINGS, a_findings_file(refined="@Version"))
     assert not list(expected_findings.faulty(package.crate))
 
 
 def test_reports_a_record_selector_that_selects_an_attribute_as_a_node_that_is_not_an_element(package):
-    package.write(FINDINGS, finding(record="/ExampleRecordSet/ExampleRecord[1]/@Version", refined=None))
+    package.write(FINDINGS, a_findings_file(record="/ExampleRecordSet/ExampleRecord[1]/@Version", refined=None))
     assert (
         "selects a node of example-0001.xml that is not an element, where a record's selector selects the record"
     ) in "\n".join(expected_findings.faulty(package.crate))
 
 
 def test_reports_a_record_selector_that_selects_a_text_node_as_a_node_that_is_not_an_element(package):
-    package.write(FINDINGS, finding(record="/ExampleRecordSet/ExampleRecord[1]/Label/text()", refined=None))
+    package.write(FINDINGS, a_findings_file(record="/ExampleRecordSet/ExampleRecord[1]/Label/text()", refined=None))
     assert (
         "selects a node of example-0001.xml that is not an element, where a record's selector selects the record"
     ) in "\n".join(expected_findings.faulty(package.crate))
 
 
 def test_reports_nothing_for_a_finding_about_the_document_selecting_the_document_element(package):
-    package.write(FINDINGS, finding(record="/ExampleRecordSet", refined=None))
+    package.write(FINDINGS, a_findings_file(record="/ExampleRecordSet", refined=None))
     assert not list(expected_findings.faulty(package.crate))
 
 
 def test_reports_a_record_selector_that_selects_an_element_inside_a_record(package):
-    package.write(FINDINGS, finding(record="/ExampleRecordSet/ExampleRecord[1]/Label", refined=None))
+    package.write(FINDINGS, a_findings_file(record="/ExampleRecordSet/ExampleRecord[1]/Label", refined=None))
     assert (
         "selects Label of example-0001.xml, where a finding is about the document, selecting its "
         "document element, or about a record, selecting ExampleRecord, the adapter's "
@@ -192,19 +187,19 @@ def test_reports_a_record_selector_that_selects_an_element_inside_a_record(packa
 
 
 def test_holds_a_record_selector_to_no_element_name_when_the_adapter_declares_none(package):
-    package.write(FINDINGS, finding(record="/ExampleRecordSet/ExampleRecord[1]/Label[1]", refined=None))
+    package.write(FINDINGS, a_findings_file(record="/ExampleRecordSet/ExampleRecord[1]/Label[1]", refined=None))
     crate = package.crate
     crate.graph.remove((crate.root, BRIDGE.elementNameOfEachRecord, None))
     assert not list(expected_findings.faulty(crate))
 
 
 def test_reports_a_selector_that_is_not_an_xpath(package):
-    package.write(FINDINGS, finding(refined="Note["))
+    package.write(FINDINGS, a_findings_file(refined="Note["))
     assert "is not an XPath this lint can evaluate" in "\n".join(expected_findings.faulty(package.crate))
 
 
 def test_reports_a_finding_naming_a_source_other_than_the_entrys_input(package):
-    package.write(FINDINGS, finding(source="<../in/example-0002.xml>"))
+    package.write(FINDINGS, a_findings_file(source="<../in/example-0002.xml>"))
     assert (
         "names example-0002.xml as its oa:hasSource, where the entry's bridge:input is example-0001.xml"
         in "\n".join(expected_findings.faulty(package.crate))
@@ -212,22 +207,22 @@ def test_reports_a_finding_naming_a_source_other_than_the_entrys_input(package):
 
 
 def test_reports_a_finding_with_no_selector(package):
-    package.write(FINDINGS, finding(record=None))
+    package.write(FINDINGS, a_findings_file(record=None))
     assert "carries exactly one oa:hasSelector" in "\n".join(expected_findings.faulty(package.crate))
 
 
 def test_reports_a_finding_with_no_body(package):
-    package.write(FINDINGS, finding(body=None))
+    package.write(FINDINGS, a_findings_file(body=None))
     assert "carries exactly one oa:hasBody" in "\n".join(expected_findings.faulty(package.crate))
 
 
 def test_reports_a_finding_with_no_severity(package):
-    package.write(FINDINGS, finding(severity=None))
+    package.write(FINDINGS, a_findings_file(severity=None))
     assert "carries exactly one sh:resultSeverity" in "\n".join(expected_findings.faulty(package.crate))
 
 
 def test_reports_a_severity_outside_the_scale(package):
-    package.write(FINDINGS, finding(severity="<https://example.org/synthetic-adapter/severe>"))
+    package.write(FINDINGS, a_findings_file(severity="<https://example.org/synthetic-adapter/severe>"))
     assert "sh:Info, sh:Warning, sh:Violation" in "\n".join(expected_findings.faulty(package.crate))
 
 
@@ -247,7 +242,7 @@ def test_reports_expected_findings_holding_no_finding_at_all(package):
 
 
 def test_reports_expected_findings_whose_only_finding_mistypes_the_annotation_class(package):
-    package.write(FINDINGS, finding().replace("a oa:Annotation", "a oa:Annotaton"))
+    package.write(FINDINGS, a_findings_file().replace("a oa:Annotation", "a oa:Annotaton"))
     assert "carries no oa:Annotation" in "\n".join(expected_findings.faulty(package.crate))
 
 
@@ -263,12 +258,12 @@ def test_evaluates_no_selector_for_an_entry_naming_no_input(crate):
 
 
 def test_reports_nothing_for_a_record_selector_that_names_its_record_another_way(package):
-    package.write(FINDINGS, finding(record="/ExampleRecordSet/*[local-name()='ExampleRecord'][1]"))
+    package.write(FINDINGS, a_findings_file(record="/ExampleRecordSet/*[local-name()='ExampleRecord'][1]"))
     assert not list(expected_findings.faulty(package.crate))
 
 
 def test_reports_nothing_for_a_document_selector_that_names_the_document_element_another_way(package):
-    package.write(FINDINGS, finding(record="/*[local-name()='ExampleRecordSet']", refined=None))
+    package.write(FINDINGS, a_findings_file(record="/*[local-name()='ExampleRecordSet']", refined=None))
     assert not list(expected_findings.faulty(package.crate))
 
 
@@ -308,20 +303,6 @@ A_FINDING_NAMED_RATHER_THAN_WRITTEN_FOR_ITSELF = (
 )
 
 
-def finding_carrying(body="ex:no-term-for-a-free-text-note", selector=None):
-    selector = selector or '[ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ]'
-    return (
-        PREFIXES_OF_FINDINGS
-        + f"""
-[] a oa:Annotation ;
-  oa:hasTarget [ oa:hasSource <../in/example-0001.xml> ; oa:hasSelector {selector} ] ;
-  oa:hasBody {body} ;
-  oa:motivatedBy oa:classifying ;
-  sh:resultSeverity sh:Info .
-"""
-    )
-
-
 def test_reports_a_finding_carrying_more_than_one_target(package):
     package.write(FINDINGS, A_FINDING_WITH_TWO_TARGETS)
     assert ("A finding about the source document carries exactly one oa:hasTarget") in "\n".join(
@@ -346,13 +327,13 @@ def test_reports_a_finding_named_rather_than_written_for_itself(package):
 def test_reports_a_record_selector_that_is_not_an_xpath_selector(package):
     package.write(
         FINDINGS,
-        finding_carrying(selector='[ a oa:TextQuoteSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ]'),
+        a_findings_file(selector='[ a oa:TextQuoteSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ]'),
     )
     assert "A record's selector is an oa:XPathSelector." in "\n".join(expected_findings.faulty(package.crate))
 
 
 def test_reports_a_record_selector_carrying_no_xpath(package):
-    package.write(FINDINGS, finding_carrying(selector="[ a oa:XPathSelector ]"))
+    package.write(FINDINGS, a_findings_file(selector="[ a oa:XPathSelector ]"))
     assert "A selector carries exactly one rdf:value, its XPath, a string." in "\n".join(
         expected_findings.faulty(package.crate)
     )
@@ -361,7 +342,7 @@ def test_reports_a_record_selector_carrying_no_xpath(package):
 def test_reports_a_record_selector_refined_more_than_once(package):
     package.write(
         FINDINGS,
-        finding_carrying(
+        a_findings_file(
             selector=(
                 '[ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ; '
                 'oa:refinedBy [ a oa:XPathSelector ; rdf:value "Label" ] ; '
@@ -377,7 +358,7 @@ def test_reports_a_record_selector_refined_more_than_once(package):
 def test_reports_a_refinement_that_is_not_an_xpath_selector(package):
     package.write(
         FINDINGS,
-        finding_carrying(
+        a_findings_file(
             selector=(
                 '[ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ; '
                 'oa:refinedBy [ a oa:TextQuoteSelector ; rdf:value "Note" ] ]'
@@ -392,7 +373,7 @@ def test_reports_a_refinement_that_is_not_an_xpath_selector(package):
 def test_reports_a_refinement_refined_further(package):
     package.write(
         FINDINGS,
-        finding_carrying(
+        a_findings_file(
             selector=(
                 '[ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ; '
                 'oa:refinedBy [ a oa:XPathSelector ; rdf:value "Note" ; '
@@ -409,38 +390,17 @@ A_GAP_OF_THE_SCHEME = "ex:no-term-for-a-free-text-note"
 A_GAP_WHOSE_VALUE_IS_OUTSIDE_A_FIXED_SET = "ex:a-status-outside-the-set-the-vocabulary-fixes"
 
 
-def coded_finding(
-    body=A_GAP_OF_THE_SCHEME,
-    record="/ExampleRecordSet/ExampleRecord[1]",
-    refined="Note",
-    value=None,
-    severity="sh:Info",
-):
-    refinement = "" if refined is None else f' ; oa:refinedBy [ a oa:XPathSelector ; rdf:value "{refined}" ]'
-    written = [
-        "[] a oa:Annotation",
-        "oa:hasTarget [ oa:hasSource <../in/example-0001.xml> ; "
-        f'oa:hasSelector [ a oa:XPathSelector ; rdf:value "{record}"{refinement} ] ]',
-        f"oa:hasBody {body}",
-        "oa:motivatedBy oa:classifying",
-        f"sh:resultSeverity {severity}",
-    ]
-    if value is not None:
-        written.append(f"sh:value {value}")
-    return PREFIXES_OF_FINDINGS + "\n" + " ;\n  ".join(written) + " .\n"
-
-
 def said_about(package):
     return [message for message in expected_findings.faulty(package.crate) if "example-0001.ttl" in message]
 
 
 def test_reports_nothing_for_a_finding_whose_body_is_a_gap_of_the_adapters_gap_scheme(package):
-    package.write(FINDINGS, coded_finding())
+    package.write(FINDINGS, a_findings_file())
     assert not said_about(package)
 
 
 def test_reports_a_finding_whose_body_is_no_gap_of_the_adapters_gap_scheme(package):
-    package.write(FINDINGS, coded_finding(body="ex:a-gap-the-scheme-does-not-hold"))
+    package.write(FINDINGS, a_findings_file(body="ex:a-gap-the-scheme-does-not-hold"))
     assert (
         "https://example.org/synthetic-adapter/v1#a-gap-the-scheme-does-not-hold is not a gap of the adapter's "
         "bridge:gapScheme, the anchor of a validation rule in a W3C XML Schema Recommendation, "
@@ -449,22 +409,22 @@ def test_reports_a_finding_whose_body_is_no_gap_of_the_adapters_gap_scheme(packa
 
 
 def test_reports_nothing_for_a_finding_whose_body_is_the_anchor_of_a_w3c_xml_schema_validation_rule(package):
-    package.write(FINDINGS, coded_finding(body="<https://www.w3.org/TR/xmlschema-1/#cvc-complex-type>"))
+    package.write(FINDINGS, a_findings_file(body="<https://www.w3.org/TR/xmlschema-1/#cvc-complex-type>"))
     assert not said_about(package)
 
 
 def test_reports_nothing_for_a_finding_whose_body_is_the_concept_for_a_schema_failure_w3c_names_no_rule_for(package):
-    package.write(FINDINGS, coded_finding(body="bridge:schemaRuleUnnamed"))
+    package.write(FINDINGS, a_findings_file(body="bridge:schemaRuleUnnamed"))
     assert not said_about(package)
 
 
 def test_reports_nothing_for_a_finding_whose_body_is_the_concept_a_census_carries(package):
-    package.write(FINDINGS, coded_finding(body="bridge:pathNotAccounted"))
+    package.write(FINDINGS, a_findings_file(body="bridge:pathNotAccounted"))
     assert not said_about(package)
 
 
 def test_reports_the_concept_an_address_selecting_other_than_one_node_carries(package):
-    package.write(FINDINGS, coded_finding(body="bridge:addressNotOneNode"))
+    package.write(FINDINGS, a_findings_file(body="bridge:addressNotOneNode"))
     assert (
         "https://ns.cascadeprotocol.org/bridge/v1-draft#addressNotOneNode is not a gap of the adapter's "
         "bridge:gapScheme, the anchor of a validation rule in a W3C XML Schema Recommendation, "
@@ -473,7 +433,7 @@ def test_reports_the_concept_an_address_selecting_other_than_one_node_carries(pa
 
 
 def test_reports_the_concept_a_census_carries_where_the_adapter_names_no_source_accounting(package):
-    package.write(FINDINGS, coded_finding(body="bridge:pathNotAccounted"))
+    package.write(FINDINGS, a_findings_file(body="bridge:pathNotAccounted"))
     package.edit(
         "ro-crate-metadata.json",
         '      "bridge:sourceAccounting": {\n        "@id": "vocab/example-accounting.ttl"\n      },\n',
@@ -487,7 +447,7 @@ def test_reports_the_concept_a_census_carries_where_the_adapter_names_no_source_
 
 
 def test_reports_a_finding_whose_body_is_the_anchor_of_no_w3c_xml_schema_validation_rule(package):
-    package.write(FINDINGS, coded_finding(body="<https://www.w3.org/TR/xmlschema-1/#cvc-nonesuch>"))
+    package.write(FINDINGS, a_findings_file(body="<https://www.w3.org/TR/xmlschema-1/#cvc-nonesuch>"))
     assert (
         "https://www.w3.org/TR/xmlschema-1/#cvc-nonesuch is not a gap of the adapter's bridge:gapScheme, "
         "the anchor of a validation rule in a W3C XML Schema Recommendation, bridge:schemaRuleUnnamed, "
@@ -496,13 +456,13 @@ def test_reports_a_finding_whose_body_is_the_anchor_of_no_w3c_xml_schema_validat
 
 
 def test_reports_a_body_that_is_no_code_with_every_anchor_a_body_may_take(package):
-    package.write(FINDINGS, coded_finding(body="<https://www.w3.org/TR/xmlschema-1/#cvc-nonesuch>"))
+    package.write(FINDINGS, a_findings_file(body="<https://www.w3.org/TR/xmlschema-1/#cvc-nonesuch>"))
     said = "\n".join(said_about(package))
     assert [str(anchor) for anchor in W3C_XML_SCHEMA_RULE_ANCHORS if str(anchor) not in said] == []
 
 
 def test_reports_a_finding_whose_body_names_a_rule_in_the_recommendation_that_does_not_define_it(package):
-    package.write(FINDINGS, coded_finding(body="<https://www.w3.org/TR/xmlschema-1/#cvc-pattern-valid>"))
+    package.write(FINDINGS, a_findings_file(body="<https://www.w3.org/TR/xmlschema-1/#cvc-pattern-valid>"))
     assert (
         "https://www.w3.org/TR/xmlschema-1/#cvc-pattern-valid is not a gap of the adapter's bridge:gapScheme, "
         "the anchor of a validation rule in a W3C XML Schema Recommendation, bridge:schemaRuleUnnamed, "
@@ -511,29 +471,29 @@ def test_reports_a_finding_whose_body_names_a_rule_in_the_recommendation_that_do
 
 
 def test_reports_nothing_for_a_finding_whose_gap_is_a_value_outside_a_fixed_set_carrying_no_source_value(package):
-    package.write(FINDINGS, coded_finding(body=A_GAP_WHOSE_VALUE_IS_OUTSIDE_A_FIXED_SET))
+    package.write(FINDINGS, a_findings_file(body=A_GAP_WHOSE_VALUE_IS_OUTSIDE_A_FIXED_SET))
     assert not said_about(package)
 
 
 def test_reports_nothing_for_a_finding_carrying_the_source_value_that_made_it_fire_where_its_gap_is_of_another_kind(
     package,
 ):
-    package.write(FINDINGS, coded_finding(value='"a free-text note"'))
+    package.write(FINDINGS, a_findings_file(value='"a free-text note"'))
     assert not said_about(package)
 
 
 def test_reports_nothing_for_a_finding_whose_gap_is_a_value_outside_a_fixed_set_carrying_that_value(package):
-    package.write(FINDINGS, coded_finding(body=A_GAP_WHOSE_VALUE_IS_OUTSIDE_A_FIXED_SET, value='"provisional"'))
+    package.write(FINDINGS, a_findings_file(body=A_GAP_WHOSE_VALUE_IS_OUTSIDE_A_FIXED_SET, value='"provisional"'))
     assert not said_about(package)
 
 
 def test_reports_nothing_for_a_finding_about_the_document_refined_to_one_element_under_the_document_element(package):
-    package.write(FINDINGS, coded_finding(record="/ExampleRecordSet", refined="ExampleRecord[1]"))
+    package.write(FINDINGS, a_findings_file(record="/ExampleRecordSet", refined="ExampleRecord[1]"))
     assert not said_about(package)
 
 
 def test_reports_a_finding_about_the_document_whose_refinement_selects_no_element(package):
-    package.write(FINDINGS, coded_finding(record="/ExampleRecordSet", refined="Absent"))
+    package.write(FINDINGS, a_findings_file(record="/ExampleRecordSet", refined="Absent"))
     assert said_about(package) == [
         "example-0001: example-0001.ttl: Absent selects no node of example-0001.xml, "
         "where a finding selects exactly one"
@@ -541,41 +501,24 @@ def test_reports_a_finding_about_the_document_whose_refinement_selects_no_elemen
 
 
 def test_reports_a_finding_about_the_document_whose_refinement_selects_more_than_one_element(package):
-    package.write(FINDINGS, coded_finding(record="/ExampleRecordSet", refined="*"))
+    package.write(FINDINGS, a_findings_file(record="/ExampleRecordSet", refined="*"))
     assert said_about(package) == [
         "example-0001: example-0001.ttl: * selects 2 nodes of example-0001.xml, where a finding selects exactly one"
     ]
 
 
-def output_validation_finding(body, severity="sh:Violation"):
-    """A finding about the produced graph: its body the SHACL result's code, pointed at the record, refined no further."""
-    return (
-        PREFIXES_OF_FINDINGS
-        + f"""
-[] a oa:Annotation ;
-  oa:hasTarget [ oa:hasSource <../in/example-0001.xml> ;
-                 oa:hasSelector [ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ] ] ;
-  oa:hasBody {body} ;
-  oa:motivatedBy oa:classifying ;
-  sh:resultPath ex:status ;
-  sh:focusNode ex:record-1 ;
-  sh:resultSeverity {severity} .
-"""
-    )
-
-
 def test_reports_nothing_for_a_finding_whose_body_is_the_shacl_constraint_component_that_failed(package):
-    package.write(FINDINGS, output_validation_finding("sh:MinCountConstraintComponent"))
+    package.write(FINDINGS, findings_file(an_output_validation_finding(body="sh:MinCountConstraintComponent")))
     assert not said_about(package)
 
 
 def test_reports_nothing_for_a_finding_whose_body_is_the_gap_a_predicate_no_ontology_declares_opens(package):
-    package.write(FINDINGS, output_validation_finding("bridge:predicateNotDeclared"))
+    package.write(FINDINGS, findings_file(an_output_validation_finding(body="bridge:predicateNotDeclared")))
     assert not said_about(package)
 
 
 def test_reports_a_finding_whose_body_is_the_name_of_no_shacl_constraint_component(package):
-    package.write(FINDINGS, output_validation_finding("sh:NonesuchConstraintComponent"))
+    package.write(FINDINGS, findings_file(an_output_validation_finding(body="sh:NonesuchConstraintComponent")))
     assert "http://www.w3.org/ns/shacl#NonesuchConstraintComponent is not a gap of the adapter's" in "\n".join(
         said_about(package)
     )

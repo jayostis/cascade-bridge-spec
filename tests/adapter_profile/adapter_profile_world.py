@@ -6,6 +6,7 @@ from pyshacl import validate
 from rdflib import Graph
 from rdflib.namespace import RDF, SH
 
+from _findings import SHAPES as FINDING_SHAPES
 from _findings import unmet
 from _selectors import step_of
 from _terms import BRIDGE, MF, OA
@@ -24,6 +25,7 @@ PREFIXES_OF_FINDINGS = """@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-synt
 @prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 @prefix ex:     <https://example.org/synthetic-adapter/v1#> .
 """
+FINDINGS_BASE = "https://example.org/synthetic-adapter/fixtures/findings/example-0001.ttl"
 
 CARRIED = "bridge:carried"
 CARRIED_IN_PART = "bridge:carriedInPart"
@@ -44,6 +46,60 @@ def unmet_over(turtle, shapes, base=None):
 
 def said_over(turtle, shapes, base=None):
     return "\n".join(unmet_over(turtle, shapes, base))
+
+
+def a_finding(
+    body="ex:no-term-for-a-free-text-note",
+    severity="sh:Info",
+    source="<../in/example-0001.xml>",
+    record="/ExampleRecordSet/ExampleRecord[1]",
+    refined=None,
+    selector=None,
+    motivation="oa:classifying",
+    value=None,
+    occurrences=None,
+    path=None,
+    focus=None,
+):
+    if selector is None and record is not None:
+        refinement = "" if refined is None else f' ; oa:refinedBy [ a oa:XPathSelector ; rdf:value "{refined}" ]'
+        selector = f'[ a oa:XPathSelector ; rdf:value "{record}"{refinement} ]'
+    target = [f"oa:hasSource {source}"] + ([] if selector is None else [f"oa:hasSelector {selector}"])
+    written = ["[] a oa:Annotation", f"oa:hasTarget [ {' ; '.join(target)} ]"]
+    written += [
+        f"{predicate} {term}"
+        for predicate, term in (
+            ("oa:hasBody", body),
+            ("oa:motivatedBy", motivation),
+            ("sh:resultSeverity", severity),
+            ("sh:value", value),
+            ("bridge:occurrences", occurrences),
+            ("sh:resultPath", path),
+            ("sh:focusNode", focus),
+        )
+        if term is not None
+    ]
+    return " ;\n  ".join(written) + " .\n"
+
+
+def an_output_validation_finding(**changed):
+    return a_finding(
+        **{
+            "body": "sh:MinCountConstraintComponent",
+            "severity": "sh:Violation",
+            "path": "ex:status",
+            "focus": "ex:record-1",
+            **changed,
+        }
+    )
+
+
+def findings_file(*findings):
+    return PREFIXES_OF_FINDINGS + "\n" + "\n".join(findings)
+
+
+def said_about_findings(*findings):
+    return said_over(findings_file(*findings), FINDING_SHAPES, FINDINGS_BASE)
 
 
 def shape_file_messages(crate, shapes_file):
