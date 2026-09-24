@@ -1,15 +1,7 @@
-from rdflib import Graph
-
-from _findings import SHAPES, unmet
+from _findings import SHAPES
+from adapter_profile_world import PREFIXES_OF_FINDINGS, said_over
 
 BASE = "https://example.org/synthetic-adapter/fixtures/findings/example-0001.ttl"
-
-PREFIXES = """@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix sh:     <http://www.w3.org/ns/shacl#> .
-@prefix oa:     <http://www.w3.org/ns/oa#> .
-@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
-@prefix ex:     <https://example.org/synthetic-adapter/v1#> .
-"""
 
 TARGET = """oa:hasTarget [
     oa:hasSource <../in/example-0001.xml> ;
@@ -27,16 +19,11 @@ def finding(body="ex:no-term-for-a-free-text-note", motivation="oa:classifying",
         written.append(f"sh:value {value}")
     if occurrences is not None:
         written.append(f"bridge:occurrences {occurrences}")
-    return PREFIXES + "\n" + " ;\n  ".join(written) + " .\n"
+    return PREFIXES_OF_FINDINGS + "\n" + " ;\n  ".join(written) + " .\n"
 
 
 def said_about(turtle):
-    return "\n".join(
-        unmet(
-            Graph().parse(data=turtle, format="turtle", publicID=BASE),
-            Graph().parse(SHAPES, format="turtle"),
-        )
-    )
+    return said_over(turtle, SHAPES, BASE)
 
 
 def test_rejects_a_finding_whose_body_is_an_oa_textual_body():

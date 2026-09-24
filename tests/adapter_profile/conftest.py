@@ -4,14 +4,10 @@ import shutil
 import subprocess
 
 import pytest
-from pyshacl import validate
 from rdflib import Graph
-from rdflib.namespace import RDF, SH
 
 import _crate
-from adapter_profile_world import FIXTURE, ROOT
-
-MUST = ROOT / "adapter" / "profile" / "must"
+from adapter_profile_world import FIXTURE
 
 GAP_SCHEME_FILE = "vocab/example-gaps.ttl"
 SOURCE_ACCOUNTING_FILE = "vocab/example-accounting.ttl"
@@ -138,18 +134,3 @@ def crate(conforming):
     graph = Graph()
     graph += conforming.graph
     return dataclasses.replace(conforming, graph=graph)
-
-
-@pytest.fixture(scope="session")
-def shape_file_messages():
-    def run(crate, shapes_file):
-        _, report, _ = validate(
-            crate.graph,
-            shacl_graph=Graph().parse(MUST / shapes_file, format="turtle"),
-            advanced=True,
-        )
-        return "\n".join(
-            str(report.value(result, SH.resultMessage)) for result in report.subjects(RDF.type, SH.ValidationResult)
-        )
-
-    return run

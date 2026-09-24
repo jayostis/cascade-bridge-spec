@@ -1,14 +1,56 @@
+import functools
 from pathlib import Path
 
 from lxml import etree
+from pyshacl import validate
 from rdflib import Graph
-from rdflib.namespace import RDF
+from rdflib.namespace import RDF, SH
 
+from _findings import unmet
 from _selectors import step_of
 from _terms import BRIDGE, MF, OA
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURE = ROOT / "fixtures" / "synthetic-adapter"
+MUST = ROOT / "adapter" / "profile" / "must"
+
+PREFIXES_OF_AN_ACCOUNTING = """@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+@prefix ex:     <https://example.org/synthetic-adapter/v1#> .
+"""
+
+PREFIXES_OF_FINDINGS = """@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix sh:     <http://www.w3.org/ns/shacl#> .
+@prefix oa:     <http://www.w3.org/ns/oa#> .
+@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+@prefix ex:     <https://example.org/synthetic-adapter/v1#> .
+"""
+
+CARRIED = "bridge:carried"
+CARRIED_IN_PART = "bridge:carriedInPart"
+REDUNDANT_WITH = "bridge:redundantWith"
+CONSUMED = "bridge:consumed"
+NO_HOME = "bridge:noHome"
+IGNORED = "bridge:ignored"
+
+
+@functools.cache
+def shapes_in(path):
+    return Graph().parse(path, format="turtle")
+
+
+def unmet_over(turtle, shapes, base=None):
+    return list(unmet(Graph().parse(data=turtle, format="turtle", publicID=base), shapes_in(shapes)))
+
+
+def said_over(turtle, shapes, base=None):
+    return "\n".join(unmet_over(turtle, shapes, base))
+
+
+def shape_file_messages(crate, shapes_file):
+    _, report, _ = validate(crate.graph, shacl_graph=shapes_in(MUST / shapes_file), advanced=True)
+    return "\n".join(
+        str(report.value(result, SH.resultMessage)) for result in report.subjects(RDF.type, SH.ValidationResult)
+    )
 
 
 def accounting_of(crate):

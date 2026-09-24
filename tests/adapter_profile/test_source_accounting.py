@@ -2,10 +2,15 @@ from rdflib import URIRef
 
 import source_accounting
 from _terms import BRIDGE
-
-PREFIXES = """@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
-@prefix ex:     <https://example.org/synthetic-adapter/v1#> .
-"""
+from adapter_profile_world import (
+    CARRIED,
+    CARRIED_IN_PART,
+    CONSUMED,
+    IGNORED,
+    NO_HOME,
+    PREFIXES_OF_AN_ACCOUNTING,
+    REDUNDANT_WITH,
+)
 
 A_SCHEME_HOLDING_A_GAP_OF_EACH_KIND_A_VERDICT_IMPLIES = """@prefix skos:   <http://www.w3.org/2004/02/skos/core#> .
 @prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
@@ -62,13 +67,6 @@ A_NAMESPACED_ATTRIBUTE_OF_THE_RECORD = (
     f"/ExampleRecord/@*[local-name()='kind' and namespace-uri()='{AN_EXTENSION_NAMESPACE}']"
 )
 
-CARRIED = "bridge:carried"
-CARRIED_IN_PART = "bridge:carriedInPart"
-REDUNDANT_WITH = "bridge:redundantWith"
-CONSUMED = "bridge:consumed"
-NO_HOME = "bridge:noHome"
-IGNORED = "bridge:ignored"
-
 
 def entry(path, verdict=CARRIED, names_gap=None, same_fact_as=None, because=None):
     written = ["[] a bridge:PathEntry", f'bridge:sourcePath "{path}"', f"bridge:verdict {verdict}"]
@@ -85,7 +83,7 @@ def entry(path, verdict=CARRIED, names_gap=None, same_fact_as=None, because=None
 
 
 def accounting(*entries):
-    return PREFIXES + "\n" + "\n".join(entries)
+    return PREFIXES_OF_AN_ACCOUNTING + "\n" + "\n".join(entries)
 
 
 def accounted(package, *entries):

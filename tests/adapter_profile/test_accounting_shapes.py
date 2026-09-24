@@ -1,12 +1,16 @@
-from rdflib import Graph
-
-from _findings import SHAPES, unmet
+from _findings import SHAPES
+from adapter_profile_world import (
+    CARRIED,
+    CARRIED_IN_PART,
+    CONSUMED,
+    IGNORED,
+    NO_HOME,
+    PREFIXES_OF_AN_ACCOUNTING,
+    REDUNDANT_WITH,
+    said_over,
+)
 
 BASE = "https://example.org/synthetic-adapter/vocab/example-accounting.ttl"
-
-PREFIXES = """@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
-@prefix ex:     <https://example.org/synthetic-adapter/v1#> .
-"""
 
 A_PATH = '"/ExampleRecord/Label"'
 THE_PATH_THAT_CARRIES_THE_FACT = '"/ExampleRecord/@Accession"'
@@ -18,13 +22,6 @@ A_CONCEPT_MAP = "<https://example.org/synthetic-adapter/vocab/example-statuses.t
 ANOTHER_CONCEPT_MAP = "<https://example.org/synthetic-adapter/vocab/example-kinds.ttl>"
 A_REASON = '"A schema location is not data about the record."'
 ANOTHER_REASON = '"A record identifier is not data about the record either."'
-
-CARRIED = "bridge:carried"
-CARRIED_IN_PART = "bridge:carriedInPart"
-REDUNDANT_WITH = "bridge:redundantWith"
-CONSUMED = "bridge:consumed"
-NO_HOME = "bridge:noHome"
-IGNORED = "bridge:ignored"
 
 ONE_VERDICT = (
     "An entry carries exactly one bridge:verdict, one of bridge:carried, bridge:carriedInPart, "
@@ -58,16 +55,11 @@ def entry(
         )
         if value is not None
     ]
-    return PREFIXES + "\n[] " + " ;\n  ".join(written) + " .\n"
+    return PREFIXES_OF_AN_ACCOUNTING + "\n[] " + " ;\n  ".join(written) + " .\n"
 
 
 def said_about(turtle):
-    return "\n".join(
-        unmet(
-            Graph().parse(data=turtle, format="turtle", publicID=BASE),
-            Graph().parse(SHAPES, format="turtle"),
-        )
-    )
+    return said_over(turtle, SHAPES, BASE)
 
 
 def test_rejects_an_entry_carrying_no_verdict():

@@ -4,19 +4,12 @@ from rdflib.namespace import RDF, SH
 import expected_findings
 from _codes import W3C_XML_SCHEMA_RULE_ANCHORS
 from _terms import BRIDGE, MF, OA
-from adapter_profile_world import FIXTURE, selected_by
+from adapter_profile_world import FIXTURE, PREFIXES_OF_FINDINGS, selected_by
 
 FINDINGS = "fixtures/findings/example-0001.ttl"
 
-PREFIXES = """@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix sh:     <http://www.w3.org/ns/shacl#> .
-@prefix oa:     <http://www.w3.org/ns/oa#> .
-@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
-@prefix ex:     <https://example.org/synthetic-adapter/v1#> .
-"""
-
 TWO_FINDINGS_SHARING_ONE_SELECTOR = (
-    PREFIXES
+    PREFIXES_OF_FINDINGS
     + """
 <#selector> a oa:XPathSelector ;
   rdf:value "/ExampleRecordSet/ExampleRecord[1]" ;
@@ -35,7 +28,7 @@ TWO_FINDINGS_SHARING_ONE_SELECTOR = (
 )
 
 TWO_FINDINGS_SHARING_ONE_TARGET = (
-    PREFIXES
+    PREFIXES_OF_FINDINGS
     + """
 _:t oa:hasSource <../in/example-0001.xml> ;
   oa:hasSelector [ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ;
@@ -54,7 +47,7 @@ _:t oa:hasSource <../in/example-0001.xml> ;
 )
 
 A_STRAY_SELECTOR_AND_NO_FINDING = (
-    PREFIXES
+    PREFIXES_OF_FINDINGS
     + """
 [] a oa:XPathSelector ; rdf:value "/no/such/path[99]" .
 """
@@ -78,7 +71,7 @@ def finding(
     annotation.append("oa:motivatedBy oa:classifying")
     if severity is not None:
         annotation.append(f"sh:resultSeverity {severity}")
-    return PREFIXES + "\n" + " ;\n  ".join(annotation) + " .\n"
+    return PREFIXES_OF_FINDINGS + "\n" + " ;\n  ".join(annotation) + " .\n"
 
 
 def test_reports_nothing_for_findings_that_select_the_node_each_one_is_about(crate):
@@ -249,7 +242,7 @@ def test_reports_two_findings_sharing_one_target(package):
 
 
 def test_reports_expected_findings_holding_no_finding_at_all(package):
-    package.write(FINDINGS, PREFIXES)
+    package.write(FINDINGS, PREFIXES_OF_FINDINGS)
     assert "carries no oa:Annotation" in "\n".join(expected_findings.faulty(package.crate))
 
 
@@ -280,7 +273,7 @@ def test_reports_nothing_for_a_document_selector_that_names_the_document_element
 
 
 A_FINDING_WITH_TWO_TARGETS = (
-    PREFIXES
+    PREFIXES_OF_FINDINGS
     + """
 [] a oa:Annotation ;
   oa:hasTarget [ oa:hasSource <../in/example-0001.xml> ;
@@ -293,7 +286,7 @@ A_FINDING_WITH_TWO_TARGETS = (
 )
 
 A_FINDING_SOURCED_BY_A_LITERAL = (
-    PREFIXES
+    PREFIXES_OF_FINDINGS
     + """
 [] a oa:Annotation ;
   oa:hasTarget [ oa:hasSource "example-0001.xml" ;
@@ -304,7 +297,7 @@ A_FINDING_SOURCED_BY_A_LITERAL = (
 )
 
 A_FINDING_NAMED_RATHER_THAN_WRITTEN_FOR_ITSELF = (
-    PREFIXES
+    PREFIXES_OF_FINDINGS
     + """
 <#the-one-finding> a oa:Annotation ;
   oa:hasTarget [ oa:hasSource <../in/example-0001.xml> ;
@@ -318,7 +311,7 @@ A_FINDING_NAMED_RATHER_THAN_WRITTEN_FOR_ITSELF = (
 def finding_carrying(body="ex:no-term-for-a-free-text-note", selector=None):
     selector = selector or '[ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ]'
     return (
-        PREFIXES
+        PREFIXES_OF_FINDINGS
         + f"""
 [] a oa:Annotation ;
   oa:hasTarget [ oa:hasSource <../in/example-0001.xml> ; oa:hasSelector {selector} ] ;
@@ -434,7 +427,7 @@ def coded_finding(
     ]
     if value is not None:
         written.append(f"sh:value {value}")
-    return PREFIXES + "\n" + " ;\n  ".join(written) + " .\n"
+    return PREFIXES_OF_FINDINGS + "\n" + " ;\n  ".join(written) + " .\n"
 
 
 def said_about(package):
@@ -559,7 +552,7 @@ def test_reports_a_finding_about_the_document_whose_refinement_selects_more_than
 def output_validation_finding(body, severity="sh:Violation"):
     """A finding about the produced graph: its body the SHACL result's code, pointed at the record, refined no further."""
     return (
-        PREFIXES
+        PREFIXES_OF_FINDINGS
         + f"""
 [] a oa:Annotation ;
   oa:hasTarget [ oa:hasSource <../in/example-0001.xml> ;
