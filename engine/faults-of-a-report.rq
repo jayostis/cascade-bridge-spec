@@ -3,7 +3,7 @@ PREFIX mf: <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#>
 
-SELECT DISTINCT ?entry ?fault
+SELECT ?entry ?fault
 WHERE {
   {
     FILTER NOT EXISTS { ?anyResult earl:outcome ?anyOutcome }
