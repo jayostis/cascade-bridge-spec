@@ -6,6 +6,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from rdflib import BNode, Graph, URIRef, Variable
 from rdflib.namespace import RDF, SH
 from rdflib.plugins.sparql import prepareQuery
+from rdflib.plugins.sparql.parserutils import CompValue
 from rocrate_validator.models import ValidationContext
 from rocrate_validator.requirements.python import PyFunctionCheck, check, requirement
 
@@ -64,6 +65,15 @@ def shapes_less_the_selector_and_the_severity_a_bridge_supplies():
     return shapes
 
 
+def operators(algebra):
+    if isinstance(algebra, CompValue):
+        yield algebra.name
+        yield from operators(list(algebra.values()))
+    elif isinstance(algebra, (list, tuple)):
+        for part in algebra:
+            yield from operators(part)
+
+
 def malformed(crate):
     declared = [(prop, query) for prop in QUERY_FORMS for query in sorted(crate.graph.objects(crate.root, prop))]
     gaps = gaps_of(crate)
@@ -79,6 +89,14 @@ def malformed(crate):
         except Exception as error:
             yield f"{name} does not parse as SPARQL 1.1\n{error}"
             continue
+        held = set(operators(parsed.algebra))
+        if "ServiceGraphPattern" in held:
+            yield f"{name} holds a SERVICE pattern, which a Bridge refuses to prepare because it fetches"
+        if "DatasetClause" in held:
+            yield (
+                f"{name} holds a FROM or FROM NAMED clause, which a Bridge refuses to prepare because it "
+                "fetches and replaces the dataset a Bridge builds"
+            )
         found = parsed.algebra.name.removesuffix("Query").upper()
         if found != form:
             yield f"{name} is a {found} query, where {term} requires {form}"
