@@ -2,19 +2,9 @@
 
 import pytest
 
-from compatibility_world import VOCABULARY, a_host, write_compatibility
+from compatibility_world import VOCABULARY, write_compatibility
 
 PICKED_WHEN_THE_CHECK_RUNS = "picked when the check runs"
-
-
-def test_an_engines_file_naming_its_counterpart_by_repository_url_passes(world):
-    said = world.tool(world.engine_beside_adapter())
-    assert "1 counterpart: 1 hold" in said
-
-
-def test_an_adapters_file_naming_its_counterpart_by_repository_url_passes(world):
-    said = world.tool(world.adapter_beside_engine())
-    assert "1 counterpart: 1 hold" in said
 
 
 def test_an_adapter_with_no_compatibility_json_is_nothing_to_check_not_a_pass(world):
@@ -53,11 +43,6 @@ def test_a_file_of_neither_form_is_refused(world, overrides, says):
 
 def refusals(world, said):
     return [line.replace(str(world.root), "") for line in said.splitlines() if line.startswith("  FAIL  ")]
-
-
-def test_an_engines_file_naming_two_hosts_passes_the_shapes(world):
-    said = world.tool(world.engine_beside_adapter(host=[a_host("native"), a_host("node")]))
-    assert "compatibility.json against the shapes" in said
 
 
 @pytest.mark.parametrize(

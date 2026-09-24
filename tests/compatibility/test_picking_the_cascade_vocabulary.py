@@ -37,7 +37,7 @@ def given_to_the_engine(said):
     return Path(said.split(GIVEN, 1)[1].splitlines()[0].strip())
 
 
-def test_the_engine_is_given_the_vocabulary_checked_out_at_the_adapters_pin(world):
+def test_the_engine_is_given_the_vocabulary_checked_out_at_the_adapters_pin_and_the_row_says_the_pin(world):
     engine, event = world.engine_under_test()
 
     said = world.tool(engine, **world.ci(event=event))
@@ -45,13 +45,6 @@ def test_the_engine_is_given_the_vocabulary_checked_out_at_the_adapters_pin(worl
     given = given_to_the_engine(said)
     assert git("rev-parse", "HEAD", cwd=given) == world.commits[VOCABULARY]
     assert (given / VOCABULARY_FILES[0]).is_file()
-
-
-def test_the_vocabulary_row_says_the_pin_it_was_checked_out_at(world):
-    engine, event = world.engine_under_test()
-
-    world.tool(engine, **world.ci(event=event))
-
     assert row(world).get("commit") == world.commits[VOCABULARY]
     assert "bridge:cascadeVocabularyPin" in row(world).get("how", "")
     assert world.commits[VOCABULARY][:7] in table_row(world)

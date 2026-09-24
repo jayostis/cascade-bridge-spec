@@ -26,8 +26,9 @@ def test_an_adapter_failing_on_the_second_host_only_is_two_entries_and_the_run_f
 
 
 def test_an_adapter_holding_on_both_hosts_is_two_entries_each_with_its_own_report(world):
-    world.tool(world.engine_beside_adapter(host=native_and_node()))
+    said = world.tool(world.engine_beside_adapter(host=native_and_node()))
 
+    assert "compatibility.json against the shapes" in said
     found = entries(world)
     assert [entry["holds"] for entry in found] == [True, True]
     reports = {entry["report"] for entry in found}
@@ -44,7 +45,7 @@ def test_an_adapters_run_runs_every_host_of_the_engine_it_names(world):
     assert "node" in failing
 
 
-def test_the_table_has_a_row_for_each_host(world):
+def test_the_table_has_a_row_for_each_host_and_a_row_run_on_no_host_says_so(world):
     engine, event = world.engine_under_test(host=native_and_node(on_node="failed"))
 
     world.tool(engine, 1, **world.ci(event=event))
@@ -54,13 +55,6 @@ def test_the_table_has_a_row_for_each_host(world):
         ("native", "✅ holds"),
         ("node", "❌ does not hold"),
     ]
-
-
-def test_a_row_run_on_no_host_says_so_in_the_engine_host_column(world):
-    engine, event = world.engine_under_test(host=native_and_node())
-
-    world.tool(engine, **world.ci(event=event))
-
     assert world.table_row("cascade-bridge-spec")["engine host"] == "—"
 
 

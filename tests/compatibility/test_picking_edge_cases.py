@@ -3,8 +3,8 @@
 from compatibility_world import MATCHING, depends_on
 
 
-def test_a_named_pull_request_in_the_repository_under_test_leaves_its_own_row_alone(world):
-    """It is checked out already: the pull request under test is what the run tests."""
+def test_a_named_pull_request_in_the_repository_under_test_leaves_its_own_row_alone_and_is_listed_as_not_used(world):
+    """The pull request under test is what the run tests; the named one is merged into nothing."""
     world.pull_request("engine", 2)
     engine, event = world.engine_under_test(body=depends_on("engine", 2))
 
@@ -13,15 +13,6 @@ def test_a_named_pull_request_in_the_repository_under_test_leaves_its_own_row_al
     row = world.record()["repositories"]["jayostis/engine"]
     assert row["role"] == "under test"
     assert row["how"] == "pull request #1 merged into main"
-
-
-def test_a_named_pull_request_in_the_repository_under_test_is_listed_as_not_used(world):
-    """The run merges it into nothing, so it is a row like any other the run uses no code from."""
-    world.pull_request("engine", 2)
-    engine, event = world.engine_under_test(body=depends_on("engine", 2))
-
-    world.tool(engine, **world.ci(event=event))
-
     table = world.table()
     assert "engine/pull/2" in table
     assert "not used" in table

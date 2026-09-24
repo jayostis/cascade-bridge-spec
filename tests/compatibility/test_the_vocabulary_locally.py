@@ -19,7 +19,7 @@ def adapter_naming(world, files):
     return adapter
 
 
-def test_the_vocabulary_sibling_is_used_as_it_is_on_disk_uncommitted_edits_included(world):
+def test_the_vocabulary_sibling_is_used_as_it_is_on_disk_and_the_row_names_the_file_differing_from_the_pin(world):
     engine = world.engine_beside_adapter()
     spec = world.workspace / VOCABULARY
     (spec / VOCABULARY_FILES[0]).write_text(AN_EDIT, encoding="utf-8")
@@ -29,6 +29,9 @@ def test_the_vocabulary_sibling_is_used_as_it_is_on_disk_uncommitted_edits_inclu
     assert f"fake engine: vocabularies {spec}" in said
     assert world.record()["repositories"][VOCABULARY]["how"] == "the sibling's working tree, on main"
     assert world.record()["repositories"][VOCABULARY]["uncommittedEdits"] is True
+    assert VOCABULARY_FILES[0] in said
+    assert VOCABULARY_FILES[1] not in said
+    assert "1 counterpart: 1 hold" in said
 
 
 def test_a_local_run_stops_with_the_git_command_for_a_missing_vocabulary_sibling(world):
@@ -40,17 +43,6 @@ def test_a_local_run_stops_with_the_git_command_for_a_missing_vocabulary_sibling
 
     assert f"git clone {VOCABULARY_URL}" in said
     assert "Traceback" not in said
-
-
-def test_the_row_names_a_vocabulary_file_whose_bytes_differ_from_the_pinned_commits(world):
-    engine = world.engine_beside_adapter()
-    (world.workspace / VOCABULARY / VOCABULARY_FILES[0]).write_text(AN_EDIT, encoding="utf-8")
-
-    said = world.tool(engine)
-
-    assert VOCABULARY_FILES[0] in said
-    assert VOCABULARY_FILES[1] not in said
-    assert "1 counterpart: 1 hold" in said
 
 
 def test_the_row_says_the_comparison_was_not_made_where_the_pinned_commit_is_absent(world):

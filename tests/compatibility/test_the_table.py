@@ -3,33 +3,17 @@
 from compatibility_world import MATCHING, depends_on, git
 
 
-def test_the_table_has_a_row_for_the_repository_under_test_the_specification_and_each_counterpart(world):
+def test_the_table_has_a_row_for_each_repository_used_and_only_a_counterparts_says_whether_it_holds(world):
     engine, event = world.engine_under_test()
 
     world.tool(engine, **world.ci(event=event))
 
-    table = world.table()
-    for repository in ("engine", "cascade-bridge-spec", "adapter"):
-        assert f"| [{repository}]" in table
-    assert "pull request #1 merged into main" in table
-
-
-def test_only_a_counterparts_row_says_whether_it_holds(world):
-    engine, event = world.engine_under_test()
-
-    world.tool(engine, **world.ci(event=event))
-
-    rows = {line.split("|")[1].strip(): line for line in world.table().splitlines() if line.startswith("|")}
-    assert "holds" in rows["[adapter](" + world.url("adapter") + ")"]
-    assert "holds" not in rows["[engine](" + world.url("engine") + ")"]
-    assert "holds" not in rows["[cascade-bridge-spec](" + world.url("cascade-bridge-spec") + ")"]
-
-
-def test_the_run_writes_the_table_to_the_results(world):
-    engine, event = world.engine_under_test()
-
-    world.tool(engine, **world.ci(event=event))
-
+    rows = {name: " | ".join(world.table_row(name).values()) for name in ("engine", "cascade-bridge-spec", "adapter")}
+    assert all(rows.values()), world.table()
+    assert "pull request #1 merged into main" in rows["engine"]
+    assert "holds" in rows["adapter"]
+    assert "holds" not in rows["engine"]
+    assert "holds" not in rows["cascade-bridge-spec"]
     assert "[adapter]" in world.table_in_results()
 
 

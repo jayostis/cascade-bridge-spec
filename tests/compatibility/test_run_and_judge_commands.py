@@ -12,6 +12,8 @@ def test_an_entry_whose_engine_passes_its_adapter_holds(world):
     assert "fake engine: testing" in said
     assert "holds; 1 cantTell, 5 passed, 1 untested" in said
     assert "does not hold" not in said
+    assert "1 counterpart: 1 hold" in said
+    assert "a result produced from uncommitted edits is feedback, never evidence" not in said
 
 
 @pytest.mark.parametrize(

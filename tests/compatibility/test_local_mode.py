@@ -17,25 +17,11 @@ def test_a_sibling_on_another_branch_with_uncommitted_edits_is_used_as_it_is(wor
     assert world.record()["repositories"]["adapter"]["how"] == "the sibling's working tree, on feat/next"
 
 
-def test_a_local_run_judges_the_sibling_it_used(world):
-    said = world.tool(world.engine_beside_adapter())
-
-    assert "does not hold" not in said
-    assert "1 counterpart: 1 hold" in said
-    assert "a result produced from uncommitted edits is feedback, never evidence" not in said
-
-
 def test_a_local_run_stops_with_the_git_clone_command_for_a_missing_sibling(world):
     said = world.tool(world.engine([world.url("adapter")]), 1)
 
     assert f"clone it with: git clone {world.url('adapter')}" in said
     assert "Traceback" not in said
-
-
-def test_a_local_run_writes_no_table(world):
-    world.tool(world.engine_beside_adapter())
-
-    assert world.table() == ""
 
 
 def test_an_adapter_is_run_by_the_engine_beside_it(world):
@@ -46,9 +32,10 @@ def test_an_adapter_is_run_by_the_engine_beside_it(world):
     assert "1 counterpart: 1 hold" in said
 
 
-def test_every_line_names_the_repository_it_is_about(world):
+def test_a_local_run_names_the_repository_each_line_is_about_and_writes_no_table(world):
     """Locally there is no URL for the repository under test or the specification; a line still names one."""
     said = world.tool(world.engine_beside_adapter())
 
     assert "engine is" in said
     assert "cascade-bridge-spec is" in said
+    assert world.table() == ""
