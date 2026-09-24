@@ -1,3 +1,4 @@
+import pytest
 from rdflib import URIRef
 
 import gap_scheme
@@ -103,38 +104,39 @@ def test_reports_a_gap_that_names_no_scheme(package):
     ) in "\n".join(gap_scheme.faulty(package.crate))
 
 
-def test_reports_a_gap_that_is_broader_than_no_kind(package):
-    package.write(GAP_SCHEME, scheme_of_one_gap(broader=None))
-    assert f"{THE_GAP} is skos:broader exactly one of {THE_KINDS_A_GAP_MAY_NAME}" in "\n".join(
-        gap_scheme.faulty(package.crate)
+@pytest.mark.parametrize(
+    "broader",
+    [
+        None,
+        "skos:broader bridge:noPredicate, bridge:carriedWithLoss",
+        "skos:broader ex:a-kind-of-our-own",
+        "skos:broader bridge:pathNotAccounted",
+    ],
+    ids=[
+        "no kind",
+        "two kinds",
+        "a kind outside the kinds the vocabulary declares",
+        "the concept a census carries",
+    ],
+)
+def test_reports_a_gap_that_is_not_skos_broader_exactly_one_kind_a_gap_may_name(package, broader):
+    assert f"{THE_GAP} is skos:broader exactly one of {THE_KINDS_A_GAP_MAY_NAME}" in said_about(
+        package, broader=broader
     )
 
 
-def test_reports_a_gap_that_is_broader_than_two_kinds(package):
-    package.write(GAP_SCHEME, scheme_of_one_gap(broader="skos:broader bridge:noPredicate, bridge:carriedWithLoss"))
-    assert f"{THE_GAP} is skos:broader exactly one of {THE_KINDS_A_GAP_MAY_NAME}" in "\n".join(
-        gap_scheme.faulty(package.crate)
-    )
-
-
-def test_reports_a_gap_whose_kind_is_outside_the_kinds_the_vocabulary_declares(package):
-    package.write(GAP_SCHEME, scheme_of_one_gap(broader="skos:broader ex:a-kind-of-our-own"))
-    assert f"{THE_GAP} is skos:broader exactly one of {THE_KINDS_A_GAP_MAY_NAME}" in "\n".join(
-        gap_scheme.faulty(package.crate)
-    )
-
-
-def test_reports_a_gap_whose_kind_is_the_concept_a_census_carries(package):
-    package.write(GAP_SCHEME, scheme_of_one_gap(broader="skos:broader bridge:pathNotAccounted"))
-    assert f"{THE_GAP} is skos:broader exactly one of {THE_KINDS_A_GAP_MAY_NAME}" in "\n".join(
-        gap_scheme.faulty(package.crate)
-    )
-
-
-def test_reports_a_closing_term_that_is_a_literal(package):
-    package.write(GAP_SCHEME, scheme_of_one_gap(closed_by='"genomics:assertionDate"'))
-    assert (f"{THE_GAP} names at most one bridge:closedBy, the Cascade term that would close it, by IRI") in "\n".join(
-        gap_scheme.faulty(package.crate)
+@pytest.mark.parametrize(
+    "closed_by",
+    [
+        '"genomics:assertionDate"',
+        "<https://ns.cascadeprotocol.org/genomics/v1#assertionDate>, "
+        "<https://ns.cascadeprotocol.org/genomics/v1#assertionNote>",
+    ],
+    ids=["a literal", "two terms"],
+)
+def test_reports_a_closing_term_that_is_a_literal_or_one_of_two(package, closed_by):
+    assert f"{THE_GAP} names at most one bridge:closedBy, the Cascade term that would close it, by IRI" in (
+        said_about(package, closed_by=closed_by)
     )
 
 
@@ -178,21 +180,6 @@ def test_reports_a_gap_that_names_a_scheme_other_than_the_one_its_file_carries(p
         f"{THE_GAP} carries exactly one skos:inScheme, {THE_SCHEME}, "
         "the one skos:ConceptScheme example-gaps.ttl carries"
     ) in "\n".join(gap_scheme.faulty(package.crate))
-
-
-def test_reports_a_gap_naming_two_closing_terms(package):
-    package.write(
-        GAP_SCHEME,
-        scheme_of_one_gap(
-            closed_by=(
-                "<https://ns.cascadeprotocol.org/genomics/v1#assertionDate>, "
-                "<https://ns.cascadeprotocol.org/genomics/v1#assertionNote>"
-            )
-        ),
-    )
-    assert (f"{THE_GAP} names at most one bridge:closedBy, the Cascade term that would close it, by IRI") in "\n".join(
-        gap_scheme.faulty(package.crate)
-    )
 
 
 def test_reports_a_gap_scheme_that_does_not_parse_as_turtle(package):
