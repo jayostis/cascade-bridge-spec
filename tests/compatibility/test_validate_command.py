@@ -7,23 +7,13 @@ from compatibility_world import VOCABULARY, a_host, write_compatibility
 PICKED_WHEN_THE_CHECK_RUNS = "picked when the check runs"
 
 
-def adapter_naming_engine(world):
-    adapter = world.clone("adapter")
-    write_compatibility(adapter, {"mustPassWith": [world.url("engine")]})
-    world.clone("engine")
-    world.clone(VOCABULARY)
-    return adapter
-
-
 def test_an_engines_file_naming_its_counterpart_by_repository_url_passes(world):
-    world.clone("adapter")
-    world.clone(VOCABULARY)
-    said = world.tool(world.engine([world.url("adapter")]))
+    said = world.tool(world.engine_beside_adapter())
     assert "1 counterpart: 1 hold" in said
 
 
 def test_an_adapters_file_naming_its_counterpart_by_repository_url_passes(world):
-    said = world.tool(adapter_naming_engine(world))
+    said = world.tool(world.adapter_beside_engine())
     assert "1 counterpart: 1 hold" in said
 
 
@@ -66,9 +56,7 @@ def refusals(world, said):
 
 
 def test_an_engines_file_naming_two_hosts_passes_the_shapes(world):
-    world.clone("adapter")
-    world.clone(VOCABULARY)
-    said = world.tool(world.engine([world.url("adapter")], host=[a_host("native"), a_host("node")]))
+    said = world.tool(world.engine_beside_adapter(host=[a_host("native"), a_host("node")]))
     assert "compatibility.json against the shapes" in said
 
 
@@ -84,7 +72,7 @@ def test_an_engines_file_naming_no_host_is_refused_saying_an_engine_names_one(wo
 
 
 def test_an_adapters_file_carrying_setup_or_command_is_refused(world):
-    adapter = adapter_naming_engine(world)
+    adapter = world.adapter_beside_engine()
     write_compatibility(adapter, {"mustPassWith": [world.url("engine")], "command": ["node", "cli.js"]})
     said = world.tool(adapter, 1)
     assert "an adapter's compatibility.json carries no" in said

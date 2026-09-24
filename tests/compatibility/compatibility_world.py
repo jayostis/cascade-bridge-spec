@@ -22,6 +22,8 @@ FAKE_ENGINE = ROOT / "fixtures" / "fake-engine"
 CONTEXT_IRI = "https://ns.cascadeprotocol.org/bridge/v1-draft/compatibility.jsonld"
 OWNER = "jayostis"
 CRATE = "ro-crate-metadata.json"
+MATCHING = "main, the branch matching the pull request's target"
+NOWHERE = "https://example.invalid/gone.git"
 
 VOCABULARY = "spec"
 VOCABULARY_OWNER = "the-cascade-protocol"
@@ -147,6 +149,10 @@ def pin_vocabulary(origins, commit):
         git("commit", "-q", "--allow-empty", "-m", "the vocabulary this adapter reads", cwd=origin)
         heads[name] = git("rev-parse", "HEAD", cwd=origin)
     return heads
+
+
+def depends_on(repository, number, owner=OWNER):
+    return f"Some description.\n\nDepends-On: https://github.com/{owner}/{repository}/pull/{number}\n"
 
 
 def write_compatibility(directory, document):
@@ -344,6 +350,32 @@ class World:
         write_compatibility(engine, engine_document(must_pass_with, canned, **overrides))
         return engine
 
+    def engine_under_test(self, body="", base="main", **overrides):
+        self.pull_request("engine", 1, body=body, base=base)
+        return self.engine([self.url("adapter")], **overrides), self.event(1)
+
+    def offline(self):
+        """Every clone's origin points nowhere: a local run reaches no network."""
+        for clone in self.workspace.iterdir():
+            git("remote", "set-url", "origin", NOWHERE, cwd=clone)
+
+    def engine_beside_adapter(self, canned="passed", **overrides):
+        engine = self.engine([self.url("adapter")], canned, **overrides)
+        self.clone("adapter")
+        self.clone(VOCABULARY)
+        self.offline()
+        return engine
+
+    def adapter_beside_engine(self, engine_document=None):
+        adapter = self.clone("adapter")
+        write_compatibility(adapter, {"mustPassWith": [self.url("engine")]})
+        engine = self.clone("engine")
+        if engine_document is not None:
+            write_compatibility(engine, engine_document)
+        self.clone(VOCABULARY)
+        self.offline()
+        return adapter
+
     def event(self, number, repository="engine"):
         pull = self.pull_requests.get(repository, number)
         path = self.root / "event.json"
@@ -445,6 +477,17 @@ class World:
 
     def table(self):
         return self.summary.read_text(encoding="utf-8") if self.summary.exists() else ""
+
+    def table_rows(self):
+        lines = [
+            [cell.strip() for cell in line.split("|")[1:-1]]
+            for line in self.table().splitlines()
+            if line.startswith("| ")
+        ]
+        return [dict(zip(lines[0], row, strict=True)) for row in lines[1:]] if lines else []
+
+    def table_row(self, repository):
+        return next((row for row in self.table_rows() if row["repository"].startswith(f"[{repository}]")), {})
 
     def table_in_results(self):
         written = self.results / "table.md"

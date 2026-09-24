@@ -13,18 +13,15 @@ from compatibility_world import (
     SYNTHETIC_ADAPTER,
     VOCABULARY,
     VOCABULARY_FILES,
+    VOCABULARY_OWNER,
     VOCABULARY_PATH,
     VOCABULARY_URL,
+    depends_on,
     git,
     name_vocabulary,
 )
-from test_picking_versions import depends_on, engine_under_test
 
 GIVEN = "fake engine: vocabularies "
-
-
-def depends_on_the_vocabulary(number):
-    return f"Some description.\n\nDepends-On: https://github.com/{VOCABULARY_PATH}/pull/{number}\n"
 
 
 def row(world):
@@ -32,7 +29,7 @@ def row(world):
 
 
 def table_row(world):
-    return next((line for line in world.table().splitlines() if line.startswith(f"| [{VOCABULARY}]")), "")
+    return " | ".join(world.table_row(VOCABULARY).values())
 
 
 def given_to_the_engine(said):
@@ -41,7 +38,7 @@ def given_to_the_engine(said):
 
 
 def test_the_engine_is_given_the_vocabulary_checked_out_at_the_adapters_pin(world):
-    engine, event = engine_under_test(world)
+    engine, event = world.engine_under_test()
 
     said = world.tool(engine, **world.ci(event=event))
 
@@ -51,7 +48,7 @@ def test_the_engine_is_given_the_vocabulary_checked_out_at_the_adapters_pin(worl
 
 
 def test_the_vocabulary_row_says_the_pin_it_was_checked_out_at(world):
-    engine, event = engine_under_test(world)
+    engine, event = world.engine_under_test()
 
     world.tool(engine, **world.ci(event=event))
 
@@ -62,7 +59,7 @@ def test_the_vocabulary_row_says_the_pin_it_was_checked_out_at(world):
 
 def test_a_named_vocabulary_pull_request_is_merged_into_its_target_and_the_row_names_it(world):
     world.pull_request(VOCABULARY, 5, fill=lambda path: (path / "NOTICE").write_text("five\n"))
-    engine, event = engine_under_test(world, body=depends_on_the_vocabulary(5))
+    engine, event = world.engine_under_test(body=depends_on(VOCABULARY, 5, owner=VOCABULARY_OWNER))
 
     said = world.tool(engine, **world.ci(event=event))
 
@@ -74,8 +71,8 @@ def test_a_named_vocabulary_pull_request_is_merged_into_its_target_and_the_row_n
 
 def test_a_vocabulary_pull_request_named_through_another_pull_request_is_followed(world):
     world.pull_request(VOCABULARY, 5)
-    world.pull_request("adapter", 7, body=depends_on_the_vocabulary(5))
-    engine, event = engine_under_test(world, body=depends_on("adapter", 7))
+    world.pull_request("adapter", 7, body=depends_on(VOCABULARY, 5, owner=VOCABULARY_OWNER))
+    engine, event = world.engine_under_test(body=depends_on("adapter", 7))
 
     world.tool(engine, **world.ci(event=event))
 
@@ -84,7 +81,7 @@ def test_a_vocabulary_pull_request_named_through_another_pull_request_is_followe
 
 def test_a_vocabulary_pull_request_closed_without_merging_fails_the_check_naming_it(world):
     world.pull_request(VOCABULARY, 5, state="closed")
-    engine, event = engine_under_test(world, body=depends_on_the_vocabulary(5))
+    engine, event = world.engine_under_test(body=depends_on(VOCABULARY, 5, owner=VOCABULARY_OWNER))
 
     said = world.tool(engine, 1, **world.ci(event=event))
 
@@ -96,7 +93,7 @@ def test_a_branch_of_the_vocabulary_matching_the_pull_requests_target_is_not_pic
     world.branch(VOCABULARY, "stable/x", fill=lambda path: (path / "STABLE").write_text("stable\n"))
     world.branch("adapter", "stable/x")
     world.branch("cascade-bridge-spec", "stable/x")
-    engine, event = engine_under_test(world, base="stable/x")
+    engine, event = world.engine_under_test(base="stable/x")
 
     said = world.tool(engine, **world.ci(event=event, branch="stable/x"))
 
@@ -107,7 +104,7 @@ def test_a_branch_of_the_vocabulary_matching_the_pull_requests_target_is_not_pic
 def test_an_engines_run_picks_the_vocabulary_from_the_counterpart_adapters_pin(world):
     later = world.commit_on_main(VOCABULARY, "LATER")
     world.pin_vocabularies(commit=later)
-    engine, event = engine_under_test(world)
+    engine, event = world.engine_under_test()
 
     said = world.tool(engine, **world.ci(event=event))
 

@@ -6,41 +6,22 @@ from compatibility_world import (
     VOCABULARY_FILES,
     VOCABULARY_NAMESPACE,
     VOCABULARY_URL,
-    git,
     name_vocabulary,
-    write_compatibility,
 )
 
 AN_EDIT = "# an edit the sibling has not committed\n"
 A_COMMIT_THE_SIBLING_DOES_NOT_HOLD = "0" * 40
 
 
-def nowhere(world, *names):
-    """Every origin URL points nowhere: a local run reaches no network."""
-    for name in names:
-        git("remote", "set-url", "origin", "https://example.invalid/gone.git", cwd=world.workspace / name)
-
-
-def engine_beside_its_siblings(world):
-    engine = world.engine([world.url("adapter")])
-    world.clone("adapter")
-    spec = world.clone(VOCABULARY)
-    nowhere(world, "engine", "adapter", VOCABULARY)
-    return engine, spec
-
-
-def adapter_naming(world, files=VOCABULARY_FILES):
-    adapter = world.clone("adapter")
-    write_compatibility(adapter, {"mustPassWith": [world.url("engine")]})
+def adapter_naming(world, files):
+    adapter = world.adapter_beside_engine()
     name_vocabulary(adapter / CRATE, VOCABULARY_URL, world.commits[VOCABULARY], files)
-    world.clone("engine")
-    world.clone(VOCABULARY)
-    nowhere(world, "adapter", "engine", VOCABULARY)
     return adapter
 
 
 def test_the_vocabulary_sibling_is_used_as_it_is_on_disk_uncommitted_edits_included(world):
-    engine, spec = engine_beside_its_siblings(world)
+    engine = world.engine_beside_adapter()
+    spec = world.workspace / VOCABULARY
     (spec / VOCABULARY_FILES[0]).write_text(AN_EDIT, encoding="utf-8")
 
     said = world.tool(engine)
@@ -53,7 +34,7 @@ def test_the_vocabulary_sibling_is_used_as_it_is_on_disk_uncommitted_edits_inclu
 def test_a_local_run_stops_with_the_git_command_for_a_missing_vocabulary_sibling(world):
     engine = world.engine([world.url("adapter")])
     world.clone("adapter")
-    nowhere(world, "engine", "adapter")
+    world.offline()
 
     said = world.tool(engine, 1)
 
@@ -62,8 +43,8 @@ def test_a_local_run_stops_with_the_git_command_for_a_missing_vocabulary_sibling
 
 
 def test_the_row_names_a_vocabulary_file_whose_bytes_differ_from_the_pinned_commits(world):
-    engine, spec = engine_beside_its_siblings(world)
-    (spec / VOCABULARY_FILES[0]).write_text(AN_EDIT, encoding="utf-8")
+    engine = world.engine_beside_adapter()
+    (world.workspace / VOCABULARY / VOCABULARY_FILES[0]).write_text(AN_EDIT, encoding="utf-8")
 
     said = world.tool(engine)
 
@@ -73,7 +54,7 @@ def test_the_row_names_a_vocabulary_file_whose_bytes_differ_from_the_pinned_comm
 
 
 def test_the_row_says_the_comparison_was_not_made_where_the_pinned_commit_is_absent(world):
-    engine, _ = engine_beside_its_siblings(world)
+    engine = world.engine_beside_adapter()
     name_vocabulary(world.workspace / "adapter" / CRATE, VOCABULARY_URL, A_COMMIT_THE_SIBLING_DOES_NOT_HOLD)
 
     said = world.tool(engine)

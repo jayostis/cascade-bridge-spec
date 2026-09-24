@@ -3,8 +3,7 @@
 import subprocess
 import sys
 
-from compatibility_world import VOCABULARY
-from test_picking_versions import depends_on, engine_under_test
+from compatibility_world import depends_on
 
 WITHOUT_SITE_PACKAGES = (sys.executable, "-S")
 
@@ -16,7 +15,7 @@ def test_the_interpreter_without_site_packages_cannot_import_rdflib():
 
 def test_the_merge_gate_runs_with_no_package_installed(world):
     world.pull_request("adapter", 7, state="closed", merged=True)
-    engine, event = engine_under_test(world, body=depends_on("adapter", 7))
+    engine, event = world.engine_under_test(body=depends_on("adapter", 7))
 
     said = world.tool(engine, check="ready-to-merge", interpreter=WITHOUT_SITE_PACKAGES, **world.ci(event=event))
 
@@ -24,11 +23,7 @@ def test_the_merge_gate_runs_with_no_package_installed(world):
 
 
 def test_a_check_with_the_validators_missing_names_what_is_missing(world):
-    engine = world.engine([world.url("adapter")])
-    world.clone("adapter")
-    world.clone(VOCABULARY)
-
-    said = world.tool(engine, 1, interpreter=WITHOUT_SITE_PACKAGES)
+    said = world.tool(world.engine_beside_adapter(), 1, interpreter=WITHOUT_SITE_PACKAGES)
 
     assert "rdflib is not installed" in said
     assert "Traceback" not in said

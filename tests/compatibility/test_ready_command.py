@@ -2,9 +2,17 @@
 
 import pytest
 
-from compatibility_world import CRATE, VOCABULARY, VOCABULARY_PATH, VOCABULARY_URL, git, name_vocabulary
-from compatibility_world import write_compatibility as compatibility_file
-from test_picking_versions import depends_on, engine_under_test
+from compatibility_world import (
+    CRATE,
+    VOCABULARY,
+    VOCABULARY_OWNER,
+    VOCABULARY_PATH,
+    VOCABULARY_URL,
+    depends_on,
+    git,
+    name_vocabulary,
+    write_compatibility,
+)
 
 GATE = "ready-to-merge"
 
@@ -12,7 +20,7 @@ GATE = "ready-to-merge"
 def test_ready_to_merge_fails_while_a_named_pull_request_is_open_naming_it(world):
     head = world.pull_request("adapter", 7)
     world.pull_requests.check_run("adapter", head, "compatibility")
-    engine, event = engine_under_test(world, body=depends_on("adapter", 7))
+    engine, event = world.engine_under_test(body=depends_on("adapter", 7))
 
     said = world.tool(engine, 1, check="ready-to-merge", **world.ci(event=event, gate=GATE))
 
@@ -22,7 +30,7 @@ def test_ready_to_merge_fails_while_a_named_pull_request_is_open_naming_it(world
 
 def test_ready_to_merge_passes_once_the_named_pull_request_has_merged(world):
     world.pull_request("adapter", 7, state="closed", merged=True)
-    engine, event = engine_under_test(world, body=depends_on("adapter", 7))
+    engine, event = world.engine_under_test(body=depends_on("adapter", 7))
 
     said = world.tool(engine, check="ready-to-merge", **world.ci(event=event))
 
@@ -33,7 +41,7 @@ def test_ready_to_merge_passes_once_the_named_pull_request_has_merged(world):
 def test_ready_to_merge_tells_a_pull_request_closed_without_merging_to_cut_the_line_naming_it(world):
     world.pull_request("adapter", 7, state="closed")
     world.pull_request("adapter", 8)
-    engine, event = engine_under_test(world, body=depends_on("adapter", 7) + depends_on("adapter", 8))
+    engine, event = world.engine_under_test(body=depends_on("adapter", 7) + depends_on("adapter", 8))
 
     said = world.tool(engine, 1, check="ready-to-merge", **world.ci(event=event))
 
@@ -42,7 +50,7 @@ def test_ready_to_merge_tells_a_pull_request_closed_without_merging_to_cut_the_l
 
 
 def test_ready_to_merge_passes_a_pull_request_naming_nothing(world):
-    engine, event = engine_under_test(world)
+    engine, event = world.engine_under_test()
 
     said = world.tool(engine, check="ready-to-merge", **world.ci(event=event))
 
@@ -58,7 +66,7 @@ def test_ready_to_merge_passes_a_push(world):
 def test_ready_to_merge_reads_only_the_pull_requests_named_directly(world):
     world.pull_request("cascade-bridge-spec", 3)
     world.pull_request("adapter", 7, body=depends_on("cascade-bridge-spec", 3), state="closed", merged=True)
-    engine, event = engine_under_test(world, body=depends_on("adapter", 7))
+    engine, event = world.engine_under_test(body=depends_on("adapter", 7))
 
     said = world.tool(engine, check="ready-to-merge", **world.ci(event=event))
 
@@ -70,7 +78,7 @@ def adapter_naming_the_engine_back(world, *runs, merged=False):
     head = world.pull_request("adapter", 7, body=depends_on("engine", 1), state=state, merged=merged)
     for name, status, conclusion in runs:
         world.pull_requests.check_run("adapter", head, name, status=status, conclusion=conclusion)
-    return engine_under_test(world, body=depends_on("adapter", 7))
+    return world.engine_under_test(body=depends_on("adapter", 7))
 
 
 @pytest.mark.parametrize(
@@ -114,7 +122,7 @@ def test_ready_to_merge_counts_a_pull_request_naming_it_back_through_another_as_
     world.pull_requests.check_run("adapter", head, "compatibility")
     spec = world.pull_request("cascade-bridge-spec", 3, body=depends_on("engine", 1))
     world.pull_requests.check_run("cascade-bridge-spec", spec, "ruff and pytest")
-    engine, event = engine_under_test(world, body=depends_on("adapter", 7))
+    engine, event = world.engine_under_test(body=depends_on("adapter", 7))
 
     said = world.tool(engine, check="ready-to-merge", **world.ci(event=event, gate=GATE))
 
@@ -169,7 +177,7 @@ def test_ready_to_merge_fails_a_cycle_whose_member_names_a_pull_request_outside_
     world.pull_request("cascade-bridge-spec", 3, state=state)
     head = world.pull_request("adapter", 7, body=depends_on("engine", 1) + depends_on("cascade-bridge-spec", 3))
     world.pull_requests.check_run("adapter", head, "compatibility")
-    engine, event = engine_under_test(world, body=depends_on("adapter", 7))
+    engine, event = world.engine_under_test(body=depends_on("adapter", 7))
 
     said = world.tool(engine, 1, check="ready-to-merge", **world.ci(event=event, gate=GATE))
 
@@ -180,7 +188,7 @@ def test_ready_to_merge_passes_a_cycle_whose_member_names_a_merged_pull_request_
     world.pull_request("cascade-bridge-spec", 3, state="closed", merged=True)
     head = world.pull_request("adapter", 7, body=depends_on("engine", 1) + depends_on("cascade-bridge-spec", 3))
     world.pull_requests.check_run("adapter", head, "compatibility")
-    engine, event = engine_under_test(world, body=depends_on("adapter", 7))
+    engine, event = world.engine_under_test(body=depends_on("adapter", 7))
 
     said = world.tool(engine, check="ready-to-merge", **world.ci(event=event, gate=GATE))
 
@@ -190,7 +198,7 @@ def test_ready_to_merge_passes_a_cycle_whose_member_names_a_merged_pull_request_
 def test_ready_to_merge_finds_no_cycle_through_a_merged_pull_request(world):
     world.pull_request("adapter", 7, body=depends_on("cascade-bridge-spec", 3))
     world.pull_request("cascade-bridge-spec", 3, body=depends_on("engine", 1), state="closed", merged=True)
-    engine, event = engine_under_test(world, body=depends_on("adapter", 7))
+    engine, event = world.engine_under_test(body=depends_on("adapter", 7))
 
     said = world.tool(engine, 1, check="ready-to-merge", **world.ci(event=event, gate=GATE))
 
@@ -224,13 +232,13 @@ def squashed_onto_main(world, name, number):
 def adapter_under_test(world, body=""):
     world.pull_request("adapter", 1, body=body)
     adapter = world.clone("adapter")
-    compatibility_file(adapter, {"mustPassWith": [world.url("engine")]})
+    write_compatibility(adapter, {"mustPassWith": [world.url("engine")]})
     return adapter, world.event(1, "adapter")
 
 
 def test_ready_to_merge_waits_for_the_pin_to_contain_a_merged_vocabulary_pull_request(world):
     merge = merged_into_main(world, VOCABULARY, 5)
-    body = f"Some description.\n\nDepends-On: https://github.com/{VOCABULARY_PATH}/pull/5\n"
+    body = depends_on(VOCABULARY, 5, owner=VOCABULARY_OWNER)
     adapter, event = adapter_under_test(world, body=body)
     variables = world.ci(repository="adapter", event=event)
 
@@ -247,7 +255,7 @@ def test_ready_to_merge_waits_for_the_pin_to_contain_a_merged_vocabulary_pull_re
 
 def test_ready_to_merge_takes_a_pin_at_what_a_squash_merge_left_on_the_target(world):
     squash = squashed_onto_main(world, VOCABULARY, 5)
-    body = f"Some description.\n\nDepends-On: https://github.com/{VOCABULARY_PATH}/pull/5\n"
+    body = depends_on(VOCABULARY, 5, owner=VOCABULARY_OWNER)
     adapter, event = adapter_under_test(world, body=body)
     name_vocabulary(adapter / CRATE, VOCABULARY_URL, squash)
 
@@ -258,7 +266,7 @@ def test_ready_to_merge_takes_a_pin_at_what_a_squash_merge_left_on_the_target(wo
 
 def test_ready_to_merge_says_why_a_pin_could_not_be_read_rather_than_that_it_contains_nothing(world):
     merged_into_main(world, VOCABULARY, 5)
-    body = f"Some description.\n\nDepends-On: https://github.com/{VOCABULARY_PATH}/pull/5\n"
+    body = depends_on(VOCABULARY, 5, owner=VOCABULARY_OWNER)
     adapter, event = adapter_under_test(world, body=body)
     name_vocabulary(adapter / CRATE, VOCABULARY_URL, "0" * 40)
 
@@ -274,7 +282,7 @@ def test_ready_to_merge_fails_a_cycle_member_named_through_another_whose_check_d
     world.pull_requests.check_run("adapter", head, "compatibility")
     spec = world.pull_request("cascade-bridge-spec", 3, body=depends_on("engine", 1))
     world.pull_requests.check_run("cascade-bridge-spec", spec, "ruff and pytest", conclusion="failure")
-    engine, event = engine_under_test(world, body=depends_on("adapter", 7))
+    engine, event = world.engine_under_test(body=depends_on("adapter", 7))
 
     said = world.tool(engine, 1, check="ready-to-merge", **world.ci(event=event, gate=GATE))
 
