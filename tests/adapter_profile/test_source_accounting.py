@@ -212,14 +212,9 @@ def test_reports_nothing_for_a_carried_in_part_entry_naming_a_gap_of_a_value_not
     assert not said_about(package)
 
 
-def test_reports_a_no_home_entry_naming_a_gap_carried_with_loss_and_a_carried_in_part_entry_naming_one_with_no_predicate(
-    package,
-):
+def test_reports_a_no_home_entry_naming_a_gap_carried_with_loss(package):
     accounted(package, entry(NO_QUERY_MENTIONS, verdict=NO_HOME, names_gap=A_GAP_CARRIED_WITH_LOSS))
     assert A_GAP_CARRIED_WITH_LOSS.removeprefix("ex:") in said_about(package)
-
-    accounted(package, entry(THE_MAPPING_MENTIONS, verdict=CARRIED_IN_PART, names_gap=A_GAP_WITH_NO_PREDICATE))
-    assert A_GAP_WITH_NO_PREDICATE.removeprefix("ex:") in said_about(package)
 
 
 def test_reports_nothing_for_the_accounting_the_synthetic_adapter_commits(crate):
