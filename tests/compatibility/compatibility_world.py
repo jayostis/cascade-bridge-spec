@@ -119,7 +119,24 @@ def publish_origins(origins):
         write_compatibility(path, engine_document([]))
 
     commits["engine"] = publish(origins, "engine", engine)
+    commits.update(pin_vocabulary(origins, commits[VOCABULARY]))
     return commits
+
+
+def origin_of(origins, name):
+    return origins / (VOCABULARY_OWNER if name == VOCABULARY else OWNER) / name
+
+
+def pin_vocabulary(origins, commit, files=VOCABULARY_FILES):
+    """Every adapter crate in these origins names this world's the-cascade-protocol/spec at a commit of it."""
+    heads = {}
+    for name, relative in CRATES_NAMING_THE_VOCABULARY:
+        origin = origin_of(origins, name)
+        name_vocabulary(origin / relative / CRATE, VOCABULARY_URL, commit, files)
+        git("add", "-A", cwd=origin)
+        git("commit", "-q", "--allow-empty", "-m", "the vocabulary this adapter reads", cwd=origin)
+        heads[name] = git("rev-parse", "HEAD", cwd=origin)
+    return heads
 
 
 def write_compatibility(directory, document):
@@ -281,22 +298,17 @@ class World:
         copy = self.root / "origins"
         shutil.copytree(self.origins, copy)
         self.origins = copy
-        return self.pin_vocabularies()
+        return self
 
-    def pin_vocabularies(self, commit=None, files=VOCABULARY_FILES):
-        """Every adapter crate in these origins names this world's the-cascade-protocol/spec at a commit of it."""
-        for name, relative in CRATES_NAMING_THE_VOCABULARY:
-            origin = self.origin(name)
-            name_vocabulary(origin / relative / CRATE, VOCABULARY_URL, commit or self.commits[VOCABULARY], files)
-            git("add", "-A", cwd=origin)
-            git("commit", "-q", "--allow-empty", "-m", "the vocabulary this adapter reads", cwd=origin)
+    def pin_vocabularies(self, commit, files=VOCABULARY_FILES):
+        self.commits.update(pin_vocabulary(self.origins, commit, files))
         return self
 
     def url(self, name):
         return self.origin(name).as_uri()
 
     def origin(self, name):
-        return self.origins / (VOCABULARY_OWNER if name == VOCABULARY else OWNER) / name
+        return origin_of(self.origins, name)
 
     def clone(self, name):
         path = self.workspace / name

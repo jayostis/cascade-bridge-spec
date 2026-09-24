@@ -54,7 +54,7 @@ ex:the-record-names-no-submitter a skos:Concept ;
 
 
 class Package:
-    def __init__(self, path, tracked=True):
+    def __init__(self, path, tracked=False):
         shutil.copytree(FIXTURE, path)
         self.path = path
         self.tracked = tracked
@@ -126,13 +126,13 @@ def package(tmp_path):
 
 
 @pytest.fixture
-def loose(tmp_path):
-    return Package(tmp_path / "package", tracked=False)
+def tracked_package(tmp_path):
+    return Package(tmp_path / "package", tracked=True)
 
 
 @pytest.fixture(scope="session")
 def conforming(tmp_path_factory):
-    return Package(tmp_path_factory.mktemp("conforming") / "package").crate
+    return Package(tmp_path_factory.mktemp("conforming") / "package", tracked=True).crate
 
 
 @pytest.fixture
