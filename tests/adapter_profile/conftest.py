@@ -2,7 +2,6 @@ import dataclasses
 import json
 import shutil
 import subprocess
-from pathlib import Path
 
 import pytest
 from pyshacl import validate
@@ -10,9 +9,8 @@ from rdflib import Graph
 from rdflib.namespace import RDF, SH
 
 import _crate
+from adapter_profile_world import FIXTURE, ROOT
 
-ROOT = Path(__file__).resolve().parents[2]
-FIXTURE = ROOT / "fixtures" / "synthetic-adapter"
 MUST = ROOT / "adapter" / "profile" / "must"
 
 GAP_SCHEME_FILE = "vocab/example-gaps.ttl"

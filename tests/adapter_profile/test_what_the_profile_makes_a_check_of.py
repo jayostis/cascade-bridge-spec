@@ -1,9 +1,9 @@
 import shutil
-from pathlib import Path
 
 from rocrate_validator import services
 
-ROOT = Path(__file__).resolve().parents[2]
+from adapter_profile_world import ROOT
+
 PROFILE = ROOT / "adapter"
 
 DISCOVERED = (

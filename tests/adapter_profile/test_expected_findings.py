@@ -1,11 +1,10 @@
-from pathlib import Path
-
 from rdflib import Graph
 from rdflib.namespace import RDF, SH
 
 import expected_findings
 from _codes import W3C_XML_SCHEMA_RULE_ANCHORS
 from _terms import BRIDGE, MF, OA
+from adapter_profile_world import FIXTURE, selected_by
 
 FINDINGS = "fixtures/findings/example-0001.ttl"
 
@@ -591,13 +590,7 @@ def test_reports_a_finding_whose_body_is_the_name_of_no_shacl_constraint_compone
     )
 
 
-EXAMPLE_0003 = Path(__file__).resolve().parents[2] / "fixtures/synthetic-adapter/fixtures/findings/example-0003.ttl"
-
-
-def selected_by(graph, finding):
-    selector = graph.value(graph.value(finding, OA.hasTarget), OA.hasSelector)
-    refinement = graph.value(selector, OA.refinedBy)
-    return str(graph.value(selector, RDF.value)), str(graph.value(refinement, RDF.value))
+EXAMPLE_0003 = FIXTURE / "fixtures" / "findings" / "example-0003.ttl"
 
 
 def test_the_schema_findings_the_synthetic_adapter_expects_are_w3cs_rules_and_the_element_they_were_broken_on():

@@ -1,16 +1,10 @@
-from lxml import etree
 from rdflib import Graph, Literal
 from rdflib.namespace import RDF, SH, SKOS, XSD
 
 from _codes import scheme_named_by
-from _selectors import selector_of, step_of
-from _terms import BRIDGE, MF, OA
-
-
-def accounting_of(crate):
-    named = crate.graph.value(crate.root, BRIDGE.sourceAccounting)
-    assert named is not None, "the synthetic adapter names no bridge:sourceAccounting"
-    return Graph().parse(crate.file_at(named), format="turtle")
+from _selectors import selector_of
+from _terms import BRIDGE, OA
+from adapter_profile_world import accounting_of, below_the_record, cases, refinement_of, selected_by
 
 
 def lookups_of(crate):
@@ -43,10 +37,6 @@ def key_of(value):
     return value.strip(XML_WHITESPACE).lower()
 
 
-def below_the_record(source_path):
-    return source_path.removeprefix("/").split("/", 1)[1]
-
-
 def value_of(element):
     """A path's value: the text of an element with no element children, and nothing where it has one."""
     return None if len(element) else (element.text or "")
@@ -64,38 +54,6 @@ def held_at(record, source_path):
 
 def outside(holding, notations):
     return {value: elements for value, elements in holding.items() if key_of(value) and key_of(value) not in notations}
-
-
-def records_of(crate, document):
-    name = str(crate.graph.value(crate.root, BRIDGE.elementNameOfEachRecord) or "")
-    return document.xpath("//*[local-name()=$name]", name=name)
-
-
-def cases(crate):
-    """Each (name, expected findings graph, records) a test of the manifest names an input and findings for."""
-    for test in crate.entries:
-        result = crate.graph.value(test, MF.result)
-        expected = None if result is None else crate.graph.value(result, BRIDGE.expectedFindings)
-        action = crate.graph.value(test, MF.action)
-        source = None if action is None else crate.graph.value(action, BRIDGE.input)
-        if expected is None or source is None:
-            continue
-        graph = Graph().parse(crate.file_at(expected), format="turtle")
-        yield crate.name_of(test), graph, records_of(crate, etree.parse(str(crate.file_at(source))))
-
-
-def refinement_of(record, element):
-    steps, walked = [], element
-    while walked is not None and walked is not record:
-        steps.append(step_of(walked, True))
-        walked = walked.getparent()
-    return "/".join(reversed(steps)) or None
-
-
-def selected_by(graph, finding):
-    selector = graph.value(graph.value(finding, OA.hasTarget), OA.hasSelector)
-    refined = graph.value(selector, OA.refinedBy)
-    return str(graph.value(selector, RDF.value)), None if refined is None else str(graph.value(refined, RDF.value))
 
 
 def reported_by_the_lookup(graph, record, gap):

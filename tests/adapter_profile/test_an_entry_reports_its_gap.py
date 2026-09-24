@@ -1,10 +1,10 @@
-from lxml import etree
-from rdflib import Graph, Literal
+from rdflib import Literal
 from rdflib.namespace import RDF, SH, SKOS, XSD
 
 from _codes import KINDS_A_GAP_MAY_NAME, scheme_named_by
-from _selectors import selector_of, step_of
-from _terms import BRIDGE, MF, OA
+from _selectors import selector_of
+from _terms import BRIDGE, OA
+from adapter_profile_world import accounting_of, below_the_record, cases, refinement_of, selected_by
 
 KINDS_AN_ENTRY_REPORTS = (BRIDGE.noPredicate, BRIDGE.sourceLacksRequired)
 KINDS_AN_ENTRY_REPORTS_NOTHING_OF = (BRIDGE.carriedWithLoss, BRIDGE.valueNotMapped, BRIDGE.schemaRuleUnnamed)
@@ -24,12 +24,6 @@ AN_UNACCOUNTED_PATH_STANDING_AT_MORE_THAN_ONE_NODE = (
     f"/ExampleRecord/*[local-name()='Extension' and namespace-uri()='{THE_NAMESPACE}']"
 )
 AN_UNACCOUNTED_PATH_STANDING_AT_ONE_NODE = "/ExampleRecord/Novelty"
-
-
-def accounting_of(crate):
-    named = crate.graph.value(crate.root, BRIDGE.sourceAccounting)
-    assert named is not None, "the synthetic adapter names no bridge:sourceAccounting"
-    return Graph().parse(crate.file_at(named), format="turtle")
 
 
 def entries_of(crate):
@@ -62,34 +56,10 @@ def naming_a_gap_no_entry_reports(crate):
     ]
 
 
-def records_of(crate, document):
-    name = str(crate.graph.value(crate.root, BRIDGE.elementNameOfEachRecord) or "")
-    return document.xpath("//*[local-name()=$name]", name=name)
-
-
-def cases(crate):
-    """Each (name, expected findings graph, records) a test of the manifest names an input and findings for."""
-    for test in crate.entries:
-        result = crate.graph.value(test, MF.result)
-        expected = None if result is None else crate.graph.value(result, BRIDGE.expectedFindings)
-        action = crate.graph.value(test, MF.action)
-        source = None if action is None else crate.graph.value(action, BRIDGE.input)
-        if expected is None or source is None:
-            continue
-        graph = Graph().parse(crate.file_at(expected), format="turtle")
-        records = records_of(crate, etree.parse(str(crate.file_at(source))))
-        yield crate.name_of(test), graph, records
-
-
 def the_case(crate, named):
     found = [case for case in cases(crate) if case[0] == named]
     assert found, f"the manifest names no case {named} carrying an input and expected findings"
     return found[0]
-
-
-def below_the_record(source_path):
-    """The path an XPath evaluates from the record element, which is the step a bridge:sourcePath starts at."""
-    return source_path.removeprefix("/").split("/", 1)[1]
 
 
 def standing_at(record, source_path):
@@ -101,20 +71,6 @@ def standing_at(record, source_path):
         on, _, attribute = relative.rpartition("/@")
         return [owner for owner in record.xpath(on) if owner.xpath(f"@{attribute}")]
     return record.xpath(relative)
-
-
-def refinement_of(record, element):
-    steps, walked = [], element
-    while walked is not None and walked is not record:
-        steps.append(step_of(walked, True))
-        walked = walked.getparent()
-    return "/".join(reversed(steps)) or None
-
-
-def selected_by(graph, finding):
-    selector = graph.value(graph.value(finding, OA.hasTarget), OA.hasSelector)
-    refined = graph.value(selector, OA.refinedBy)
-    return str(graph.value(selector, RDF.value)), None if refined is None else str(graph.value(refined, RDF.value))
 
 
 def findings_about(graph, record):
