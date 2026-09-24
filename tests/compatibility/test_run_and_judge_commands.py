@@ -43,8 +43,9 @@ def test_an_entry_whose_engine_passes_its_adapter_holds(world):
         pytest.param(
             "partial",
             [
-                "does not hold; 1 passed; 6 of the manifest's 7 tests have no outcome: "
-                "example-0002, example-0003, example-0004, example-0005, example-0006, example-release-2026-01"
+                "does not hold; 1 passed; example-0002 has no outcome; example-0003 has no outcome; "
+                "example-0004 has no outcome; example-0005 has no outcome; example-0006 has no outcome; "
+                "example-release-2026-01 has no outcome"
             ],
             id="a report missing entries of the manifest, though none failed",
         ),

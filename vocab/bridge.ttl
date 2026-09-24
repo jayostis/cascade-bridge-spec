@@ -297,13 +297,13 @@ bridge:IsomorphicConversionTest a owl:Class ;
 bridge:InputOnlyTest a owl:Class ;
   rdfs:subClassOf mf:ManifestEntry ;
   rdfs:label "Input-only test"@en ;
-  rdfs:comment "Parse and validate bridge:input; record the produced graph and findings; judge nothing."@en ;
+  rdfs:comment "Parse and validate bridge:input; record the produced graph and findings; judge nothing, and report earl:cantTell."@en ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
 bridge:DatasetCompletionTest a owl:Class ;
   rdfs:subClassOf mf:ManifestEntry ;
   rdfs:label "Dataset completion test"@en ;
-  rdfs:comment "Stream bridge:dataset in its envelope; the run must complete without rejection. Where bridge:recordsProcessedCount and bridge:outputDigest are present they must match; where absent the harness records them."@en ;
+  rdfs:comment "Stream bridge:dataset in its envelope; the run must complete without rejection. Where bridge:recordsProcessedCount and bridge:outputDigest are present they must match; where absent the harness records them. A Bridge that does not stream the dataset reports earl:untested."@en ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
 bridge:LiftTest a owl:Class ;

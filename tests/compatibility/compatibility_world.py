@@ -74,7 +74,7 @@ def publish(origins, name, fill, owner=OWNER):
 
 def specification(path):
     """What a run fetches and runs the checks from: this working tree, uncommitted edits included."""
-    for directory in ("scripts", "vocab", "shapes", "adapter", "fixtures"):
+    for directory in ("scripts", "vocab", "shapes", "adapter", "engine", "fixtures"):
         shutil.copytree(ROOT / directory, path / directory, ignore=shutil.ignore_patterns("__pycache__"))
     shutil.copy(ROOT / "pyproject.toml", path / "pyproject.toml")
 

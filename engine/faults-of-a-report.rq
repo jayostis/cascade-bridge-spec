@@ -1,0 +1,123 @@
+PREFIX earl: <http://www.w3.org/ns/earl#>
+PREFIX mf: <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#>
+
+SELECT ?entry ?fault
+WHERE {
+  {
+    FILTER NOT EXISTS { ?anyResult earl:outcome ?anyOutcome }
+    BIND ("its report records no outcome" AS ?fault)
+  }
+  UNION
+  {
+    ?result earl:outcome ?outcome .
+    FILTER (?outcome IN (earl:failed, earl:inapplicable))
+    OPTIONAL { ?assertion earl:result ?result ; earl:test ?entry }
+    BIND (COALESCE(IF(CONTAINS(STR(?entry), "#"), STRAFTER(STR(?entry), "#"), STR(?entry)), "a result naming no test") AS ?name)
+    BIND (CONCAT(?name, " is reported ", STRAFTER(STR(?outcome), STR(earl:)),
+      ": a report that holds gives only passed, cantTell or untested") AS ?fault)
+  }
+  UNION
+  {
+    ?result earl:outcome ?outcome .
+    FILTER (?outcome NOT IN (earl:passed, earl:failed, earl:cantTell, earl:inapplicable, earl:untested))
+    OPTIONAL { ?assertion earl:result ?result ; earl:test ?entry }
+    BIND (COALESCE(IF(CONTAINS(STR(?entry), "#"), STRAFTER(STR(?entry), "#"), STR(?entry)), "a result naming no test") AS ?name)
+    BIND (IF(isLITERAL(?outcome), CONCAT("\"", STR(?outcome), "\""),
+      IF(isBLANK(?outcome), "a blank node",
+        IF(STRSTARTS(STR(?outcome), STR(earl:)), STRAFTER(STR(?outcome), STR(earl:)), CONCAT("<", STR(?outcome), ">"))))
+      AS ?reported)
+    BIND (CONCAT(?name, " is reported ", ?reported, ", and ", ?reported, " is not one of EARL's five outcomes") AS ?fault)
+  }
+  UNION
+  {
+    FILTER EXISTS { ?anyResult earl:outcome ?anyOutcome }
+    {
+      SELECT ?entry WHERE {
+        {
+          ?manifest mf:entries/rdf:rest*/rdf:first ?entry .
+          BIND (1 AS ?listed)
+          BIND (0 AS ?reported)
+        }
+        UNION
+        {
+          ?assertion earl:test ?entry ;
+            earl:result/earl:outcome ?outcome .
+          BIND (0 AS ?listed)
+          BIND (1 AS ?reported)
+        }
+        UNION
+        {
+          ?manifest bridge:adapter ?adapter .
+          {
+            SELECT DISTINCT ?slashes WHERE {
+              ?listing mf:entries/rdf:rest*/rdf:first ?listedEntry ;
+                bridge:adapter ?listingAdapter .
+              BIND (STRAFTER(STR(?listedEntry), STR(?listingAdapter)) AS ?within)
+              BIND (STRLEN(?within) - STRLEN(REPLACE(?within, "/", "")) AS ?slashes)
+            }
+          }
+          ?assertion earl:test ?test ;
+            earl:result/earl:outcome ?outcome .
+          BIND (REPLACE(STR(?test), CONCAT("^.*/(([^/]*/){", STR(?slashes), "}[^/]*)$"), "$1") AS ?withinAdapter)
+          FILTER (?withinAdapter != "")
+          BIND (IRI(CONCAT(STR(?adapter), ?withinAdapter)) AS ?entry)
+          BIND (0 AS ?listed)
+          BIND (1 AS ?reported)
+        }
+      }
+      GROUP BY ?entry
+      HAVING (MAX(?listed) = 1 && MAX(?reported) = 0)
+    }
+    BIND (IF(CONTAINS(STR(?entry), "#"), STRAFTER(STR(?entry), "#"), STR(?entry)) AS ?name)
+    BIND (CONCAT(?name, " has no outcome") AS ?fault)
+  }
+  UNION
+  {
+    {
+      SELECT ?entry ?outcome WHERE {
+        {
+          ?manifest mf:entries/rdf:rest*/rdf:first ?entry .
+          ?entry a bridge:InputOnlyTest .
+          VALUES ?outcome { earl:passed earl:untested }
+          BIND (1 AS ?listed)
+          BIND (0 AS ?reported)
+        }
+        UNION
+        {
+          ?assertion earl:test ?entry ;
+            earl:result/earl:outcome ?outcome .
+          FILTER (?outcome IN (earl:passed, earl:untested))
+          BIND (0 AS ?listed)
+          BIND (1 AS ?reported)
+        }
+        UNION
+        {
+          ?manifest bridge:adapter ?adapter .
+          {
+            SELECT DISTINCT ?slashes WHERE {
+              ?listing mf:entries/rdf:rest*/rdf:first ?listedEntry ;
+                bridge:adapter ?listingAdapter .
+              BIND (STRAFTER(STR(?listedEntry), STR(?listingAdapter)) AS ?within)
+              BIND (STRLEN(?within) - STRLEN(REPLACE(?within, "/", "")) AS ?slashes)
+            }
+          }
+          ?assertion earl:test ?test ;
+            earl:result/earl:outcome ?outcome .
+          FILTER (?outcome IN (earl:passed, earl:untested))
+          BIND (REPLACE(STR(?test), CONCAT("^.*/(([^/]*/){", STR(?slashes), "}[^/]*)$"), "$1") AS ?withinAdapter)
+          FILTER (?withinAdapter != "")
+          BIND (IRI(CONCAT(STR(?adapter), ?withinAdapter)) AS ?entry)
+          BIND (0 AS ?listed)
+          BIND (1 AS ?reported)
+        }
+      }
+      GROUP BY ?entry ?outcome
+      HAVING (MAX(?listed) = 1 && MAX(?reported) = 1)
+    }
+    BIND (IF(CONTAINS(STR(?entry), "#"), STRAFTER(STR(?entry), "#"), STR(?entry)) AS ?name)
+    BIND (CONCAT("input-only ", ?name, " is reported ", STRAFTER(STR(?outcome), STR(earl:)), ", not cantTell") AS ?fault)
+  }
+}
+ORDER BY ?entry ?fault
