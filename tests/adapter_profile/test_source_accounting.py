@@ -98,6 +98,11 @@ def said_about(package):
     return "\n".join(source_accounting.faulty(package.crate))
 
 
+def test_reports_nothing_for_an_adapter_naming_no_accounting(crate):
+    crate.graph.remove((crate.root, BRIDGE.sourceAccounting, None))
+    assert not list(source_accounting.faulty(crate))
+
+
 def test_reports_an_adapter_that_names_more_than_one_accounting(crate):
     crate.graph.remove((crate.root, BRIDGE.sourceAccounting, None))
     for named in (

@@ -15,6 +15,11 @@ def test_reports_a_crate_that_does_not_name_the_adapter_profile(crate, shape_fil
     assert "names the Cascade Bridge Adapter profile" in shape_file_messages(crate, "adapter.ttl")
 
 
+def test_reports_an_identifier_that_is_not_a_format_id(crate, shape_file_messages):
+    crate.graph.set((crate.root, SCHEMA.identifier, Literal("Synthetic_Example")))
+    assert "The adapter carries exactly one identifier, the format id" in shape_file_messages(crate, "adapter.ttl")
+
+
 def test_reports_a_crate_that_names_no_mapping(crate, shape_file_messages):
     crate.graph.remove((crate.root, BRIDGE.mapping, None))
     assert "names at least one bridge:mapping" in shape_file_messages(crate, "adapter.ttl")
