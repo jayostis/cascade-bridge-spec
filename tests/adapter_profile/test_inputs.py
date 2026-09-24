@@ -1,4 +1,4 @@
-from rdflib import Literal
+from rdflib import Literal, URIRef
 
 import inputs
 from _terms import BRIDGE, SCHEMA
@@ -24,17 +24,13 @@ def schemas_of(crate):
     )
 
 
-def test_reports_nothing_for_an_input_that_satisfies_its_envelopes_schema(crate):
+def test_reports_nothing_for_inputs_that_satisfy_their_schemas_or_whose_failures_their_findings_record(crate):
     assert not list(inputs.invalid(crate))
 
 
 def test_reports_an_input_that_does_not_satisfy_its_schema(package):
     package.edit("fixtures/in/example-0001.xml", 'Version="3"', 'Version="third"')
     assert "does not validate against" in "\n".join(inputs.invalid(package.crate))
-
-
-def test_reports_nothing_for_a_schema_failure_its_entrys_expected_findings_record(crate):
-    assert not [message for message in inputs.invalid(crate) if "example-0003" in message]
 
 
 def test_reports_a_schema_failure_its_entrys_expected_findings_record_at_a_lesser_severity(package):
@@ -108,10 +104,9 @@ def test_reports_an_input_that_is_not_well_formed_xml_where_the_schema_is_one_it
     assert "example-0001.xml is not well-formed XML" in "\n".join(inputs.invalid(package.crate))
 
 
-def test_reports_a_schema_that_is_not_a_file_in_the_package(package):
-    crate = package.crate
+def test_reports_a_schema_that_is_not_a_file_in_the_package(crate):
     schema = crate.graph.value(crate.root, BRIDGE.sourceSchema)
-    crate.file_at(schema).unlink()
+    crate.graph.set((crate.root, BRIDGE.sourceSchema, URIRef(f"{schema}.absent")))
     assert "which is not a file in this package" in "\n".join(inputs.invalid(crate))
 
 
