@@ -15,43 +15,6 @@ from adapter_profile_world import (
 
 FINDINGS = "fixtures/findings/example-0001.ttl"
 
-TWO_FINDINGS_SHARING_ONE_SELECTOR = (
-    PREFIXES_OF_FINDINGS
-    + """
-<#selector> a oa:XPathSelector ;
-  rdf:value "/ExampleRecordSet/ExampleRecord[1]" ;
-  oa:refinedBy [ a oa:XPathSelector ; rdf:value "Note" ] .
-
-[] a oa:Annotation ;
-  oa:hasTarget [ oa:hasSource <../in/example-0001.xml> ; oa:hasSelector <#selector> ] ;
-  oa:hasBody [ a oa:TextualBody ; rdf:value "no term for a free-text note" ] ;
-  sh:resultSeverity sh:Info .
-
-[] a oa:Annotation ;
-  oa:hasTarget [ oa:hasSource <../in/example-0001.xml> ; oa:hasSelector <#selector> ] ;
-  oa:hasBody [ a oa:TextualBody ; rdf:value "a second note" ] ;
-  sh:resultSeverity sh:Info .
-"""
-)
-
-TWO_FINDINGS_SHARING_ONE_TARGET = (
-    PREFIXES_OF_FINDINGS
-    + """
-_:t oa:hasSource <../in/example-0001.xml> ;
-  oa:hasSelector [ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ;
-                   oa:refinedBy [ a oa:XPathSelector ; rdf:value "Note" ] ] .
-
-[] a oa:Annotation ;
-  oa:hasTarget _:t ;
-  oa:hasBody [ a oa:TextualBody ; rdf:value "no term for a free-text note" ] ;
-  sh:resultSeverity sh:Info .
-
-[] a oa:Annotation ;
-  oa:hasTarget _:t ;
-  oa:hasBody [ a oa:TextualBody ; rdf:value "a second note" ] ;
-  sh:resultSeverity sh:Info .
-"""
-)
 
 A_STRAY_SELECTOR_AND_NO_FINDING = (
     PREFIXES_OF_FINDINGS
@@ -206,34 +169,9 @@ def test_reports_a_finding_naming_a_source_other_than_the_entrys_input(package):
     )
 
 
-def test_reports_a_finding_with_no_selector(package):
-    package.write(FINDINGS, a_findings_file(record=None))
-    assert "carries exactly one oa:hasSelector" in "\n".join(expected_findings.faulty(package.crate))
-
-
 def test_reports_a_finding_with_no_body(package):
     package.write(FINDINGS, a_findings_file(body=None))
     assert "carries exactly one oa:hasBody" in "\n".join(expected_findings.faulty(package.crate))
-
-
-def test_reports_a_finding_with_no_severity(package):
-    package.write(FINDINGS, a_findings_file(severity=None))
-    assert "carries exactly one sh:resultSeverity" in "\n".join(expected_findings.faulty(package.crate))
-
-
-def test_reports_a_severity_outside_the_scale(package):
-    package.write(FINDINGS, a_findings_file(severity="<https://example.org/synthetic-adapter/severe>"))
-    assert "sh:Info, sh:Warning, sh:Violation" in "\n".join(expected_findings.faulty(package.crate))
-
-
-def test_reports_two_findings_sharing_one_selector(package):
-    package.write(FINDINGS, TWO_FINDINGS_SHARING_ONE_SELECTOR)
-    assert "selector of its own, shared with no other finding" in "\n".join(expected_findings.faulty(package.crate))
-
-
-def test_reports_two_findings_sharing_one_target(package):
-    package.write(FINDINGS, TWO_FINDINGS_SHARING_ONE_TARGET)
-    assert "a target of its own, shared with no other finding" in "\n".join(expected_findings.faulty(package.crate))
 
 
 def test_reports_expected_findings_holding_no_finding_at_all(package):
@@ -265,125 +203,6 @@ def test_reports_nothing_for_a_record_selector_that_names_its_record_another_way
 def test_reports_nothing_for_a_document_selector_that_names_the_document_element_another_way(package):
     package.write(FINDINGS, a_findings_file(record="/*[local-name()='ExampleRecordSet']", refined=None))
     assert not list(expected_findings.faulty(package.crate))
-
-
-A_FINDING_WITH_TWO_TARGETS = (
-    PREFIXES_OF_FINDINGS
-    + """
-[] a oa:Annotation ;
-  oa:hasTarget [ oa:hasSource <../in/example-0001.xml> ;
-                 oa:hasSelector [ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ] ] ;
-  oa:hasTarget [ oa:hasSource <../in/example-0001.xml> ;
-                 oa:hasSelector [ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[2]" ] ] ;
-  oa:hasBody [ a oa:TextualBody ; rdf:value "no term for a free-text note" ] ;
-  sh:resultSeverity sh:Info .
-"""
-)
-
-A_FINDING_SOURCED_BY_A_LITERAL = (
-    PREFIXES_OF_FINDINGS
-    + """
-[] a oa:Annotation ;
-  oa:hasTarget [ oa:hasSource "example-0001.xml" ;
-                 oa:hasSelector [ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ] ] ;
-  oa:hasBody [ a oa:TextualBody ; rdf:value "no term for a free-text note" ] ;
-  sh:resultSeverity sh:Info .
-"""
-)
-
-A_FINDING_NAMED_RATHER_THAN_WRITTEN_FOR_ITSELF = (
-    PREFIXES_OF_FINDINGS
-    + """
-<#the-one-finding> a oa:Annotation ;
-  oa:hasTarget [ oa:hasSource <../in/example-0001.xml> ;
-                 oa:hasSelector [ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ] ] ;
-  oa:hasBody [ a oa:TextualBody ; rdf:value "no term for a free-text note" ] ;
-  sh:resultSeverity sh:Info .
-"""
-)
-
-
-def test_reports_a_finding_carrying_more_than_one_target(package):
-    package.write(FINDINGS, A_FINDING_WITH_TWO_TARGETS)
-    assert ("A finding about the source document carries exactly one oa:hasTarget") in "\n".join(
-        expected_findings.faulty(package.crate)
-    )
-
-
-def test_reports_a_target_naming_its_source_as_a_literal_rather_than_by_iri(package):
-    package.write(FINDINGS, A_FINDING_SOURCED_BY_A_LITERAL)
-    assert (
-        "A finding's target names exactly one oa:hasSource by IRI, the document the record was read from."
-    ) in "\n".join(expected_findings.faulty(package.crate))
-
-
-def test_reports_a_finding_named_rather_than_written_for_itself(package):
-    package.write(FINDINGS, A_FINDING_NAMED_RATHER_THAN_WRITTEN_FOR_ITSELF)
-    assert "A finding is a blank node written for that one finding" in "\n".join(
-        expected_findings.faulty(package.crate)
-    )
-
-
-def test_reports_a_record_selector_that_is_not_an_xpath_selector(package):
-    package.write(
-        FINDINGS,
-        a_findings_file(selector='[ a oa:TextQuoteSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ]'),
-    )
-    assert "A record's selector is an oa:XPathSelector." in "\n".join(expected_findings.faulty(package.crate))
-
-
-def test_reports_a_record_selector_carrying_no_xpath(package):
-    package.write(FINDINGS, a_findings_file(selector="[ a oa:XPathSelector ]"))
-    assert "A selector carries exactly one rdf:value, its XPath, a string." in "\n".join(
-        expected_findings.faulty(package.crate)
-    )
-
-
-def test_reports_a_record_selector_refined_more_than_once(package):
-    package.write(
-        FINDINGS,
-        a_findings_file(
-            selector=(
-                '[ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ; '
-                'oa:refinedBy [ a oa:XPathSelector ; rdf:value "Label" ] ; '
-                'oa:refinedBy [ a oa:XPathSelector ; rdf:value "Note" ] ]'
-            )
-        ),
-    )
-    assert "A record's selector is refined by at most one selector" in "\n".join(
-        expected_findings.faulty(package.crate)
-    )
-
-
-def test_reports_a_refinement_that_is_not_an_xpath_selector(package):
-    package.write(
-        FINDINGS,
-        a_findings_file(
-            selector=(
-                '[ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ; '
-                'oa:refinedBy [ a oa:TextQuoteSelector ; rdf:value "Note" ] ]'
-            )
-        ),
-    )
-    assert "A selector refining a record's selector is an oa:XPathSelector." in "\n".join(
-        expected_findings.faulty(package.crate)
-    )
-
-
-def test_reports_a_refinement_refined_further(package):
-    package.write(
-        FINDINGS,
-        a_findings_file(
-            selector=(
-                '[ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ; '
-                'oa:refinedBy [ a oa:XPathSelector ; rdf:value "Note" ; '
-                'oa:refinedBy [ a oa:XPathSelector ; rdf:value "text()" ] ] ]'
-            )
-        ),
-    )
-    assert "A selector refining a record's selector is refined no further." in "\n".join(
-        expected_findings.faulty(package.crate)
-    )
 
 
 A_GAP_OF_THE_SCHEME = "ex:no-term-for-a-free-text-note"

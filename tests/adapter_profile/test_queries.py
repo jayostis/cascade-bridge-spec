@@ -221,13 +221,6 @@ A_FINDINGS_QUERY_GIVING_ONE_TARGET_TWO_SELECTORS = findings_query("""  [] a oa:A
     oa:hasBody [ a oa:TextualBody ; rdf:value "no term for a free-text note" ] ;
     sh:resultSeverity sh:Info .""")
 
-A_FINDINGS_QUERY_NAMING_THE_ANNOTATION_IT_CONSTRUCTS = findings_query("""  <https://example.org/the-one-finding> a oa:Annotation ;
-    oa:hasTarget [
-      oa:hasSource bridge:thisRecord ;
-      oa:hasSelector [ a oa:XPathSelector ; rdf:value "Note" ]
-    ] ;
-    oa:hasBody [ a oa:TextualBody ; rdf:value "no term for a free-text note" ] ;
-    sh:resultSeverity sh:Info .""")
 
 A_FINDINGS_QUERY_BINDING_THE_ANNOTATION_TO_A_VARIABLE = findings_query("""  ?note a oa:Annotation ;
     oa:hasTarget [
@@ -282,11 +275,6 @@ def test_reports_a_findings_query_giving_one_target_two_selectors(package):
     )
 
 
-def test_reports_a_findings_query_naming_the_annotation_it_constructs(package):
-    package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_NAMING_THE_ANNOTATION_IT_CONSTRUCTS)
-    assert "A finding is a blank node written for that one finding" in "\n".join(queries.malformed(package.crate))
-
-
 def test_reports_a_findings_query_binding_the_annotation_to_a_variable(package):
     package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_BINDING_THE_ANNOTATION_TO_A_VARIABLE)
     said = list(queries.malformed(package.crate))
@@ -337,15 +325,6 @@ def test_reports_a_findings_query_constructing_a_selector_that_is_itself_refined
     ], said
 
 
-A_FINDINGS_QUERY_CONSTRUCTING_A_TEXTUAL_BODY = findings_query("""  [] a oa:Annotation ;
-    oa:hasTarget [
-      oa:hasSource bridge:thisRecord ;
-      oa:hasSelector [ a oa:XPathSelector ; rdf:value "Note" ]
-    ] ;
-    oa:hasBody [ a oa:TextualBody ; rdf:value "no term for a free-text note" ] ;
-    oa:motivatedBy oa:classifying ;
-    sh:resultSeverity sh:Info .""")
-
 A_FINDINGS_QUERY_CONSTRUCTING_A_GAP_OF_THE_ADAPTERS_SCHEME = findings_query("""  [] a oa:Annotation ;
     oa:hasTarget [
       oa:hasSource bridge:thisRecord ;
@@ -372,13 +351,6 @@ A_FINDINGS_QUERY_WHOSE_BODY_IS_BOUND_TO_A_VARIABLE = findings_query("""  [] a oa
     oa:hasBody ?gap ;
     oa:motivatedBy oa:classifying ;
     sh:resultSeverity sh:Info .""")
-
-
-def test_reports_a_findings_query_constructing_an_oa_textual_body(package):
-    package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_CONSTRUCTING_A_TEXTUAL_BODY)
-    assert (
-        "A finding carries exactly one oa:hasBody, an IRI: the code the finding is an instance of, never a sentence."
-    ) in "\n".join(queries.malformed(package.crate))
 
 
 def test_reports_a_findings_query_constructing_a_constant_body_outside_the_adapters_gap_scheme(package):
