@@ -1,3 +1,5 @@
+import pytest
+
 from _findings import SHAPES
 from adapter_profile_world import (
     CARRIED,
@@ -62,251 +64,169 @@ def said_about(turtle):
     return said_over(turtle, SHAPES, BASE)
 
 
-def test_rejects_an_entry_carrying_no_verdict():
-    assert ONE_VERDICT in said_about(entry(verdict=None))
-    assert not said_about(entry())
+A_MINIMAL_ENTRY_OF_EACH_VERDICT = {
+    CARRIED: {},
+    CARRIED_IN_PART: {"names_gap": A_GAP},
+    REDUNDANT_WITH: {"same_fact_as": THE_PATH_THAT_CARRIES_THE_FACT},
+    CONSUMED: {},
+    NO_HOME: {"names_gap": A_GAP},
+    IGNORED: {"because": A_REASON},
+}
 
 
-def test_rejects_an_entry_carrying_two_verdicts():
-    assert ONE_VERDICT in said_about(entry(verdict=f"{CARRIED}, {CONSUMED}"))
-    assert not said_about(entry())
+def minimal(verdict, **changed):
+    return entry(verdict=verdict, **{**A_MINIMAL_ENTRY_OF_EACH_VERDICT[verdict], **changed})
 
 
-def test_rejects_an_entry_whose_verdict_is_outside_the_scheme_of_the_six():
-    assert ONE_VERDICT in said_about(entry(verdict="ex:mostly-carried"))
-    assert not said_about(entry())
+def looks_up(verdict=CONSUMED, **changed):
+    return minimal(verdict, **{"lookup_in": A_CONCEPT_MAP, "lookup_names_gap": A_GAP_OF_A_VALUE_NOT_MAPPED, **changed})
 
 
-def test_rejects_an_entry_carrying_no_source_path():
-    assert ONE_SOURCE_PATH in said_about(entry(path=None))
-    assert not said_about(entry())
-
-
-def test_rejects_an_entry_carrying_two_source_paths():
-    assert ONE_SOURCE_PATH in said_about(entry(path=f"{A_PATH}, {THE_PATH_THAT_CARRIES_THE_FACT}"))
-    assert not said_about(entry())
-
-
-def test_rejects_an_entry_whose_source_path_is_an_iri_rather_than_a_string():
-    assert ONE_SOURCE_PATH in said_about(entry(path="<https://example.org/synthetic-adapter/paths/Label>"))
-    assert not said_about(entry())
-
-
-def test_rejects_a_subject_of_a_source_path_that_is_no_path_entry():
-    assert AN_ENTRY_IS_TYPED in said_about(entry(typed=False))
-    assert not said_about(entry())
-
-
-def test_rejects_a_carried_entry_that_names_a_gap():
-    assert "An entry whose verdict is bridge:carried names no bridge:namesGap." in said_about(
-        entry(verdict=CARRIED, names_gap=A_GAP)
-    )
-    assert not said_about(entry(verdict=CARRIED))
-
-
-def test_rejects_a_carried_entry_that_names_the_path_carrying_the_same_fact():
-    assert "An entry whose verdict is bridge:carried names no bridge:sameFactAs." in said_about(
-        entry(verdict=CARRIED, same_fact_as=THE_PATH_THAT_CARRIES_THE_FACT)
-    )
-    assert not said_about(entry(verdict=CARRIED))
-
-
-def test_rejects_a_carried_entry_that_gives_a_reason():
-    assert "An entry whose verdict is bridge:carried gives no bridge:because." in said_about(
-        entry(verdict=CARRIED, because=A_REASON)
-    )
-    assert not said_about(entry(verdict=CARRIED))
-
-
-def test_rejects_a_carried_in_part_entry_that_names_no_gap():
-    assert (
-        "An entry whose verdict is bridge:carriedInPart names exactly one bridge:namesGap, the gap the loss opens."
-    ) in said_about(entry(verdict=CARRIED_IN_PART))
-    assert not said_about(entry(verdict=CARRIED_IN_PART, names_gap=A_GAP))
-
-
-def test_rejects_a_carried_in_part_entry_that_names_two_gaps():
-    assert (
-        "An entry whose verdict is bridge:carriedInPart names exactly one bridge:namesGap, the gap the loss opens."
-    ) in said_about(entry(verdict=CARRIED_IN_PART, names_gap=f"{A_GAP}, {ANOTHER_GAP}"))
-    assert not said_about(entry(verdict=CARRIED_IN_PART, names_gap=A_GAP))
-
-
-def test_rejects_a_carried_in_part_entry_that_names_the_path_carrying_the_same_fact():
-    assert "An entry whose verdict is bridge:carriedInPart names no bridge:sameFactAs." in said_about(
-        entry(verdict=CARRIED_IN_PART, names_gap=A_GAP, same_fact_as=THE_PATH_THAT_CARRIES_THE_FACT)
-    )
-    assert not said_about(entry(verdict=CARRIED_IN_PART, names_gap=A_GAP))
-
-
-def test_rejects_a_carried_in_part_entry_that_gives_a_reason():
-    assert "An entry whose verdict is bridge:carriedInPart gives no bridge:because." in said_about(
-        entry(verdict=CARRIED_IN_PART, names_gap=A_GAP, because=A_REASON)
-    )
-    assert not said_about(entry(verdict=CARRIED_IN_PART, names_gap=A_GAP))
-
-
-def test_rejects_a_redundant_with_entry_that_names_no_path_carrying_the_same_fact():
-    assert (
+REJECTED = {
+    "an entry carrying no verdict": (ONE_VERDICT, entry(verdict=None)),
+    "an entry carrying two verdicts": (ONE_VERDICT, entry(verdict=f"{CARRIED}, {CONSUMED}")),
+    "an entry whose verdict is outside the scheme of the six": (ONE_VERDICT, entry(verdict="ex:mostly-carried")),
+    "an entry carrying no source path": (ONE_SOURCE_PATH, entry(path=None)),
+    "an entry carrying two source paths": (
+        ONE_SOURCE_PATH,
+        entry(path=f"{A_PATH}, {THE_PATH_THAT_CARRIES_THE_FACT}"),
+    ),
+    "an entry whose source path is an iri rather than a string": (
+        ONE_SOURCE_PATH,
+        entry(path="<https://example.org/synthetic-adapter/paths/Label>"),
+    ),
+    "a subject of a source path that is no path entry": (AN_ENTRY_IS_TYPED, entry(typed=False)),
+    "a carried entry that names a gap": (
+        "An entry whose verdict is bridge:carried names no bridge:namesGap.",
+        minimal(CARRIED, names_gap=A_GAP),
+    ),
+    "a carried entry that names the path carrying the same fact": (
+        "An entry whose verdict is bridge:carried names no bridge:sameFactAs.",
+        minimal(CARRIED, same_fact_as=THE_PATH_THAT_CARRIES_THE_FACT),
+    ),
+    "a carried entry that gives a reason": (
+        "An entry whose verdict is bridge:carried gives no bridge:because.",
+        minimal(CARRIED, because=A_REASON),
+    ),
+    "a carried in part entry that names no gap": (
+        "An entry whose verdict is bridge:carriedInPart names exactly one bridge:namesGap, the gap the loss opens.",
+        minimal(CARRIED_IN_PART, names_gap=None),
+    ),
+    "a carried in part entry that names two gaps": (
+        "An entry whose verdict is bridge:carriedInPart names exactly one bridge:namesGap, the gap the loss opens.",
+        minimal(CARRIED_IN_PART, names_gap=f"{A_GAP}, {ANOTHER_GAP}"),
+    ),
+    "a carried in part entry that names the path carrying the same fact": (
+        "An entry whose verdict is bridge:carriedInPart names no bridge:sameFactAs.",
+        minimal(CARRIED_IN_PART, same_fact_as=THE_PATH_THAT_CARRIES_THE_FACT),
+    ),
+    "a carried in part entry that gives a reason": (
+        "An entry whose verdict is bridge:carriedInPart gives no bridge:because.",
+        minimal(CARRIED_IN_PART, because=A_REASON),
+    ),
+    "a redundant with entry that names no path carrying the same fact": (
         "An entry whose verdict is bridge:redundantWith names exactly one bridge:sameFactAs, "
-        "the bridge:sourcePath that carries the fact instead."
-    ) in said_about(entry(verdict=REDUNDANT_WITH))
-    assert not said_about(entry(verdict=REDUNDANT_WITH, same_fact_as=THE_PATH_THAT_CARRIES_THE_FACT))
-
-
-def test_rejects_a_redundant_with_entry_that_names_two_paths_carrying_the_same_fact():
-    assert (
+        "the bridge:sourcePath that carries the fact instead.",
+        minimal(REDUNDANT_WITH, same_fact_as=None),
+    ),
+    "a redundant with entry that names two paths carrying the same fact": (
         "An entry whose verdict is bridge:redundantWith names exactly one bridge:sameFactAs, "
-        "the bridge:sourcePath that carries the fact instead."
-    ) in said_about(
-        entry(
-            verdict=REDUNDANT_WITH,
-            same_fact_as=f"{THE_PATH_THAT_CARRIES_THE_FACT}, {ANOTHER_PATH_THAT_CARRIES_IT}",
-        )
-    )
-    assert not said_about(entry(verdict=REDUNDANT_WITH, same_fact_as=THE_PATH_THAT_CARRIES_THE_FACT))
-
-
-def test_rejects_a_redundant_with_entry_that_names_a_gap():
-    assert "An entry whose verdict is bridge:redundantWith names no bridge:namesGap." in said_about(
-        entry(verdict=REDUNDANT_WITH, same_fact_as=THE_PATH_THAT_CARRIES_THE_FACT, names_gap=A_GAP)
-    )
-    assert not said_about(entry(verdict=REDUNDANT_WITH, same_fact_as=THE_PATH_THAT_CARRIES_THE_FACT))
-
-
-def test_rejects_a_redundant_with_entry_that_gives_a_reason():
-    assert "An entry whose verdict is bridge:redundantWith gives no bridge:because." in said_about(
-        entry(verdict=REDUNDANT_WITH, same_fact_as=THE_PATH_THAT_CARRIES_THE_FACT, because=A_REASON)
-    )
-    assert not said_about(entry(verdict=REDUNDANT_WITH, same_fact_as=THE_PATH_THAT_CARRIES_THE_FACT))
-
-
-def test_rejects_a_consumed_entry_that_names_a_gap():
-    assert "An entry whose verdict is bridge:consumed names no bridge:namesGap." in said_about(
-        entry(verdict=CONSUMED, names_gap=A_GAP)
-    )
-    assert not said_about(entry(verdict=CONSUMED))
-
-
-def test_rejects_a_consumed_entry_that_names_the_path_carrying_the_same_fact():
-    assert "An entry whose verdict is bridge:consumed names no bridge:sameFactAs." in said_about(
-        entry(verdict=CONSUMED, same_fact_as=THE_PATH_THAT_CARRIES_THE_FACT)
-    )
-    assert not said_about(entry(verdict=CONSUMED))
-
-
-def test_rejects_a_consumed_entry_that_gives_a_reason():
-    assert "An entry whose verdict is bridge:consumed gives no bridge:because." in said_about(
-        entry(verdict=CONSUMED, because=A_REASON)
-    )
-    assert not said_about(entry(verdict=CONSUMED))
-
-
-def test_rejects_a_no_home_entry_that_names_no_gap():
-    assert (
-        "An entry whose verdict is bridge:noHome names exactly one bridge:namesGap, "
-        "the gap the missing predicate opens."
-    ) in said_about(entry(verdict=NO_HOME))
-    assert not said_about(entry(verdict=NO_HOME, names_gap=A_GAP))
-
-
-def test_rejects_a_no_home_entry_that_names_two_gaps():
-    assert (
-        "An entry whose verdict is bridge:noHome names exactly one bridge:namesGap, "
-        "the gap the missing predicate opens."
-    ) in said_about(entry(verdict=NO_HOME, names_gap=f"{A_GAP}, {ANOTHER_GAP}"))
-    assert not said_about(entry(verdict=NO_HOME, names_gap=A_GAP))
-
-
-def test_rejects_a_no_home_entry_that_names_the_path_carrying_the_same_fact():
-    assert "An entry whose verdict is bridge:noHome names no bridge:sameFactAs." in said_about(
-        entry(verdict=NO_HOME, names_gap=A_GAP, same_fact_as=THE_PATH_THAT_CARRIES_THE_FACT)
-    )
-    assert not said_about(entry(verdict=NO_HOME, names_gap=A_GAP))
-
-
-def test_rejects_a_no_home_entry_that_gives_a_reason():
-    assert "An entry whose verdict is bridge:noHome gives no bridge:because." in said_about(
-        entry(verdict=NO_HOME, names_gap=A_GAP, because=A_REASON)
-    )
-    assert not said_about(entry(verdict=NO_HOME, names_gap=A_GAP))
-
-
-def test_rejects_an_ignored_entry_that_gives_no_reason():
-    assert (
+        "the bridge:sourcePath that carries the fact instead.",
+        minimal(REDUNDANT_WITH, same_fact_as=f"{THE_PATH_THAT_CARRIES_THE_FACT}, {ANOTHER_PATH_THAT_CARRIES_IT}"),
+    ),
+    "a redundant with entry that names a gap": (
+        "An entry whose verdict is bridge:redundantWith names no bridge:namesGap.",
+        minimal(REDUNDANT_WITH, names_gap=A_GAP),
+    ),
+    "a redundant with entry that gives a reason": (
+        "An entry whose verdict is bridge:redundantWith gives no bridge:because.",
+        minimal(REDUNDANT_WITH, because=A_REASON),
+    ),
+    "a consumed entry that names a gap": (
+        "An entry whose verdict is bridge:consumed names no bridge:namesGap.",
+        minimal(CONSUMED, names_gap=A_GAP),
+    ),
+    "a consumed entry that names the path carrying the same fact": (
+        "An entry whose verdict is bridge:consumed names no bridge:sameFactAs.",
+        minimal(CONSUMED, same_fact_as=THE_PATH_THAT_CARRIES_THE_FACT),
+    ),
+    "a consumed entry that gives a reason": (
+        "An entry whose verdict is bridge:consumed gives no bridge:because.",
+        minimal(CONSUMED, because=A_REASON),
+    ),
+    "a no home entry that names no gap": (
+        "An entry whose verdict is bridge:noHome names exactly one bridge:namesGap, the gap the missing predicate opens.",
+        minimal(NO_HOME, names_gap=None),
+    ),
+    "a no home entry that names two gaps": (
+        "An entry whose verdict is bridge:noHome names exactly one bridge:namesGap, the gap the missing predicate opens.",
+        minimal(NO_HOME, names_gap=f"{A_GAP}, {ANOTHER_GAP}"),
+    ),
+    "a no home entry that names the path carrying the same fact": (
+        "An entry whose verdict is bridge:noHome names no bridge:sameFactAs.",
+        minimal(NO_HOME, same_fact_as=THE_PATH_THAT_CARRIES_THE_FACT),
+    ),
+    "a no home entry that gives a reason": (
+        "An entry whose verdict is bridge:noHome gives no bridge:because.",
+        minimal(NO_HOME, because=A_REASON),
+    ),
+    "an ignored entry that gives no reason": (
         "An entry whose verdict is bridge:ignored gives exactly one bridge:because, "
-        "why the path is deliberately not carried."
-    ) in said_about(entry(verdict=IGNORED))
-    assert not said_about(entry(verdict=IGNORED, because=A_REASON))
-
-
-def test_rejects_an_ignored_entry_that_gives_two_reasons():
-    assert (
+        "why the path is deliberately not carried.",
+        minimal(IGNORED, because=None),
+    ),
+    "an ignored entry that gives two reasons": (
         "An entry whose verdict is bridge:ignored gives exactly one bridge:because, "
-        "why the path is deliberately not carried."
-    ) in said_about(entry(verdict=IGNORED, because=f"{A_REASON}, {ANOTHER_REASON}"))
-    assert not said_about(entry(verdict=IGNORED, because=A_REASON))
+        "why the path is deliberately not carried.",
+        minimal(IGNORED, because=f"{A_REASON}, {ANOTHER_REASON}"),
+    ),
+    "an ignored entry that names a gap": (
+        "An entry whose verdict is bridge:ignored names no bridge:namesGap.",
+        minimal(IGNORED, names_gap=A_GAP),
+    ),
+    "an ignored entry that names the path carrying the same fact": (
+        "An entry whose verdict is bridge:ignored names no bridge:sameFactAs.",
+        minimal(IGNORED, same_fact_as=THE_PATH_THAT_CARRIES_THE_FACT),
+    ),
+    "an entry naming a concept map and no gap for a value outside it": (
+        "bridge:lookupNamesGap",
+        looks_up(lookup_names_gap=None),
+    ),
+    "an entry naming a gap for a value outside a concept map it names nowhere": (
+        "bridge:lookupIn",
+        looks_up(lookup_in=None),
+    ),
+    "an entry naming two concept maps": (
+        "bridge:lookupIn",
+        looks_up(lookup_in=f"{A_CONCEPT_MAP}, {ANOTHER_CONCEPT_MAP}"),
+    ),
+    "an entry naming two gaps for a value outside its concept map": (
+        "bridge:lookupNamesGap",
+        looks_up(lookup_names_gap=f"{A_GAP_OF_A_VALUE_NOT_MAPPED}, {A_GAP}"),
+    ),
+    "a concept map named as a string rather than by iri": (
+        "bridge:lookupIn",
+        looks_up(lookup_in='"vocab/example-statuses.ttl"'),
+    ),
+    "a gap for a value outside a concept map named as a string rather than by iri": (
+        "bridge:lookupNamesGap",
+        looks_up(lookup_names_gap='"a-status-outside-the-set-the-vocabulary-fixes"'),
+    ),
+}
 
 
-def test_rejects_an_ignored_entry_that_names_a_gap():
-    assert "An entry whose verdict is bridge:ignored names no bridge:namesGap." in said_about(
-        entry(verdict=IGNORED, because=A_REASON, names_gap=A_GAP)
-    )
-    assert not said_about(entry(verdict=IGNORED, because=A_REASON))
+@pytest.mark.parametrize(("message", "turtle"), REJECTED.values(), ids=list(REJECTED))
+def test_rejects(message, turtle):
+    assert message in said_about(turtle)
 
 
-def test_rejects_an_ignored_entry_that_names_the_path_carrying_the_same_fact():
-    assert "An entry whose verdict is bridge:ignored names no bridge:sameFactAs." in said_about(
-        entry(verdict=IGNORED, because=A_REASON, same_fact_as=THE_PATH_THAT_CARRIES_THE_FACT)
-    )
-    assert not said_about(entry(verdict=IGNORED, because=A_REASON))
+@pytest.mark.parametrize("verdict", A_MINIMAL_ENTRY_OF_EACH_VERDICT)
+def test_accepts_a_minimal_entry_of_each_verdict(verdict):
+    assert not said_about(minimal(verdict))
 
 
-def looks_up(verdict=CONSUMED, lookup_in=A_CONCEPT_MAP, lookup_names_gap=A_GAP_OF_A_VALUE_NOT_MAPPED, **rest):
-    return entry(verdict=verdict, lookup_in=lookup_in, lookup_names_gap=lookup_names_gap, **rest)
-
-
-def test_rejects_an_entry_naming_a_concept_map_and_no_gap_for_a_value_outside_it():
-    assert "bridge:lookupNamesGap" in said_about(looks_up(lookup_names_gap=None))
-    assert not said_about(looks_up())
-
-
-def test_rejects_an_entry_naming_a_gap_for_a_value_outside_a_concept_map_it_names_nowhere():
-    assert "bridge:lookupIn" in said_about(looks_up(lookup_in=None))
-    assert not said_about(looks_up())
-
-
-def test_rejects_an_entry_naming_two_concept_maps():
-    assert "bridge:lookupIn" in said_about(looks_up(lookup_in=f"{A_CONCEPT_MAP}, {ANOTHER_CONCEPT_MAP}"))
-    assert not said_about(looks_up())
-
-
-def test_rejects_an_entry_naming_two_gaps_for_a_value_outside_its_concept_map():
-    assert "bridge:lookupNamesGap" in said_about(looks_up(lookup_names_gap=f"{A_GAP_OF_A_VALUE_NOT_MAPPED}, {A_GAP}"))
-    assert not said_about(looks_up())
-
-
-def test_rejects_a_concept_map_named_as_a_string_rather_than_by_iri():
-    assert "bridge:lookupIn" in said_about(looks_up(lookup_in='"vocab/example-statuses.ttl"'))
-    assert not said_about(looks_up())
-
-
-def test_rejects_a_gap_for_a_value_outside_a_concept_map_named_as_a_string_rather_than_by_iri():
-    assert "bridge:lookupNamesGap" in said_about(
-        looks_up(lookup_names_gap='"a-status-outside-the-set-the-vocabulary-fixes"')
-    )
-    assert not said_about(looks_up())
-
-
-def test_rejects_half_a_lookup_on_an_entry_of_every_verdict_and_accepts_both_halves_there():
-    for verdict, rest in (
-        (CARRIED, {}),
-        (CARRIED_IN_PART, {"names_gap": A_GAP}),
-        (REDUNDANT_WITH, {"same_fact_as": THE_PATH_THAT_CARRIES_THE_FACT}),
-        (CONSUMED, {}),
-        (NO_HOME, {"names_gap": A_GAP}),
-        (IGNORED, {"because": A_REASON}),
-    ):
-        assert "bridge:lookupIn" in said_about(looks_up(verdict=verdict, lookup_in=None, **rest)), verdict
-        assert "bridge:lookupNamesGap" in said_about(looks_up(verdict=verdict, lookup_names_gap=None, **rest)), verdict
-        assert not said_about(looks_up(verdict=verdict, **rest)), verdict
+@pytest.mark.parametrize("verdict", A_MINIMAL_ENTRY_OF_EACH_VERDICT)
+def test_rejects_half_a_lookup_on_an_entry_of_every_verdict_and_accepts_both_halves_there(verdict):
+    assert "bridge:lookupIn" in said_about(looks_up(verdict, lookup_in=None))
+    assert "bridge:lookupNamesGap" in said_about(looks_up(verdict, lookup_names_gap=None))
+    assert not said_about(looks_up(verdict))
