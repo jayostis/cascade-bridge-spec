@@ -66,8 +66,9 @@ def test_an_adapter_is_run_by_the_engine_beside_it(world):
     world.clone(VOCABULARY)
     nowhere(world)
 
-    said = world.tool(adapter)
+    said = world.tool(adapter, in_a_process=True)
 
+    assert "rocrate-validator" in said
     assert "fake engine: testing" in said
     assert "1 counterpart: 1 hold" in said
 
