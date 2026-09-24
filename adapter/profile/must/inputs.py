@@ -49,8 +49,6 @@ def local_file(url):
 
 
 def resolving_in(etree, package, refused):
-    """Fetches nothing: a file outside the package is refused, and a W3C schema the package ships no copy of is the Bridge's."""
-
     def in_package(path):
         return path is not None and path.is_file() and path.is_relative_to(package)
 

@@ -53,6 +53,15 @@
         },
         {
           "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/vocab/bridge.ttl"
+        },
+        {
+          "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/adapter/profile/w3c/xml.xsd"
+        },
+        {
+          "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/adapter/profile/w3c/xlink.xsd"
+        },
+        {
+          "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/adapter/profile/w3c/NOTICE"
         }
       ]
     },
@@ -106,6 +115,39 @@
       "description": "The bridge: vocabulary."
     },
     {
+      "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/adapter/profile/w3c/xml.xsd",
+      "@type": "File",
+      "name": "W3C XML namespace schema",
+      "encodingFormat": "application/xml",
+      "conformsTo": {
+        "@id": "http://www.w3.org/2001/XMLSchema"
+      },
+      "license": {
+        "@id": "https://www.w3.org/copyright/software-license-2023/"
+      }
+    },
+    {
+      "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/adapter/profile/w3c/xlink.xsd",
+      "@type": "File",
+      "name": "W3C XLink 1.1 schema",
+      "encodingFormat": "application/xml",
+      "conformsTo": {
+        "@id": "http://www.w3.org/2001/XMLSchema"
+      },
+      "license": {
+        "@id": "https://www.w3.org/copyright/software-license-2023/"
+      }
+    },
+    {
+      "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/adapter/profile/w3c/NOTICE",
+      "@type": "File",
+      "name": "W3C Software and Document Notice",
+      "encodingFormat": "text/plain",
+      "license": {
+        "@id": "https://www.w3.org/copyright/software-license-2023/"
+      }
+    },
+    {
       "@id": "https://spdx.org/licenses/Apache-2.0",
       "@type": "CreativeWork",
       "identifier": "Apache-2.0",
@@ -113,6 +155,11 @@
       "url": {
         "@id": "https://www.apache.org/licenses/LICENSE-2.0"
       }
+    },
+    {
+      "@id": "https://www.w3.org/copyright/software-license-2023/",
+      "@type": "CreativeWork",
+      "name": "W3C Software and Document License - 2023 version"
     }
   ]
 }

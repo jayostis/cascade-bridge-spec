@@ -24,8 +24,9 @@ adapter contributes data to them through these terms.
 - **A schema's `xs:include` and `xs:import` resolve against the schema's own
   IRI**, through the host, and only to files in the adapter package, except that
   an `xs:import` of the XML namespace (`http://www.w3.org/XML/1998/namespace`)
-  or of XLink (`http://www.w3.org/1999/xlink`) naming no file in the package
-  resolves to the Bridge's own copy of that W3C schema. Nothing is fetched.
+  or of XLink (`http://www.w3.org/1999/xlink`) whose `schemaLocation` is absent
+  or names no file in the package, W3C's own address included, resolves to the
+  Bridge's own copy of that W3C schema. Nothing is fetched.
 - **The stamp is the Bridge's**, never the adapter's.
 - **Re-import changes nothing**: an adapter's output is a function of its input.
 - **A format has one adapter**, with vendor quirks as data, never one adapter per vendor.

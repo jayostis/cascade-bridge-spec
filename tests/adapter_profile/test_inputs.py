@@ -182,8 +182,10 @@ def importing(package, namespace, attribute=None, location=None):
     [
         (XML_NAMESPACE, "xml:lang", None),
         (XLINK, "xlink:href", None),
-        (XML_NAMESPACE, "xml:lang", "https://example.invalid/xml.xsd"),
-        (XLINK, "xlink:href", "https://example.invalid/xlink.xsd"),
+        (XML_NAMESPACE, "xml:lang", "http://www.w3.org/2009/01/xml.xsd"),
+        (XLINK, "xlink:href", "http://www.w3.org/XML/2008/06/xlink.xsd"),
+        (XML_NAMESPACE, "xml:lang", "xml.xsd"),
+        (XLINK, "xlink:href", "xlink.xsd"),
     ],
 )
 def test_supplies_a_w3c_schema_the_package_ships_no_copy_of(package, namespace, attribute, location):
