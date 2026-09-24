@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SHAPES_FILES = [
     *sorted((ROOT / "shapes").glob("*.ttl")),
     *sorted((ROOT / "adapter" / "profile" / "must").glob("*.ttl")),
+    *sorted((ROOT / "fixtures" / "synthetic-vocabularies").rglob("*.shapes.ttl")),
 ]
 
 

@@ -1,0 +1,13 @@
+@prefix ex:   <https://example.org/synthetic-adapter/v1#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+<https://example.org/synthetic-adapter/v1#> a owl:Ontology .
+
+ex:Record a owl:Class .
+
+ex:accession a owl:DatatypeProperty .
+
+ex:version a owl:DatatypeProperty .
+
+rdfs:label a owl:AnnotationProperty .

@@ -46,6 +46,9 @@ is then its type triples alone.
 
 ## Running an adapter
 
+A Bridge refuses to prepare an adapter one of whose queries holds a `SERVICE`
+pattern anywhere or a `FROM` or `FROM NAMED` clause, and fetches nothing.
+
 A Bridge runs every source record of a document whatever the adapter's
 `bridge:detectQuery` answers, and reports the answer.
 

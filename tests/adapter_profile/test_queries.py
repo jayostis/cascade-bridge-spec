@@ -1,3 +1,5 @@
+import pytest
+
 import queries
 from _terms import BRIDGE
 
@@ -370,3 +372,70 @@ def test_reports_nothing_for_a_findings_query_constructing_a_gap_of_the_adapters
 def test_holds_a_findings_query_to_nothing_where_the_body_it_constructs_is_bound_to_a_variable(package):
     package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_WHOSE_BODY_IS_BOUND_TO_A_VARIABLE)
     assert not list(queries.malformed(package.crate))
+
+
+ENDPOINT = "<https://example.org/sparql>"
+
+
+@pytest.mark.parametrize(
+    "query, old, new",
+    [
+        pytest.param(
+            "in/example-record.rq",
+            "  OPTIONAL {",
+            f"  SERVICE {ENDPOINT} {{ ?exampleRecord ?p ?o }}\n  OPTIONAL {{",
+            id="at-the-top-of-a-mapping",
+        ),
+        pytest.param(
+            FINDINGS_QUERY,
+            "  ?note a xyz:Note .\n",
+            f"  ?note a xyz:Note .\n  {{ SELECT ?note WHERE {{ SERVICE {ENDPOINT} {{ ?note ?p ?o }} }} }}\n",
+            id="in-a-subquery-of-a-findings-query",
+        ),
+        pytest.param(
+            "in/example-detect.rq",
+            "ASK {",
+            f"ASK {{\n  FILTER EXISTS {{ SERVICE SILENT {ENDPOINT} {{ ?s ?p ?o }} }}",
+            id="in-filter-exists-of-a-detect-query",
+        ),
+        pytest.param(
+            "in/example-record.rq",
+            "    FILTER (?statusKey",
+            f"    SERVICE {ENDPOINT} {{ ?statusConcept ?p ?o }}\n    FILTER (?statusKey",
+            id="in-filter-not-exists-of-a-mapping",
+        ),
+    ],
+)
+def test_reports_a_query_holding_a_service_pattern(package, query, old, new):
+    package.edit(query, old, new)
+    assert f"{query.removeprefix('in/')} holds a SERVICE pattern" in "\n".join(queries.malformed(package.crate))
+
+
+@pytest.mark.parametrize(
+    "query, old, new",
+    [
+        pytest.param(
+            "in/example-record.rq",
+            "WHERE {",
+            "FROM <https://example.org/graph>\nWHERE {",
+            id="from-on-a-mapping",
+        ),
+        pytest.param(
+            FINDINGS_QUERY,
+            "WHERE {",
+            "FROM NAMED <https://example.org/graph>\nWHERE {",
+            id="from-named-on-a-findings-query",
+        ),
+        pytest.param(
+            "in/example-detect.rq",
+            "ASK {",
+            "ASK FROM <https://example.org/graph> {",
+            id="from-on-a-detect-query",
+        ),
+    ],
+)
+def test_reports_a_query_holding_a_dataset_clause(package, query, old, new):
+    package.edit(query, old, new)
+    assert f"{query.removeprefix('in/')} holds a FROM or FROM NAMED clause" in "\n".join(
+        queries.malformed(package.crate)
+    )

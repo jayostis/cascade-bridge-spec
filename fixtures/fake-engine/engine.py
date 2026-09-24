@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -85,9 +86,17 @@ def test(args, adapter):
     return 0
 
 
+def names_a_vocabulary_file(adapter):
+    crate = json.loads((adapter / "ro-crate-metadata.json").read_text(encoding="utf-8"))
+    return any("bridge:vocabularyFile" in entity for entity in crate["@graph"])
+
+
 def convert(args, adapter):
     if args.document is None or not args.document.is_file():
         print(f"fake engine: {args.document} is not a document to convert", file=sys.stderr)
+        return 2
+    if args.findings is not None and args.vocabularies is None and names_a_vocabulary_file(adapter):
+        print(f"fake engine: {adapter} names a bridge:vocabularyFile and no --vocabularies was given", file=sys.stderr)
         return 2
     print(f"fake engine: converting {args.document} with {adapter}; detect answered true", file=sys.stderr)
     graph = GRAPH[args.format]
