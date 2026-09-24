@@ -12,11 +12,11 @@ DOCUMENT = ADAPTER / "fixtures" / "in" / "example-0001.xml"
 FORMATS = {"turtle": "turtle", "ntriples": "nt"}
 
 
-def engine(*arguments, expected=0):
+def engine(*arguments, succeeds=True):
     run = subprocess.run(
         [sys.executable, str(ENGINE), *arguments], capture_output=True, encoding="utf-8", errors="replace"
     )
-    assert run.returncode == expected, run.stdout + run.stderr
+    assert (run.returncode == 0) == succeeds, run.stdout + run.stderr
     return run
 
 
@@ -71,11 +71,5 @@ def test_convert_writes_no_findings_file_when_it_is_not_asked_for(tmp_path):
 
 
 def test_convert_exits_non_zero_and_writes_no_graph_when_the_document_is_not_one(tmp_path):
-    run = subprocess.run(
-        [sys.executable, str(ENGINE), "convert", str(ADAPTER), str(tmp_path / "absent.xml")],
-        capture_output=True,
-        encoding="utf-8",
-        errors="replace",
-    )
-    assert run.returncode != 0, run.stdout + run.stderr
+    run = engine("convert", str(ADAPTER), str(tmp_path / "absent.xml"), succeeds=False)
     assert run.stdout == ""

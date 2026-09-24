@@ -1,16 +1,16 @@
 import hashlib
 import re
-from pathlib import Path
 
 import pytest
 from rocrate_validator import services
 from rocrate_validator.models import ValidationSettings
 
-ROOT = Path(__file__).resolve().parents[2]
+from adapter_profile_world import FIXTURE, ROOT
+
 PROFILES = ROOT / "adapter"
 PROFILE = "cascade-bridge-adapter"
 INHERITED = "ro-crate-1.2"
-SYNTHETIC_ADAPTER = ROOT / "fixtures" / "synthetic-adapter"
+SYNTHETIC_ADAPTER = FIXTURE
 
 CRATE = "ro-crate-metadata.json"
 MANIFEST = "fixtures/manifest.ttl"

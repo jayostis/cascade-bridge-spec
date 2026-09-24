@@ -1,10 +1,10 @@
 """What a caller's workflow starts: it fetches a version, and the checks run from the one picked."""
 
-from test_picking_versions import depends_on, engine_under_test
+from compatibility_world import depends_on
 
 
 def test_a_run_says_one_verdict(world):
-    engine, event = engine_under_test(world)
+    engine, event = world.engine_under_test()
 
     said = world.tool(engine, **world.ci(event=event))
 
@@ -22,7 +22,7 @@ def test_nothing_to_check_is_not_reported_as_a_pass(world):
 
 
 def test_the_checks_run_from_the_version_picked_not_the_one_fetched_to_start(world):
-    engine, event = engine_under_test(world)
+    engine, event = world.engine_under_test()
 
     said = world.tool(engine, in_a_process=True, **world.ci(event=event))
 
@@ -33,7 +33,7 @@ def test_the_checks_run_from_the_version_picked_not_the_one_fetched_to_start(wor
 def test_the_merge_gate_runs_from_the_version_picked_too(world):
     """A pull request here that changes the gate is tried the same way as one that changes a check."""
     world.pull_request("cascade-bridge-spec", 3)
-    engine, event = engine_under_test(world, body=depends_on("cascade-bridge-spec", 3))
+    engine, event = world.engine_under_test(body=depends_on("cascade-bridge-spec", 3))
 
     said = world.tool(engine, 1, check="ready-to-merge", in_a_process=True, **world.ci(event=event))
 

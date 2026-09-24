@@ -4,22 +4,16 @@ import sys
 
 import pytest
 
-from compatibility_world import VOCABULARY, engine_document, git, write_compatibility
-
-
-def engine_beside_adapter(world, canned="passed", **overrides):
-    engine = world.engine([world.url("adapter")], canned, **overrides)
-    world.clone("adapter")
-    world.clone(VOCABULARY)
-    git("remote", "set-url", "origin", "https://example.invalid/gone.git", cwd=world.workspace / "adapter")
-    return engine
+from compatibility_world import engine_document
 
 
 def test_an_entry_whose_engine_passes_its_adapter_holds(world):
-    said = world.tool(engine_beside_adapter(world))
+    said = world.tool(world.engine_beside_adapter())
     assert "fake engine: testing" in said
     assert "holds; 1 cantTell, 5 passed, 1 untested" in said
     assert "does not hold" not in said
+    assert "1 counterpart: 1 hold" in said
+    assert "a result produced from uncommitted edits is feedback, never evidence" not in said
 
 
 @pytest.mark.parametrize(
@@ -52,13 +46,13 @@ def test_an_entry_whose_engine_passes_its_adapter_holds(world):
     ],
 )
 def test_an_entry_does_not_hold_on_what_its_report_says(world, canned, says):
-    said = world.tool(engine_beside_adapter(world, canned), 1)
+    said = world.tool(world.engine_beside_adapter(canned), 1)
     for fragment in says:
         assert fragment in said
 
 
 def test_an_entry_whose_engines_setup_failed_says_so_rather_than_that_it_wrote_no_report(world):
-    engine = engine_beside_adapter(world, setup=[sys.executable, "-c", "raise SystemExit(1)"])
+    engine = world.engine_beside_adapter(setup=[sys.executable, "-c", "raise SystemExit(1)"])
     said = world.tool(engine, 1)
     assert "does not hold; it was not run" in said
     assert "it wrote no report" not in said
@@ -66,18 +60,13 @@ def test_an_entry_whose_engines_setup_failed_says_so_rather_than_that_it_wrote_n
 
 def test_a_counterpart_engine_stating_no_command_is_not_run_rather_than_refused(world):
     """A counterpart's files are read for what running it needs, never validated."""
-    adapter = world.clone("adapter")
-    write_compatibility(adapter, {"mustPassWith": [world.url("engine")]})
-    engine = world.clone("engine")
-    world.clone(VOCABULARY)
-    write_compatibility(engine, engine_document([], command=None))
-    said = world.tool(adapter, 1)
+    said = world.tool(world.adapter_beside_engine(engine_document([], command=None)), 1)
     assert "states no setup and command" in said
     assert "does not hold; it was not run" in said
 
 
 def test_an_entry_run_on_a_siblings_uncommitted_edits_is_flagged(world):
-    engine = engine_beside_adapter(world)
+    engine = world.engine_beside_adapter()
     (world.workspace / "adapter" / "README.md").write_text("an uncommitted edit\n", encoding="utf-8")
     said = world.tool(engine)
     assert "uncommitted edits): holds" in said

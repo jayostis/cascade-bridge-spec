@@ -4,6 +4,7 @@ from rdflib import Graph
 from rdflib.namespace import RDF, SH
 
 from _terms import BRIDGE, MF, OA
+from adapter_profile_world import accounting_of, selected_by
 
 THE_NAMESPACE = "https://example.org/synthetic-adapter/ext/v1"
 
@@ -31,13 +32,6 @@ def every(crate):
     found = list(census_findings(crate))
     assert found
     return found
-
-
-def selected_by(graph, finding):
-    selector = graph.value(graph.value(finding, OA.hasTarget), OA.hasSelector)
-    refined = graph.value(selector, OA.refinedBy)
-    record = str(graph.value(selector, RDF.value))
-    return record, None if refined is None else str(graph.value(refined, RDF.value))
 
 
 def the_one_naming(crate, path):
@@ -91,10 +85,7 @@ def test_every_census_finding_is_a_backlog_item_rather_than_a_defect_in_the_docu
 
 
 def test_the_synthetic_adapters_accounting_carries_no_entry_for_any_path_its_census_findings_name(crate):
-    named = crate.graph.value(crate.root, BRIDGE.sourceAccounting)
-    assert named is not None
-    accounting = Graph().parse(crate.file_at(named), format="turtle")
-    accounted = {str(path) for path in accounting.objects(None, BRIDGE.sourcePath)}
+    accounted = {str(path) for path in accounting_of(crate).objects(None, BRIDGE.sourcePath)}
     assert accounted
     for _, graph, finding in every(crate):
         assert str(graph.value(finding, SH.value)) not in accounted

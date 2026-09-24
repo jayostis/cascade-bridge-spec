@@ -1,6 +1,4 @@
-from rdflib import Graph
-
-from _findings import unmet
+from adapter_profile_world import said_over
 from lookups import SHAPES
 
 BASE = "https://example.org/synthetic-adapter/vocab/example-statuses.ttl"
@@ -42,12 +40,7 @@ def concept(
 
 
 def said_about(*concepts):
-    return "\n".join(
-        unmet(
-            Graph().parse(data=PREFIXES + "\n" + "\n".join(concepts), format="turtle", publicID=BASE),
-            Graph().parse(SHAPES, format="turtle"),
-        )
-    )
+    return said_over(PREFIXES + "\n" + "\n".join(concepts), SHAPES, BASE)
 
 
 def test_rejects_a_concept_carrying_no_notation():

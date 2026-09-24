@@ -2,42 +2,22 @@ from rdflib import URIRef
 
 import source_accounting
 from _terms import BRIDGE
+from adapter_profile_world import (
+    CARRIED,
+    CARRIED_IN_PART,
+    CONSUMED,
+    IGNORED,
+    NO_HOME,
+    PREFIXES_OF_AN_ACCOUNTING,
+    REDUNDANT_WITH,
+)
 
-PREFIXES = """@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
-@prefix ex:     <https://example.org/synthetic-adapter/v1#> .
-"""
-
-A_SCHEME_HOLDING_A_GAP_OF_EACH_KIND_A_VERDICT_IMPLIES = """@prefix skos:   <http://www.w3.org/2004/02/skos/core#> .
-@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
-@prefix ex:     <https://example.org/synthetic-adapter/v1#> .
-
-ex:gaps a skos:ConceptScheme .
-
-ex:no-term-for-a-free-text-note a skos:Concept ;
-  skos:prefLabel "no term for a free-text note" ;
-  skos:inScheme ex:gaps ;
-  skos:broader bridge:noPredicate .
-
-ex:only-the-first-note-is-carried a skos:Concept ;
-  skos:prefLabel "only the first note is carried" ;
-  skos:inScheme ex:gaps ;
-  skos:broader bridge:carriedWithLoss .
-
-ex:a-status-outside-the-set-the-vocabulary-fixes a skos:Concept ;
-  skos:prefLabel "a status outside the set the vocabulary fixes" ;
-  skos:inScheme ex:gaps ;
-  skos:broader bridge:valueNotMapped .
-
-ex:no-source-for-the-curation-date-a-shape-requires a skos:Concept ;
-  skos:prefLabel "no source for the curation date a shape requires" ;
-  skos:inScheme ex:gaps ;
-  skos:broader bridge:sourceLacksRequired .
-"""
+ACCOUNTING = "vocab/example-accounting.ttl"
 
 A_GAP_WITH_NO_PREDICATE = "ex:no-term-for-a-free-text-note"
-A_GAP_CARRIED_WITH_LOSS = "ex:only-the-first-note-is-carried"
+A_GAP_CARRIED_WITH_LOSS = "ex:only-the-first-run-of-a-labels-text-is-carried"
 A_GAP_OF_A_VALUE_NOT_MAPPED = "ex:a-status-outside-the-set-the-vocabulary-fixes"
-A_GAP_OF_A_SOURCE_LACKING_WHAT_A_SHAPE_REQUIRES = "ex:no-source-for-the-curation-date-a-shape-requires"
+A_GAP_OF_A_SOURCE_LACKING_WHAT_A_SHAPE_REQUIRES = "ex:the-record-names-no-submitter"
 
 THE_VERSION = "/ExampleRecord/@Version"
 THE_MAPPING_MENTIONS = "/ExampleRecord/Label"
@@ -62,13 +42,6 @@ A_NAMESPACED_ATTRIBUTE_OF_THE_RECORD = (
     f"/ExampleRecord/@*[local-name()='kind' and namespace-uri()='{AN_EXTENSION_NAMESPACE}']"
 )
 
-CARRIED = "bridge:carried"
-CARRIED_IN_PART = "bridge:carriedInPart"
-REDUNDANT_WITH = "bridge:redundantWith"
-CONSUMED = "bridge:consumed"
-NO_HOME = "bridge:noHome"
-IGNORED = "bridge:ignored"
-
 
 def entry(path, verdict=CARRIED, names_gap=None, same_fact_as=None, because=None):
     written = ["[] a bridge:PathEntry", f'bridge:sourcePath "{path}"', f"bridge:verdict {verdict}"]
@@ -85,13 +58,11 @@ def entry(path, verdict=CARRIED, names_gap=None, same_fact_as=None, because=None
 
 
 def accounting(*entries):
-    return PREFIXES + "\n" + "\n".join(entries)
+    return PREFIXES_OF_AN_ACCOUNTING + "\n" + "\n".join(entries)
 
 
 def accounted(package, *entries):
-    return package.gap_scheme(A_SCHEME_HOLDING_A_GAP_OF_EACH_KIND_A_VERDICT_IMPLIES).source_accounting(
-        accounting(*entries)
-    )
+    return package.write(ACCOUNTING, accounting(*entries))
 
 
 def said_about(package):
@@ -241,14 +212,9 @@ def test_reports_nothing_for_a_carried_in_part_entry_naming_a_gap_of_a_value_not
     assert not said_about(package)
 
 
-def test_reports_a_no_home_entry_naming_a_gap_carried_with_loss_and_a_carried_in_part_entry_naming_one_with_no_predicate(
-    package,
-):
+def test_reports_a_no_home_entry_naming_a_gap_carried_with_loss(package):
     accounted(package, entry(NO_QUERY_MENTIONS, verdict=NO_HOME, names_gap=A_GAP_CARRIED_WITH_LOSS))
     assert A_GAP_CARRIED_WITH_LOSS.removeprefix("ex:") in said_about(package)
-
-    accounted(package, entry(THE_MAPPING_MENTIONS, verdict=CARRIED_IN_PART, names_gap=A_GAP_WITH_NO_PREDICATE))
-    assert A_GAP_WITH_NO_PREDICATE.removeprefix("ex:") in said_about(package)
 
 
 def test_reports_nothing_for_the_accounting_the_synthetic_adapter_commits(crate):

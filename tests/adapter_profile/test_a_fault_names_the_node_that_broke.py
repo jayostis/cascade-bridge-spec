@@ -1,6 +1,5 @@
-from rdflib import Graph
-
-from _findings import SHAPES, unmet
+from _findings import SHAPES
+from adapter_profile_world import unmet_over
 
 PREFIXES = """@prefix bridge:  <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 @prefix ex:      <https://example.org/synthetic-adapter/v1#> .
@@ -62,12 +61,7 @@ CLINVAR_ACCOUNTING_WITH_ONE_NO_HOME_ENTRY_NAMING_NO_GAP = f"""
 
 
 def faults_over(turtle):
-    return list(
-        unmet(
-            Graph().parse(data=PREFIXES + turtle, format="turtle"),
-            Graph().parse(SHAPES, format="turtle"),
-        )
-    )
+    return unmet_over(PREFIXES + turtle, SHAPES)
 
 
 def test_a_shape_broken_at_two_nodes_gives_two_faults_each_naming_its_node():

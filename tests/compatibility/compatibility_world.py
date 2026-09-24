@@ -22,6 +22,8 @@ FAKE_ENGINE = ROOT / "fixtures" / "fake-engine"
 CONTEXT_IRI = "https://ns.cascadeprotocol.org/bridge/v1-draft/compatibility.jsonld"
 OWNER = "jayostis"
 CRATE = "ro-crate-metadata.json"
+MATCHING = "main, the branch matching the pull request's target"
+NOWHERE = "https://example.invalid/gone.git"
 
 VOCABULARY = "spec"
 VOCABULARY_OWNER = "the-cascade-protocol"
@@ -137,16 +139,20 @@ def origin_of(origins, name):
     return origins / (VOCABULARY_OWNER if name == VOCABULARY else OWNER) / name
 
 
-def pin_vocabulary(origins, commit, files=VOCABULARY_FILES):
+def pin_vocabulary(origins, commit):
     """Every adapter crate in these origins names this world's the-cascade-protocol/spec at a commit of it."""
     heads = {}
     for name, relative in CRATES_NAMING_THE_VOCABULARY:
         origin = origin_of(origins, name)
-        name_vocabulary(origin / relative / CRATE, VOCABULARY_URL, commit, files)
+        name_vocabulary(origin / relative / CRATE, VOCABULARY_URL, commit)
         git("add", "-A", cwd=origin)
         git("commit", "-q", "--allow-empty", "-m", "the vocabulary this adapter reads", cwd=origin)
         heads[name] = git("rev-parse", "HEAD", cwd=origin)
     return heads
+
+
+def depends_on(repository, number, owner=OWNER):
+    return f"Some description.\n\nDepends-On: https://github.com/{owner}/{repository}/pull/{number}\n"
 
 
 def write_compatibility(directory, document):
@@ -179,7 +185,6 @@ class PullRequests:
 
     def __init__(self):
         self.by_repository = {}
-        self.comments = []
         self.refusals = {}
         self.check_runs_by_commit = {}
 
@@ -266,14 +271,6 @@ class Handler(BaseHTTPRequestHandler):
             return self.answer(200 if pull else 404, pull or {"message": "Not Found"})
         return self.answer(404, {"message": "Not Found"})
 
-    def do_POST(self):
-        parts = self.parts()
-        body = self.rfile.read(int(self.headers.get("Content-Length", 0))).decode("utf-8")
-        if len(parts) == 6 and parts[3] == "issues" and parts[5] == "comments":
-            self.server.pull_requests.comments.append((parts[2], int(parts[4]), json.loads(body)["body"]))
-            return self.answer(201, {"id": len(self.server.pull_requests.comments)})
-        return self.answer(404, {"message": "Not Found"})
-
 
 class Api:
     def __init__(self, pull_requests):
@@ -293,7 +290,8 @@ class Api:
 class World:
     def __init__(self, root, origins, commits, pull_requests, api_url):
         self.root = root
-        self.origins = origins
+        self.origins = root / "origins"
+        shutil.copytree(origins, self.origins)
         self.commits = dict(commits)
         self.pull_requests = pull_requests
         self.api_url = api_url
@@ -304,14 +302,8 @@ class World:
         self.temporary.mkdir()
         self.summary = root / "summary.md"
 
-    def own_origins(self):
-        copy = self.root / "origins"
-        shutil.copytree(self.origins, copy)
-        self.origins = copy
-        return self
-
-    def pin_vocabularies(self, commit, files=VOCABULARY_FILES):
-        self.commits.update(pin_vocabulary(self.origins, commit, files))
+    def pin_vocabularies(self, commit):
+        self.commits.update(pin_vocabulary(self.origins, commit))
         return self
 
     def url(self, name):
@@ -358,8 +350,34 @@ class World:
         write_compatibility(engine, engine_document(must_pass_with, canned, **overrides))
         return engine
 
+    def engine_under_test(self, body="", base="main", **overrides):
+        self.pull_request("engine", 1, body=body, base=base)
+        return self.engine([self.url("adapter")], **overrides), self.event(1)
+
+    def offline(self):
+        """Every clone's origin points nowhere: a local run reaches no network."""
+        for clone in self.workspace.iterdir():
+            git("remote", "set-url", "origin", NOWHERE, cwd=clone)
+
+    def engine_beside_adapter(self, canned="passed", **overrides):
+        engine = self.engine([self.url("adapter")], canned, **overrides)
+        self.clone("adapter")
+        self.clone(VOCABULARY)
+        self.offline()
+        return engine
+
+    def adapter_beside_engine(self, engine_document=None):
+        adapter = self.clone("adapter")
+        write_compatibility(adapter, {"mustPassWith": [self.url("engine")]})
+        engine = self.clone("engine")
+        if engine_document is not None:
+            write_compatibility(engine, engine_document)
+        self.clone(VOCABULARY)
+        self.offline()
+        return adapter
+
     def event(self, number, repository="engine"):
-        pull = self.pull_requests.get(repository, number) or {"base": {"ref": "main"}}
+        pull = self.pull_requests.get(repository, number)
         path = self.root / "event.json"
         body = {"pull_request": {"number": number, "base": {"ref": pull["base"]["ref"]}}}
         path.write_text(json.dumps(body), encoding="utf-8")
@@ -410,13 +428,13 @@ class World:
             variables["CASCADE_CHECK_RUN_ID"] = own
         return variables
 
-    def tool(self, subject, expected=0, check=None, interpreter=None, arguments=(), in_a_process=False, **variables):
+    def tool(self, subject, expected=0, check=None, interpreter=None, in_a_process=False, **variables):
         """The tool's run, in this Python unless the test is about a process: then as a caller's workflow starts it.
 
         In this Python the run does not hop to the version it picks, which holds this checkout's code, and does not
         lint an adapter with rocrate-validator; a run in a process does both.
         """
-        argv = [str(subject), "--results", str(self.results), *arguments]
+        argv = [str(subject), "--results", str(self.results)]
         if check:
             argv += ["--check", check]
         if variables.get("CI") == "true":  # start passes it as an argument, and sets no variable
@@ -460,10 +478,17 @@ class World:
     def table(self):
         return self.summary.read_text(encoding="utf-8") if self.summary.exists() else ""
 
+    def table_rows(self):
+        lines = [
+            [cell.strip() for cell in line.split("|")[1:-1]]
+            for line in self.table().splitlines()
+            if line.startswith("| ")
+        ]
+        return [dict(zip(lines[0], row, strict=True)) for row in lines[1:]] if lines else []
+
+    def table_row(self, repository):
+        return next((row for row in self.table_rows() if row["repository"].startswith(f"[{repository}]")), {})
+
     def table_in_results(self):
         written = self.results / "table.md"
         return written.read_text(encoding="utf-8") if written.exists() else ""
-
-
-def current_branch(path):
-    return git("symbolic-ref", "--short", "HEAD", cwd=path)

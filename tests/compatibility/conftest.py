@@ -15,6 +15,6 @@ def world(tmp_path, published):
     pull_requests = PullRequests()
     api = Api(pull_requests)
     try:
-        yield World(tmp_path, origins, commits, pull_requests, api.url).own_origins()
+        yield World(tmp_path, origins, commits, pull_requests, api.url)
     finally:
         api.stop()

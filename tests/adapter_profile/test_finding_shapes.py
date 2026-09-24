@@ -1,98 +1,190 @@
-from rdflib import Graph
+from adapter_profile_world import a_finding, said_about_findings
 
-from _findings import SHAPES, unmet
+TWO_FINDINGS_SHARING_ONE_SELECTOR = """
+<#selector> a oa:XPathSelector ;
+  rdf:value "/ExampleRecordSet/ExampleRecord[1]" ;
+  oa:refinedBy [ a oa:XPathSelector ; rdf:value "Note" ] .
 
-BASE = "https://example.org/synthetic-adapter/fixtures/findings/example-0001.ttl"
+[] a oa:Annotation ;
+  oa:hasTarget [ oa:hasSource <../in/example-0001.xml> ; oa:hasSelector <#selector> ] ;
+  oa:hasBody [ a oa:TextualBody ; rdf:value "no term for a free-text note" ] ;
+  sh:resultSeverity sh:Info .
 
-PREFIXES = """@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix sh:     <http://www.w3.org/ns/shacl#> .
-@prefix oa:     <http://www.w3.org/ns/oa#> .
-@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
-@prefix ex:     <https://example.org/synthetic-adapter/v1#> .
+[] a oa:Annotation ;
+  oa:hasTarget [ oa:hasSource <../in/example-0001.xml> ; oa:hasSelector <#selector> ] ;
+  oa:hasBody [ a oa:TextualBody ; rdf:value "a second note" ] ;
+  sh:resultSeverity sh:Info .
 """
 
-TARGET = """oa:hasTarget [
-    oa:hasSource <../in/example-0001.xml> ;
-    oa:hasSelector [ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ]
-  ]"""
+TWO_FINDINGS_SHARING_ONE_TARGET = """
+_:t oa:hasSource <../in/example-0001.xml> ;
+  oa:hasSelector [ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ;
+                   oa:refinedBy [ a oa:XPathSelector ; rdf:value "Note" ] ] .
 
+[] a oa:Annotation ;
+  oa:hasTarget _:t ;
+  oa:hasBody [ a oa:TextualBody ; rdf:value "no term for a free-text note" ] ;
+  sh:resultSeverity sh:Info .
 
-def finding(body="ex:no-term-for-a-free-text-note", motivation="oa:classifying", value=None, occurrences=None):
-    written = ["[] a oa:Annotation", TARGET, "sh:resultSeverity sh:Info"]
-    if body is not None:
-        written.append(f"oa:hasBody {body}")
-    if motivation is not None:
-        written.append(f"oa:motivatedBy {motivation}")
-    if value is not None:
-        written.append(f"sh:value {value}")
-    if occurrences is not None:
-        written.append(f"bridge:occurrences {occurrences}")
-    return PREFIXES + "\n" + " ;\n  ".join(written) + " .\n"
+[] a oa:Annotation ;
+  oa:hasTarget _:t ;
+  oa:hasBody [ a oa:TextualBody ; rdf:value "a second note" ] ;
+  sh:resultSeverity sh:Info .
+"""
 
-
-def said_about(turtle):
-    return "\n".join(
-        unmet(
-            Graph().parse(data=turtle, format="turtle", publicID=BASE),
-            Graph().parse(SHAPES, format="turtle"),
-        )
-    )
+A_FINDING_WITH_TWO_TARGETS = """
+[] a oa:Annotation ;
+  oa:hasTarget [ oa:hasSource <../in/example-0001.xml> ;
+                 oa:hasSelector [ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ] ] ;
+  oa:hasTarget [ oa:hasSource <../in/example-0001.xml> ;
+                 oa:hasSelector [ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[2]" ] ] ;
+  oa:hasBody [ a oa:TextualBody ; rdf:value "no term for a free-text note" ] ;
+  sh:resultSeverity sh:Info .
+"""
 
 
 def test_rejects_a_finding_whose_body_is_an_oa_textual_body():
     assert (
         "A finding carries exactly one oa:hasBody, an IRI: the code the finding is an instance of, never a sentence."
-    ) in said_about(finding(body='[ a oa:TextualBody ; rdf:value "no term for a free-text note" ]'))
+    ) in said_about_findings(a_finding(body='[ a oa:TextualBody ; rdf:value "no term for a free-text note" ]'))
 
 
 def test_rejects_a_finding_whose_body_is_a_literal():
     assert (
         "A finding carries exactly one oa:hasBody, an IRI: the code the finding is an instance of, never a sentence."
-    ) in said_about(finding(body='"no term for a free-text note"'))
+    ) in said_about_findings(a_finding(body='"no term for a free-text note"'))
 
 
 def test_rejects_a_finding_carrying_two_bodies():
     assert (
         "A finding carries exactly one oa:hasBody, an IRI: the code the finding is an instance of, never a sentence."
-    ) in said_about(finding(body="ex:no-term-for-a-free-text-note, ex:a-status-outside-the-set-the-vocabulary-fixes"))
+    ) in said_about_findings(
+        a_finding(body="ex:no-term-for-a-free-text-note, ex:a-status-outside-the-set-the-vocabulary-fixes")
+    )
 
 
 def test_rejects_a_finding_carrying_no_motivation():
-    assert "A finding carries exactly one oa:motivatedBy, oa:classifying." in said_about(finding(motivation=None))
+    assert "A finding carries exactly one oa:motivatedBy, oa:classifying." in said_about_findings(
+        a_finding(motivation=None)
+    )
 
 
 def test_rejects_a_finding_motivated_by_something_other_than_classifying():
-    assert "A finding carries exactly one oa:motivatedBy, oa:classifying." in said_about(
-        finding(motivation="oa:commenting")
+    assert "A finding carries exactly one oa:motivatedBy, oa:classifying." in said_about_findings(
+        a_finding(motivation="oa:commenting")
     )
 
 
 def test_rejects_a_finding_carrying_two_motivations():
-    assert "A finding carries exactly one oa:motivatedBy, oa:classifying." in said_about(
-        finding(motivation="oa:classifying, oa:commenting")
+    assert "A finding carries exactly one oa:motivatedBy, oa:classifying." in said_about_findings(
+        a_finding(motivation="oa:classifying, oa:commenting")
     )
 
 
 def test_rejects_a_finding_carrying_two_source_values():
-    assert "A finding carries at most one sh:value, what in the source it is about." in said_about(
-        finding(value='"clinically significant", "uncertain"')
+    assert "A finding carries at most one sh:value, what in the source it is about." in said_about_findings(
+        a_finding(value='"clinically significant", "uncertain"')
     )
 
 
 def test_accepts_a_finding_whose_body_is_an_iri_classifying_it_and_the_source_value_that_made_it_fire():
-    assert not said_about(finding(value='"clinically significant"'))
+    assert not said_about_findings(a_finding(value='"clinically significant"'))
 
 
 def test_rejects_a_finding_carrying_two_occurrence_counts():
-    assert "bridge:occurrences" in said_about(finding(occurrences="2, 3"))
-    assert not said_about(finding(occurrences="2"))
+    assert "bridge:occurrences" in said_about_findings(a_finding(occurrences="2, 3"))
+    assert not said_about_findings(a_finding(occurrences="2"))
 
 
 def test_rejects_a_finding_whose_occurrence_count_is_no_integer():
-    assert "bridge:occurrences" in said_about(finding(occurrences='"two"'))
-    assert not said_about(finding(occurrences="297"))
+    assert "bridge:occurrences" in said_about_findings(a_finding(occurrences='"two"'))
+    assert not said_about_findings(a_finding(occurrences="297"))
 
 
 def test_rejects_a_finding_whose_occurrence_count_is_one_where_a_count_of_one_is_written_by_omitting_it():
-    assert "bridge:occurrences" in said_about(finding(occurrences="1"))
-    assert not said_about(finding())
+    assert "bridge:occurrences" in said_about_findings(a_finding(occurrences="1"))
+    assert not said_about_findings(a_finding())
+
+
+def test_rejects_a_finding_with_no_selector():
+    assert "carries exactly one oa:hasSelector" in said_about_findings(a_finding(record=None))
+
+
+def test_rejects_a_finding_with_no_severity():
+    assert "carries exactly one sh:resultSeverity" in said_about_findings(a_finding(severity=None))
+
+
+def test_rejects_a_severity_outside_the_scale():
+    assert "sh:Info, sh:Warning, sh:Violation" in said_about_findings(
+        a_finding(severity="<https://example.org/synthetic-adapter/severe>")
+    )
+
+
+def test_rejects_two_findings_sharing_one_selector():
+    assert "selector of its own, shared with no other finding" in said_about_findings(TWO_FINDINGS_SHARING_ONE_SELECTOR)
+
+
+def test_rejects_two_findings_sharing_one_target():
+    assert "a target of its own, shared with no other finding" in said_about_findings(TWO_FINDINGS_SHARING_ONE_TARGET)
+
+
+def test_rejects_a_finding_carrying_more_than_one_target():
+    assert "A finding about the source document carries exactly one oa:hasTarget" in said_about_findings(
+        A_FINDING_WITH_TWO_TARGETS
+    )
+
+
+def test_rejects_a_target_naming_its_source_as_a_literal_rather_than_by_iri():
+    assert (
+        "A finding's target names exactly one oa:hasSource by IRI, the document the record was read from."
+    ) in said_about_findings(a_finding(source='"example-0001.xml"'))
+
+
+def test_rejects_a_finding_named_rather_than_written_for_itself():
+    assert "A finding is a blank node written for that one finding" in said_about_findings(
+        a_finding().replace("[] a oa:Annotation", "<#the-one-finding> a oa:Annotation")
+    )
+
+
+def test_rejects_a_record_selector_that_is_not_an_xpath_selector():
+    assert "A record's selector is an oa:XPathSelector." in said_about_findings(
+        a_finding(selector='[ a oa:TextQuoteSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ]')
+    )
+
+
+def test_rejects_a_record_selector_carrying_no_xpath():
+    assert "A selector carries exactly one rdf:value, its XPath, a string." in said_about_findings(
+        a_finding(selector="[ a oa:XPathSelector ]")
+    )
+
+
+def test_rejects_a_record_selector_refined_more_than_once():
+    assert "A record's selector is refined by at most one selector" in said_about_findings(
+        a_finding(
+            selector=(
+                '[ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ; '
+                'oa:refinedBy [ a oa:XPathSelector ; rdf:value "Label" ] ; '
+                'oa:refinedBy [ a oa:XPathSelector ; rdf:value "Note" ] ]'
+            )
+        )
+    )
+
+
+def test_rejects_a_refinement_that_is_not_an_xpath_selector():
+    assert "A selector refining a record's selector is an oa:XPathSelector." in said_about_findings(
+        a_finding(
+            selector='[ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ; oa:refinedBy [ a oa:TextQuoteSelector ; rdf:value "Note" ] ]'
+        )
+    )
+
+
+def test_rejects_a_refinement_refined_further():
+    assert "A selector refining a record's selector is refined no further." in said_about_findings(
+        a_finding(
+            selector=(
+                '[ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ; '
+                'oa:refinedBy [ a oa:XPathSelector ; rdf:value "Note" ; '
+                'oa:refinedBy [ a oa:XPathSelector ; rdf:value "text()" ] ] ]'
+            )
+        )
+    )
