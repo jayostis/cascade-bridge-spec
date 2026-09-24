@@ -616,15 +616,15 @@ def pin_not_a_data_entity(package):
         ),
     ],
 )
-def test_the_validator_runs_the_profile(package, tmp_path, mutate, passes, says, never_says):
+def test_the_validator_runs_the_profile(tracked_package, tmp_path, mutate, passes, says, never_says):
     if mutate:
-        mutate(package)
+        mutate(tracked_package)
     report = tmp_path / "report.json"
     run = subprocess.run(
         [
             *ROCRATE_VALIDATOR_IN_THIS_PYTHON,
             "validate",
-            str(package.path),
+            str(tracked_package.path),
             "--extra-profiles-path",
             str(ROOT / "adapter"),
             "--profile-identifier",
