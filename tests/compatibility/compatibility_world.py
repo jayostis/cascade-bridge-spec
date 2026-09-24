@@ -127,6 +127,9 @@ def publish_origins(origins):
 
     commits["engine"] = publish(origins, "engine", engine)
     commits.update(pin_vocabulary(origins, commits[VOCABULARY]))
+    for name in commits:
+        # Every world copies these origins, and one pack copies faster than a file per object.
+        git("repack", "-a", "-d", "-q", cwd=origin_of(origins, name))
     return commits
 
 
