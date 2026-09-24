@@ -177,6 +177,16 @@ def test_a_report_giving_inapplicable_says_what_a_report_that_holds_gives(tmp_pa
     assert "a report that holds gives only passed, cantTell or untested" in verdict.describe()
 
 
+def test_each_failed_result_naming_no_test_is_its_own_fault(tmp_path):
+    report = earl(tmp_path, dict.fromkeys(EVERY_TEST, "passed") | {"example-0002": "cantTell"})
+    with report.open("a", encoding="utf-8") as written:
+        written.write("[] earl:result [ earl:outcome earl:failed ] .\n" * 2)
+    verdict = judge_report(report, SYNTHETIC_ADAPTER)
+    assert verdict.tally["failed"] == 2
+    fault = "a result naming no test is reported failed: a report that holds gives only passed, cantTell or untested"
+    assert verdict.faults == [fault, fault]
+
+
 def test_a_report_recording_no_outcome_is_that_one_fault(tmp_path):
     verdict = judge_report(earl(tmp_path, {}), SYNTHETIC_ADAPTER)
     assert verdict.faults == ["its report records no outcome"]
