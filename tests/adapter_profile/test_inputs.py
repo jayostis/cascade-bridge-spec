@@ -1,3 +1,4 @@
+import pytest
 from rdflib import Literal, URIRef
 
 import inputs
@@ -141,3 +142,66 @@ def test_reports_a_schema_failure_its_entrys_expected_findings_record_as_a_gap_r
             "<https://example.org/synthetic-adapter/v1#no-term-for-a-free-text-note>",
         )
     assert "example-0003.xml does not validate against example-set.xsd" in "\n".join(inputs.invalid(package.crate))
+
+
+XML_NAMESPACE = "http://www.w3.org/XML/1998/namespace"
+XLINK = "http://www.w3.org/1999/xlink"
+
+A_SHIPPED_XML_NAMESPACE_SCHEMA_ALLOWING_ONLY_ENGLISH = """<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.w3.org/XML/1998/namespace">
+  <xs:attribute name="lang">
+    <xs:simpleType>
+      <xs:restriction base="xs:string">
+        <xs:enumeration value="en"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:attribute>
+</xs:schema>
+"""
+
+
+def importing(package, namespace, attribute=None, location=None):
+    named = "" if location is None else f' schemaLocation="{location}"'
+    package.edit(
+        "schema/example-record.xsd",
+        'elementFormDefault="qualified">',
+        f'elementFormDefault="qualified" xmlns:xlink="{XLINK}">\n  <xs:import namespace="{namespace}"{named}/>',
+    )
+    if attribute is None:
+        return package
+    package.edit(
+        "schema/example-record.xsd",
+        '<xs:attribute name="Curated" type="xs:string"/>',
+        f'<xs:attribute name="Curated" type="xs:string"/>\n    <xs:attribute ref="{attribute}"/>',
+    )
+    return package
+
+
+@pytest.mark.parametrize(
+    "namespace, attribute, location",
+    [
+        (XML_NAMESPACE, "xml:lang", None),
+        (XLINK, "xlink:href", None),
+        (XML_NAMESPACE, "xml:lang", "http://www.w3.org/2009/01/xml.xsd"),
+        (XLINK, "xlink:href", "http://www.w3.org/XML/2008/06/xlink.xsd"),
+        (XML_NAMESPACE, "xml:lang", "xml.xsd"),
+        (XLINK, "xlink:href", "xlink.xsd"),
+    ],
+)
+def test_supplies_a_w3c_schema_the_package_ships_no_copy_of(package, namespace, attribute, location):
+    assert not list(inputs.invalid(importing(package, namespace, attribute, location).crate))
+
+
+def test_reads_a_w3c_schema_the_package_ships_from_the_package(package):
+    package.write("schema/xml.xsd", A_SHIPPED_XML_NAMESPACE_SCHEMA_ALLOWING_ONLY_ENGLISH)
+    importing(package, XML_NAMESPACE, "xml:lang", "xml.xsd")
+    package.edit("fixtures/in/example-0002.xml", 'Version="2"', 'Version="2" xml:lang="fr"')
+    assert "/ExampleRecord of example-0002.xml does not validate against example-record.xsd" in "\n".join(
+        inputs.invalid(package.crate)
+    )
+
+
+@pytest.mark.parametrize("location", ["https://example.invalid/elsewhere.xsd", "../../elsewhere.xsd"])
+def test_reports_an_import_of_another_namespace_that_names_no_file_in_the_package(package, location):
+    importing(package, "https://example.org/elsewhere", location=location)
+    assert "elsewhere.xsd, which is not a file in this package" in "\n".join(inputs.invalid(package.crate))
