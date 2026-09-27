@@ -78,8 +78,8 @@ def run_on_host(entry, engine, host, set_up, earl, record):
         report(False, f"{entry.name} was not run on {entry.host}: its setup failed")
         return
     argv = [*command, "test", str(entry.adapter), "--earl", str(earl)]
-    if record.vocabularies is not None:
-        argv += ["--vocabularies", str(record.vocabularies)]
+    if entry.vocabularies is not None:
+        argv += ["--vocabularies", str(entry.vocabularies)]
     print(f"  run   {' '.join(argv)}   (in {engine}, on {entry.host})")
     status = execute(argv, engine)
     if status is None:

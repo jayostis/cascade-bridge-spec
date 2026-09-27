@@ -77,27 +77,31 @@ def compatibility(directory, options, event, api, spec):
     used += counterpart_rows
 
     # A checked-out adapter is what names the vocabulary, so a Depends-On: line of it is reached only now.
-    reading = vocabularies.read_from(directory, counterpart_rows)
-    if reading is not None and options.mode == "ci":
-        reached = picking.follow(api, event, [*listed, reading.url], options.spec_repository)
-    vocabulary = None if reading is None else vocabularies.place(directory, reading, options, event, reached)
-    if vocabulary is not None:
-        used.append(vocabulary)
+    readings = vocabularies.read_from(directory, counterpart_rows)
+    if readings and options.mode == "ci":
+        reached = picking.follow(api, event, [*listed, *(reading.url for reading in readings)], options.spec_repository)
+    placed = [(reading, vocabularies.place(directory, reading, options, event, reached)) for reading in readings]
+    used += [vocabulary for _, vocabulary in placed]
 
     used += placing.not_used(reached)
     for entry in used:
         if entry.role is Role.COUNTERPART:
             entry.adapter = directory if is_adapter(directory) else entry.path
+            entry.vocabularies = next(
+                (vocabulary.path for reading, vocabulary in placed if entry.adapter in reading.adapters), None
+            )
     record = Record(directory, options.mode, used)
     record.save(options.results)
     for entry in used:
         report(True, entry.describe())
-    if vocabulary is not None and options.mode == "local":
-        vocabularies.compared(vocabulary, reading)
+    if options.mode == "local":
+        for reading, vocabulary in placed:
+            vocabularies.compared(vocabulary, reading)
 
     status = validate.validate(directory, document, spec)
-    if status is not Status.FAIL and vocabulary is not None:
-        status = vocabularies.check(directory, vocabulary, reading)
+    for reading, vocabulary in placed:
+        if status is not Status.FAIL:
+            status = vocabularies.check(directory, vocabulary, reading)
     if status is not Status.FAIL:
         engines.run(directory, record, options)
         status = judge.judge(record, options)

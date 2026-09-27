@@ -10,6 +10,7 @@ from compatibility_tool.console import Stop
 from compatibility_tool.record import Role, Row
 from compatibility_world import (
     CRATE,
+    OWNER,
     SYNTHETIC_ADAPTER,
     VOCABULARY,
     VOCABULARY_FILES,
@@ -104,8 +105,8 @@ def test_an_engines_run_picks_the_vocabulary_from_the_counterpart_adapters_pin(w
     assert (given_to_the_engine(said) / "LATER").is_file()
 
 
-def test_two_adapters_naming_different_commits_stop_the_run_naming_both(tmp_path):
-    """One run checks one version out, so every adapter it pairs names one."""
+def test_two_adapters_pinning_different_commits_of_one_vocabulary_repository_stop_the_run_naming_both(tmp_path):
+    """One run checks one version of a repository out."""
     paired = []
     for commit in ("a" * 40, "b" * 40):
         adapter = tmp_path / commit[0]
@@ -113,7 +114,7 @@ def test_two_adapters_naming_different_commits_stop_the_run_naming_both(tmp_path
         name_vocabulary(adapter / CRATE, VOCABULARY_URL, commit)
         paired.append(Row(adapter.name, VOCABULARY_URL, commit, "", Role.COUNTERPART, path=adapter))
 
-    with pytest.raises(Stop, match="name one bridge:cascadeVocabularyPin"):
+    with pytest.raises(Stop, match="pin one commit of"):
         vocabularies.read_from(tmp_path, paired)
 
 
@@ -128,3 +129,20 @@ def test_a_pin_naming_another_vocabulary_repository_is_checked_out_at_its_commit
     assert git("rev-parse", "HEAD", cwd=given) == commit
     assert world.record()["repositories"]["cascade-vocabulary"]["commit"] == commit
     assert VOCABULARY not in world.record()["repositories"]
+
+
+def test_an_engine_naming_two_adapters_with_different_vocabulary_pins_runs_each_against_its_own(world):
+    shutil.copytree(world.origin("adapter"), world.origins / OWNER / "adapter-on-spec")
+    pin_another_vocabulary(world, "cascade-vocabulary")
+    world.pull_request("engine", 1)
+    engine = world.engine([world.url("adapter"), world.url("adapter-on-spec")])
+
+    said = world.tool(engine, **world.ci(event=world.event(1)))
+
+    tested = [
+        Path(line.split("testing ", 1)[1].split(",", 1)[0]).name
+        for line in said.splitlines()
+        if "fake engine: testing" in line
+    ]
+    given = [path.name for path in map(given_to_the_engine, said.split("fake engine: testing")[1:])]
+    assert dict(zip(tested, given, strict=True)) == {"adapter": "cascade-vocabulary", "adapter-on-spec": VOCABULARY}
