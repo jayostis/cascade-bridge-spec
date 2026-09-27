@@ -219,3 +219,30 @@ def test_reports_a_json_findings_query_constructing_an_xpath_selector(json_packa
 
 def test_reports_nothing_for_the_committed_json_queries(json_crate):
     assert not list(queries.malformed(json_crate))
+
+
+def test_reports_nothing_for_a_fractional_value_the_schema_holds_to_a_fractional_multiple(json_package):
+    json_package.edit(
+        RECORD_SCHEMA, '"label": {"type": "string"}', '"label": {"type": ["string", "number"], "multipleOf": 0.5}'
+    )
+    json_package.edit("fixtures/in/json-0001.json", '"label": "first synthetic JSON record"', '"label": 1.5')
+    assert "json-0001" not in said(inputs, json_package.crate)
+
+
+def test_reports_a_fractional_value_that_is_no_multiple_of_the_schemas_fraction(json_package):
+    json_package.edit(
+        RECORD_SCHEMA, '"label": {"type": "string"}', '"label": {"type": ["string", "number"], "multipleOf": 0.5}'
+    )
+    json_package.edit("fixtures/in/json-0001.json", '"label": "first synthetic JSON record"', '"label": 1.2')
+    assert "is not a multiple of 0.5" in said(inputs, json_package.crate)
+
+
+def test_reports_nothing_for_an_integer_written_with_a_zero_fraction(json_package):
+    json_package.edit("fixtures/in/json-0001.json", '"version": 3', '"version": 3.0')
+    assert "json-0001" not in said(inputs, json_package.crate)
+
+
+def test_reports_nothing_for_a_carried_json_path_a_mapping_mentions_with_an_escaped_local_name(json_package):
+    json_package.edit("vocab/example-accounting.ttl", '"/label"', '"/a~0b"')
+    json_package.edit("in/example-record.rq", "xyz:label ?label", "xyz:a\~b ?label")
+    assert "mentions a~b" not in said(source_accounting, json_package.crate)

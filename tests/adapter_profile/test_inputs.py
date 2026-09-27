@@ -203,3 +203,15 @@ def test_reads_a_w3c_schema_the_package_ships_from_the_package(package):
 def test_reports_an_import_of_another_namespace_that_names_no_file_in_the_package(package, location):
     importing(package, "https://example.org/elsewhere", location=location)
     assert "elsewhere.xsd, which is not a file in this package" in "\n".join(inputs.invalid(package.crate))
+
+
+def test_validates_an_input_named_only_by_a_conversion_of_an_identity_relation_test(package):
+    package.edit("fixtures/in/example-0007.xml", 'Version="3"', 'Version="third"')
+    assert "example-0002-and-example-0007-name-one-record: example-0007.xml does not validate against" in (
+        "\n".join(inputs.invalid(package.crate))
+    )
+
+
+def test_reports_an_input_named_only_by_a_conversion_that_is_not_a_file_in_the_package(package):
+    (package.path / "fixtures/in/example-0007.xml").unlink()
+    assert "bridge:input names" in "\n".join(inputs.invalid(package.crate))

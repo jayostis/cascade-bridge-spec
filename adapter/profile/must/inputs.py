@@ -10,7 +10,7 @@ from rocrate_validator.requirements.python import PyFunctionCheck, check, requir
 
 from _crate import file_name_of, path_of
 from _findings import report_findings
-from _json_source import NotJson, parsed, pointer_of, syntax_of, validated_value
+from _json_source import NotJson, a_number_as_validated, parsed, pointer_of, syntax_of, validated_value
 from _json_source import records_of as json_records_of
 from _selectors import expected_findings_file_of, json_nodes_recorded_on, violations_recorded_on
 from _terms import BRIDGE, MF, SCHEMA
@@ -37,10 +37,10 @@ def committed_inputs(crate):
         action = crate.graph.value(test, MF.action)
         if action is None:
             continue
-        source = crate.graph.value(action, BRIDGE.input)
-        if source is None:
-            continue
-        yield test, source, crate.graph.value(action, BRIDGE.envelope)
+        for conversion in [action, *crate.graph.objects(action, BRIDGE.conversion)]:
+            source = crate.graph.value(conversion, BRIDGE.input)
+            if source is not None:
+                yield test, source, crate.graph.value(conversion, BRIDGE.envelope)
 
 
 def local_file(url):
@@ -156,7 +156,7 @@ class JsonSchemas:
                 f"against a JSON Schema declared {' or '.join(sorted(JSON_SCHEMA_MEDIA_TYPES))}"
             )
         try:
-            schema = json.loads(path.read_text(encoding="utf-8"))
+            schema = json.loads(path.read_text(encoding="utf-8"), parse_float=a_number_as_validated)
         except ValueError as error:
             return f"{path.name} does not parse as JSON: {error}"
         if not isinstance(schema, dict) or schema.get("$schema") not in JSON_SCHEMA_DRAFT_06:
@@ -174,7 +174,10 @@ class JsonSchemas:
             named = local_file(uri) if uri.startswith("file:") else None
             if named is None or not named.is_file() or not named.is_relative_to(package):
                 raise LookupError(f"{uri} is not a file in this package")
-            return Resource.from_contents(json.loads(named.read_text(encoding="utf-8")), default_specification=DRAFT6)
+            return Resource.from_contents(
+                json.loads(named.read_text(encoding="utf-8"), parse_float=a_number_as_validated),
+                default_specification=DRAFT6,
+            )
 
         registry = Registry(retrieve=retrieve).with_resource(
             path.as_uri(), Resource.from_contents(schema, default_specification=DRAFT6)
