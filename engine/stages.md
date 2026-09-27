@@ -85,8 +85,8 @@ version named, and:
   `bridge:selector` the `rdf:value` of the source record's selector. A mapping
   writes there the source's own version metadata: its version id as
   `pav:version`, a plain string, and when it was last updated as
-  `pav:lastUpdateOn`, an `xsd:dateTime` whose lexical form is the source's text
-  as written. For a record it finds inside the source record, as a FHIR
+  `pav:lastUpdateOn`, the source's text as written, an `xsd:date` where it states
+  a date and an `xsd:dateTime` where it states a date-time. For a record it finds inside the source record, as a FHIR
   contained resource is, it writes there `bridge:selector` as the `rdf:value`
   of the selector that record would have as a source record of its own:
   `/entry/0/resource/contained/0` under `/entry/0`.

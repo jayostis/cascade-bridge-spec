@@ -85,10 +85,11 @@ def test_a_record_without_a_usable_id_is_named_by_its_documents_sha256_and_its_s
     )
 
 
-def test_an_arrivals_version_id_is_a_plain_string_and_its_last_update_the_sources_own_text():
+def test_an_arrivals_last_update_is_the_sources_own_text_typed_as_the_date_or_date_time_it_states():
     assert (
-        "its version id as `pav:version`, a plain string, and when it was last updated as `pav:lastUpdateOn`, an "
-        "`xsd:dateTime` whose lexical form is the source's text as written" in STAGES
+        "its version id as `pav:version`, a plain string, and when it was last updated as `pav:lastUpdateOn`, the "
+        "source's text as written, an `xsd:date` where it states a date and an `xsd:dateTime` where it states a "
+        "date-time." in STAGES
     )
 
 
