@@ -6,21 +6,35 @@
 @prefix rec:    <https://ns.cascadeprotocol.org/records/v1-draft#> .
 @prefix ex:     <https://example.org/synthetic-adapter/v1#> .
 
-<urn:uuid:6004a646-16cd-8a20-8b6a-37d4f2ab0d73>
+<urn:uuid:279ae78d-ea82-899c-a7c6-4d23f20adc98>
   a ex:Record ;
-  ex:accession "EX000105" .
+  ex:accession "EX000107" .
 
-<ni:///sha-256;T-3b-SA6En9RkeOYVYtBxCoRDn9AEvksr3EYRcrPeIU>
-  prov:specializationOf <urn:uuid:6004a646-16cd-8a20-8b6a-37d4f2ab0d73> ;
-  rdfs:label "a record carrying members the accounting names nowhere" .
+<ni:///sha-256;28ZsgkZXrZ-95LershhTmtPKXlcsSGsF_MAnKM1VuTE>
+  prov:specializationOf <urn:uuid:279ae78d-ea82-899c-a7c6-4d23f20adc98> ;
+  rdfs:label "one of two records holding one accession" .
 
-[] bridge:arrivedAs <ni:///sha-256;T-3b-SA6En9RkeOYVYtBxCoRDn9AEvksr3EYRcrPeIU> ;
+[] bridge:arrivedAs <ni:///sha-256;28ZsgkZXrZ-95LershhTmtPKXlcsSGsF_MAnKM1VuTE> ;
   pav:version "1" ;
   bridge:selector "/records/0" ;
-  prov:wasDerivedFrom <ni:///sha-256;ahuVsX4Hc8sCQCJV07MHA5wBxxnc9kxNnPuG9uJOQaE> ;
+  prov:wasDerivedFrom <ni:///sha-256;jo_WTAf-65KdN4gSHJMPv1s4-UY3ck_jdSVYxj771Fk> ;
   prov:wasGeneratedBy _:import .
 
-<ni:///sha-256;ahuVsX4Hc8sCQCJV07MHA5wBxxnc9kxNnPuG9uJOQaE>
+<urn:uuid:bad72f10-8b8a-8450-bc22-70da13803dda>
+  a ex:Record ;
+  ex:accession "EX000107" .
+
+<ni:///sha-256;rUnwnAr1vhyuY_s1Q1egktKvdjIxDXkeF9xbzMgdF4w>
+  prov:specializationOf <urn:uuid:bad72f10-8b8a-8450-bc22-70da13803dda> ;
+  rdfs:label "the other record holding that accession" .
+
+[] bridge:arrivedAs <ni:///sha-256;rUnwnAr1vhyuY_s1Q1egktKvdjIxDXkeF9xbzMgdF4w> ;
+  pav:version "4" ;
+  bridge:selector "/records/1" ;
+  prov:wasDerivedFrom <ni:///sha-256;jo_WTAf-65KdN4gSHJMPv1s4-UY3ck_jdSVYxj771Fk> ;
+  prov:wasGeneratedBy _:import .
+
+<ni:///sha-256;jo_WTAf-65KdN4gSHJMPv1s4-UY3ck_jdSVYxj771Fk>
   a prov:Entity ;
   bridge:serverBaseUrl "https://records.example.org/api" ;
   pav:retrievedFrom <https://records.example.org/api/ExampleRecordSet> ;
@@ -34,7 +48,7 @@
 
 _:import
   a prov:Activity ;
-  prov:used <ni:///sha-256;ahuVsX4Hc8sCQCJV07MHA5wBxxnc9kxNnPuG9uJOQaE> ;
+  prov:used <ni:///sha-256;jo_WTAf-65KdN4gSHJMPv1s4-UY3ck_jdSVYxj771Fk> ;
   rdfs:label "synthetic example import" ;
   prov:startedAtTime "2026-09-01T10:00:00Z"^^xsd:dateTime ;
   prov:qualifiedAssociation [

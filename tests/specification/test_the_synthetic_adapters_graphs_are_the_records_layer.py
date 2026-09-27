@@ -1,19 +1,16 @@
 import json
 import xml.etree.ElementTree as ElementTree
 from pathlib import Path
+from urllib.parse import unquote
 
 import pytest
-from rdflib import RDF, RDFS, BNode, Graph, Literal, Namespace, URIRef
+from rdflib import RDF, RDFS, XSD, BNode, Graph, Literal, Namespace, URIRef
 from rdflib.compare import isomorphic
+
+from json_lift import Members, parsed
 from recomputed import PLACEHOLDER, XSD_STRING, canonical_nquads, ni_name, normalised_base_url, record_name
 
 ROOT = Path(__file__).resolve().parents[2]
-ADAPTER = ROOT / "fixtures" / "synthetic-adapter"
-MANIFEST_FILE = ADAPTER / "fixtures" / "manifest.ttl"
-MANIFEST = Graph().parse(MANIFEST_FILE, format="turtle", publicID=MANIFEST_FILE.as_uri())
-CRATE = next(
-    entity for entity in json.loads((ADAPTER / "ro-crate-metadata.json").read_text())["@graph"] if entity["@id"] == "./"
-)
 
 MF = Namespace("http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#")
 BRIDGE = Namespace("https://ns.cascadeprotocol.org/bridge/v1-draft#")
@@ -21,29 +18,90 @@ PROV = Namespace("http://www.w3.org/ns/prov#")
 PAV = Namespace("http://purl.org/pav/")
 EX = Namespace("https://example.org/synthetic-adapter/v1#")
 
-CONVERSIONS = sorted(MANIFEST.subjects(RDF.type, BRIDGE.IsomorphicConversionTest), key=str)
+
+class XmlAdapter:
+    directory = ROOT / "fixtures" / "synthetic-adapter"
+
+    @staticmethod
+    def accessions(document):
+        root = ElementTree.parse(document).getroot()
+        return [
+            record.get("Accession")
+            for record in ([root] if root.tag == "ExampleRecord" else root.findall("ExampleRecord"))
+        ]
+
+    @staticmethod
+    def selected(document, selector):
+        root = ElementTree.parse(document).getroot()
+        steps = selector.split("/")[1:]
+        assert steps[0] == root.tag, selector
+        element = root if len(steps) == 1 else root.find("/".join(steps[1:]))
+        return {"accession": element.get("Accession"), "version": element.get("Version")}
 
 
-def path_of(iri):
-    return ADAPTER / str(iri).removeprefix(ADAPTER.as_uri() + "/")
+class JsonAdapter:
+    directory = ROOT / "fixtures" / "synthetic-json-adapter"
+    HELD = "/contained/"
+
+    @staticmethod
+    def accessions(document):
+        value = parsed(document.read_bytes())
+        records = dict(value).get("records")
+        return [dict(record).get("accession") for record in ([value] if records is None else records)]
+
+    @staticmethod
+    def selected(document, selector):
+        node = parsed(document.read_bytes())
+        for token in selector.split("/")[1:]:
+            token = unquote(token).replace("~1", "/").replace("~0", "~")
+            node = node[int(token)] if not isinstance(node, Members) else dict(node)[token]
+        return dict(node)
 
 
-def action_of(test):
-    return MANIFEST.value(test, MF.action)
+ADAPTERS = {"synthetic-adapter": XmlAdapter, "synthetic-json-adapter": JsonAdapter}
 
 
-def input_of(test):
-    return path_of(MANIFEST.value(action_of(test), BRIDGE.input))
+def manifest_of(adapter):
+    manifest = adapter.directory / "fixtures" / "manifest.ttl"
+    return Graph().parse(manifest, format="turtle", publicID=manifest.as_uri())
 
 
-def facts_of(test):
-    return Graph().parse(path_of(MANIFEST.value(action_of(test), BRIDGE.facts)), format="turtle")
+def crate_of(adapter):
+    graph = json.loads((adapter.directory / "ro-crate-metadata.json").read_text(encoding="utf-8"))["@graph"]
+    return next(entity for entity in graph if entity["@id"] == "./")
 
 
-def expected_of(test):
-    return Graph().parse(
-        path_of(MANIFEST.value(MANIFEST.value(test, MF.result), BRIDGE.expectedGraph)), format="turtle"
-    )
+CONVERSIONS = [
+    pytest.param(adapter, test, id=f"{name}:{str(test).rpartition('#')[2]}")
+    for name, adapter in ADAPTERS.items()
+    for test in sorted(manifest_of(adapter).subjects(RDF.type, BRIDGE.IsomorphicConversionTest), key=str)
+]
+
+
+def path_of(adapter, iri):
+    return adapter.directory / str(iri).removeprefix(adapter.directory.as_uri() + "/")
+
+
+def action_value(adapter, test, term):
+    manifest = manifest_of(adapter)
+    return manifest.value(manifest.value(test, MF.action), term)
+
+
+def input_of(adapter, test):
+    return path_of(adapter, action_value(adapter, test, BRIDGE.input))
+
+
+def facts_of(adapter, test):
+    return Graph().parse(path_of(adapter, action_value(adapter, test, BRIDGE.facts)), format="turtle")
+
+
+def expected_file_of(adapter, test):
+    manifest = manifest_of(adapter)
+    return path_of(adapter, manifest.value(manifest.value(test, MF.result), BRIDGE.expectedGraph))
+
+
+def expected_of(adapter, test):
+    return Graph().parse(expected_file_of(adapter, test), format="turtle")
 
 
 def described(graph, node, into=None):
@@ -62,35 +120,33 @@ def the_one(graph, rdf_type):
     return found[0]
 
 
-def records_of(document):
-    root = ElementTree.parse(document).getroot()
-    return [root] if root.tag == "ExampleRecord" else root.findall("ExampleRecord")
-
-
-def selected(document, selector):
-    root = ElementTree.parse(document).getroot()
-    steps = selector.split("/")[1:]
-    assert steps[0] == root.tag, selector
-    return root if len(steps) == 1 else root.find("/".join(steps[1:]))
-
-
 def arrival_of(graph, record):
     version = graph.value(None, PROV.specializationOf, record)
     return graph.value(None, BRIDGE.arrivedAs, version)
 
 
-def test_every_conversion_of_the_synthetic_adapter_is_supplied_facts():
-    assert CONVERSIONS
-    assert all(MANIFEST.value(action_of(test), BRIDGE.facts) is not None for test in CONVERSIONS)
+def selector_of(graph, record):
+    return str(graph.value(arrival_of(graph, record), BRIDGE.selector))
 
 
-@pytest.mark.parametrize("test", CONVERSIONS, ids=lambda test: str(test).rpartition("#")[2])
-def test_the_document_is_named_by_the_sha256_of_its_bytes_and_carries_the_facts_supplied_with_it(test):
-    expected = expected_of(test)
+def holder_of(adapter, selector):
+    return selector.rpartition(adapter.HELD)[0] if adapter is JsonAdapter and adapter.HELD in selector else None
+
+
+@pytest.mark.parametrize("adapter", ADAPTERS.values(), ids=ADAPTERS.keys())
+def test_every_conversion_of_a_synthetic_adapter_is_supplied_facts(adapter):
+    tests = list(manifest_of(adapter).subjects(RDF.type, BRIDGE.IsomorphicConversionTest))
+    assert tests
+    assert all(action_value(adapter, test, BRIDGE.facts) is not None for test in tests)
+
+
+@pytest.mark.parametrize(("adapter", "test"), CONVERSIONS)
+def test_the_document_is_named_by_the_sha256_of_its_bytes_and_carries_the_facts_supplied_with_it(adapter, test):
+    expected = expected_of(adapter, test)
     document = the_one(expected, PROV.Entity)
-    assert str(document) == ni_name(input_of(test).read_bytes())
+    assert str(document) == ni_name(input_of(adapter, test).read_bytes())
     supplied = Graph()
-    for subject, predicate, value in facts_of(test):
+    for subject, predicate, value in facts_of(adapter, test):
         if predicate == BRIDGE.serverBaseUrl:
             value = Literal(normalised_base_url(str(value)))
         supplied.add((document if subject == BRIDGE.thisDocument else subject, predicate, value))
@@ -99,19 +155,20 @@ def test_the_document_is_named_by_the_sha256_of_its_bytes_and_carries_the_facts_
     assert isomorphic(written, described(supplied, document))
 
 
-@pytest.mark.parametrize("test", CONVERSIONS, ids=lambda test: str(test).rpartition("#")[2])
-def test_the_import_carries_the_facts_supplied_with_it_and_applied_the_adapters_release(test):
-    expected = expected_of(test)
+@pytest.mark.parametrize(("adapter", "test"), CONVERSIONS)
+def test_the_import_carries_the_facts_supplied_with_it_and_applied_the_adapters_release(adapter, test):
+    expected = expected_of(adapter, test)
+    crate = crate_of(adapter)
     run = the_one(expected, PROV.Activity)
     assert expected.value(run, PROV.used) == the_one(expected, PROV.Entity)
     association = expected.value(run, PROV.qualifiedAssociation)
     plan = expected.value(association, PROV.hadPlan)
     assert (plan, RDF.type, PROV.Plan) in expected
-    assert expected.value(plan, RDFS.label) == Literal(CRATE["identifier"])
-    assert expected.value(plan, PAV.version) == Literal(CRATE["version"])
+    assert expected.value(plan, RDFS.label) == Literal(crate["identifier"])
+    assert expected.value(plan, PAV.version) == Literal(crate["version"])
     assert not list(expected.predicate_objects(expected.value(association, PROV.agent)))
     supplied = Graph()
-    for predicate, value in facts_of(test).predicate_objects(BRIDGE.thisImport):
+    for predicate, value in facts_of(adapter, test).predicate_objects(BRIDGE.thisImport):
         supplied.add((run, predicate, value))
     written = Graph()
     for predicate, value in expected.predicate_objects(run):
@@ -120,24 +177,39 @@ def test_the_import_carries_the_facts_supplied_with_it_and_applied_the_adapters_
     assert isomorphic(written, supplied)
 
 
-@pytest.mark.parametrize("test", CONVERSIONS, ids=lambda test: str(test).rpartition("#")[2])
-def test_each_record_is_named_by_its_server_type_and_accession_unless_its_document_repeats_the_accession(test):
-    expected = expected_of(test)
-    held = [record.get("Accession") for record in records_of(input_of(test))]
-    server = normalised_base_url(str(facts_of(test).value(BRIDGE.thisDocument, BRIDGE.serverBaseUrl)))
-    document = ni_name(input_of(test).read_bytes())
-    records = list(expected.subjects(RDF.type, EX.Record))
-    assert records
-    for record in records:
+@pytest.mark.parametrize(("adapter", "test"), CONVERSIONS)
+def test_each_record_is_named_by_its_server_type_and_accession_unless_its_document_repeats_the_accession(adapter, test):
+    expected = expected_of(adapter, test)
+    held = adapter.accessions(input_of(adapter, test))
+    server = normalised_base_url(str(facts_of(adapter, test).value(BRIDGE.thisDocument, BRIDGE.serverBaseUrl)))
+    document = ni_name(input_of(adapter, test).read_bytes())
+    for record in expected.subjects(RDF.type, EX.Record):
+        if holder_of(adapter, selector_of(expected, record)) is not None:
+            continue
         accession = str(expected.value(record, EX.accession))
-        selector = str(expected.value(arrival_of(expected, record), BRIDGE.selector))
-        inputs = [server, "ExampleRecord", accession] if held.count(accession) == 1 else [document, selector]
+        inputs = (
+            [server, "ExampleRecord", accession]
+            if held.count(accession) == 1
+            else [document, selector_of(expected, record)]
+        )
         assert str(record) == record_name(inputs)
 
 
-@pytest.mark.parametrize("test", CONVERSIONS, ids=lambda test: str(test).rpartition("#")[2])
-def test_each_version_is_named_by_the_sha256_of_its_content(test):
-    expected = expected_of(test)
+@pytest.mark.parametrize(("adapter", "test"), CONVERSIONS)
+def test_a_record_held_inside_another_is_named_by_its_holders_name_and_its_own_id(adapter, test):
+    expected = expected_of(adapter, test)
+    by_selector = {selector_of(expected, record): record for record in expected.subjects(RDF.type, EX.Record)}
+    for selector, record in by_selector.items():
+        holder = holder_of(adapter, selector)
+        if holder is not None:
+            own_id = adapter.selected(input_of(adapter, test), selector)["id"]
+            assert str(expected.value(record, EX.accession)) == own_id
+            assert str(record) == record_name([str(by_selector[holder]), own_id])
+
+
+@pytest.mark.parametrize(("adapter", "test"), CONVERSIONS)
+def test_each_version_is_named_by_the_sha256_of_its_content(adapter, test):
+    expected = expected_of(adapter, test)
 
     def term(node):
         if node == version:
@@ -146,22 +218,46 @@ def test_each_version_is_named_by_the_sha256_of_its_content(test):
             return ("iri", str(node))
         return ("literal", str(node), str(node.datatype or XSD_STRING))
 
-    versions = set(expected.subjects(PROV.specializationOf, None))
-    assert versions
-    for version in versions:
+    for version in set(expected.subjects(PROV.specializationOf, None)):
         content = {tuple(term(node) for node in triple) for triple in expected.triples((version, None, None))}
         assert str(version) == ni_name(canonical_nquads(content).encode("utf-8"))
 
 
-@pytest.mark.parametrize("test", CONVERSIONS, ids=lambda test: str(test).rpartition("#")[2])
-def test_each_arrival_selects_its_record_in_the_document_and_carries_the_version_the_source_gave_it(test):
-    expected = expected_of(test)
+@pytest.mark.parametrize(("adapter", "test"), CONVERSIONS)
+def test_each_arrival_selects_its_record_in_the_document_and_carries_the_version_the_source_gave_it(adapter, test):
+    expected = expected_of(adapter, test)
     document = the_one(expected, PROV.Entity)
     run = the_one(expected, PROV.Activity)
     for record in expected.subjects(RDF.type, EX.Record):
         arrival = arrival_of(expected, record)
-        element = selected(input_of(test), str(expected.value(arrival, BRIDGE.selector)))
-        assert element.get("Accession") == str(expected.value(record, EX.accession))
-        assert expected.value(arrival, PAV.version) == Literal(element.get("Version"))
+        selector = selector_of(expected, record)
+        node = adapter.selected(input_of(adapter, test), selector)
+        if holder_of(adapter, selector) is None:
+            assert node["accession"] == str(expected.value(record, EX.accession))
+            assert expected.value(arrival, PAV.version) == Literal(node["version"])
+        else:
+            assert expected.value(arrival, PAV.version) is None
         assert expected.value(arrival, PROV.wasDerivedFrom) == document
         assert expected.value(arrival, PROV.wasGeneratedBy) == run
+
+
+@pytest.mark.parametrize(("adapter", "test"), CONVERSIONS)
+def test_an_arrival_says_when_the_source_last_updated_its_record_in_the_sources_own_text(adapter, test):
+    expected = expected_of(adapter, test)
+    written = expected_file_of(adapter, test).read_text(encoding="utf-8")
+    for record in expected.subjects(RDF.type, EX.Record):
+        updated = adapter.selected(input_of(adapter, test), selector_of(expected, record)).get("lastUpdated")
+        if updated is not None:
+            assert expected.value(arrival_of(expected, record), PAV.lastUpdateOn).datatype == XSD.dateTime
+            assert f'pav:lastUpdateOn "{updated}"^^xsd:dateTime' in written
+
+
+def test_the_synthetic_json_adapter_holds_a_record_inside_another_and_a_record_that_is_its_documents_value():
+    selectors = {
+        selector_of(expected_of(JsonAdapter, test), record)
+        for adapter, test in (param.values for param in CONVERSIONS)
+        if adapter is JsonAdapter
+        for record in expected_of(JsonAdapter, test).subjects(RDF.type, EX.Record)
+    }
+    assert "/records/0/contained/0" in selectors
+    assert "" in selectors
