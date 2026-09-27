@@ -212,6 +212,19 @@ def test_validates_an_input_named_only_by_a_conversion_of_an_identity_relation_t
     )
 
 
+def test_reports_nothing_for_a_conversion_whose_schema_failure_an_entry_converting_that_input_in_that_envelope_records(
+    package,
+):
+    package.edit(
+        "fixtures/manifest.ttl",
+        "bridge:input <in/example-0007.xml> ;",
+        "bridge:input <in/example-0003.xml> ;",
+    )
+    assert "example-0002-and-example-0007-name-one-record: example-0003.xml" not in (
+        "\n".join(inputs.invalid(package.crate))
+    )
+
+
 def test_reports_an_input_named_only_by_a_conversion_that_is_not_a_file_in_the_package(package):
     (package.path / "fixtures/in/example-0007.xml").unlink()
     assert "bridge:input names" in "\n".join(inputs.invalid(package.crate))

@@ -57,6 +57,15 @@ def committed_inputs(crate):
                 yield test, source, crate.graph.value(conversion, BRIDGE.envelope)
 
 
+def findings_files_for(crate, inputs, test, source, envelope):
+    """An identity relation test records no findings: a conversion of one is held to those of the entries converting its input in its envelope."""
+    own = expected_findings_file_of(crate, test)
+    if own is not None:
+        return [own]
+    files = (expected_findings_file_of(crate, other) for other, s, e in inputs if (s, e) == (source, envelope))
+    return list(dict.fromkeys(file for file in files if file is not None))
+
+
 def local_file(url):
     scheme = urlparse(url).scheme
     if scheme == "file":
@@ -257,8 +266,12 @@ def invalid_json(crate, inputs):
         for fault in (against_document, against_records):
             if isinstance(fault, str):
                 yield f"{name}: {fault}"
-        findings_file = expected_findings_file_of(crate, test)
-        recorded = set() if findings_file is None else json_nodes_recorded_on(findings_file, written)
+        recorded = set().union(
+            *(
+                json_nodes_recorded_on(file, written)
+                for file in findings_files_for(crate, inputs, test, source, envelope)
+            )
+        )
         value = validated_value(data)
         if against_document is not None and not isinstance(against_document, str):
             yield from json_failures(
@@ -332,8 +345,12 @@ def invalid(crate):
         except etree.Error as error:
             yield f"{name}: {input_path.name} is not well-formed XML\n{error}"
             continue
-        findings_file = expected_findings_file_of(crate, test)
-        recorded = set() if findings_file is None else violations_recorded_on(findings_file, document)
+        recorded = set().union(
+            *(
+                violations_recorded_on(file, document)
+                for file in findings_files_for(crate, inputs, test, source, envelope)
+            )
+        )
         if isinstance(against_document, etree.XMLSchema):
             yield from measured_against(
                 against_document,
@@ -367,7 +384,7 @@ def invalid(crate):
 
 @requirement(name="Inputs against the declared schemas")
 class Inputs(PyFunctionCheck):
-    """Every committed input validates whole against its envelope's document schema, and record by record against the source schema, except where the entry's expected findings record the failure."""
+    """Every committed input validates whole against its envelope's document schema, and record by record against the source schema, except where the expected findings of that input in that envelope record the failure."""
 
     @check(name="every input and every record in it validates against the declared schema")
     def run_check(self, context: ValidationContext) -> bool:
