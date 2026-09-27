@@ -47,3 +47,15 @@ def test_reports_an_attribution_naming_its_role_by_a_literal(package):
 def test_reports_an_import_time_that_is_no_datetime(package):
     package.edit(FACTS, 'prov:startedAtTime "2026-09-01T10:00:00Z"^^xsd:dateTime', 'prov:startedAtTime "yesterday"')
     assert "prov:startedAtTime, an xsd:dateTime" in said(package.crate)
+
+
+def test_reports_a_fact_stated_of_a_misspelled_document(package):
+    package.edit(FACTS, "bridge:thisDocument\n", "bridge:thisDocumnet\n")
+    assert "v1-draft#thisDocumnet is none of them" in said(package.crate)
+
+
+def test_reports_a_fact_stated_of_a_subject_that_is_neither_the_document_the_import_nor_what_they_name(package):
+    package.edit(
+        FACTS, "bridge:thisImport\n", '<https://example.org/elsewhere> rdfs:label "a stray" .\n\nbridge:thisImport\n'
+    )
+    assert "https://example.org/elsewhere is none of them" in said(package.crate)
