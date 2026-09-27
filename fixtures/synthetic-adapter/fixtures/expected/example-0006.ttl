@@ -1,9 +1,43 @@
-@prefix ex:   <https://example.org/synthetic-adapter/v1#> .
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix prov:   <http://www.w3.org/ns/prov#> .
+@prefix pav:    <http://purl.org/pav/> .
+@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+@prefix rec:    <https://ns.cascadeprotocol.org/records/v1-draft#> .
+@prefix ex:     <https://example.org/synthetic-adapter/v1#> .
 
-<https://example.org/synthetic-adapter/record/EX000007>
+<urn:uuid:61c152b0-9107-88da-84b3-1738ca0f3e79>
   a ex:Record ;
-  ex:accession "EX000007" ;
-  ex:version "1"^^xsd:integer ;
+  ex:accession "EX000007" .
+
+<ni:///sha-256;wuj4s4S1MmBrrk2LHYa02fpAqPtzzijmwewn9DQ5Q1U>
+  prov:specializationOf <urn:uuid:61c152b0-9107-88da-84b3-1738ca0f3e79> ;
   rdfs:label "a record whose findings query writes a severity over its gap concept's, takes a second from the concept, and leaves a third to neither" .
+
+[] bridge:arrivedAs <ni:///sha-256;wuj4s4S1MmBrrk2LHYa02fpAqPtzzijmwewn9DQ5Q1U> ;
+  pav:version "1" ;
+  bridge:selector "/ExampleRecordSet/ExampleRecord[1]" ;
+  prov:wasDerivedFrom <ni:///sha-256;lhOaSHA2XUP2uvRdwazZghXDBgkRzk1dcPfRKNvCms4> ;
+  prov:wasGeneratedBy _:import .
+
+<ni:///sha-256;lhOaSHA2XUP2uvRdwazZghXDBgkRzk1dcPfRKNvCms4>
+  a prov:Entity ;
+  bridge:serverBaseUrl "https://records.example.org/api" ;
+  pav:retrievedFrom <https://records.example.org/api/ExampleRecordSet> ;
+  pav:retrievedOn "2026-08-30T22:14:00Z"^^xsd:dateTime ;
+  prov:qualifiedAttribution
+    [ prov:agent [ rdfs:label "Example Records Registry" ] ; prov:hadRole rec:author ] ,
+    [ prov:agent [ rdfs:label "Example Fetcher" ] ; prov:hadRole rec:transmitter ] ;
+  bridge:authenticatedPatient "Patient/example-patient" ;
+  bridge:authenticatedAsProxy false ;
+  bridge:sourceFormatVersion "1" .
+
+_:import
+  a prov:Activity ;
+  prov:used <ni:///sha-256;lhOaSHA2XUP2uvRdwazZghXDBgkRzk1dcPfRKNvCms4> ;
+  rdfs:label "synthetic example import" ;
+  prov:startedAtTime "2026-09-01T10:00:00Z"^^xsd:dateTime ;
+  prov:qualifiedAssociation [
+    prov:hadPlan [ a prov:Plan ; rdfs:label "synthetic-example" ; pav:version "0.1.0" ] ;
+    prov:agent [ ]
+  ] .

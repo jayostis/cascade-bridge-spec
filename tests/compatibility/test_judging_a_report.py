@@ -14,10 +14,13 @@ FAULTS_OF_A_REPORT = ROOT / "engine" / "faults-of-a-report.rq"
 EVERY_TEST = (
     "example-0001",
     "example-0002",
+    "example-0002-and-example-0007-name-one-record",
     "example-0003",
     "example-0004",
     "example-0005",
     "example-0006",
+    "example-0008",
+    "example-0008-names-two-records",
     "example-release-2026-01",
 )
 HUNDREDS_OF_ENTRIES = [f"case-{number:04}" for number in range(500)]
@@ -80,19 +83,42 @@ def adapter_whose_crate_root(tmp_path, change):
 def test_a_report_with_every_test_passed_or_undecided_holds(tmp_path):
     report = earl(
         tmp_path,
-        dict(zip(EVERY_TEST, ("passed", "cantTell", "passed", "passed", "passed", "passed", "untested"), strict=True)),
+        dict(
+            zip(
+                EVERY_TEST,
+                (
+                    "passed",
+                    "cantTell",
+                    "passed",
+                    "passed",
+                    "passed",
+                    "passed",
+                    "passed",
+                    "passed",
+                    "passed",
+                    "untested",
+                ),
+                strict=True,
+            )
+        ),
     )
     verdict = judge_report(report, SYNTHETIC_ADAPTER)
     assert verdict.holds
-    assert verdict.tally == {"passed": 5, "cantTell": 1, "untested": 1}
-    assert verdict.describe() == "1 cantTell, 5 passed, 1 untested, covering all 7 of the manifest's tests"
+    assert verdict.tally == {"passed": 8, "cantTell": 1, "untested": 1}
+    assert verdict.describe() == "1 cantTell, 8 passed, 1 untested, covering all 10 of the manifest's tests"
 
 
 @pytest.mark.parametrize("outcome", ["failed", "inapplicable"])
 def test_a_report_with_a_failing_outcome_does_not_hold(tmp_path, outcome):
     report = earl(
         tmp_path,
-        dict(zip(EVERY_TEST, (outcome, "cantTell", "passed", "passed", "passed", "passed", "passed"), strict=True)),
+        dict(
+            zip(
+                EVERY_TEST,
+                (outcome, "cantTell", "passed", "passed", "passed", "passed", "passed", "passed", "passed", "passed"),
+                strict=True,
+            )
+        ),
     )
     verdict = judge_report(report, SYNTHETIC_ADAPTER)
     assert not verdict.holds
@@ -104,7 +130,13 @@ def test_a_report_with_a_failing_outcome_does_not_hold(tmp_path, outcome):
 def test_an_outcome_outside_earls_five_does_not_hold(tmp_path):
     report = earl(
         tmp_path,
-        dict(zip(EVERY_TEST, ("passed", "cantTell", "passed", "passed", "passed", "passed", "sortOf"), strict=True)),
+        dict(
+            zip(
+                EVERY_TEST,
+                ("passed", "cantTell", "passed", "passed", "passed", "passed", "passed", "passed", "passed", "sortOf"),
+                strict=True,
+            )
+        ),
     )
     verdict = judge_report(report, SYNTHETIC_ADAPTER)
     assert not verdict.holds
@@ -148,7 +180,13 @@ def test_a_crate_naming_its_test_manifest_in_a_one_element_array_is_judged_by_th
 def test_a_report_giving_an_input_only_entry_passed_does_not_hold(tmp_path):
     report = earl(
         tmp_path,
-        dict(zip(EVERY_TEST, ("passed", "passed", "passed", "passed", "passed", "passed", "untested"), strict=True)),
+        dict(
+            zip(
+                EVERY_TEST,
+                ("passed", "passed", "passed", "passed", "passed", "passed", "passed", "passed", "passed", "untested"),
+                strict=True,
+            )
+        ),
     )
     verdict = judge_report(report, SYNTHETIC_ADAPTER)
     assert not verdict.holds
@@ -156,13 +194,28 @@ def test_a_report_giving_an_input_only_entry_passed_does_not_hold(tmp_path):
 
 
 EVERY_PARSED_REPORT = [
-    pytest.param(("passed", "cantTell", "passed", "passed", "passed", "passed", "untested"), id="passed or undecided"),
-    pytest.param(("failed", "passed", "passed", "passed", "passed", "passed", "passed"), id="failed"),
-    pytest.param(("inapplicable", "passed", "passed", "passed", "passed", "passed", "passed"), id="inapplicable"),
-    pytest.param(("passed", "passed", "passed", "passed", "passed", "passed", "sortOf"), id="outside EARL's five"),
+    pytest.param(
+        ("passed", "cantTell", "passed", "passed", "passed", "passed", "passed", "passed", "passed", "untested"),
+        id="passed or undecided",
+    ),
+    pytest.param(
+        ("failed", "passed", "passed", "passed", "passed", "passed", "passed", "passed", "passed", "passed"),
+        id="failed",
+    ),
+    pytest.param(
+        ("inapplicable", "passed", "passed", "passed", "passed", "passed", "passed", "passed", "passed", "passed"),
+        id="inapplicable",
+    ),
+    pytest.param(
+        ("passed", "passed", "passed", "passed", "passed", "passed", "passed", "passed", "passed", "sortOf"),
+        id="outside EARL's five",
+    ),
     pytest.param(("passed",), id="missing tests of the manifest"),
     pytest.param((), id="no outcome"),
-    pytest.param(("passed", "passed", "passed", "passed", "passed", "passed", "untested"), id="input-only passed"),
+    pytest.param(
+        ("passed", "passed", "passed", "passed", "passed", "passed", "passed", "passed", "passed", "untested"),
+        id="input-only passed",
+    ),
 ]
 
 
@@ -184,7 +237,7 @@ def test_a_fault_only_the_query_knows_is_what_the_judge_prints(tmp_path, monkeyp
     report = earl(tmp_path, dict.fromkeys(EVERY_TEST, "passed") | {"example-0002": "cantTell"})
     verdict = judge_report(report, SYNTHETIC_ADAPTER)
     assert not verdict.holds
-    assert verdict.describe() == "1 cantTell, 6 passed; a rule written only in the query"
+    assert verdict.describe() == "1 cantTell, 9 passed; a rule written only in the query"
 
 
 def test_a_report_giving_an_input_only_entry_untested_says_which_entry(tmp_path):

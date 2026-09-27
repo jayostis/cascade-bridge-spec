@@ -30,7 +30,7 @@ each host's `command`.
 ## `convert`
 
 ```
-convert <adapter directory> <document> [--envelope <iri>] [--out <file>] [--findings <file>] [--format turtle|ntriples] [--vocabularies <directory>]
+convert <adapter directory> <document> [--envelope <iri>] [--facts <file>] [--out <file>] [--findings <file>] [--format turtle|ntriples] [--vocabularies <directory>]
 ```
 
 It runs the adapter over every record of `<document>`, a source document the
@@ -48,6 +48,10 @@ nothing for it. An IRI naming no envelope the adapter declares is an error.
 Without `--envelope`, the document is read in the envelope that admits it, a
 JSON envelope naming a `bridge:docRootMemberValue` before one naming none; where
 that leaves more than one, or none, which is used is not specified.
+
+`--facts` names a Turtle file of the facts supplied with `<document>`
+([`stages.md`](stages.md#facts-supplied-with-a-document)). Without it, the
+document is converted with none.
 
 `--findings` writes the union of every record's findings as one graph, in the
 same format, to `<file>` and never on standard output. They are the findings a

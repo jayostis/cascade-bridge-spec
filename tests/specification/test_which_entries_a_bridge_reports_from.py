@@ -1,7 +1,7 @@
 A_KIND_TRUE_OF_THE_PATH = "A gap of kind `bridge:noPredicate` or `bridge:sourceLacksRequired` is true of the path"
 A_KIND_TRUE_OF_WHAT_A_RECORD_HOLDS = (
-    "A gap of kind `bridge:carriedWithLoss`, `bridge:valueNotMapped` or `bridge:schemaRuleUnnamed` is true of what a "
-    "record holds"
+    "A gap of kind `bridge:carriedWithLoss`, `bridge:valueNotMapped`, `bridge:schemaRuleUnnamed` or "
+    "`bridge:idRepeated` is true of what a record holds"
 )
 
 

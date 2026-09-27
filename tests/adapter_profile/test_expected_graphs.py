@@ -20,7 +20,7 @@ def test_reports_nothing_for_entries_naming_no_expected_graph(crate):
 
 
 def test_never_judges_an_expected_graph_against_cascades_shapes(package):
-    prefix = "@prefix ex:   <https://example.org/synthetic-adapter/v1#> ."
+    prefix = "@prefix ex:     <https://example.org/synthetic-adapter/v1#> ."
     package.edit(
         EXPECTED,
         prefix,

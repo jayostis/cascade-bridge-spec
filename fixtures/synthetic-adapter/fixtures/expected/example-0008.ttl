@@ -6,21 +6,35 @@
 @prefix rec:    <https://ns.cascadeprotocol.org/records/v1-draft#> .
 @prefix ex:     <https://example.org/synthetic-adapter/v1#> .
 
-<urn:uuid:35fde6a1-cbc5-80d0-9e87-a1bf5c26f146>
+<urn:uuid:c8921171-a82f-8c1a-ba1b-86cc101aa358>
   a ex:Record ;
-  ex:accession "EX000004" .
+  ex:accession "EX000008" .
 
-<ni:///sha-256;O54jlpNEXI5CwAimq0jvaR5DmtYr1WQiDi_TJN_u9jM>
-  prov:specializationOf <urn:uuid:35fde6a1-cbc5-80d0-9e87-a1bf5c26f146> ;
-  rdfs:label "a record that is valid where the document around it is not" .
+<ni:///sha-256;7hHMWZECQg4qbpHFT8Gq6rbQcDDnm3Bm-sHU_iWDYZY>
+  prov:specializationOf <urn:uuid:c8921171-a82f-8c1a-ba1b-86cc101aa358> ;
+  rdfs:label "a record whose accession the next record repeats" .
 
-[] bridge:arrivedAs <ni:///sha-256;O54jlpNEXI5CwAimq0jvaR5DmtYr1WQiDi_TJN_u9jM> ;
+[] bridge:arrivedAs <ni:///sha-256;7hHMWZECQg4qbpHFT8Gq6rbQcDDnm3Bm-sHU_iWDYZY> ;
   pav:version "1" ;
   bridge:selector "/ExampleRecordSet/ExampleRecord[1]" ;
-  prov:wasDerivedFrom <ni:///sha-256;cAsvZNrWbawF8X2-odKv1514dtDecgj1Ot9DKFIUa_o> ;
+  prov:wasDerivedFrom <ni:///sha-256;YoBNkrm6KN-7eBZZxmVzofOHY3Me93KbppjQVpnm8Xk> ;
   prov:wasGeneratedBy _:import .
 
-<ni:///sha-256;cAsvZNrWbawF8X2-odKv1514dtDecgj1Ot9DKFIUa_o>
+<urn:uuid:17da4e34-8287-8f3a-b874-7e50fddb2ef2>
+  a ex:Record ;
+  ex:accession "EX000008" .
+
+<ni:///sha-256;cNF7u8eJMZIGMUYPtWT-ANvXc62v9xSIdTntQ3wunhw>
+  prov:specializationOf <urn:uuid:17da4e34-8287-8f3a-b874-7e50fddb2ef2> ;
+  rdfs:label "a record repeating the accession of the one before it" .
+
+[] bridge:arrivedAs <ni:///sha-256;cNF7u8eJMZIGMUYPtWT-ANvXc62v9xSIdTntQ3wunhw> ;
+  pav:version "1" ;
+  bridge:selector "/ExampleRecordSet/ExampleRecord[2]" ;
+  prov:wasDerivedFrom <ni:///sha-256;YoBNkrm6KN-7eBZZxmVzofOHY3Me93KbppjQVpnm8Xk> ;
+  prov:wasGeneratedBy _:import .
+
+<ni:///sha-256;YoBNkrm6KN-7eBZZxmVzofOHY3Me93KbppjQVpnm8Xk>
   a prov:Entity ;
   bridge:serverBaseUrl "https://records.example.org/api" ;
   pav:retrievedFrom <https://records.example.org/api/ExampleRecordSet> ;
@@ -34,7 +48,7 @@
 
 _:import
   a prov:Activity ;
-  prov:used <ni:///sha-256;cAsvZNrWbawF8X2-odKv1514dtDecgj1Ot9DKFIUa_o> ;
+  prov:used <ni:///sha-256;YoBNkrm6KN-7eBZZxmVzofOHY3Me93KbppjQVpnm8Xk> ;
   rdfs:label "synthetic example import" ;
   prov:startedAtTime "2026-09-01T10:00:00Z"^^xsd:dateTime ;
   prov:qualifiedAssociation [

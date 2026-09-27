@@ -8,6 +8,7 @@ from rdflib import OWL, RDF, Graph
 ROOT = Path(__file__).resolve().parents[2]
 ADAPTER = ROOT / "fixtures" / "synthetic-adapter"
 VOCABULARIES = ROOT / "fixtures" / "synthetic-vocabularies"
+BRIDGE_VOCABULARY = ROOT / "vocab" / "bridge.ttl"
 EXPECTED_GRAPHS = sorted((ADAPTER / "fixtures" / "expected").glob("*.ttl"))
 DECLARES_A_PREDICATE = (RDF.Property, OWL.DatatypeProperty, OWL.ObjectProperty, OWL.AnnotationProperty)
 
@@ -31,8 +32,8 @@ def test_every_vocabulary_file_the_synthetic_adapter_names_is_there(file):
 
 
 @pytest.mark.parametrize("expected", EXPECTED_GRAPHS, ids=lambda path: path.name)
-def test_every_predicate_an_expected_graph_writes_is_declared_there(expected):
-    vocabulary = read(*named_files())
+def test_every_predicate_an_expected_graph_writes_is_declared_there_or_by_the_bridge_vocabulary(expected):
+    vocabulary = read(*named_files()) + Graph().parse(BRIDGE_VOCABULARY, format="turtle")
     declared = {term for kind in DECLARES_A_PREDICATE for term in vocabulary.subjects(RDF.type, kind)}
     written = set(Graph().parse(expected, format="turtle").predicates()) - {RDF.type}
     assert written <= declared, written - declared

@@ -9,11 +9,11 @@ adapter contributes data to them through these terms.
 | read and chunk | **Splitter** | `bridge:elementNameOfEachRecord`, `bridge:jsonPathOfEachRecord` |
 | transform | **Message Translator** | `bridge:mapping`, `bridge:table` |
 | Cascade RDF as target | **Canonical Data Model** | `bridge:vocabulary`, `bridge:cascadeVocabularyPin`, `bridge:vocabularyFile` |
-| link within the batch | **Aggregator** | nothing: the mapping emits the links, the Bridge resolves them |
-| name versions | **Message History** | each version, linked to its record by `prov:specializationOf` |
+| link records | **Aggregator** | `bridge:documentTableQuery`: a link within one source record is a name the mapping mints, and to any other record, in the document or not, that record's computed name |
+| name versions, write arrivals | **Message History** | each version, linked to its record by `prov:specializationOf`, and the source's version metadata on its arrival |
 | check, validate | **Message Validator** | `bridge:sourceSchema`, `bridge:documentSchema` |
 | findings | **Invalid Message Channel** | `bridge:findingsQuery` |
-| re-import as no-op | **Idempotent Receiver** | nothing beyond a guarantee |
+| re-import as no-op | **Idempotent Receiver** | nothing: a pod writer's re-import checks (the same document, the same source version, the same version as the current one) make it one |
 | vendor quirks | **Normalizer** | a normalising pass per vendor, where the format has vendors |
 
 - **Validation reports; it never refuses.** A source record that fails its
@@ -31,11 +31,13 @@ adapter contributes data to them through these terms.
   `$id` or, where it declares none, its own IRI, and only within the schema or
   to files in the adapter package. Nothing is fetched.
 - **A version's name is the Bridge's**, never the adapter's.
-- **Re-import changes nothing**: an adapter's output is a function of its input.
+- **A Bridge's graph is a function of the document and the facts supplied with
+  it**, and of nothing a pod holds.
+- **A reference to a record not in the document is its computed name**, which
+  resolves when that record arrives. Nothing is dropped.
 - **A format has one adapter**, with vendor quirks as data, never one adapter per vendor.
 
-Not settled: what Core contains, and whether an output record points at another
-output record of the same source record by a blank node the Bridge resolves or by a minted name.
+Not settled: what Core contains.
 
 ## Versions
 
@@ -53,3 +55,36 @@ place of the version's IRI, a nested node's IRI included. It hashes the content
 as the mapping wrote it, before any store round trip, and writes the mapping's
 graph with the version's name in place of its IRI in the same way. A Bridge must
 reproduce the vectors in [`../fixtures/versioning/`](../fixtures/versioning/).
+
+## Facts supplied with a document
+
+A caller supplies facts about a document as a Turtle file, `convert`'s
+`--facts` or an entry's `bridge:facts`, stating them of `bridge:thisDocument`
+and `bridge:thisImport` as [`../shapes/facts.shapes.ttl`](../shapes/facts.shapes.ttl)
+requires. A record's dataset holds them ([`sparql.md`](sparql.md#running-an-adapter)).
+
+## What a Bridge writes after the mapping
+
+A Bridge's graph for a document is the union of its records' graphs, each
+version named, and:
+
+- **the document**: its SHA-256 as its name, `a prov:Entity`, and every
+  supplied fact, with that name in place of `bridge:thisDocument` and
+  `bridge:serverBaseUrl` normalised;
+- **the import**: a blank node, `a prov:Activity`, `prov:used` the document,
+  every supplied fact with that node in place of `bridge:thisImport`, and a
+  `prov:qualifiedAssociation` whose `prov:hadPlan` is a blank node `a
+  prov:Plan` with the adapter's `identifier` as its `rdfs:label` and its
+  `version` as its `pav:version`, and whose `prov:agent` is a blank node `a
+  prov:SoftwareAgent` naming the Bridge's release by `rdfs:label` and
+  `pav:version`;
+- **each version's arrival**: one blank node carrying every triple the mapping
+  wrote of a node it linked to that version by `bridge:arrivedAs`, and
+  `bridge:arrivedAs` the version's name, `bridge:selector` its record's
+  selector, `prov:wasDerivedFrom` the document and `prov:wasGeneratedBy` the
+  import. A mapping writes there the source's own version metadata: its
+  version id as `pav:version`, and when it was last updated as
+  `pav:lastUpdateOn`.
+
+[`../fixtures/synthetic-adapter/fixtures/expected/example-0001.ttl`](../fixtures/synthetic-adapter/fixtures/expected/example-0001.ttl)
+is a whole document's graph.

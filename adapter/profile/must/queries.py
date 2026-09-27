@@ -19,6 +19,7 @@ from _terms import BRIDGE, OA
 QUERY_FORMS = {
     BRIDGE.mapping: ("bridge:mapping", "CONSTRUCT"),
     BRIDGE.findingsQuery: ("bridge:findingsQuery", "CONSTRUCT"),
+    BRIDGE.documentTableQuery: ("bridge:documentTableQuery", "CONSTRUCT"),
     BRIDGE.detectQuery: ("bridge:detectQuery", "ASK"),
 }
 

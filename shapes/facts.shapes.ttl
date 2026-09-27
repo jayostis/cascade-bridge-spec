@@ -1,0 +1,102 @@
+@prefix sh:     <http://www.w3.org/ns/shacl#> .
+@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix owl:    <http://www.w3.org/2002/07/owl#> .
+@prefix prov:   <http://www.w3.org/ns/prov#> .
+@prefix pav:    <http://purl.org/pav/> .
+@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+<> a owl:Ontology .
+
+<#Document> a sh:NodeShape ;
+  sh:targetNode bridge:thisDocument ;
+  sh:closed true ;
+  sh:message "The document is supplied bridge:serverBaseUrl, pav:retrievedFrom, pav:retrievedOn, prov:qualifiedAttribution, bridge:authenticatedPatient, bridge:authenticatedAsProxy and bridge:sourceFormatVersion, and nothing else: what a Bridge computes, bridge:sha256 among it, is never supplied." ;
+  sh:property [
+    sh:path bridge:serverBaseUrl ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "The document names at most one bridge:serverBaseUrl, a plain string."
+  ] ;
+  sh:property [
+    sh:path pav:retrievedFrom ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "The document names at most one pav:retrievedFrom, by IRI."
+  ] ;
+  sh:property [
+    sh:path pav:retrievedOn ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:dateTime ;
+    sh:message "The document carries at most one pav:retrievedOn, an xsd:dateTime."
+  ] ;
+  sh:property [
+    sh:path prov:qualifiedAttribution ;
+    sh:node <#Attribution> ;
+    sh:message "Each prov:qualifiedAttribution of the document names one prov:agent, carrying one rdfs:label, and one prov:hadRole by IRI."
+  ] ;
+  sh:property [
+    sh:path bridge:authenticatedPatient ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "The document names at most one bridge:authenticatedPatient, a plain string."
+  ] ;
+  sh:property [
+    sh:path bridge:authenticatedAsProxy ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:boolean ;
+    sh:message "The document carries at most one bridge:authenticatedAsProxy, an xsd:boolean."
+  ] ;
+  sh:property [
+    sh:path bridge:sourceFormatVersion ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "The document carries at most one bridge:sourceFormatVersion, a plain string."
+  ] .
+
+<#Attribution> a sh:NodeShape ;
+  sh:closed true ;
+  sh:message "An attribution carries prov:agent and prov:hadRole, and nothing else." ;
+  sh:property [
+    sh:path prov:agent ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:node <#Agent> ;
+    sh:message "An attribution names exactly one prov:agent, carrying exactly one rdfs:label and nothing else."
+  ] ;
+  sh:property [
+    sh:path prov:hadRole ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "An attribution names exactly one prov:hadRole, by IRI."
+  ] .
+
+<#Agent> a sh:NodeShape ;
+  sh:closed true ;
+  sh:message "An agent carries rdfs:label, and nothing else." ;
+  sh:property [
+    sh:path rdfs:label ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "An agent carries exactly one rdfs:label, a plain string."
+  ] .
+
+<#Import> a sh:NodeShape ;
+  sh:targetNode bridge:thisImport ;
+  sh:closed true ;
+  sh:message "The import is supplied rdfs:label and prov:startedAtTime, and nothing else." ;
+  sh:property [
+    sh:path rdfs:label ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "The import carries at most one rdfs:label, its name, a plain string."
+  ] ;
+  sh:property [
+    sh:path prov:startedAtTime ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:dateTime ;
+    sh:message "The import carries at most one prov:startedAtTime, an xsd:dateTime."
+  ] .
