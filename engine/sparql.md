@@ -99,6 +99,32 @@ member named its `bridge:docRootMemberName`, whose value, where the envelope
 names a `bridge:docRootMemberValue`, is a string, number, `true` or `false` the
 lift writes as that value.
 
+## Naming a record
+
+A record's name is `urn:uuid:` and a version 8 UUID laid out as
+[RFC 9562 §5.8](https://www.rfc-editor.org/rfc/rfc9562#section-5.8) lays it
+out, in lower case: the first 128 bits of the SHA-256 of the UTF-8 text
+`90c60849-c5ef-4ca6-bfb8-8662bd07d2b5`, `|`, and the record's inputs joined by
+`|`, with the version bits set to `1000` and the variant bits to `10`.
+[`../fixtures/naming/name.rq`](../fixtures/naming/name.rq) computes it from the
+joined inputs, and a Bridge and an adapter must reproduce the vectors in
+[`../fixtures/naming/`](../fixtures/naming/).
+
+| the source gives | the inputs |
+|---|---|
+| a FHIR resource whose `id` is unique within its document | the server's base URL, the resource type, the `id` |
+| a FHIR Bundle entry with no `id` and a `urn:uuid` `fullUrl` | the `fullUrl` |
+| a FHIR contained resource | the containing record's name, the contained resource's `id` |
+| a C-CDA entry whose id is unique within its document | the id's `root` and `extension`, or its `root` where it has no `extension` |
+| a ClinVar `VariationArchive` or `ClinicalAssertion` | `https://www.ncbi.nlm.nih.gov/clinvar`, its VCV or SCV accession |
+| a ClinVar interpretation, one for each `ClassifiedCondition` of an RCV | `https://www.ncbi.nlm.nih.gov/clinvar`, the RCV accession, the condition's position in its `ClassifiedConditionList`, counted from 0 |
+| any of these whose id repeats within its document, a record with none of these ids, or a FHIR resource with no known server | the document's SHA-256 and the record's selector |
+
+A server's base URL has its scheme and host lower-cased and every trailing `/`
+removed, and a Bridge normalises it so before a mapping reads it. A document's
+SHA-256 is written `ni:///sha-256;` and the digest of its bytes in unpadded
+base64url ([RFC 6920](https://www.rfc-editor.org/rfc/rfc6920)).
+
 ## Running an adapter
 
 A Bridge refuses to prepare an adapter one of whose queries holds a `SERVICE`

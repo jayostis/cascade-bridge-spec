@@ -5,6 +5,7 @@
 @prefix owl:    <http://www.w3.org/2002/07/owl#> .
 @prefix schema: <http://schema.org/> .
 @prefix mf:     <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .
+@prefix qt:     <http://www.w3.org/2001/sw/DataAccess/tests/test-query#> .
 @prefix oa:     <http://www.w3.org/ns/oa#> .
 @prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 @prefix dct:    <http://purl.org/dc/terms/> .
@@ -97,11 +98,15 @@
     [ sh:class bridge:DatasetCompletionTest ]
     [ sh:class bridge:LiftTest ]
     [ sh:class bridge:SkeletonTest ]
+    [ sh:class bridge:NamingTest ]
+    [ sh:class bridge:BaseUrlNormalisationTest ]
+    [ sh:class bridge:VersioningTest ]
   ) ;
-  sh:message "A manifest entry is an IRI typed with exactly one of bridge:IsomorphicConversionTest, bridge:InputOnlyTest, bridge:DatasetCompletionTest, bridge:LiftTest, bridge:SkeletonTest." .
+  sh:message "A manifest entry is an IRI typed with exactly one of bridge:IsomorphicConversionTest, bridge:InputOnlyTest, bridge:DatasetCompletionTest, bridge:LiftTest, bridge:SkeletonTest, bridge:NamingTest, bridge:BaseUrlNormalisationTest, bridge:VersioningTest." .
 
 <#Test> a sh:NodeShape ;
-  sh:targetClass bridge:IsomorphicConversionTest, bridge:InputOnlyTest, bridge:DatasetCompletionTest, bridge:LiftTest, bridge:SkeletonTest ;
+  sh:targetClass bridge:IsomorphicConversionTest, bridge:InputOnlyTest, bridge:DatasetCompletionTest, bridge:LiftTest, bridge:SkeletonTest, bridge:NamingTest,
+    bridge:BaseUrlNormalisationTest, bridge:VersioningTest ;
   sh:nodeKind sh:IRI ;
   sh:property [
     sh:path mf:name ;
@@ -169,13 +174,12 @@
   ] .
 
 <#BridgeTest> a sh:NodeShape ;
-  sh:targetClass bridge:LiftTest, bridge:SkeletonTest ;
+  sh:targetClass bridge:LiftTest, bridge:SkeletonTest, bridge:NamingTest, bridge:BaseUrlNormalisationTest, bridge:VersioningTest ;
   sh:property [
     sh:path mf:result ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
-    sh:node <#LiftResult> ;
-    sh:message "A test of a Bridge carries exactly one mf:result naming the expected graph."
+    sh:message "A test of a Bridge carries exactly one mf:result."
   ] ;
   sh:property [
     sh:path bridge:stampPredicate ;
@@ -198,6 +202,10 @@
   sh:property [
     sh:path mf:action ;
     sh:node <#LiftAction>
+  ] ;
+  sh:property [
+    sh:path mf:result ;
+    sh:node <#LiftResult>
   ] .
 
 <#SkeletonTest> a sh:NodeShape ;
@@ -205,6 +213,136 @@
   sh:property [
     sh:path mf:action ;
     sh:node <#SkeletonAction>
+  ] ;
+  sh:property [
+    sh:path mf:result ;
+    sh:node <#LiftResult>
+  ] .
+
+<#NamingTest> a sh:NodeShape ;
+  sh:targetClass bridge:NamingTest ;
+  sh:property [
+    sh:path mf:action ;
+    sh:node <#NamingAction>
+  ] ;
+  sh:property [
+    sh:path mf:result ;
+    sh:node <#NamingResult>
+  ] .
+
+<#NamingAction> a sh:NodeShape ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property [
+    sh:path qt:query ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "The action of a naming test names exactly one qt:query, the query computing a name from ?input, by IRI."
+  ] ;
+  sh:property [
+    sh:path bridge:nameInputs ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:message "The action of a naming test carries exactly one bridge:nameInputs list."
+  ] ;
+  sh:property [
+    sh:path ( bridge:nameInputs [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "bridge:nameInputs lists at least one input, each a plain string."
+  ] .
+
+<#NamingResult> a sh:NodeShape ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property [
+    sh:path bridge:expectedName ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:pattern "^urn:uuid:[0-9a-f]{8}-[0-9a-f]{4}-8[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$" ;
+    sh:message "The result of a naming test names exactly one bridge:expectedName, urn:uuid: and a lower-case UUID of version 8 and variant 10."
+  ] .
+
+<#BaseUrlNormalisationTest> a sh:NodeShape ;
+  sh:targetClass bridge:BaseUrlNormalisationTest ;
+  sh:property [
+    sh:path mf:action ;
+    sh:node <#ServerBaseUrl>
+  ] ;
+  sh:property [
+    sh:path mf:result ;
+    sh:node <#ServerBaseUrl>
+  ] .
+
+<#ServerBaseUrl> a sh:NodeShape ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property [
+    sh:path bridge:serverBaseUrl ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "The action and the result of a base URL normalisation test each carry exactly one bridge:serverBaseUrl, a plain string."
+  ] .
+
+<#VersioningTest> a sh:NodeShape ;
+  sh:targetClass bridge:VersioningTest ;
+  sh:property [
+    sh:path mf:action ;
+    sh:node <#VersioningAction>
+  ] ;
+  sh:property [
+    sh:path mf:result ;
+    sh:node <#VersioningResult>
+  ] .
+
+<#VersioningAction> a sh:NodeShape ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property [
+    sh:path bridge:input ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "The action of a versioning test names exactly one bridge:input, the N-Triples a mapping constructed, by IRI."
+  ] .
+
+<#VersioningResult> a sh:NodeShape ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property [
+    sh:path bridge:expectedGraph ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "The result of a versioning test names exactly one bridge:expectedGraph, the graph with every version named, by IRI."
+  ] ;
+  sh:property [
+    sh:path bridge:expectedVersion ;
+    sh:minCount 1 ;
+    sh:node <#ExpectedVersion> ;
+    sh:message "The result of a versioning test carries a bridge:expectedVersion for each version the input holds."
+  ] .
+
+<#ExpectedVersion> a sh:NodeShape ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property [
+    sh:path bridge:expectedName ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:pattern "^ni:///sha-256;[A-Za-z0-9_-]{43}$" ;
+    sh:message "An expected version names exactly one bridge:expectedName, ni:///sha-256; and 43 unpadded base64url characters."
+  ] ;
+  sh:property [
+    sh:path bridge:canonicalContent ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "An expected version names exactly one bridge:canonicalContent, the N-Quads its name is the hash of, by IRI."
   ] .
 
 <#CommittedAction> a sh:NodeShape ;

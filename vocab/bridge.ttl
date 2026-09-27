@@ -1,6 +1,7 @@
 @prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 @prefix mf:     <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .
 @prefix owl:    <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
 @prefix dct:    <http://purl.org/dc/terms/> .
@@ -335,6 +336,46 @@ bridge:SkeletonTest a owl:Class ;
   rdfs:subClassOf mf:ManifestEntry ;
   rdfs:label "Envelope skeleton test"@en ;
   rdfs:comment "A test of a Bridge offering bridge:sparql-1.1: build the envelope skeleton of bridge:input by the lift the action's bridge:sourceMediaType selects, its records named by the action's bridge:elementNameOfEachRecord or bridge:jsonPathOfEachRecord. The produced graph must be isomorphic to bridge:expectedGraph, blank nodes relabelled and IRIs and literals exact. Nothing is removed from either side."@en ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:NamingTest a owl:Class ;
+  rdfs:subClassOf mf:ManifestEntry ;
+  rdfs:label "Naming test"@en ;
+  rdfs:comment "A test of a Bridge offering bridge:sparql-1.1: evaluate the action's qt:query with ?input substituted by the members of bridge:nameInputs joined by |. It must have exactly one solution, whose ?name equals bridge:expectedName."@en ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:BaseUrlNormalisationTest a owl:Class ;
+  rdfs:subClassOf mf:ManifestEntry ;
+  rdfs:label "Base URL normalisation test"@en ;
+  rdfs:comment "A test of a Bridge offering bridge:sparql-1.1: normalise the action's bridge:serverBaseUrl. It must equal the result's bridge:serverBaseUrl, character for character."@en ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:VersioningTest a owl:Class ;
+  rdfs:subClassOf mf:ManifestEntry ;
+  rdfs:label "Versioning test"@en ;
+  rdfs:comment "A test of a Bridge: name the versions in bridge:input, read as the graph a mapping constructed, its literals as written. The produced graph must equal bridge:expectedGraph, IRIs and literals exact. Each bridge:expectedVersion's bridge:expectedName must name a version whose content, with the placeholder in place, has bridge:canonicalContent as its canonical N-Quads, byte for byte, and no other version may be named."@en ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:nameInputs a owl:ObjectProperty ;
+  rdfs:label "name inputs"@en ;
+  rdfs:range rdf:List ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:expectedName a owl:ObjectProperty ;
+  rdfs:label "expected name"@en ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:serverBaseUrl a owl:DatatypeProperty ;
+  rdfs:label "server base URL"@en ;
+  rdfs:range xsd:string ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:expectedVersion a owl:ObjectProperty ;
+  rdfs:label "expected version"@en ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:canonicalContent a owl:ObjectProperty ;
+  rdfs:label "canonical content"@en ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
 bridge:adapter a owl:ObjectProperty ;
