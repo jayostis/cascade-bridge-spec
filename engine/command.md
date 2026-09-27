@@ -30,7 +30,7 @@ each host's `command`.
 ## `convert`
 
 ```
-convert <adapter directory> <document> [--out <file>] [--findings <file>] [--format turtle|ntriples] [--vocabularies <directory>]
+convert <adapter directory> <document> [--envelope <iri>] [--out <file>] [--findings <file>] [--format turtle|ntriples] [--vocabularies <directory>]
 ```
 
 It runs the adapter over every record of `<document>`, a source document the
@@ -38,6 +38,16 @@ caller holds rather than one the adapter committed, and emits their union as one
 graph: Turtle by default, `--format ntriples` for a reader that consumes a
 stream, on standard output unless `--out` names a file. Standard output carries
 the graph and nothing else.
+
+`--envelope` names the envelope `<document>` is read in, by its IRI resolved
+against the adapter's `ro-crate-metadata.json`, so `#envelope-set` names the
+envelope that file declares as `#envelope-set`. The document is read in it
+whether or not it admits the document ([`sparql.md`](sparql.md)), as `test`
+reads an entry's input in the envelope the entry names, and a Bridge refuses
+nothing for it. An IRI naming no envelope the adapter declares is an error.
+Without `--envelope`, the document is read in the envelope that admits it, a
+JSON envelope naming a `bridge:docRootMemberValue` before one naming none; where
+that leaves more than one, or none, which is used is not specified.
 
 `--findings` writes the union of every record's findings as one graph, in the
 same format, to `<file>` and never on standard output. They are the findings a

@@ -16,8 +16,6 @@ A_DOCUMENT_SCHEMA_HOLDING_EVERY_RECORD_TO_NOTHING = """<?xml version="1.0" encod
 </xs:schema>
 """
 
-AN_INPUT_IN_THE_SCHEMA_LANGUAGE_THIS_LINT_CANNOT_READ = '{"ExampleRecord": [{"Accession": "EX000001"}]}\n'
-
 
 def schemas_of(crate):
     return set(crate.graph.objects(crate.root, BRIDGE.sourceSchema)) | set(
@@ -91,13 +89,13 @@ def test_reports_a_source_schema_no_record_was_validated_against_for_want_of_an_
     ) in "\n".join(inputs.invalid(crate))
 
 
-def test_holds_a_package_to_nothing_when_the_schema_language_is_one_it_cannot_read(package):
-    crate = package.crate
+def test_reports_an_xml_adapter_whose_schema_is_a_json_schema(crate):
     for schema in schemas_of(crate):
         crate.graph.set((schema, SCHEMA.encodingFormat, Literal("application/schema+json")))
-    for _, source, _ in inputs.committed_inputs(crate):
-        crate.file_at(source).write_text(AN_INPUT_IN_THE_SCHEMA_LANGUAGE_THIS_LINT_CANNOT_READ, encoding="utf-8")
-    assert not list(inputs.invalid(crate))
+    assert (
+        "example-record.xsd is declared application/schema+json, a JSON Schema, where an XML source is validated "
+        "against an XSD 1.0 schema declared application/xml or text/xml"
+    ) in "\n".join(inputs.invalid(crate))
 
 
 def test_reports_an_input_that_is_not_well_formed_xml_where_the_schema_is_one_it_reads(package):

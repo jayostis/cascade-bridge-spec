@@ -7,6 +7,7 @@
 @prefix mf:     <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .
 @prefix oa:     <http://www.w3.org/ns/oa#> .
 @prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+@prefix dct:    <http://purl.org/dc/terms/> .
 
 <> a owl:Ontology ;
   sh:declare [ sh:prefix "rdf" ;    sh:namespace "http://www.w3.org/1999/02/22-rdf-syntax-ns#"^^xsd:anyURI ] ;
@@ -398,14 +399,31 @@
   ] .
 
 <#RecordSelector> a sh:NodeShape ;
-  sh:class oa:XPathSelector ;
-  sh:message "A record's selector is an oa:XPathSelector." ;
+  sh:or (
+    [ sh:class oa:XPathSelector ]
+    [ sh:class oa:FragmentSelector ; sh:property [ sh:path dct:conformsTo ; sh:hasValue <https://www.rfc-editor.org/rfc/rfc6901> ] ]
+  ) ;
+  sh:message "A record's selector is an oa:XPathSelector, or an oa:FragmentSelector whose dcterms:conformsTo is JSON Pointer, <https://www.rfc-editor.org/rfc/rfc6901>." ;
+  sh:sparql [
+    sh:prefixes <> ;
+    sh:message "A selector refining a record's selector is of its kind: an oa:XPathSelector refines an oa:XPathSelector, and an oa:FragmentSelector an oa:FragmentSelector." ;
+    sh:select """
+      SELECT $this ?value WHERE {
+        $this oa:refinedBy ?value .
+        FILTER NOT EXISTS {
+          $this a ?kind .
+          ?value a ?kind .
+          FILTER (?kind IN (oa:XPathSelector, oa:FragmentSelector))
+        }
+      }
+    """
+  ] ;
   sh:property [
     sh:path rdf:value ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:datatype xsd:string ;
-    sh:message "A selector carries exactly one rdf:value, its XPath, a string."
+    sh:message "A selector carries exactly one rdf:value, its XPath or its JSON Pointer, a string."
   ] ;
   sh:property [
     sh:path oa:refinedBy ;
@@ -415,14 +433,17 @@
   ] .
 
 <#RefinedSelector> a sh:NodeShape ;
-  sh:class oa:XPathSelector ;
-  sh:message "A selector refining a record's selector is an oa:XPathSelector." ;
+  sh:or (
+    [ sh:class oa:XPathSelector ]
+    [ sh:class oa:FragmentSelector ; sh:property [ sh:path dct:conformsTo ; sh:hasValue <https://www.rfc-editor.org/rfc/rfc6901> ] ]
+  ) ;
+  sh:message "A selector refining a record's selector is an oa:XPathSelector, or an oa:FragmentSelector whose dcterms:conformsTo is JSON Pointer, <https://www.rfc-editor.org/rfc/rfc6901>." ;
   sh:property [
     sh:path rdf:value ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:datatype xsd:string ;
-    sh:message "A selector carries exactly one rdf:value, its XPath, a string."
+    sh:message "A selector carries exactly one rdf:value, its XPath or its JSON Pointer, a string."
   ] ;
   sh:property [
     sh:path oa:refinedBy ;
@@ -662,30 +683,56 @@
   sh:closed true ;
   sh:ignoredProperties ( rdf:type ) ;
   sh:property [
+    sh:path bridge:sourceMediaType ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:pattern "^(application/(xml|json)|text/xml|[a-z]+/[a-z0-9.!#$&^_-]+[+](xml|json))$" ;
+    sh:message "The action of a test of a Bridge names exactly one bridge:sourceMediaType, which selects the lift: application/xml, text/xml or a +xml type for the XML lift, application/json or a +json type for the JSON lift."
+  ] ;
+  sh:property [
     sh:path bridge:input ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:nodeKind sh:IRI ;
-    sh:message "The action of a lift test names exactly one bridge:input, the XML document lifted, by IRI."
+    sh:message "The action of a lift test names exactly one bridge:input, the document lifted, by IRI."
   ] .
 
 <#SkeletonAction> a sh:NodeShape ;
   sh:closed true ;
   sh:ignoredProperties ( rdf:type ) ;
   sh:property [
+    sh:path bridge:sourceMediaType ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:pattern "^(application/(xml|json)|text/xml|[a-z]+/[a-z0-9.!#$&^_-]+[+](xml|json))$" ;
+    sh:message "The action of a test of a Bridge names exactly one bridge:sourceMediaType, which selects the lift: application/xml, text/xml or a +xml type for the XML lift, application/json or a +json type for the JSON lift."
+  ] ;
+  sh:property [
     sh:path bridge:input ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:nodeKind sh:IRI ;
-    sh:message "The action of a skeleton test names exactly one bridge:input, the XML document the skeleton is built from, by IRI."
+    sh:message "The action of a skeleton test names exactly one bridge:input, the document the skeleton is built from, by IRI."
   ] ;
   sh:property [
     sh:path bridge:elementNameOfEachRecord ;
-    sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:datatype xsd:string ;
-    sh:message "The action of a skeleton test names exactly one bridge:elementNameOfEachRecord, the local name of the element emptied."
-  ] .
+    sh:message "The action of a skeleton test names at most one bridge:elementNameOfEachRecord, the local name of the XML element emptied, a string."
+  ] ;
+  sh:property [
+    sh:path bridge:jsonPathOfEachRecord ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "The action of a skeleton test names at most one bridge:jsonPathOfEachRecord, the JSONPath selecting the JSON records emptied, a string."
+  ] ;
+  sh:xone (
+    [ sh:path bridge:elementNameOfEachRecord ; sh:minCount 1 ]
+    [ sh:path bridge:jsonPathOfEachRecord ; sh:minCount 1 ]
+  ) ;
+  sh:message "The action of a skeleton test names exactly one of bridge:elementNameOfEachRecord, the local name of the XML element emptied, and bridge:jsonPathOfEachRecord, the JSONPath selecting the JSON records emptied." .
 
 <#LiftResult> a sh:NodeShape ;
   sh:closed true ;

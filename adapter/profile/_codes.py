@@ -1,6 +1,7 @@
 from rdflib import Graph, URIRef
 from rdflib.namespace import RDF, SH, SKOS
 
+from _json_source import syntax_of
 from _terms import BRIDGE
 
 KINDS_A_GAP_MAY_NAME = (
@@ -48,9 +49,57 @@ W3C_XML_SCHEMA_RULE_ANCHORS = frozenset(
     for rule in rules
 )
 
-BODIES_OF_A_SCHEMA_FAILURE = W3C_XML_SCHEMA_RULE_ANCHORS | {BRIDGE.schemaRuleUnnamed}
+KEYWORDS_OF_JSON_SCHEMA_DRAFT_06 = (
+    "multipleOf",
+    "maximum",
+    "exclusiveMaximum",
+    "minimum",
+    "exclusiveMinimum",
+    "maxLength",
+    "minLength",
+    "pattern",
+    "items",
+    "additionalItems",
+    "maxItems",
+    "minItems",
+    "uniqueItems",
+    "contains",
+    "maxProperties",
+    "minProperties",
+    "required",
+    "properties",
+    "patternProperties",
+    "additionalProperties",
+    "dependencies",
+    "propertyNames",
+    "enum",
+    "const",
+    "type",
+    "allOf",
+    "anyOf",
+    "oneOf",
+    "not",
+)
+
+JSON_SCHEMA_DRAFT_06_VALIDATION = "https://datatracker.ietf.org/doc/html/draft-wright-json-schema-validation-01"
+
+JSON_SCHEMA_DRAFT_06_KEYWORD_ANCHORS = {
+    keyword: URIRef(f"{JSON_SCHEMA_DRAFT_06_VALIDATION}#section-6.{section}")
+    for section, keyword in enumerate(KEYWORDS_OF_JSON_SCHEMA_DRAFT_06, start=1)
+}
+
+JSON_SCHEMA_RULE_ANCHORS = frozenset(JSON_SCHEMA_DRAFT_06_KEYWORD_ANCHORS.values())
+
+BODIES_OF_A_SCHEMA_FAILURE = W3C_XML_SCHEMA_RULE_ANCHORS | JSON_SCHEMA_RULE_ANCHORS | {BRIDGE.schemaRuleUnnamed}
 
 THE_ANCHORS = ", ".join(sorted(str(anchor) for anchor in W3C_XML_SCHEMA_RULE_ANCHORS))
+
+THE_JSON_SCHEMA_ANCHORS = ", ".join(str(anchor) for anchor in JSON_SCHEMA_DRAFT_06_KEYWORD_ANCHORS.values())
+
+
+def schema_rule_anchors_of(crate):
+    return JSON_SCHEMA_RULE_ANCHORS if syntax_of(crate) == "json" else W3C_XML_SCHEMA_RULE_ANCHORS
+
 
 CONSTRAINT_COMPONENTS_OF_SHACL = (
     "And",
@@ -100,11 +149,17 @@ def no_gap_of_the_scheme(crate):
     admitted = "bridge:schemaRuleUnnamed, or bridge:pathNotAccounted"
     if not accounts_for_its_source(crate):
         admitted = "or bridge:schemaRuleUnnamed, the adapter naming no bridge:sourceAccounting"
+    if syntax_of(crate) == "json":
+        rule, anchors = (
+            "the anchor of a JSON Schema draft-06 validation keyword",
+            THE_JSON_SCHEMA_ANCHORS,
+        )
+    else:
+        rule, anchors = "the anchor of a validation rule in a W3C XML Schema Recommendation", THE_ANCHORS
     return (
-        "is not a gap of the adapter's bridge:gapScheme, the anchor of a validation rule "
-        f"in a W3C XML Schema Recommendation, {admitted}. A finding about the produced graph "
+        f"is not a gap of the adapter's bridge:gapScheme, {rule}, {admitted}. A finding about the produced graph "
         "takes the SHACL constraint component that failed, or bridge:predicateNotDeclared. "
-        f"The anchors a body may take are {THE_ANCHORS}. "
+        f"The anchors a body may take are {anchors}. "
         f"The constraint components it may take are {THE_CONSTRAINT_COMPONENTS}"
     )
 
@@ -129,4 +184,5 @@ def gaps_of(crate):
 
 def bodies_a_finding_may_carry(crate):
     census = {BRIDGE.pathNotAccounted} if accounts_for_its_source(crate) else set()
-    return gaps_of(crate) | BODIES_OF_A_SCHEMA_FAILURE | BODIES_OF_AN_OUTPUT_VALIDATION_FINDING | census
+    schema = schema_rule_anchors_of(crate) | {BRIDGE.schemaRuleUnnamed}
+    return gaps_of(crate) | schema | BODIES_OF_AN_OUTPUT_VALIDATION_FINDING | census

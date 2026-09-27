@@ -1,0 +1,521 @@
+{
+  "@context": [
+    "https://w3id.org/ro/crate/1.2/context",
+    {
+      "bridge": "https://ns.cascadeprotocol.org/bridge/v1-draft#",
+      "bridge:requiresProfile": "bridge:requiresProfile",
+      "bridge:cascadeVocabularyPin": "bridge:cascadeVocabularyPin",
+      "bridge:vocabulary": "bridge:vocabulary",
+      "bridge:vocabularyFile": "bridge:vocabularyFile",
+      "bridge:sourceMediaType": "bridge:sourceMediaType",
+      "bridge:sourceSchema": "bridge:sourceSchema",
+      "bridge:envelope": "bridge:envelope",
+      "bridge:mapping": "bridge:mapping",
+      "bridge:findingsQuery": "bridge:findingsQuery",
+      "bridge:gapScheme": "bridge:gapScheme",
+      "bridge:table": "bridge:table",
+      "bridge:sourceAccounting": "bridge:sourceAccounting",
+      "bridge:detectQuery": "bridge:detectQuery",
+      "bridge:testManifest": "bridge:testManifest",
+      "bridge:docRootMemberName": "bridge:docRootMemberName",
+      "bridge:docRootMemberValue": "bridge:docRootMemberValue",
+      "bridge:jsonPathOfEachRecord": "bridge:jsonPathOfEachRecord",
+      "bridge:documentSchema": "bridge:documentSchema"
+    }
+  ],
+  "@graph": [
+    {
+      "@id": "ro-crate-metadata.json",
+      "@type": "CreativeWork",
+      "conformsTo": {
+        "@id": "https://w3id.org/ro/crate/1.2"
+      },
+      "about": {
+        "@id": "./"
+      }
+    },
+    {
+      "@id": "./",
+      "@type": [
+        "Dataset",
+        "bridge:Adapter"
+      ],
+      "identifier": "synthetic-json-example",
+      "name": "Synthetic Example JSON Records",
+      "version": "0.1.0",
+      "description": "An invented adapter package for a JSON source: the adapter profile's JSON test subject.",
+      "datePublished": "2026-09-27",
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      },
+      "conformsTo": [
+        {
+          "@id": "https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/"
+        }
+      ],
+      "bridge:requiresProfile": [
+        {
+          "@id": "https://ns.cascadeprotocol.org/bridge/v1-draft#sparql-1.1"
+        }
+      ],
+      "bridge:cascadeVocabularyPin": {
+        "@id": "https://example.org/synthetic-adapter/vocabulary/commit/0000000000000000000000000000000000000000"
+      },
+      "bridge:vocabulary": [
+        {
+          "@id": "https://example.org/synthetic-adapter/v1#"
+        }
+      ],
+      "bridge:vocabularyFile": [
+        "ontologies/example/v1/example.ttl",
+        "ontologies/example/v1/example.shapes.ttl"
+      ],
+      "bridge:sourceMediaType": "application/example+json",
+      "bridge:sourceSchema": {
+        "@id": "schema/example-record.schema.json"
+      },
+      "bridge:envelope": [
+        {
+          "@id": "#envelope-set"
+        },
+        {
+          "@id": "#envelope-record"
+        }
+      ],
+      "bridge:mapping": [
+        {
+          "@id": "in/example-record.rq"
+        }
+      ],
+      "bridge:findingsQuery": [
+        {
+          "@id": "in/example-findings.rq"
+        }
+      ],
+      "bridge:gapScheme": {
+        "@id": "vocab/example-gaps.ttl"
+      },
+      "bridge:table": [
+        {
+          "@id": "vocab/example-statuses.ttl"
+        }
+      ],
+      "bridge:sourceAccounting": {
+        "@id": "vocab/example-accounting.ttl"
+      },
+      "bridge:detectQuery": {
+        "@id": "in/example-detect.rq"
+      },
+      "bridge:testManifest": {
+        "@id": "fixtures/manifest.ttl"
+      },
+      "hasPart": [
+        {
+          "@id": "in/example-record.rq"
+        },
+        {
+          "@id": "in/example-findings.rq"
+        },
+        {
+          "@id": "in/example-detect.rq"
+        },
+        {
+          "@id": "schema/example-record.schema.json"
+        },
+        {
+          "@id": "schema/example-set.schema.json"
+        },
+        {
+          "@id": "vocab/example-gaps.ttl"
+        },
+        {
+          "@id": "vocab/example-accounting.ttl"
+        },
+        {
+          "@id": "vocab/example-statuses.ttl"
+        },
+        {
+          "@id": "fixtures/manifest.ttl"
+        },
+        {
+          "@id": "fixtures/in/json-0001.json"
+        },
+        {
+          "@id": "fixtures/in/json-0002.json"
+        },
+        {
+          "@id": "fixtures/in/json-0003.json"
+        },
+        {
+          "@id": "fixtures/in/json-0004.json"
+        },
+        {
+          "@id": "fixtures/expected/json-0001.ttl"
+        },
+        {
+          "@id": "fixtures/findings/json-0001.ttl"
+        },
+        {
+          "@id": "fixtures/expected/json-0002.ttl"
+        },
+        {
+          "@id": "fixtures/findings/json-0002.ttl"
+        },
+        {
+          "@id": "fixtures/expected/json-0003.ttl"
+        },
+        {
+          "@id": "fixtures/findings/json-0003.ttl"
+        },
+        {
+          "@id": "fixtures/expected/json-0004.ttl"
+        },
+        {
+          "@id": "fixtures/findings/json-0004.ttl"
+        },
+        {
+          "@id": "fixtures/expected/json-0005.ttl"
+        },
+        {
+          "@id": "fixtures/findings/json-0005.ttl"
+        },
+        {
+          "@id": "https://example.org/synthetic-adapter/vocabulary/commit/0000000000000000000000000000000000000000"
+        }
+      ]
+    },
+    {
+      "@id": "#envelope-set",
+      "@type": "bridge:Envelope",
+      "name": "set",
+      "bridge:docRootMemberName": "kind",
+      "bridge:docRootMemberValue": "set",
+      "bridge:jsonPathOfEachRecord": "$.records[*]",
+      "bridge:documentSchema": {
+        "@id": "schema/example-set.schema.json"
+      }
+    },
+    {
+      "@id": "#envelope-record",
+      "@type": "bridge:Envelope",
+      "name": "record",
+      "bridge:docRootMemberName": "kind",
+      "bridge:jsonPathOfEachRecord": "$"
+    },
+    {
+      "@id": "https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/",
+      "@type": [
+        "CreativeWork",
+        "Profile"
+      ],
+      "name": "Cascade Bridge Adapter profile"
+    },
+    {
+      "@id": "https://ns.cascadeprotocol.org/bridge/v1-draft#sparql-1.1",
+      "@type": "bridge:Profile",
+      "name": "sparql-1.1"
+    },
+    {
+      "@id": "https://example.org/synthetic-adapter/vocabulary/commit/0000000000000000000000000000000000000000",
+      "@type": [
+        "SoftwareSourceCode",
+        "File"
+      ],
+      "name": "synthetic vocabulary at the null commit",
+      "codeRepository": {
+        "@id": "https://example.org/synthetic-adapter/vocabulary"
+      },
+      "version": "0000000000000000000000000000000000000000"
+    },
+    {
+      "@id": "https://example.org/synthetic-adapter/v1#",
+      "@type": "DefinedTermSet",
+      "name": "Synthetic example vocabulary",
+      "version": "v1"
+    },
+    {
+      "@id": "in/example-record.rq",
+      "@type": "File",
+      "name": "Mapping",
+      "encodingFormat": "application/sparql-query",
+      "contentSize": "1021",
+      "sha256": "62e468b39d62e3467eb306491961f084bb9b5d457ed2736b34b080cf01754c11",
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      }
+    },
+    {
+      "@id": "in/example-findings.rq",
+      "@type": "File",
+      "name": "Findings query",
+      "encodingFormat": "application/sparql-query",
+      "contentSize": "854",
+      "sha256": "96029f3b935115645fc02676fd51ef0faaed521db0f515d644f7f6799bb61a49",
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      }
+    },
+    {
+      "@id": "in/example-detect.rq",
+      "@type": "File",
+      "name": "Detect query",
+      "encodingFormat": "application/sparql-query",
+      "contentSize": "308",
+      "sha256": "978dd8ab60ae55fd47aa544b765b7503571a1d47485046115e4723028a611b82",
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      }
+    },
+    {
+      "@id": "schema/example-record.schema.json",
+      "@type": "File",
+      "name": "Example record JSON Schema, draft-06",
+      "encodingFormat": "application/schema+json",
+      "contentSize": "654",
+      "sha256": "ee18a0fa84a654f48d0f12ea4f5a2a9b0685adadf3459ba454dae285526e8c76",
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      }
+    },
+    {
+      "@id": "schema/example-set.schema.json",
+      "@type": "File",
+      "name": "Example set JSON Schema, this package's wrapper",
+      "encodingFormat": "application/schema+json",
+      "contentSize": "233",
+      "sha256": "f5a68778a64104ec8e946de4072ea12f754708f3d1d9f055b97e9238ee7bd1e3",
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      }
+    },
+    {
+      "@id": "vocab/example-gaps.ttl",
+      "@type": "File",
+      "name": "Gap scheme",
+      "encodingFormat": "text/turtle",
+      "contentSize": "580",
+      "sha256": "e293b9b12b393c31687ecb4fdf99d165c2c79257795ba63b7fd43733358bdbf2",
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      }
+    },
+    {
+      "@id": "vocab/example-accounting.ttl",
+      "@type": "File",
+      "name": "Source accounting",
+      "encodingFormat": "text/turtle",
+      "contentSize": "937",
+      "sha256": "e2a4d139ccec99f5d367d21e9b9e9a4241d4c40307b27b2f65880009ad0d7e06",
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      }
+    },
+    {
+      "@id": "vocab/example-statuses.ttl",
+      "@type": "File",
+      "name": "Status table",
+      "encodingFormat": "text/turtle",
+      "contentSize": "541",
+      "sha256": "0df6c1fc930f79b09d6fecc3ae2edce0fa7482c32edb358881caf4f2076d04dc",
+      "isBasedOn": {
+        "@id": "https://example.org/synthetic-adapter/vocabulary/statuses"
+      },
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      }
+    },
+    {
+      "@id": "fixtures/manifest.ttl",
+      "@type": "File",
+      "name": "Test manifest",
+      "encodingFormat": "text/turtle",
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      }
+    },
+    {
+      "@id": "fixtures/in/json-0001.json",
+      "@type": "File",
+      "name": "Synthetic JSON input, set envelope",
+      "encodingFormat": "application/example+json",
+      "contentSize": "337",
+      "sha256": "a478c7ab28cebeebecb07e6d7e1c34ebd10902379279c3a6b824011e905fa9f4",
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      }
+    },
+    {
+      "@id": "fixtures/in/json-0002.json",
+      "@type": "File",
+      "name": "Synthetic JSON input, record envelope",
+      "encodingFormat": "application/example+json",
+      "contentSize": "176",
+      "sha256": "6386f4065f25931d545d2a96f20631951598e8b39a55cda1b7b30aa7100dd336",
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      }
+    },
+    {
+      "@id": "fixtures/in/json-0003.json",
+      "@type": "File",
+      "name": "Synthetic JSON input whose document and record fail their schemas",
+      "encodingFormat": "application/example+json",
+      "contentSize": "165",
+      "sha256": "3933c3312f70dc520cf2d3366ab2311d73812bdeaec805235d157266d9fc7ee5",
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      }
+    },
+    {
+      "@id": "fixtures/in/json-0004.json",
+      "@type": "File",
+      "name": "Synthetic JSON input carrying members the accounting names nowhere",
+      "encodingFormat": "application/example+json",
+      "contentSize": "408",
+      "sha256": "6a1b95b17e0773cb02402255d3b307039c01c719dcf64c4d9cfb86f6e24e41a1",
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      }
+    },
+    {
+      "@id": "fixtures/expected/json-0001.ttl",
+      "@type": "File",
+      "name": "Expected graph for json-0001",
+      "encodingFormat": "text/turtle",
+      "contentSize": "525",
+      "sha256": "3bd0e6a1c65437cb9bb073a33182368a3b35e8703c3bea7221edbf85397cff80",
+      "isBasedOn": {
+        "@id": "fixtures/in/json-0001.json"
+      },
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      }
+    },
+    {
+      "@id": "fixtures/findings/json-0001.ttl",
+      "@type": "File",
+      "name": "Expected findings for json-0001",
+      "encodingFormat": "text/turtle",
+      "contentSize": "2305",
+      "sha256": "e9b102279aab21c6ccfd6a1a407411f8eab0dc812abbf06558b39dfd201ba318",
+      "isBasedOn": {
+        "@id": "fixtures/in/json-0001.json"
+      },
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      }
+    },
+    {
+      "@id": "fixtures/expected/json-0002.ttl",
+      "@type": "File",
+      "name": "Expected graph for json-0002",
+      "encodingFormat": "text/turtle",
+      "contentSize": "367",
+      "sha256": "29dfe52fd8ede65b6d8a63ce79b2b28696105b3fd3da8582b69fd437c2a0569d",
+      "isBasedOn": {
+        "@id": "fixtures/in/json-0002.json"
+      },
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      }
+    },
+    {
+      "@id": "fixtures/findings/json-0002.ttl",
+      "@type": "File",
+      "name": "Expected findings for json-0002",
+      "encodingFormat": "text/turtle",
+      "contentSize": "1302",
+      "sha256": "924b993e53d913adb6f8ce6edadfc4b07c0a72a34403d8c9ec617a5860d96704",
+      "isBasedOn": {
+        "@id": "fixtures/in/json-0002.json"
+      },
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      }
+    },
+    {
+      "@id": "fixtures/expected/json-0003.ttl",
+      "@type": "File",
+      "name": "Expected graph for json-0003",
+      "encodingFormat": "text/turtle",
+      "contentSize": "320",
+      "sha256": "ede9d6ec6c97df3738326ac2f0d89bc8a489eec2a541e26e62eb17b1ec3b514a",
+      "isBasedOn": {
+        "@id": "fixtures/in/json-0003.json"
+      },
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      }
+    },
+    {
+      "@id": "fixtures/findings/json-0003.ttl",
+      "@type": "File",
+      "name": "Expected findings for json-0003",
+      "encodingFormat": "text/turtle",
+      "contentSize": "1841",
+      "sha256": "0bfcaa4ad41d104e6050b99f43a2186689ca2691fdf8ad9a3d3d3c9b34bf062d",
+      "isBasedOn": {
+        "@id": "fixtures/in/json-0003.json"
+      },
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      }
+    },
+    {
+      "@id": "fixtures/expected/json-0004.ttl",
+      "@type": "File",
+      "name": "Expected graph for json-0004",
+      "encodingFormat": "text/turtle",
+      "contentSize": "373",
+      "sha256": "683b570eda6d9d5b4fd5edb5ed48dc386a24ef58caf05834b61cc12459f3f9de",
+      "isBasedOn": {
+        "@id": "fixtures/in/json-0004.json"
+      },
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      }
+    },
+    {
+      "@id": "fixtures/findings/json-0004.ttl",
+      "@type": "File",
+      "name": "Expected findings for json-0004",
+      "encodingFormat": "text/turtle",
+      "contentSize": "2459",
+      "sha256": "8bbc1ac10c76c20f4a5bbb8cf8b1bd97be3b88929347ae5b34d1646ff43d9a0d",
+      "isBasedOn": {
+        "@id": "fixtures/in/json-0004.json"
+      },
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      }
+    },
+    {
+      "@id": "fixtures/expected/json-0005.ttl",
+      "@type": "File",
+      "name": "Expected graph for json-0005",
+      "encodingFormat": "text/turtle",
+      "contentSize": "168",
+      "sha256": "583dc2a45f53c57219d6ced92b12caafadcfec96967d0ab8df3bed75b4fc093f",
+      "isBasedOn": {
+        "@id": "fixtures/in/json-0001.json"
+      },
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      }
+    },
+    {
+      "@id": "fixtures/findings/json-0005.ttl",
+      "@type": "File",
+      "name": "Expected findings for json-0005",
+      "encodingFormat": "text/turtle",
+      "contentSize": "3389",
+      "sha256": "6b4d028291776a8b6896c78fa4b11c9876dc231ba17960759a427d18272660c3",
+      "isBasedOn": {
+        "@id": "fixtures/in/json-0001.json"
+      },
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      }
+    }
+  ]
+}
