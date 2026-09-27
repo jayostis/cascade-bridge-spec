@@ -7,7 +7,12 @@ from _terms import BRIDGE, OA
 from adapter_profile_world import accounting_of, below_the_record, cases, refinement_of, selected_by
 
 KINDS_AN_ENTRY_REPORTS = (BRIDGE.noPredicate, BRIDGE.sourceLacksRequired)
-KINDS_AN_ENTRY_REPORTS_NOTHING_OF = (BRIDGE.carriedWithLoss, BRIDGE.valueNotMapped, BRIDGE.schemaRuleUnnamed)
+KINDS_AN_ENTRY_REPORTS_NOTHING_OF = (
+    BRIDGE.carriedWithLoss,
+    BRIDGE.valueNotMapped,
+    BRIDGE.schemaRuleUnnamed,
+    BRIDGE.idRepeated,
+)
 VERDICTS_THAT_MAY_NAME_A_GAP = (BRIDGE.carriedInPart, BRIDGE.noHome)
 
 THE_NAMESPACE = "https://example.org/synthetic-adapter/ext/v1"

@@ -68,6 +68,11 @@ jobs:
         with:
           path: cascade-bridge-spec/fixtures/synthetic-adapter
 
+      - name: start action (compatibility) on the synthetic JSON adapter
+        uses: ./cascade-bridge-spec/.github/actions/start
+        with:
+          path: cascade-bridge-spec/fixtures/synthetic-json-adapter
+
   # A cycle's members discount the check that shares their own gate's name, and
   # the name is the job's: run here under any other name and a pull request of
   # this repository waits on gates that are waiting on it.

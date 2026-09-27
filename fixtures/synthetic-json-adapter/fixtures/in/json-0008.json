@@ -1,0 +1,7 @@
+{
+  "kind": "listing",
+  "records": [
+    {"accession": "EX000108", "version": 1, "label": "a record read in the listing envelope"},
+    {"accession": "EX000109", "version": 0}
+  ]
+}

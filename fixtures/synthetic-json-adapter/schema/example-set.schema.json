@@ -1,0 +1,10 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "type": "object",
+  "required": ["kind", "records"],
+  "properties": {
+    "kind": {"const": "set"},
+    "records": {"type": "array"}
+  },
+  "additionalProperties": false
+}

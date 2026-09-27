@@ -14,6 +14,7 @@
       "bridge:elementNameOfEachRecord": "bridge:elementNameOfEachRecord",
       "bridge:mapping": "bridge:mapping",
       "bridge:findingsQuery": "bridge:findingsQuery",
+      "bridge:documentTableQuery": "bridge:documentTableQuery",
       "bridge:gapScheme": "bridge:gapScheme",
       "bridge:table": "bridge:table",
       "bridge:sourceAccounting": "bridge:sourceAccounting",
@@ -91,8 +92,14 @@
         },
         {
           "@id": "in/example-severities.rq"
+        },
+        {
+          "@id": "in/example-repeated-accession.rq"
         }
       ],
+      "bridge:documentTableQuery": {
+        "@id": "in/example-table.rq"
+      },
       "bridge:gapScheme": {
         "@id": "vocab/example-gaps.ttl"
       },
@@ -190,6 +197,27 @@
           "@id": "fixtures/findings/example-0006.ttl"
         },
         {
+          "@id": "in/example-table.rq"
+        },
+        {
+          "@id": "in/example-repeated-accession.rq"
+        },
+        {
+          "@id": "fixtures/facts/example-registry.ttl"
+        },
+        {
+          "@id": "fixtures/in/example-0007.xml"
+        },
+        {
+          "@id": "fixtures/in/example-0008.xml"
+        },
+        {
+          "@id": "fixtures/expected/example-0008.ttl"
+        },
+        {
+          "@id": "fixtures/findings/example-0008.ttl"
+        },
+        {
           "@id": "https://example.org/synthetic-adapter/releases/example-release-2026-01.xml.gz"
         },
         {
@@ -242,8 +270,8 @@
       "@type": "File",
       "name": "Mapping",
       "encodingFormat": "application/sparql-query",
-      "contentSize": "1159",
-      "sha256": "1a441d769df3f507b94d7e198e08be10fd4a8e9c09a1edcbb38e9e2e19886cfd",
+      "contentSize": "2182",
+      "sha256": "5eb89c5a3046f95a7807988ca0436f102a61faf61a946c5004d98f285a1c05d6",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       }
@@ -277,6 +305,89 @@
       "encodingFormat": "application/sparql-query",
       "contentSize": "244",
       "sha256": "e7d3326c86f790d0fee2d42d692ccab1dc613e56b40598590c5723aeb06f1812",
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      }
+    },
+    {
+      "@id": "in/example-table.rq",
+      "@type": "File",
+      "name": "Document table query",
+      "encodingFormat": "application/sparql-query",
+      "contentSize": "297",
+      "sha256": "3e2d81aeed2d6e00d7689367f64ddc7a7f9d41ccbb1ab70524cea484797bdda2",
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      }
+    },
+    {
+      "@id": "in/example-repeated-accession.rq",
+      "@type": "File",
+      "name": "Findings query for a repeated accession",
+      "encodingFormat": "application/sparql-query",
+      "contentSize": "685",
+      "sha256": "ad1a2ed4935c2f95f68e4397c8a819b893548459fba81900b2d0359db06e772f",
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      }
+    },
+    {
+      "@id": "fixtures/facts/example-registry.ttl",
+      "@type": "File",
+      "name": "Facts supplied with every synthetic input",
+      "encodingFormat": "text/turtle",
+      "contentSize": "1002",
+      "sha256": "c22b0e6311f612ca0bceabe252423c7992a0265db2f7b755d592552bcfa3f813",
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      }
+    },
+    {
+      "@id": "fixtures/in/example-0007.xml",
+      "@type": "File",
+      "name": "Synthetic input holding example-0002's accession",
+      "encodingFormat": "application/xml",
+      "contentSize": "221",
+      "sha256": "84358186c4af543529d2c768d3c27bc6ac4b24ff0a65e1a7fd0652e994998f75",
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      }
+    },
+    {
+      "@id": "fixtures/in/example-0008.xml",
+      "@type": "File",
+      "name": "Synthetic input repeating an accession",
+      "encodingFormat": "application/xml",
+      "contentSize": "359",
+      "sha256": "62804d92b9ba28dfbb781659c66573a1f38763731ef7729ba698d05699e6f179",
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      }
+    },
+    {
+      "@id": "fixtures/expected/example-0008.ttl",
+      "@type": "File",
+      "name": "Expected graph for example-0008",
+      "encodingFormat": "text/turtle",
+      "contentSize": "2498",
+      "sha256": "f79b1e5d5f59f4a363aeee80868b3c0e68304ad5e45135b00f67d2202730d6a7",
+      "isBasedOn": {
+        "@id": "fixtures/in/example-0008.xml"
+      },
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      }
+    },
+    {
+      "@id": "fixtures/findings/example-0008.ttl",
+      "@type": "File",
+      "name": "Expected findings for example-0008",
+      "encodingFormat": "text/turtle",
+      "contentSize": "815",
+      "sha256": "30ffe2a1738e3a893227e32c0b67e4331f8dd54566eda0efc8461aec0ef1d580",
+      "isBasedOn": {
+        "@id": "fixtures/in/example-0008.xml"
+      },
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       }
@@ -392,8 +503,8 @@
       "@type": "File",
       "name": "Expected graph for example-0003",
       "encodingFormat": "text/turtle",
-      "contentSize": "377",
-      "sha256": "5c3cb9076b2ff83c4d3a7505a0111a8a87bfb4de35f75ae2bfc7ea7ff7410457",
+      "contentSize": "1932",
+      "sha256": "7acd9bfad266c3d07ad7c8f12b67781bcd2179d5607be68e4f8fbe807fc55395",
       "isBasedOn": {
         "@id": "fixtures/in/example-0003.xml"
       },
@@ -420,8 +531,8 @@
       "@type": "File",
       "name": "Expected graph for example-0001",
       "encodingFormat": "text/turtle",
-      "contentSize": "515",
-      "sha256": "6a8838353a95ee59ccaabb6e9661b712b497d4d372af8796f79a9a7f47a139f0",
+      "contentSize": "2442",
+      "sha256": "afe3fac7c97075e9a7dd7da1c82db9a15f50fecff86cb72f449743f474241ae3",
       "isBasedOn": {
         "@id": "fixtures/in/example-0001.xml"
       },
@@ -459,8 +570,8 @@
       "@type": "File",
       "name": "Expected graph for example-0004",
       "encodingFormat": "text/turtle",
-      "contentSize": "376",
-      "sha256": "ce3e61fa108c59a8d22cc6a0e0d6e228f83425fb2d45f1916152c9a363eade5b",
+      "contentSize": "1931",
+      "sha256": "fe762a30642b2789cdf3610a682663982a214276f71d314f1d820a7fe544edb8",
       "isBasedOn": {
         "@id": "fixtures/in/example-0004.xml"
       },
@@ -498,8 +609,8 @@
       "@type": "File",
       "name": "Expected graph for example-0005",
       "encodingFormat": "text/turtle",
-      "contentSize": "344",
-      "sha256": "35629da85777118569216030fe32a3d17bedb9e5c136bd753f9b657a7e6d9f52",
+      "contentSize": "1899",
+      "sha256": "a772dd74083ecdf248596fda98f932ce35120526a86857621009b941b2adc0e5",
       "isBasedOn": {
         "@id": "fixtures/in/example-0005.xml"
       },
@@ -537,8 +648,8 @@
       "@type": "File",
       "name": "Expected graph for example-0006",
       "encodingFormat": "text/turtle",
-      "contentSize": "453",
-      "sha256": "33ecea51265e7bd56015ae06ec1d8e6c0d2ea308088f5d05a750aab7a7b6d116",
+      "contentSize": "2008",
+      "sha256": "86376375ac7aaaeb6f51f20e4f2a251e1d6b0c1c505e1dbe586d58d9bc9cfa59",
       "isBasedOn": {
         "@id": "fixtures/in/example-0006.xml"
       },

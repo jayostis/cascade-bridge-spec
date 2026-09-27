@@ -47,6 +47,7 @@ class Row:
     from_named_pull_requests: bool = False
     pull_request: str | None = None
     host: str | None = None
+    vocabularies: Path | None = None
 
     @property
     def on_host(self):
@@ -71,6 +72,7 @@ class Row:
             "fromNamedPullRequests": self.from_named_pull_requests,
             "pullRequest": self.pull_request,
             "host": self.host,
+            "vocabularies": optional_text(self.vocabularies),
         }
 
     @classmethod
@@ -91,6 +93,7 @@ class Row:
             from_named_pull_requests=data.get("fromNamedPullRequests", False),
             pull_request=data.get("pullRequest"),
             host=data.get("host"),
+            vocabularies=optional_path(data.get("vocabularies")),
         )
 
 
@@ -103,10 +106,6 @@ class Record:
     @property
     def counterparts(self):
         return [entry for entry in self.used if entry.role is Role.COUNTERPART]
-
-    @property
-    def vocabularies(self):
-        return next((entry.path for entry in self.used if entry.role is Role.VOCABULARY), None)
 
     def on_each_host(self, entry, hosts):
         """The entry, replaced by one row for each host."""

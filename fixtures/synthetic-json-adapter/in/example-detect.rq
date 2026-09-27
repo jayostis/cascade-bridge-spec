@@ -1,0 +1,11 @@
+PREFIX fx:  <http://sparql.xyz/facade-x/ns/>
+PREFIX xyz: <http://sparql.xyz/facade-x/data/>
+
+ASK {
+  { ?root a fx:root ; xyz:kind "record" ; xyz:accession ?accession }
+  UNION
+  { ?root a fx:root ; xyz:kind ?kind ; xyz:records ?records .
+    FILTER (?kind IN ("set", "listing"))
+    ?records ?slot ?record .
+    ?record xyz:accession ?accession }
+}

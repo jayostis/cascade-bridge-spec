@@ -14,12 +14,13 @@ DISCOVERED = (
 )
 
 CHECKS = {
-    "profile/must/adapter.ttl": 31,
+    "profile/must/adapter.ttl": 33,
     "profile/must/declared_terms.py": 1,
     "profile/must/digests.py": 1,
-    "profile/must/envelope.ttl": 4,
+    "profile/must/envelope.ttl": 8,
     "profile/must/expected_findings.py": 1,
     "profile/must/expected_graphs.py": 1,
+    "profile/must/facts.py": 1,
     "profile/must/gap_scheme.py": 1,
     "profile/must/inputs.py": 1,
     "profile/must/inventory.py": 1,

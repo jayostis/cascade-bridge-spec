@@ -1,0 +1,53 @@
+PREFIX rdfs:   <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd:    <http://www.w3.org/2001/XMLSchema#>
+PREFIX skos:   <http://www.w3.org/2004/02/skos/core#>
+PREFIX prov:   <http://www.w3.org/ns/prov#>
+PREFIX pav:    <http://purl.org/pav/>
+PREFIX fx:     <http://sparql.xyz/facade-x/ns/>
+PREFIX xyz:    <http://sparql.xyz/facade-x/data/>
+PREFIX bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#>
+PREFIX ex:     <https://example.org/synthetic-adapter/v1#>
+
+CONSTRUCT {
+  ?record a ex:Record ;
+    ex:accession ?accession .
+  ?version prov:specializationOf ?record ;
+    rdfs:label ?label .
+  [] bridge:arrivedAs ?version ;
+    pav:version ?number ;
+    pav:lastUpdateOn ?lastUpdateOn .
+}
+WHERE {
+  ?exampleRecord a fx:root ;
+    xyz:accession ?accession ;
+    xyz:version ?number .
+  bridge:thisDocument bridge:sha256 ?document .
+  bridge:thisRecord bridge:selector ?selector .
+  OPTIONAL { bridge:thisDocument bridge:serverBaseUrl ?server }
+  {
+    SELECT ?accession (COUNT(?holder) AS ?holders)
+    WHERE { ?holder ex:holdsAccession ?accession }
+    GROUP BY ?accession
+  }
+  BIND(IF(BOUND(?server) && ?holders = 1,
+          CONCAT(?server, "|ExampleRecord|", ?accession),
+          CONCAT(?document, "|", ?selector)) AS ?input)
+  BIND(SHA256(CONCAT("90c60849-c5ef-4ca6-bfb8-8662bd07d2b5|", ?input)) AS ?hash)
+  BIND(REPLACE(REPLACE(REPLACE(REPLACE(SUBSTR(?hash, 17, 1),
+         "[048c]", "8"), "[159d]", "9"), "[26ae]", "a"), "[37bf]", "b") AS ?variant)
+  BIND(CONCAT(SUBSTR(?hash, 1, 8), "-", SUBSTR(?hash, 9, 4), "-8", SUBSTR(?hash, 14, 3),
+              "-", ?variant, SUBSTR(?hash, 18, 3), "-", SUBSTR(?hash, 21, 12)) AS ?uuid)
+  BIND(IRI(CONCAT("urn:uuid:", ?uuid)) AS ?record)
+  BIND(IRI(CONCAT("https://example.org/synthetic-adapter/version/", ?uuid)) AS ?version)
+  OPTIONAL { ?exampleRecord xyz:label ?label }
+  OPTIONAL { ?exampleRecord xyz:lastUpdated ?lastUpdated }
+  BIND(STRDT(?lastUpdated, IF(CONTAINS(?lastUpdated, "T"), xsd:dateTime, xsd:date)) AS ?lastUpdateOn)
+  FILTER NOT EXISTS {
+    ?exampleRecord xyz:status ?statuses .
+    ?statuses ?slot ?status .
+    ?statusConcept skos:inScheme ex:statuses ;
+      skos:notation ?statusKey ;
+      skos:exactMatch ex:Withdrawn .
+    FILTER (?statusKey = LCASE(REPLACE(?status, "^[ \t\r\n]+|[ \t\r\n]+$", "")))
+  }
+}

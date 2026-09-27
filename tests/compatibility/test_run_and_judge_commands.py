@@ -10,7 +10,7 @@ from compatibility_world import engine_document
 def test_an_entry_whose_engine_passes_its_adapter_holds(world):
     said = world.tool(world.engine_beside_adapter())
     assert "fake engine: testing" in said
-    assert "holds; 1 cantTell, 5 passed, 1 untested" in said
+    assert "holds; 1 cantTell, 8 passed, 1 untested" in said
     assert "does not hold" not in said
     assert "1 counterpart: 1 hold" in said
     assert "a result produced from uncommitted edits is feedback, never evidence" not in said
@@ -21,7 +21,7 @@ def test_an_entry_whose_engine_passes_its_adapter_holds(world):
     [
         pytest.param(
             "failed",
-            ["does not hold; 1 cantTell, 1 failed, 4 passed, 1 untested"],
+            ["does not hold; 1 cantTell, 1 failed, 7 passed, 1 untested"],
             id="a report with a failure, though the engine exits 0",
         ),
         pytest.param(
@@ -37,8 +37,10 @@ def test_an_entry_whose_engine_passes_its_adapter_holds(world):
         pytest.param(
             "partial",
             [
-                "does not hold; 1 passed; example-0002 has no outcome; example-0003 has no outcome; "
+                "does not hold; 1 passed; example-0002 has no outcome; "
+                "example-0002-and-example-0007-name-one-record has no outcome; example-0003 has no outcome; "
                 "example-0004 has no outcome; example-0005 has no outcome; example-0006 has no outcome; "
+                "example-0008 has no outcome; example-0008-names-two-records has no outcome; "
                 "example-release-2026-01 has no outcome"
             ],
             id="a report missing entries of the manifest, though none failed",

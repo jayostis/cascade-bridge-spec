@@ -1,0 +1,56 @@
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix prov:   <http://www.w3.org/ns/prov#> .
+@prefix pav:    <http://purl.org/pav/> .
+@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+@prefix rec:    <https://ns.cascadeprotocol.org/records/v1-draft#> .
+@prefix ex:     <https://example.org/synthetic-adapter/v1#> .
+
+<urn:uuid:df4d0a03-7e53-88d6-9498-fe8df928e582>
+  a ex:Record ;
+  ex:accession "EX000108" .
+
+<ni:///sha-256;mmjxqYP8FnzbIaBxixRaZgrU1JTDZZAgGfiA7KmJwBU>
+  prov:specializationOf <urn:uuid:df4d0a03-7e53-88d6-9498-fe8df928e582> ;
+  rdfs:label "a record read in the listing envelope" .
+
+[] bridge:arrivedAs <ni:///sha-256;mmjxqYP8FnzbIaBxixRaZgrU1JTDZZAgGfiA7KmJwBU> ;
+  pav:version "1" ;
+  bridge:selector "/records/0" ;
+  prov:wasDerivedFrom <ni:///sha-256;2UcFRSDnj7zn8D530oBUZo4NVmZuyiU476CbrXiFNZ4> ;
+  prov:wasGeneratedBy _:import .
+
+<urn:uuid:d5fa6108-fa10-85b2-85c0-b0813a3a00b3>
+  a ex:Record ;
+  ex:accession "EX000109" .
+
+<ni:///sha-256;WA4r4YX4YODD8cu2vhSSELPvOJjHWZOgptqcSk_1kH0>
+  prov:specializationOf <urn:uuid:d5fa6108-fa10-85b2-85c0-b0813a3a00b3> .
+
+[] bridge:arrivedAs <ni:///sha-256;WA4r4YX4YODD8cu2vhSSELPvOJjHWZOgptqcSk_1kH0> ;
+  pav:version "0" ;
+  bridge:selector "/records/1" ;
+  prov:wasDerivedFrom <ni:///sha-256;2UcFRSDnj7zn8D530oBUZo4NVmZuyiU476CbrXiFNZ4> ;
+  prov:wasGeneratedBy _:import .
+
+<ni:///sha-256;2UcFRSDnj7zn8D530oBUZo4NVmZuyiU476CbrXiFNZ4>
+  a prov:Entity ;
+  bridge:serverBaseUrl "https://records.example.org/api" ;
+  pav:retrievedFrom <https://records.example.org/api/ExampleRecordSet> ;
+  pav:retrievedOn "2026-08-30T22:14:00Z"^^xsd:dateTime ;
+  prov:qualifiedAttribution
+    [ prov:agent [ rdfs:label "Example Records Registry" ] ; prov:hadRole rec:author ] ,
+    [ prov:agent [ rdfs:label "Example Fetcher" ] ; prov:hadRole rec:transmitter ] ;
+  bridge:authenticatedPatient "Patient/example-patient" ;
+  bridge:authenticatedAsProxy false ;
+  bridge:sourceFormatVersion "1" .
+
+_:import
+  a prov:Activity ;
+  prov:used <ni:///sha-256;2UcFRSDnj7zn8D530oBUZo4NVmZuyiU476CbrXiFNZ4> ;
+  rdfs:label "synthetic example import" ;
+  prov:startedAtTime "2026-09-01T10:00:00Z"^^xsd:dateTime ;
+  prov:qualifiedAssociation [
+    prov:hadPlan [ a prov:Plan ; rdfs:label "synthetic-json-example" ; pav:version "0.1.0" ] ;
+    prov:agent [ ]
+  ] .

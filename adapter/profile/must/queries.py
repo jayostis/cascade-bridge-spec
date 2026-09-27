@@ -4,7 +4,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from rdflib import BNode, Graph, URIRef, Variable
-from rdflib.namespace import RDF, SH
+from rdflib.namespace import DCTERMS, RDF, SH
 from rdflib.plugins.sparql import prepareQuery
 from rdflib.plugins.sparql.parserutils import CompValue
 from rocrate_validator.models import ValidationContext
@@ -13,11 +13,13 @@ from rocrate_validator.requirements.python import PyFunctionCheck, check, requir
 from _codes import gaps_of
 from _crate import file_name_of
 from _findings import SHAPES, report_findings, unmet
+from _json_source import RFC_6901, syntax_of
 from _terms import BRIDGE, OA
 
 QUERY_FORMS = {
     BRIDGE.mapping: ("bridge:mapping", "CONSTRUCT"),
     BRIDGE.findingsQuery: ("bridge:findingsQuery", "CONSTRUCT"),
+    BRIDGE.documentTableQuery: ("bridge:documentTableQuery", "CONSTRUCT"),
     BRIDGE.detectQuery: ("bridge:detectQuery", "ASK"),
 }
 
@@ -74,9 +76,31 @@ def operators(algebra):
             yield from operators(part)
 
 
+def selectors_of_the_wrong_kind(name, template, json):
+    typed = {
+        (triple[0], triple[2])
+        for triple in template
+        if triple[1] == RDF.type and triple[2] in (OA.XPathSelector, OA.FragmentSelector)
+    }
+    wanted = OA.FragmentSelector if json else OA.XPathSelector
+    wrong = {kind for _, kind in typed if kind != wanted}
+    if wrong:
+        yield (
+            f"{name} constructs a selector typed {listed(wrong)}, where a finding about "
+            f"{'a JSON' if json else 'an XML'} document selects by {'oa:FragmentSelector' if json else 'oa:XPathSelector'}"
+        )
+    pointers = {selector for selector, kind in typed if kind == OA.FragmentSelector}
+    if json and any(URIRef(RFC_6901) not in constructed(template, pointer, DCTERMS.conformsTo) for pointer in pointers):
+        yield (
+            f"{name} constructs an oa:FragmentSelector whose dcterms:conformsTo is not <{RFC_6901}>, "
+            "where a finding about a JSON document selects by a JSON Pointer"
+        )
+
+
 def malformed(crate):
     declared = [(prop, query) for prop in QUERY_FORMS for query in sorted(crate.graph.objects(crate.root, prop))]
     gaps = gaps_of(crate)
+    json = syntax_of(crate) == "json"
     for prop, query in declared:
         term, form = QUERY_FORMS[prop]
         name = file_name_of(query)
@@ -132,6 +156,7 @@ def malformed(crate):
                     f"{name} constructs {body} as a finding's body, where a body a findings query "
                     "constructs as a constant is a gap of the adapter's bridge:gapScheme"
                 )
+        yield from selectors_of_the_wrong_kind(name, template, json)
         shapes = shapes_less_the_selector_and_the_severity_a_bridge_supplies()
         constructed_graph, standing_for = constructs(template)
         for message in unmet(constructed_graph, shapes, standing_for):

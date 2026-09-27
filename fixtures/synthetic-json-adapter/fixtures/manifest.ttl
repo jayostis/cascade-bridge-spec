@@ -1,0 +1,177 @@
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix mf:     <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .
+@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+<> a mf:Manifest ;
+  rdfs:label "synthetic JSON adapter fixture cases" ;
+  bridge:adapter <../> ;
+  mf:entries (
+    <#json-0001>
+    <#json-0002>
+    <#json-0003>
+    <#json-0004>
+    <#json-0005>
+    <#json-0006>
+    <#json-0007>
+    <#json-0008>
+    <#json-0002-and-json-0006-name-one-record>
+    <#json-0006-holds-two-records>
+    <#json-0007-names-two-records>
+  ) .
+
+<#json-0001> a bridge:IsomorphicConversionTest ;
+  mf:name "json-0001" ;
+  rdfs:comment "Each item of a set's records member is a record, selected by a JSON Pointer from the document's value. A note is reported by the findings query and by its entry, each refined to the note by a pointer relative to the record." ;
+  mf:action [
+    bridge:input <in/json-0001.json> ;
+    bridge:envelope <../ro-crate-metadata.json#envelope-set> ;
+    bridge:facts <facts/example-registry.ttl>
+  ] ;
+  mf:result [
+    bridge:expectedGraph <expected/json-0001.ttl> ;
+    bridge:expectedFindings <findings/json-0001.ttl>
+  ] .
+
+<#json-0002> a bridge:IsomorphicConversionTest ;
+  mf:name "json-0002" ;
+  rdfs:comment "A record that is the document's value is selected by the empty pointer." ;
+  mf:action [
+    bridge:input <in/json-0002.json> ;
+    bridge:envelope <../ro-crate-metadata.json#envelope-record> ;
+    bridge:facts <facts/example-registry.ttl>
+  ] ;
+  mf:result [
+    bridge:expectedGraph <expected/json-0002.ttl> ;
+    bridge:expectedFindings <findings/json-0002.ttl>
+  ] .
+
+<#json-0003> a bridge:IsomorphicConversionTest ;
+  mf:name "json-0003" ;
+  rdfs:comment "A document failing its envelope's JSON Schema, and a record failing the source schema through a $ref and directly: each failure is a finding whose body is the draft-06 section of the keyword failed, refined to the node it failed at, and no further where that node is the document's value. The record still goes through." ;
+  mf:action [
+    bridge:input <in/json-0003.json> ;
+    bridge:envelope <../ro-crate-metadata.json#envelope-set> ;
+    bridge:facts <facts/example-registry.ttl>
+  ] ;
+  mf:result [
+    bridge:expectedGraph <expected/json-0003.ttl> ;
+    bridge:expectedFindings <findings/json-0003.ttl>
+  ] .
+
+<#json-0004> a bridge:IsomorphicConversionTest ;
+  mf:name "json-0004" ;
+  rdfs:comment "A record carrying members the accounting names nowhere, one of them an array of objects: an array's items stand at its path, so the census finding for it and for a member of its items is addressed at the first item and counts the items. A status the concept map lacks, written twice in an array, is one lookup finding at its first occurrence." ;
+  mf:action [
+    bridge:input <in/json-0004.json> ;
+    bridge:envelope <../ro-crate-metadata.json#envelope-set> ;
+    bridge:facts <facts/example-registry.ttl>
+  ] ;
+  mf:result [
+    bridge:expectedGraph <expected/json-0004.ttl> ;
+    bridge:expectedFindings <findings/json-0004.ttl>
+  ] .
+
+<#json-0005> a bridge:IsomorphicConversionTest ;
+  mf:name "json-0005" ;
+  rdfs:comment "The input of json-0001 read in the record envelope, which admits it too: the whole document is then one record, the mapping finds no accession on it, the source schema reports the missing member, and the census reports every path below records. convert given --envelope naming each envelope in turn writes the findings of json-0001 and of this entry." ;
+  mf:action [
+    bridge:input <in/json-0001.json> ;
+    bridge:envelope <../ro-crate-metadata.json#envelope-record> ;
+    bridge:facts <facts/example-registry.ttl>
+  ] ;
+  mf:result [
+    bridge:expectedGraph <expected/json-0005.ttl> ;
+    bridge:expectedFindings <findings/json-0005.ttl>
+  ] .
+
+<#json-0006> a bridge:IsomorphicConversionTest ;
+  mf:name "json-0006" ;
+  rdfs:comment "A record holding another, as a FHIR resource holds a contained one: the held record is named from its holder's name and its own id, and its arrival carries the pointer selecting its own node, which the mapping writes." ;
+  mf:action [
+    bridge:input <in/json-0006.json> ;
+    bridge:envelope <../ro-crate-metadata.json#envelope-set> ;
+    bridge:facts <facts/example-registry.ttl>
+  ] ;
+  mf:result [
+    bridge:expectedGraph <expected/json-0006.ttl> ;
+    bridge:expectedFindings <findings/json-0006.ttl>
+  ] .
+
+<#json-0007> a bridge:IsomorphicConversionTest ;
+  mf:name "json-0007" ;
+  rdfs:comment "A document whose two records hold one accession: each is named from the document's SHA-256 and its record's JSON Pointer, and each carries a finding of the repeated accession." ;
+  mf:action [
+    bridge:input <in/json-0007.json> ;
+    bridge:envelope <../ro-crate-metadata.json#envelope-set> ;
+    bridge:facts <facts/example-registry.ttl>
+  ] ;
+  mf:result [
+    bridge:expectedGraph <expected/json-0007.ttl> ;
+    bridge:expectedFindings <findings/json-0007.ttl>
+  ] .
+
+<#json-0008> a bridge:IsomorphicConversionTest ;
+  mf:name "json-0008" ;
+  rdfs:comment "A document read in an envelope naming its own bridge:sourceSchema: each record is validated against the subschema the fragment of that schema's IRI names, whose $ref resolves in the whole schema document, not against the adapter's." ;
+  mf:action [
+    bridge:input <in/json-0008.json> ;
+    bridge:envelope <../ro-crate-metadata.json#envelope-listing> ;
+    bridge:facts <facts/example-registry.ttl>
+  ] ;
+  mf:result [
+    bridge:expectedGraph <expected/json-0008.ttl> ;
+    bridge:expectedFindings <findings/json-0008.ttl>
+  ] .
+
+<#json-0002-and-json-0006-name-one-record> a bridge:IdentityRelationTest ;
+  mf:name "json-0002-and-json-0006-name-one-record" ;
+  rdfs:comment "One accession on one server is one record, whether it is the document's value or an item of a set." ;
+  mf:action [
+    bridge:conversion [
+      bridge:input <in/json-0002.json> ;
+      bridge:envelope <../ro-crate-metadata.json#envelope-record> ;
+      bridge:facts <facts/example-registry.ttl>
+    ] , [
+      bridge:input <in/json-0006.json> ;
+      bridge:envelope <../ro-crate-metadata.json#envelope-set> ;
+      bridge:facts <facts/example-registry.ttl> ;
+      bridge:selector "/records/1"
+    ]
+  ] ;
+  mf:result [ bridge:sameRecord true ] .
+
+<#json-0006-holds-two-records> a bridge:IdentityRelationTest ;
+  mf:name "json-0006-holds-two-records" ;
+  rdfs:comment "A record held inside another is a record of its own." ;
+  mf:action [
+    bridge:conversion [
+      bridge:input <in/json-0006.json> ;
+      bridge:envelope <../ro-crate-metadata.json#envelope-set> ;
+      bridge:facts <facts/example-registry.ttl> ;
+      bridge:selector "/records/0"
+    ] , [
+      bridge:input <in/json-0006.json> ;
+      bridge:envelope <../ro-crate-metadata.json#envelope-set> ;
+      bridge:facts <facts/example-registry.ttl> ;
+      bridge:selector "/records/0/contained/0"
+    ]
+  ] ;
+  mf:result [ bridge:sameRecord false ] .
+
+<#json-0007-names-two-records> a bridge:IdentityRelationTest ;
+  mf:name "json-0007-names-two-records" ;
+  rdfs:comment "Two records of one document holding one accession are two records." ;
+  mf:action [
+    bridge:conversion [
+      bridge:input <in/json-0007.json> ;
+      bridge:envelope <../ro-crate-metadata.json#envelope-set> ;
+      bridge:facts <facts/example-registry.ttl> ;
+      bridge:selector "/records/0"
+    ] , [
+      bridge:input <in/json-0007.json> ;
+      bridge:envelope <../ro-crate-metadata.json#envelope-set> ;
+      bridge:facts <facts/example-registry.ttl> ;
+      bridge:selector "/records/1"
+    ]
+  ] ;
+  mf:result [ bridge:sameRecord false ] .

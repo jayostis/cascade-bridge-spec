@@ -4,13 +4,14 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from rdflib import Graph, URIRef
-from rdflib.namespace import RDF
+from rdflib.namespace import DCTERMS, RDF
 from rocrate_validator.models import ValidationContext
 from rocrate_validator.requirements.python import PyFunctionCheck, check, requirement
 
 from _codes import bodies_a_finding_may_carry, no_gap_of_the_scheme
 from _crate import file_name_of
 from _findings import SHAPES, report_findings, unmet
+from _json_source import RFC_6901, NotJson, parsed, records_of, selected_by, syntax_of
 from _selectors import local_name_of
 from _terms import BRIDGE, MF, OA
 
@@ -24,7 +25,10 @@ def expected_findings_of(crate):
         if findings is None:
             continue
         action = crate.graph.value(test, MF.action)
-        yield test, findings, None if action is None else crate.graph.value(action, BRIDGE.input)
+        if action is None:
+            yield test, findings, None, None
+            continue
+        yield test, findings, crate.graph.value(action, BRIDGE.input), crate.graph.value(action, BRIDGE.envelope)
 
 
 class Fault(str):
@@ -132,6 +136,81 @@ def unselected(graph, document, document_name, source, record_name, etree):
             )
 
 
+def of_the_wrong_kind(graph, json):
+    """Each selector whose kind is not the one the adapter's source syntax takes."""
+    for target in graph.objects(None, OA.hasTarget):
+        selector = graph.value(target, OA.hasSelector)
+        for chosen in (selector, None if selector is None else graph.value(selector, OA.refinedBy)):
+            if chosen is None:
+                continue
+            pointer = (chosen, RDF.type, OA.FragmentSelector) in graph and (
+                chosen,
+                DCTERMS.conformsTo,
+                URIRef(RFC_6901),
+            ) in graph
+            if json and not pointer:
+                yield (
+                    f"{graph.value(chosen, RDF.value)} is not written as a JSON Pointer, where a finding about a "
+                    f"JSON document selects by an oa:FragmentSelector whose dcterms:conformsTo is <{RFC_6901}>"
+                )
+            elif not json and (chosen, RDF.type, OA.XPathSelector) not in graph:
+                yield (
+                    f"{graph.value(chosen, RDF.value)} is not written as an XPath, where a finding about an "
+                    "XML document selects by an oa:XPathSelector"
+                )
+
+
+def one_of(value, pointer, document_name):
+    """The one (reference tokens, node) a pointer selects, or a Fault."""
+    chosen = selected_by(value, pointer)
+    if len(chosen) != 1:
+        how_many = f"{len(chosen)} nodes" if chosen else "no node"
+        return Fault(f"{pointer!r} selects {how_many} of {document_name}, where a finding selects exactly one")
+    return chosen[0]
+
+
+def unselected_json(graph, value, document_name, source, record_path):
+    records = set()
+    if record_path is not None:
+        try:
+            records = {tokens for tokens, _ in records_of(value, record_path)}
+        except ValueError:
+            records = set()
+    for annotation in graph.subjects(RDF.type, OA.Annotation):
+        target = graph.value(annotation, OA.hasTarget)
+        if target is None:
+            continue
+        named = graph.value(target, OA.hasSource)
+        if named is not None and named != source:
+            yield (
+                f"a finding names {file_name_of(named)} as its oa:hasSource, "
+                f"where the entry's bridge:input is {document_name}"
+            )
+            continue
+        selector = graph.value(target, OA.hasSelector)
+        if selector is None:
+            continue
+        pointer = str(graph.value(selector, RDF.value))
+        record = one_of(value, pointer, document_name)
+        if isinstance(record, Fault):
+            yield record
+            continue
+        tokens, node = record
+        if tokens and tokens not in records:
+            yield (
+                f"{pointer!r} selects a node of {document_name} that is no record, where a finding is about the "
+                f"document, selecting its value by the empty pointer, or about a record, selecting a node "
+                f"{record_path}, its envelope's bridge:jsonPathOfEachRecord, selects"
+            )
+            continue
+        refined = graph.value(selector, OA.refinedBy)
+        if refined is None:
+            continue
+        within = one_of(node, str(graph.value(refined, RDF.value)), f"the record {pointer!r} selects")
+        if isinstance(within, Fault):
+            yield within
+
+
 def faulty(crate):
     entries = list(expected_findings_of(crate))
     if not entries:
@@ -147,7 +226,8 @@ def faulty(crate):
     coded = bodies_a_finding_may_carry(crate)
     no_gap = no_gap_of_the_scheme(crate)
     record_name = str(crate.graph.value(crate.root, BRIDGE.elementNameOfEachRecord) or "")
-    for test, findings, source in entries:
+    json = syntax_of(crate) == "json"
+    for test, findings, source, envelope in entries:
         name = crate.name_of(test)
         path = crate.file_at(findings)
         if path is None:
@@ -159,10 +239,13 @@ def faulty(crate):
         except Exception as error:
             yield f"{name}: {path.name} does not parse as Turtle\n{error}"
             continue
+        if not len(graph):
+            continue
         if (None, RDF.type, OA.Annotation) not in graph:
             yield (
-                f"{name}: {path.name} carries no oa:Annotation, where an entry's bridge:expectedFindings "
-                "is every finding its input produces, each one an oa:Annotation"
+                f"{name}: {path.name} holds statements and carries no oa:Annotation, where an entry's "
+                "bridge:expectedFindings is every finding its input produces, each one an oa:Annotation, "
+                "and is empty where it produces none"
             )
             continue
         for message in unmet(graph, shapes):
@@ -170,8 +253,21 @@ def faulty(crate):
         for body in sorted(set(graph.objects(None, OA.hasBody))):
             if isinstance(body, URIRef) and body not in coded:
                 yield f"{name}: {path.name}: {body} {no_gap}"
+        for message in sorted(set(of_the_wrong_kind(graph, json))):
+            yield f"{name}: {path.name}: {message}"
         input_path = None if source is None else crate.file_at(source)
         if input_path is None:
+            continue
+        if json:
+            try:
+                value = parsed(input_path.read_bytes())
+            except NotJson:
+                continue
+            record_path = None if envelope is None else crate.graph.value(envelope, BRIDGE.jsonPathOfEachRecord)
+            for message in unselected_json(
+                graph, value, input_path.name, source, None if record_path is None else str(record_path)
+            ):
+                yield f"{name}: {path.name}: {message}"
             continue
         try:
             document = etree.parse(str(input_path))

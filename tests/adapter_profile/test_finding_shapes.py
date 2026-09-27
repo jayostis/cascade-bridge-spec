@@ -147,13 +147,16 @@ def test_rejects_a_finding_named_rather_than_written_for_itself():
 
 
 def test_rejects_a_record_selector_that_is_not_an_xpath_selector():
-    assert "A record's selector is an oa:XPathSelector." in said_about_findings(
-        a_finding(selector='[ a oa:TextQuoteSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ]')
+    assert (
+        "A record's selector is an oa:XPathSelector, or an oa:FragmentSelector whose dcterms:conformsTo is JSON Pointer"
+        in said_about_findings(
+            a_finding(selector='[ a oa:TextQuoteSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ]')
+        )
     )
 
 
 def test_rejects_a_record_selector_carrying_no_xpath():
-    assert "A selector carries exactly one rdf:value, its XPath, a string." in said_about_findings(
+    assert "A selector carries exactly one rdf:value, its XPath or its JSON Pointer, a string." in said_about_findings(
         a_finding(selector="[ a oa:XPathSelector ]")
     )
 
@@ -171,9 +174,12 @@ def test_rejects_a_record_selector_refined_more_than_once():
 
 
 def test_rejects_a_refinement_that_is_not_an_xpath_selector():
-    assert "A selector refining a record's selector is an oa:XPathSelector." in said_about_findings(
-        a_finding(
-            selector='[ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ; oa:refinedBy [ a oa:TextQuoteSelector ; rdf:value "Note" ] ]'
+    assert (
+        "A selector refining a record's selector is an oa:XPathSelector, or an oa:FragmentSelector"
+        in said_about_findings(
+            a_finding(
+                selector='[ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ; oa:refinedBy [ a oa:TextQuoteSelector ; rdf:value "Note" ] ]'
+            )
         )
     )
 
@@ -186,5 +192,30 @@ def test_rejects_a_refinement_refined_further():
                 'oa:refinedBy [ a oa:XPathSelector ; rdf:value "Note" ; '
                 'oa:refinedBy [ a oa:XPathSelector ; rdf:value "text()" ] ] ]'
             )
+        )
+    )
+
+
+A_POINTER = "a oa:FragmentSelector ; <http://purl.org/dc/terms/conformsTo> <https://www.rfc-editor.org/rfc/rfc6901>"
+
+
+def test_accepts_a_record_selector_and_a_refinement_that_are_json_pointers():
+    assert not said_about_findings(
+        a_finding(
+            selector=f'[ {A_POINTER} ; rdf:value "/records/0" ; oa:refinedBy [ {A_POINTER} ; rdf:value "/note" ] ]'
+        )
+    )
+
+
+def test_rejects_a_fragment_selector_conforming_to_no_json_pointer():
+    assert "whose dcterms:conformsTo is JSON Pointer" in said_about_findings(
+        a_finding(selector='[ a oa:FragmentSelector ; rdf:value "/records/0" ]')
+    )
+
+
+def test_rejects_a_refinement_of_another_kind_than_the_selector_it_refines():
+    assert "A selector refining a record's selector is of its kind" in said_about_findings(
+        a_finding(
+            selector=f'[ {A_POINTER} ; rdf:value "/records/0" ; oa:refinedBy [ a oa:XPathSelector ; rdf:value "Note" ] ]'
         )
     )

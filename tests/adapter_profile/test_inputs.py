@@ -16,8 +16,6 @@ A_DOCUMENT_SCHEMA_HOLDING_EVERY_RECORD_TO_NOTHING = """<?xml version="1.0" encod
 </xs:schema>
 """
 
-AN_INPUT_IN_THE_SCHEMA_LANGUAGE_THIS_LINT_CANNOT_READ = '{"ExampleRecord": [{"Accession": "EX000001"}]}\n'
-
 
 def schemas_of(crate):
     return set(crate.graph.objects(crate.root, BRIDGE.sourceSchema)) | set(
@@ -91,13 +89,13 @@ def test_reports_a_source_schema_no_record_was_validated_against_for_want_of_an_
     ) in "\n".join(inputs.invalid(crate))
 
 
-def test_holds_a_package_to_nothing_when_the_schema_language_is_one_it_cannot_read(package):
-    crate = package.crate
+def test_reports_an_xml_adapter_whose_schema_is_a_json_schema(crate):
     for schema in schemas_of(crate):
         crate.graph.set((schema, SCHEMA.encodingFormat, Literal("application/schema+json")))
-    for _, source, _ in inputs.committed_inputs(crate):
-        crate.file_at(source).write_text(AN_INPUT_IN_THE_SCHEMA_LANGUAGE_THIS_LINT_CANNOT_READ, encoding="utf-8")
-    assert not list(inputs.invalid(crate))
+    assert (
+        "example-record.xsd is declared application/schema+json, a JSON Schema, where an XML source is validated "
+        "against an XSD 1.0 schema declared application/xml or text/xml"
+    ) in "\n".join(inputs.invalid(crate))
 
 
 def test_reports_an_input_that_is_not_well_formed_xml_where_the_schema_is_one_it_reads(package):
@@ -205,3 +203,36 @@ def test_reads_a_w3c_schema_the_package_ships_from_the_package(package):
 def test_reports_an_import_of_another_namespace_that_names_no_file_in_the_package(package, location):
     importing(package, "https://example.org/elsewhere", location=location)
     assert "elsewhere.xsd, which is not a file in this package" in "\n".join(inputs.invalid(package.crate))
+
+
+def test_validates_an_input_named_only_by_a_conversion_of_an_identity_relation_test(package):
+    package.edit("fixtures/in/example-0007.xml", 'Version="3"', 'Version="third"')
+    assert "example-0002-and-example-0007-name-one-record: example-0007.xml does not validate against" in (
+        "\n".join(inputs.invalid(package.crate))
+    )
+
+
+def test_reports_nothing_for_a_conversion_whose_schema_failure_an_entry_converting_that_input_in_that_envelope_records(
+    package,
+):
+    package.edit(
+        "fixtures/manifest.ttl",
+        "bridge:input <in/example-0007.xml> ;",
+        "bridge:input <in/example-0003.xml> ;",
+    )
+    assert "example-0002-and-example-0007-name-one-record: example-0003.xml" not in (
+        "\n".join(inputs.invalid(package.crate))
+    )
+
+
+def test_reports_an_input_named_only_by_a_conversion_that_is_not_a_file_in_the_package(package):
+    (package.path / "fixtures/in/example-0007.xml").unlink()
+    assert "bridge:input names" in "\n".join(inputs.invalid(package.crate))
+
+
+def test_reports_an_xsd_named_with_a_fragment(crate):
+    schema = crate.graph.value(crate.root, BRIDGE.sourceSchema)
+    crate.graph.set((crate.root, BRIDGE.sourceSchema, URIRef(f"{schema}#ExampleRecord")))
+    assert "example-record.xsd#ExampleRecord names an XSD, whose IRI carries no fragment" in "\n".join(
+        inputs.invalid(crate)
+    )

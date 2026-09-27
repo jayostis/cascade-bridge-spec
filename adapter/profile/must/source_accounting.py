@@ -12,6 +12,7 @@ from rocrate_validator.requirements.python import PyFunctionCheck, check, requir
 
 from _codes import scheme_named_by
 from _findings import SHAPES, report_findings, unmet
+from _json_source import A_PATH, named_in_the_lift, syntax_of
 from _terms import BRIDGE
 
 THE_KINDS_A_VERDICT_MAY_NAME = {
@@ -36,6 +37,15 @@ A_PATH_IS_STEPS = (
     "*[local-name()='name' and namespace-uri()='uri'], an attribute's step that form after an @, "
     "and no step carries a position"
 )
+
+
+A_JSON_PATH_IS_STEPS = (
+    "where a step of a bridge:sourcePath of a JSON source follows a /, and is a member's name written as a "
+    "JSON Pointer reference token, ~ as ~0 and / as ~1, and the record itself is no path"
+)
+
+A_TERM = re.compile(r"(?:[^\s<>\"'{}()\[\];,/:#?*+=!|&^$@\\]|\\[-_~.!$&'()*+,;=/?#@%])+")
+AN_ESCAPE = re.compile(r"\\(.)")
 
 
 def shortened(term):
@@ -79,15 +89,22 @@ def ill_formed(source_path, steps, record):
         )
 
 
-def mentioned_by_the_mappings(crate):
+def mentioned_by_the_mappings(crate, written=A_NAME):
     """Every name the adapter's mappings write, or None where one of them is not a file this lint can read."""
     mentioned = set()
     for mapping in crate.graph.objects(crate.root, BRIDGE.mapping):
         path = crate.file_at(mapping)
         if path is None:
             return None
-        mentioned.update(A_NAME.findall(path.read_text(encoding="utf-8")))
+        mentioned.update(AN_ESCAPE.sub(r"\1", term) for term in written.findall(path.read_text(encoding="utf-8")))
     return mentioned
+
+
+def json_steps_of(source_path):
+    """The member names of a JSON path, or None where it is written as no sequence of steps."""
+    if not A_PATH.match(source_path):
+        return None
+    return [step.replace("~1", "/").replace("~0", "~") for step in source_path[1:].split("/")]
 
 
 def entries_of(accounting):
@@ -139,12 +156,18 @@ def faulty(crate):
 
     scheme = scheme_named_by(crate)
     gaps = set(scheme.subjects(RDF.type, SKOS.Concept))
-    mentioned = mentioned_by_the_mappings(crate)
+    json = syntax_of(crate) == "json"
+    mentioned = mentioned_by_the_mappings(crate, A_TERM if json else A_NAME)
     record = str(crate.graph.value(crate.root, BRIDGE.elementNameOfEachRecord) or "")
 
     for entry, source_path, verdict in entries:
-        steps = steps_of(source_path)
-        yield from ill_formed(source_path, steps, record)
+        if json:
+            steps = json_steps_of(source_path)
+            if steps is None:
+                yield f"{source_path} is written in steps this lint cannot read, {A_JSON_PATH_IS_STEPS}"
+        else:
+            steps = steps_of(source_path)
+            yield from ill_formed(source_path, steps, record)
         for instead in sorted(accounting.objects(entry, BRIDGE.sameFactAs)):
             if str(instead) == source_path:
                 yield (
@@ -176,7 +199,7 @@ def faulty(crate):
                 )
         if verdict not in VERDICTS_CLAIMING_CARRIAGE or mentioned is None or steps is None:
             continue
-        step = name_of(steps[-1])
+        step = named_in_the_lift(steps[-1]) if json else name_of(steps[-1])
         if step not in mentioned:
             yield (
                 f"{source_path} is {shortened(verdict)}, where no bridge:mapping of this adapter mentions {step}: "

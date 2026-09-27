@@ -6,12 +6,12 @@ import pytest
 from rdflib import Graph
 
 import _crate
-from adapter_profile_world import FIXTURE
+from adapter_profile_world import FIXTURE, JSON_FIXTURE
 
 
 class Package:
-    def __init__(self, path, tracked=False):
-        shutil.copytree(FIXTURE, path)
+    def __init__(self, path, tracked=False, fixture=FIXTURE):
+        shutil.copytree(fixture, path)
         self.path = path
         self.tracked = tracked
         if tracked:
@@ -62,3 +62,20 @@ def crate(conforming):
     graph = Graph()
     graph += conforming.graph
     return dataclasses.replace(conforming, graph=graph)
+
+
+@pytest.fixture
+def json_package(tmp_path):
+    return Package(tmp_path / "package", fixture=JSON_FIXTURE)
+
+
+@pytest.fixture(scope="session")
+def conforming_json(tmp_path_factory):
+    return Package(tmp_path_factory.mktemp("conforming-json") / "package", tracked=True, fixture=JSON_FIXTURE).crate
+
+
+@pytest.fixture
+def json_crate(conforming_json):
+    graph = Graph()
+    graph += conforming_json.graph
+    return dataclasses.replace(conforming_json, graph=graph)

@@ -1,0 +1,31 @@
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+@prefix oa:      <http://www.w3.org/ns/oa#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix ex:      <https://example.org/synthetic-adapter/v1#> .
+
+[] a oa:Annotation ;
+  oa:hasTarget [
+    oa:hasSource <../in/json-0007.json> ;
+    oa:hasSelector [
+      a oa:FragmentSelector ;
+      dcterms:conformsTo <https://www.rfc-editor.org/rfc/rfc6901> ;
+      rdf:value "/records/0"
+    ]
+  ] ;
+  oa:hasBody ex:an-accession-repeated-within-its-document ;
+  oa:motivatedBy oa:classifying ;
+  sh:resultSeverity sh:Info .
+
+[] a oa:Annotation ;
+  oa:hasTarget [
+    oa:hasSource <../in/json-0007.json> ;
+    oa:hasSelector [
+      a oa:FragmentSelector ;
+      dcterms:conformsTo <https://www.rfc-editor.org/rfc/rfc6901> ;
+      rdf:value "/records/1"
+    ]
+  ] ;
+  oa:hasBody ex:an-accession-repeated-within-its-document ;
+  oa:motivatedBy oa:classifying ;
+  sh:resultSeverity sh:Info .
