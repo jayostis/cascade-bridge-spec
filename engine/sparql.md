@@ -113,17 +113,21 @@ joined inputs, and a Bridge and an adapter must reproduce the vectors in
 | the source gives | the inputs |
 |---|---|
 | a FHIR resource whose `id` is unique within its document | the server's base URL, the resource type, the `id` |
-| a FHIR Bundle entry with no `id` and a `urn:uuid` `fullUrl` | the `fullUrl` |
+| a FHIR Bundle entry with no `id` and a `urn:uuid` `fullUrl`, whether a server is known or not | the `fullUrl` |
 | a FHIR contained resource | the containing record's name, the contained resource's `id` |
 | a C-CDA entry whose id is unique within its document | the id's `root` and `extension`, or its `root` where it has no `extension` |
 | a ClinVar `VariationArchive` or `ClinicalAssertion` | `https://www.ncbi.nlm.nih.gov/clinvar`, its VCV or SCV accession |
 | a ClinVar interpretation, one for each `ClassifiedCondition` of an RCV | `https://www.ncbi.nlm.nih.gov/clinvar`, the RCV accession, the condition's position in its `ClassifiedConditionList`, counted from 0 |
-| any of these whose id repeats within its document, a record with none of these ids, or a FHIR resource with no known server | the document's SHA-256 and the record's selector |
+| any of these whose id repeats within its document, a record with none of these ids, or a FHIR resource with an `id` and no known server | the document's SHA-256 and the `rdf:value` of the record's selector |
 
 A server's base URL has its scheme and host lower-cased and every trailing `/`
 removed, and a Bridge normalises it so before a mapping reads it. A document's
 SHA-256 is written `ni:///sha-256;` and the digest of its bytes in unpadded
 base64url ([RFC 6920](https://www.rfc-editor.org/rfc/rfc6920)).
+
+A reference relative to a server, as FHIR's `Patient/123` is, in a document
+with no known server names no record: a mapping writes no link for it, and the
+adapter reports it as a finding.
 
 ## Running an adapter
 
@@ -141,7 +145,7 @@ For each source record of a document, in document order, a Bridge:
 3. loads into the same default graph the facts supplied with the document,
    with `bridge:serverBaseUrl` normalised, `bridge:thisDocument bridge:sha256`
    the document's SHA-256, and `bridge:thisRecord bridge:selector` the
-   record's selector;
+   `rdf:value` of the record's selector;
 4. loads into the same default graph the document table: the RDF merge, over
    every record of the document, of the graph each `bridge:documentTableQuery`
    constructs over that record's dataset as the steps before this one leave it;

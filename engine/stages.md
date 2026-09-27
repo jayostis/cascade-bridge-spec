@@ -80,11 +80,16 @@ version named, and:
   `pav:version`;
 - **each version's arrival**: one blank node carrying every triple the mapping
   wrote of a node it linked to that version by `bridge:arrivedAs`, and
-  `bridge:arrivedAs` the version's name, `bridge:selector` its record's
-  selector, `prov:wasDerivedFrom` the document and `prov:wasGeneratedBy` the
-  import. A mapping writes there the source's own version metadata: its
-  version id as `pav:version`, and when it was last updated as
-  `pav:lastUpdateOn`.
+  `bridge:arrivedAs` the version's name, `prov:wasDerivedFrom` the document,
+  `prov:wasGeneratedBy` the import and, where the mapping wrote none,
+  `bridge:selector` the `rdf:value` of the source record's selector. A mapping
+  writes there the source's own version metadata: its version id as
+  `pav:version`, a plain string, and when it was last updated as
+  `pav:lastUpdateOn`, an `xsd:dateTime` whose lexical form is the source's text
+  as written. For a record it finds inside the source record, as a FHIR
+  contained resource is, it writes there `bridge:selector` as the `rdf:value`
+  of the selector that record would have as a source record of its own:
+  `/entry/0/resource/contained/0` under `/entry/0`.
 
 [`../fixtures/synthetic-adapter/fixtures/expected/example-0001.ttl`](../fixtures/synthetic-adapter/fixtures/expected/example-0001.ttl)
 is a whole document's graph.

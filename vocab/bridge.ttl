@@ -362,7 +362,7 @@ bridge:sha256 a owl:DatatypeProperty ;
 
 bridge:selector a owl:DatatypeProperty ;
   rdfs:label "selector"@en ;
-  rdfs:comment "Where a record stood in its document: of bridge:thisRecord in the record's dataset, and of the record's arrival."@en ;
+  rdfs:comment "Where a record stood in its document, as the rdf:value of the selector selecting it: of bridge:thisRecord in the record's dataset, and of the arrival of each version of a record."@en ;
   rdfs:range xsd:string ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
