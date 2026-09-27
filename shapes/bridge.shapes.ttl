@@ -662,30 +662,56 @@
   sh:closed true ;
   sh:ignoredProperties ( rdf:type ) ;
   sh:property [
+    sh:path bridge:sourceMediaType ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:pattern "^(application/(xml|json)|text/xml|[a-z]+/[a-z0-9.!#$&^_-]+[+](xml|json))$" ;
+    sh:message "The action of a test of a Bridge names exactly one bridge:sourceMediaType, which selects the lift: application/xml, text/xml or a +xml type for the XML lift, application/json or a +json type for the JSON lift."
+  ] ;
+  sh:property [
     sh:path bridge:input ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:nodeKind sh:IRI ;
-    sh:message "The action of a lift test names exactly one bridge:input, the XML document lifted, by IRI."
+    sh:message "The action of a lift test names exactly one bridge:input, the document lifted, by IRI."
   ] .
 
 <#SkeletonAction> a sh:NodeShape ;
   sh:closed true ;
   sh:ignoredProperties ( rdf:type ) ;
   sh:property [
+    sh:path bridge:sourceMediaType ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:pattern "^(application/(xml|json)|text/xml|[a-z]+/[a-z0-9.!#$&^_-]+[+](xml|json))$" ;
+    sh:message "The action of a test of a Bridge names exactly one bridge:sourceMediaType, which selects the lift: application/xml, text/xml or a +xml type for the XML lift, application/json or a +json type for the JSON lift."
+  ] ;
+  sh:property [
     sh:path bridge:input ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:nodeKind sh:IRI ;
-    sh:message "The action of a skeleton test names exactly one bridge:input, the XML document the skeleton is built from, by IRI."
+    sh:message "The action of a skeleton test names exactly one bridge:input, the document the skeleton is built from, by IRI."
   ] ;
   sh:property [
     sh:path bridge:elementNameOfEachRecord ;
-    sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:datatype xsd:string ;
-    sh:message "The action of a skeleton test names exactly one bridge:elementNameOfEachRecord, the local name of the element emptied."
-  ] .
+    sh:message "The action of a skeleton test names at most one bridge:elementNameOfEachRecord, the local name of the XML element emptied, a string."
+  ] ;
+  sh:property [
+    sh:path bridge:jsonPathOfEachRecord ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "The action of a skeleton test names at most one bridge:jsonPathOfEachRecord, the JSONPath selecting the JSON records emptied, a string."
+  ] ;
+  sh:xone (
+    [ sh:path bridge:elementNameOfEachRecord ; sh:minCount 1 ]
+    [ sh:path bridge:jsonPathOfEachRecord ; sh:minCount 1 ]
+  ) ;
+  sh:message "The action of a skeleton test names exactly one of bridge:elementNameOfEachRecord, the local name of the XML element emptied, and bridge:jsonPathOfEachRecord, the JSONPath selecting the JSON records emptied." .
 
 <#LiftResult> a sh:NodeShape ;
   sh:closed true ;

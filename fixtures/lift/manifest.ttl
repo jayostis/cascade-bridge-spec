@@ -15,64 +15,127 @@
     <#non-ascii>
     <#skeleton>
     <#skeleton-record-root>
+    <#json-scalars>
+    <#json-escapes>
+    <#json-null>
+    <#json-empty>
+    <#json-names>
+    <#json-duplicates>
+    <#json-root-array>
+    <#skeleton-json>
+    <#skeleton-json-record-root>
   ) .
 
 <#attributes> a bridge:LiftTest ;
   mf:name "attributes" ;
   rdfs:comment "Each attribute is a plain string literal on its element's node." ;
-  mf:action [ bridge:input <attributes.xml> ] ;
+  mf:action [ bridge:sourceMediaType "application/xml" ; bridge:input <attributes.xml> ] ;
   mf:result [ bridge:expectedGraph <attributes.nt> ] .
 
 <#mixed-content> a bridge:LiftTest ;
   mf:name "mixed-content" ;
   rdfs:comment "Text and element children share one numbering, in document order, and text keeps its spaces." ;
-  mf:action [ bridge:input <mixed-content.xml> ] ;
+  mf:action [ bridge:sourceMediaType "application/xml" ; bridge:input <mixed-content.xml> ] ;
   mf:result [ bridge:expectedGraph <mixed-content.nt> ] .
 
 <#whitespace> a bridge:LiftTest ;
   mf:name "whitespace" ;
   rdfs:comment "Whitespace-only text is dropped and takes no number; text with any other character is kept verbatim, spaces included." ;
-  mf:action [ bridge:input <whitespace.xml> ] ;
+  mf:action [ bridge:sourceMediaType "application/xml" ; bridge:input <whitespace.xml> ] ;
   mf:result [ bridge:expectedGraph <whitespace.nt> ] .
 
 <#cdata> a bridge:LiftTest ;
   mf:name "cdata" ;
   rdfs:comment "Character data and a CDATA section beside it are one text child." ;
-  mf:action [ bridge:input <cdata.xml> ] ;
+  mf:action [ bridge:sourceMediaType "application/xml" ; bridge:input <cdata.xml> ] ;
   mf:result [ bridge:expectedGraph <cdata.nt> ] .
 
 <#dropped> a bridge:LiftTest ;
   mf:name "dropped" ;
   rdfs:comment "The XML declaration, the document type declaration, comments and processing instructions are dropped, and text on either side of a dropped comment is one text child." ;
-  mf:action [ bridge:input <dropped.xml> ] ;
+  mf:action [ bridge:sourceMediaType "application/xml" ; bridge:input <dropped.xml> ] ;
   mf:result [ bridge:expectedGraph <dropped.nt> ] .
 
 <#namespaces> a bridge:LiftTest ;
   mf:name "namespaces" ;
   rdfs:comment "A namespaced element or attribute is named by its namespace IRI and local name; an unnamespaced one under the Facade-X data namespace. The namespace declaration is not an attribute." ;
-  mf:action [ bridge:input <namespaces.xml> ] ;
+  mf:action [ bridge:sourceMediaType "application/xml" ; bridge:input <namespaces.xml> ] ;
   mf:result [ bridge:expectedGraph <namespaces.nt> ] .
 
 <#no-break-space> a bridge:LiftTest ;
   mf:name "no-break-space" ;
   rdfs:comment "Whitespace is XML's S production, space, tab, CR and LF. A no-break space is not whitespace: alone it is a text child, beside spaces the text is kept verbatim, and a text of only a line feed is dropped." ;
-  mf:action [ bridge:input <no-break-space.xml> ] ;
+  mf:action [ bridge:sourceMediaType "application/xml" ; bridge:input <no-break-space.xml> ] ;
   mf:result [ bridge:expectedGraph <no-break-space.nt> ] .
 
 <#non-ascii> a bridge:LiftTest ;
   mf:name "non-ascii" ;
   rdfs:comment "A name an IRI can carry is carried as its own characters, whatever plane it is from; the last element's name ends in U+FFF9, which is an XML name character and not an iunreserved one, so it is percent-encoded as its UTF-8 octets. eE5ND8 is here because encoding UTF-16 code units rather than UTF-8 octets writes the date attribute's name as that." ;
-  mf:action [ bridge:input <non-ascii.xml> ] ;
+  mf:action [ bridge:sourceMediaType "application/xml" ; bridge:input <non-ascii.xml> ] ;
   mf:result [ bridge:expectedGraph <non-ascii.nt> ] .
 
 <#skeleton> a bridge:SkeletonTest ;
   mf:name "skeleton" ;
   rdfs:comment "A record keeps its type triples and its number among its parent's children, and loses its attributes and its children. A sibling that is not a record is lifted whole, and the numbering counts the emptied records." ;
-  mf:action [ bridge:input <skeleton.xml> ; bridge:elementNameOfEachRecord "Unit" ] ;
+  mf:action [ bridge:sourceMediaType "application/xml" ; bridge:input <skeleton.xml> ; bridge:elementNameOfEachRecord "Unit" ] ;
   mf:result [ bridge:expectedGraph <skeleton.nt> ] .
 
 <#skeleton-record-root> a bridge:SkeletonTest ;
   mf:name "skeleton-record-root" ;
   rdfs:comment "A record that is the document element is emptied like any other, so the skeleton is its type triples alone: the lift root type and its own. A Bridge that special-cases the root instead routes on a document it has lifted entirely." ;
-  mf:action [ bridge:input <skeleton-record-root.xml> ; bridge:elementNameOfEachRecord "Unit" ] ;
+  mf:action [ bridge:sourceMediaType "application/xml" ; bridge:input <skeleton-record-root.xml> ; bridge:elementNameOfEachRecord "Unit" ] ;
   mf:result [ bridge:expectedGraph <skeleton-record-root.nt> ] .
+
+<#json-scalars> a bridge:LiftTest ;
+  mf:name "json-scalars" ;
+  rdfs:comment "A number, true and false are plain string literals as the document writes them: trailing zeros, the exponent's case and sign, a negative zero and digits beyond any machine number survive. A string is its characters, spaces and the empty string included." ;
+  mf:action [ bridge:sourceMediaType "application/json" ; bridge:input <json-scalars.json> ] ;
+  mf:result [ bridge:expectedGraph <json-scalars.nt> ] .
+
+<#json-escapes> a bridge:LiftTest ;
+  mf:name "json-escapes" ;
+  rdfs:comment "A string's escapes are decoded, a surrogate pair to the one character it encodes, and characters written unescaped in UTF-8 are carried as they are." ;
+  mf:action [ bridge:sourceMediaType "application/json" ; bridge:input <json-escapes.json> ] ;
+  mf:result [ bridge:expectedGraph <json-escapes.nt> ] .
+
+<#json-null> a bridge:LiftTest ;
+  mf:name "json-null" ;
+  rdfs:comment "null is lifted as nothing, as a member's value or an array's item, and an item that is null keeps its number. An array holding only null is a node with no triples from it; arrays nest." ;
+  mf:action [ bridge:sourceMediaType "application/json" ; bridge:input <json-null.json> ] ;
+  mf:result [ bridge:expectedGraph <json-null.nt> ] .
+
+<#json-empty> a bridge:LiftTest ;
+  mf:name "json-empty" ;
+  rdfs:comment "An empty object and an empty array are each a node with no triples from it, as a member's value or an array's item." ;
+  mf:action [ bridge:sourceMediaType "application/json" ; bridge:input <json-empty.json> ] ;
+  mf:result [ bridge:expectedGraph <json-empty.nt> ] .
+
+<#json-names> a bridge:LiftTest ;
+  mf:name "json-names" ;
+  rdfs:comment "A member's name is appended as its own characters where RFC 3987 calls them iunreserved, any plane's letters among them, and percent-encoded as its UTF-8 octets otherwise: a space, a solidus, a percent sign, a question mark, a number sign, U+0080, a private-use character and U+FFF9. The empty name is the data namespace itself. The media type is chosen by its +json suffix." ;
+  mf:action [ bridge:sourceMediaType "application/example+json" ; bridge:input <json-names.json> ] ;
+  mf:result [ bridge:expectedGraph <json-names.nt> ] .
+
+<#json-duplicates> a bridge:LiftTest ;
+  mf:name "json-duplicates" ;
+  rdfs:comment "A name an object repeats is lifted once for each member carrying it: two strings are two triples, two objects two nodes, and the same string twice one triple, since a graph is a set." ;
+  mf:action [ bridge:sourceMediaType "application/json" ; bridge:input <json-duplicates.json> ] ;
+  mf:result [ bridge:expectedGraph <json-duplicates.nt> ] .
+
+<#json-root-array> a bridge:LiftTest ;
+  mf:name "json-root-array" ;
+  rdfs:comment "A document whose value is an array is lifted with that array as the lift root." ;
+  mf:action [ bridge:sourceMediaType "application/json" ; bridge:input <json-root-array.json> ] ;
+  mf:result [ bridge:expectedGraph <json-root-array.nt> ] .
+
+<#skeleton-json> a bridge:SkeletonTest ;
+  mf:name "skeleton-json" ;
+  rdfs:comment "A record keeps its place among its parent's items and its members whose value is a string, a number, true or false, and loses those whose value is an object or an array, empty or not. An item the path selects that is not an object is no record and is lifted as it is; what is not a record is lifted whole." ;
+  mf:action [ bridge:sourceMediaType "application/json" ; bridge:input <skeleton-json.json> ; bridge:jsonPathOfEachRecord "$.entry[*]" ] ;
+  mf:result [ bridge:expectedGraph <skeleton-json.nt> ] .
+
+<#skeleton-json-record-root> a bridge:SkeletonTest ;
+  mf:name "skeleton-json-record-root" ;
+  rdfs:comment "A record that is the document's value is lifted in the same way: the skeleton is the lift root's type and its members whose value is a string, a number, true or false." ;
+  mf:action [ bridge:sourceMediaType "application/json" ; bridge:input <skeleton-json-record-root.json> ; bridge:jsonPathOfEachRecord "$" ] ;
+  mf:result [ bridge:expectedGraph <skeleton-json-record-root.nt> ] .

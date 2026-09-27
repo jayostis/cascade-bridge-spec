@@ -62,7 +62,6 @@ bridge:vocabularyFile a owl:DatatypeProperty ;
 
 bridge:sourceMediaType a owl:DatatypeProperty ;
   rdfs:label "source media type"@en ;
-  rdfs:domain bridge:Adapter ;
   rdfs:range xsd:string ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
@@ -80,6 +79,12 @@ bridge:envelope a owl:ObjectProperty ;
 bridge:elementNameOfEachRecord a owl:DatatypeProperty ;
   rdfs:label "element name of each record"@en ;
   rdfs:comment "A Bridge hands each record to the mapping on its own, and preserves its raw bytes."@en ;
+  rdfs:range xsd:string ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:jsonPathOfEachRecord a owl:DatatypeProperty ;
+  rdfs:label "JSON path of each record"@en ;
+  rdfs:comment "The RFC 9535 JSONPath selecting the records of a JSON document read in the envelope. A Bridge hands each record to the mapping on its own."@en ;
   rdfs:range xsd:string ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
@@ -309,13 +314,13 @@ bridge:DatasetCompletionTest a owl:Class ;
 bridge:LiftTest a owl:Class ;
   rdfs:subClassOf mf:ManifestEntry ;
   rdfs:label "Lift test"@en ;
-  rdfs:comment "A test of a Bridge offering bridge:sparql-1.1: lift bridge:input with its document element as the lift root. The produced graph must be isomorphic to bridge:expectedGraph, blank nodes relabelled and IRIs and literals exact. No mapping runs, and nothing is removed from either side."@en ;
+  rdfs:comment "A test of a Bridge offering bridge:sparql-1.1: lift bridge:input by the lift the action's bridge:sourceMediaType selects, with its document element, or its JSON value, as the lift root. The produced graph must be isomorphic to bridge:expectedGraph, blank nodes relabelled and IRIs and literals exact. No mapping runs, and nothing is removed from either side."@en ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
 bridge:SkeletonTest a owl:Class ;
   rdfs:subClassOf mf:ManifestEntry ;
   rdfs:label "Envelope skeleton test"@en ;
-  rdfs:comment "A test of a Bridge offering bridge:sparql-1.1: build the envelope skeleton of bridge:input, with the action's bridge:elementNameOfEachRecord as the record element's local name. The produced graph must be isomorphic to bridge:expectedGraph, blank nodes relabelled and IRIs and literals exact. Nothing is removed from either side."@en ;
+  rdfs:comment "A test of a Bridge offering bridge:sparql-1.1: build the envelope skeleton of bridge:input by the lift the action's bridge:sourceMediaType selects, its records named by the action's bridge:elementNameOfEachRecord or bridge:jsonPathOfEachRecord. The produced graph must be isomorphic to bridge:expectedGraph, blank nodes relabelled and IRIs and literals exact. Nothing is removed from either side."@en ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
 bridge:adapter a owl:ObjectProperty ;

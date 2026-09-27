@@ -1,18 +1,25 @@
 # The `sparql-1.1` profile
 
-What a Bridge offering `bridge:sparql-1.1` does: lift XML to RDF, and run an
-adapter's SPARQL 1.1 queries over the lift. A Bridge must reproduce the vectors
-in [`../fixtures/lift/`](../fixtures/lift/).
+What a Bridge offering `bridge:sparql-1.1` does: lift XML or JSON to RDF, and
+run an adapter's SPARQL 1.1 queries over the lift. A Bridge must reproduce the
+vectors in [`../fixtures/lift/`](../fixtures/lift/).
 
 ## The lift
 
-The lift turns one element, the lift root, and everything under it into
-triples in the shape of SPARQL Anything's Facade-X. Every node is a blank node.
+The lift turns one node of a document, the lift root, and everything under it
+into triples in the shape of SPARQL Anything's Facade-X. Every node is a blank
+node, and the lift root is also typed `http://sparql.xyz/facade-x/ns/root`.
+
+The adapter's `bridge:sourceMediaType` says which lift applies: the XML lift to
+`application/xml`, `text/xml` and a media type with the `+xml` suffix, the JSON
+lift to `application/json` and a media type with the `+json` suffix
+([RFC 6839](https://www.rfc-editor.org/rfc/rfc6839)).
+
+### XML
 
 - **An element** is a node typed with an IRI naming it: its namespace IRI
   followed by its local name, or `http://sparql.xyz/facade-x/data/` followed by
-  its local name when it has no namespace. The lift root is also typed
-  `http://sparql.xyz/facade-x/ns/root`.
+  its local name when it has no namespace.
 - **An attribute** is a triple from its element's node, whose predicate names
   the attribute the way an element's type names the element, and whose object
   is the attribute's value as a plain string literal. A namespace declaration
@@ -25,17 +32,48 @@ triples in the shape of SPARQL Anything's Facade-X. Every node is a blank node.
   dropped takes no number. Whitespace is XML's `S` production, and no other
   character.
 
-A name is appended to the namespace IRI as its own characters, each one outside
+### JSON
+
+The JSON lift reads a JSON text ([RFC 8259](https://www.rfc-editor.org/rfc/rfc8259))
+in UTF-8 whose value is an object or an array, and lifts nothing from any other
+document, one beginning with a byte order mark or escaping a lone surrogate
+among them.
+
+- **An object or an array** is a node, and is typed only where it is the lift
+  root.
+- **A member** is a triple from its object's node, whose predicate is
+  `http://sparql.xyz/facade-x/data/` followed by the member's name, and whose
+  object is the member's value. A name an object repeats is lifted once for
+  each member carrying it.
+- **An array's items**, in order, are the objects of `rdf:_1`, `rdf:_2`, …
+  from its node.
+- **A string, a number, `true` and `false`** are each a plain string literal:
+  a string's characters with its escapes decoded, and a number, `true` and
+  `false` as the document writes them.
+- **`null`** is lifted as nothing, and takes its number among an array's items.
+- **An empty object or array** is a node with no triples from it.
+
+A name, an element's, an attribute's or a member's, is appended to its IRI as
+its own characters, each one outside
 [RFC 3987's `iunreserved`](https://www.rfc-editor.org/rfc/rfc3987#section-2.2)
 percent-encoded as its UTF-8 octets.
 
 ## What is lifted
 
 **A mapping and a findings query** run over one source record at a time, lifted
-with the record's element as the lift root: nothing outside the record is lifted.
-A record is an element whose local name is the adapter's
+with the record as the lift root: nothing outside the record is lifted.
+
+A record of an XML document is an element whose local name is the adapter's
 `bridge:elementNameOfEachRecord`, in any namespace or none; a record inside
 another is not specified.
+
+A record of a JSON document is an object the `bridge:jsonPathOfEachRecord` of
+the envelope it is read in selects, in document order; a value it selects that is
+not an object is no record. That path is a query of
+[RFC 9535 JSONPath](https://www.rfc-editor.org/rfc/rfc9535) made only of `$`
+followed by any sequence of child segments, each a name selector, written
+`.name` or `['name']`, or the wildcard `[*]`: `$` is the document's value
+itself, and `$.entry[*]` each item of its `entry` member.
 
 **The detect query** runs over the document's *envelope skeleton*: the lift of
 the whole document, with the document element as the lift root, except that
@@ -43,6 +81,23 @@ every record is lifted as an empty container — its type triples and its place
 among its parent's children, without its attributes or its children. A record
 that is the document element is lifted as an empty container too: the skeleton
 is then its type triples alone.
+
+The envelope skeleton of a JSON document is the lift of the whole document,
+except that every record is lifted with its place among its parent's members or
+items and its members whose value is a string, a number, `true` or `false`, and
+without its members whose value is an object or an array. A record that is the
+document's value is lifted in the same way.
+
+## Envelopes
+
+A document is read in one of the adapter's envelopes: under `test`, the one its
+entry names; under `convert`, as [`command.md`](command.md) says.
+
+An envelope *admits* an XML document whose document element's local name is its
+`bridge:docRootElementName`, and a JSON document whose value is an object with a
+member named its `bridge:docRootMemberName`, whose value, where the envelope
+names a `bridge:docRootMemberValue`, is a string, number, `true` or `false` the
+lift writes as that value.
 
 ## Running an adapter
 
