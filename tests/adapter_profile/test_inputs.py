@@ -215,3 +215,11 @@ def test_validates_an_input_named_only_by_a_conversion_of_an_identity_relation_t
 def test_reports_an_input_named_only_by_a_conversion_that_is_not_a_file_in_the_package(package):
     (package.path / "fixtures/in/example-0007.xml").unlink()
     assert "bridge:input names" in "\n".join(inputs.invalid(package.crate))
+
+
+def test_reports_an_xsd_named_with_a_fragment(crate):
+    schema = crate.graph.value(crate.root, BRIDGE.sourceSchema)
+    crate.graph.set((crate.root, BRIDGE.sourceSchema, URIRef(f"{schema}#ExampleRecord")))
+    assert "example-record.xsd#ExampleRecord names an XSD, whose IRI carries no fragment" in "\n".join(
+        inputs.invalid(crate)
+    )

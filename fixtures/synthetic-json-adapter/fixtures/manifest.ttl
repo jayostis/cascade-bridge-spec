@@ -13,6 +13,7 @@
     <#json-0005>
     <#json-0006>
     <#json-0007>
+    <#json-0008>
     <#json-0002-and-json-0006-name-one-record>
     <#json-0006-holds-two-records>
     <#json-0007-names-two-records>
@@ -107,6 +108,19 @@
   mf:result [
     bridge:expectedGraph <expected/json-0007.ttl> ;
     bridge:expectedFindings <findings/json-0007.ttl>
+  ] .
+
+<#json-0008> a bridge:IsomorphicConversionTest ;
+  mf:name "json-0008" ;
+  rdfs:comment "A document read in an envelope naming its own bridge:sourceSchema: each record is validated against the subschema the fragment of that schema's IRI names, whose $ref resolves in the whole schema document, not against the adapter's." ;
+  mf:action [
+    bridge:input <in/json-0008.json> ;
+    bridge:envelope <../ro-crate-metadata.json#envelope-listing> ;
+    bridge:facts <facts/example-registry.ttl>
+  ] ;
+  mf:result [
+    bridge:expectedGraph <expected/json-0008.ttl> ;
+    bridge:expectedFindings <findings/json-0008.ttl>
   ] .
 
 <#json-0002-and-json-0006-name-one-record> a bridge:IdentityRelationTest ;

@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from rdflib import RDFS, Graph, URIRef
+
 STAGES = " ".join((Path(__file__).resolve().parents[2] / "engine" / "stages.md").read_text(encoding="utf-8").split())
 
 
@@ -72,4 +74,22 @@ def test_a_json_schemas_ref_fetches_nothing():
         "A JSON Schema's `$ref` resolves as its draft says**, against the schema's `$id` or, where it declares "
         "none, its own IRI, and only within the schema or to files in the adapter package. Nothing is fetched."
         in STAGES
+    )
+
+
+def test_a_json_schemas_iri_may_name_a_subschema_by_a_json_pointer_and_an_xsds_names_none():
+    assert (
+        "**A JSON Schema's IRI may carry a fragment**, a JSON Pointer "
+        "([RFC 6901](https://www.rfc-editor.org/rfc/rfc6901), fragment form): records are validated against the "
+        "subschema it names, its `$ref`s resolved against the whole schema document. An XSD's IRI carries none."
+        in STAGES
+    )
+
+
+def test_an_envelopes_source_schema_overrides_the_adapters_for_the_records_read_in_it():
+    vocabulary = Graph().parse(Path(__file__).resolve().parents[2] / "vocab" / "bridge.ttl", format="turtle")
+    source_schema = URIRef("https://ns.cascadeprotocol.org/bridge/v1-draft#sourceSchema")
+    assert vocabulary.value(source_schema, RDFS.domain) is None
+    assert "the adapter's or, for the records read in an envelope naming one, the envelope's" in str(
+        vocabulary.value(source_schema, RDFS.comment)
     )

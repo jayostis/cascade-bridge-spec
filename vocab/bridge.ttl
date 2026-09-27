@@ -70,8 +70,7 @@ bridge:sourceMediaType a owl:DatatypeProperty ;
 
 bridge:sourceSchema a owl:ObjectProperty ;
   rdfs:label "source schema"@en ;
-  rdfs:comment "The schema a Bridge validates every record against: XSD 1.0 for an XML source, JSON Schema for a JSON one."@en ;
-  rdfs:domain bridge:Adapter ;
+  rdfs:comment "The schema a Bridge validates every record against, the adapter's or, for the records read in an envelope naming one, the envelope's: XSD 1.0 for an XML source, JSON Schema for a JSON one."@en ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
 bridge:envelope a owl:ObjectProperty ;

@@ -27,6 +27,10 @@ adapter contributes data to them through these terms.
   or of XLink (`http://www.w3.org/1999/xlink`) whose `schemaLocation` is absent
   or names no file in the package, W3C's own address included, resolves to the
   Bridge's own copy of that W3C schema. Nothing is fetched.
+- **A JSON Schema's IRI may carry a fragment**, a JSON Pointer
+  ([RFC 6901](https://www.rfc-editor.org/rfc/rfc6901), fragment form): records
+  are validated against the subschema it names, its `$ref`s resolved against
+  the whole schema document. An XSD's IRI carries none.
 - **A JSON Schema's `$ref` resolves as its draft says**, against the schema's
   `$id` or, where it declares none, its own IRI, and only within the schema or
   to files in the adapter package. Nothing is fetched.

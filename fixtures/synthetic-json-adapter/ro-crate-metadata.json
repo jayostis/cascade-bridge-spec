@@ -81,6 +81,9 @@
         },
         {
           "@id": "#envelope-record"
+        },
+        {
+          "@id": "#envelope-listing"
         }
       ],
       "bridge:mapping": [
@@ -134,6 +137,9 @@
         },
         {
           "@id": "schema/example-set.schema.json"
+        },
+        {
+          "@id": "schema/example-listing.schema.json"
         },
         {
           "@id": "vocab/example-gaps.ttl"
@@ -220,6 +226,15 @@
           "@id": "fixtures/findings/json-0007.ttl"
         },
         {
+          "@id": "fixtures/in/json-0008.json"
+        },
+        {
+          "@id": "fixtures/expected/json-0008.ttl"
+        },
+        {
+          "@id": "fixtures/findings/json-0008.ttl"
+        },
+        {
           "@id": "https://example.org/synthetic-adapter/vocabulary/commit/0000000000000000000000000000000000000000"
         }
       ]
@@ -241,6 +256,17 @@
       "name": "record",
       "bridge:docRootMemberName": "kind",
       "bridge:jsonPathOfEachRecord": "$"
+    },
+    {
+      "@id": "#envelope-listing",
+      "@type": "bridge:Envelope",
+      "name": "listing",
+      "bridge:docRootMemberName": "kind",
+      "bridge:docRootMemberValue": "listing",
+      "bridge:jsonPathOfEachRecord": "$.records[*]",
+      "bridge:sourceSchema": {
+        "@id": "schema/example-listing.schema.json#/definitions/record"
+      }
     },
     {
       "@id": "https://ns.cascadeprotocol.org/bridge/v1-draft/adapter-profile/",
@@ -300,8 +326,8 @@
       "@type": "File",
       "name": "Detect query",
       "encodingFormat": "application/sparql-query",
-      "contentSize": "308",
-      "sha256": "978dd8ab60ae55fd47aa544b765b7503571a1d47485046115e4723028a611b82",
+      "contentSize": "349",
+      "sha256": "3edcccf9808025fc3d3a8fdd90c01437e1e3435685117936fb18e37c4d4fe563",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       }
@@ -324,6 +350,17 @@
       "encodingFormat": "application/schema+json",
       "contentSize": "233",
       "sha256": "f5a68778a64104ec8e946de4072ea12f754708f3d1d9f055b97e9238ee7bd1e3",
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      }
+    },
+    {
+      "@id": "schema/example-listing.schema.json",
+      "@type": "File",
+      "name": "Example listing JSON Schema, draft-06, whose record subschema the listing envelope names",
+      "encodingFormat": "application/schema+json",
+      "contentSize": "586",
+      "sha256": "042e2b7959fd6d0a88d8e34b8e919ec9b9913070cc7b50f8cf003eb4b58539a6",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       }
@@ -369,8 +406,8 @@
       "@type": "File",
       "name": "Test manifest",
       "encodingFormat": "text/turtle",
-      "contentSize": "7019",
-      "sha256": "dabe030037236ec50d2533610281642526bfc15da87836009189c19740b586a5",
+      "contentSize": "7658",
+      "sha256": "7b483b42c9f955ea61b9e9afcb7a05c2b7c29e688c1d7cadb7cd21665ac588d5",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       }
@@ -676,6 +713,45 @@
       "sha256": "f57a6d5ea5baf083526b7c88fc03848b0ae06fbde24aef51412b4657ad7211a4",
       "isBasedOn": {
         "@id": "fixtures/in/json-0007.json"
+      },
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      }
+    },
+    {
+      "@id": "fixtures/in/json-0008.json",
+      "@type": "File",
+      "name": "Synthetic JSON input, listing envelope",
+      "encodingFormat": "application/example+json",
+      "contentSize": "183",
+      "sha256": "d947054520e78fbce7f03e77d28054668e0d56666eca2538efa09bad7885359e",
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      }
+    },
+    {
+      "@id": "fixtures/expected/json-0008.ttl",
+      "@type": "File",
+      "name": "Expected graph for json-0008",
+      "encodingFormat": "text/turtle",
+      "contentSize": "2373",
+      "sha256": "2c6c15cb7154c6f33337182806f24c8f841413e82167b3f6e56e948ca9d8ef7f",
+      "isBasedOn": {
+        "@id": "fixtures/in/json-0008.json"
+      },
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      }
+    },
+    {
+      "@id": "fixtures/findings/json-0008.ttl",
+      "@type": "File",
+      "name": "Expected findings for json-0008",
+      "encodingFormat": "text/turtle",
+      "contentSize": "1172",
+      "sha256": "313fea63beb0c01e0d2fbc4a8492275fcd8da21d1819e0e247135256a4db5256",
+      "isBasedOn": {
+        "@id": "fixtures/in/json-0008.json"
       },
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"

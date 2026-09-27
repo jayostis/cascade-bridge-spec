@@ -1,0 +1,31 @@
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+@prefix oa:      <http://www.w3.org/ns/oa#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+
+[] a oa:Annotation ;
+  oa:hasTarget [
+    oa:hasSource <../in/json-0008.json> ;
+    oa:hasSelector [
+      a oa:FragmentSelector ;
+      dcterms:conformsTo <https://www.rfc-editor.org/rfc/rfc6901> ;
+      rdf:value "/records/1"
+    ]
+  ] ;
+  oa:hasBody <https://datatracker.ietf.org/doc/html/draft-wright-json-schema-validation-01#section-6.17> ;
+  oa:motivatedBy oa:classifying ;
+  sh:resultSeverity sh:Violation .
+
+[] a oa:Annotation ;
+  oa:hasTarget [
+    oa:hasSource <../in/json-0008.json> ;
+    oa:hasSelector [
+      a oa:FragmentSelector ;
+      dcterms:conformsTo <https://www.rfc-editor.org/rfc/rfc6901> ;
+      rdf:value "/records/1" ;
+      oa:refinedBy [ a oa:FragmentSelector ; dcterms:conformsTo <https://www.rfc-editor.org/rfc/rfc6901> ; rdf:value "/version" ]
+    ]
+  ] ;
+  oa:hasBody <https://datatracker.ietf.org/doc/html/draft-wright-json-schema-validation-01#section-6.4> ;
+  oa:motivatedBy oa:classifying ;
+  sh:resultSeverity sh:Violation .
