@@ -6,6 +6,8 @@ An engine (a Cascade Bridge) runs adapters.
 |---|---|
 | the lift your output must reproduce, input by input | [`../fixtures/lift/`](../fixtures/lift/): each `.xml` and the `.nt` it must lift to, listed in `manifest.ttl` |
 | the rules the lift follows | [`sparql.md`](sparql.md) |
+| the names your mappings mint, inputs to name, and the SPARQL computing one | [`../fixtures/naming/`](../fixtures/naming/): `manifest.ttl` and `name.rq` |
+| the versions you name, mapped graph to named graph through each version's canonical N-Quads | [`../fixtures/versioning/`](../fixtures/versioning/): each `.mapped.nt`, its `.nq` and its `.versioned.nt`, listed in `manifest.ttl` |
 | how each test type is judged | the test types' `rdfs:comment` in [`../vocab/bridge.ttl`](../vocab/bridge.ttl) |
 | an adapter to run | [`../fixtures/synthetic-adapter/`](../fixtures/synthetic-adapter/) |
 | the checkout its `bridge:cascadeVocabularyPin` names, to pass as `--vocabularies` | [`../fixtures/synthetic-vocabularies/`](../fixtures/synthetic-vocabularies/) |
