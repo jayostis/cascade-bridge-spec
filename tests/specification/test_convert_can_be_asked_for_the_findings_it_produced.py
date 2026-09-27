@@ -6,7 +6,7 @@ CONVERT = " ".join(CONTRACT.split("## `convert`", 1)[1].split())
 
 def test_convert_takes_a_findings_file():
     assert (
-        "convert <adapter directory> <document> [--out <file>] [--findings <file>] [--format turtle|ntriples] "
+        "convert <adapter directory> <document> [--envelope <iri>] [--out <file>] [--findings <file>] [--format turtle|ntriples] "
         "[--vocabularies <directory>]" in CONVERT
     )
 
