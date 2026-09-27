@@ -160,7 +160,9 @@ verdict is, and an entry naming a `bridge:namesGap` as well reports from both.
 
 A path's value is the value of an attribute, and the text of an element that has
 no element child. An element with an element child has no value, and a lookup at
-its path reports nothing.
+its path reports nothing. In a JSON record, a path's value is what the lift
+writes for a string, a number, `true` or `false`, and an object or an array has
+none.
 
 A value's key is the value under SPARQL's `LCASE`, stripped of leading and
 trailing XML whitespace, and a `skos:notation` is written in that form. Values are
@@ -182,12 +184,20 @@ namespace by that name, and one in a namespace by `*[local-name()='…' and
 namespace-uri()='…']`, an attribute's after its `@`. The record element itself
 is no path. A path is the same under every envelope the adapter declares.
 
+In a JSON record, a path is the names of the members from the record down to the
+node, each written as a JSON Pointer reference token after a `/`, `~` as `~0`
+and `/` as `~1`. An array is no node of a path: its items stand at its path, so
+no step carries a position. `null` stands at no path, and the record itself is
+no path. The nodes of a JSON record are in document order, an object before
+what it holds.
+
 A census finding is addressed at the path's first occurrence in the record and
 carries `bridge:pathNotAccounted` as its body, the path as its `sh:value`, and
 `sh:Info` as its `sh:resultSeverity`. It is refined under the record's selector
 as any other finding is, onto the element at that occurrence or, for an
 attribute, onto the element the attribute stands on. An attribute of the record
-element is refined no further.
+element is refined no further. In a JSON record, it is refined onto the node at
+that occurrence.
 
 A finding addressed at a path carries `bridge:occurrences`, how many nodes of the
 record stand at that path, an `xsd:integer` of 2 or more, omitted where it is 1.
@@ -211,6 +221,15 @@ belongs to which finding is unrecoverable.
 
 A record's selector is an XPath selecting the record, and a refinement is an
 XPath relative to the record, selecting one node of it.
+
+In a JSON document, a record's selector is an `oa:FragmentSelector` whose
+`dcterms:conformsTo` is `<https://www.rfc-editor.org/rfc/rfc6901>` and whose
+`rdf:value` is a [JSON Pointer](https://www.rfc-editor.org/rfc/rfc6901), in its
+URI fragment identifier representation without the `#`, selecting the record
+from the document's value; a refinement is one of the same form, relative to
+the record. A pointer through a name its object repeats selects more than one
+node. Where a finding selects the document element, in a JSON document it
+selects the document's value, by the empty pointer.
 
 An address a Bridge writes that selects no node, or more than one, carries
 `bridge:addressNotOneNode` as its body, the address as written as its
@@ -237,3 +256,15 @@ names carries `bridge:schemaRuleUnnamed`. Which Part defines a rule is not a
 choice: the adapter profile refuses a body naming the other, and lists every
 anchor a body may take. Each rule a node breaks is a finding of its own,
 refined to that node.
+
+A finding about a JSON document breaking its JSON Schema carries as its body the
+anchor of the section defining the keyword it fails, in the validation
+specification of the draft the schema's `$schema` names: under draft-06,
+`required` is
+`https://datatracker.ietf.org/doc/html/draft-wright-json-schema-validation-01#section-6.17`.
+Draft-06 is the only draft specified, and `format` is not asserted. A keyword
+that fails only because a keyword of a subschema it applies fails, as `allOf`,
+`$ref`, `properties` or `items` do, is not the finding: that keyword is, at the
+node it fails at. `anyOf`, `oneOf`, `not` and `contains` fail as themselves.
+Each failure is a finding of its own, refined to the node it fails at, and no
+further where that node is the record or the document's value.

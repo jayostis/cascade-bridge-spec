@@ -1,0 +1,30 @@
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX fx:   <http://sparql.xyz/facade-x/ns/>
+PREFIX xyz:  <http://sparql.xyz/facade-x/data/>
+PREFIX ex:   <https://example.org/synthetic-adapter/v1#>
+
+CONSTRUCT {
+  ?record a ex:Record ;
+    ex:accession ?accession ;
+    ex:version ?version ;
+    rdfs:label ?label .
+}
+WHERE {
+  ?exampleRecord a fx:root ;
+    xyz:accession ?accession ;
+    xyz:version ?number .
+  BIND(IRI(CONCAT("https://example.org/synthetic-adapter/record/",
+                  ?accession)) AS ?record)
+  BIND(STRDT(?number, xsd:integer) AS ?version)
+  OPTIONAL { ?exampleRecord xyz:label ?label }
+  FILTER NOT EXISTS {
+    ?exampleRecord xyz:status ?statuses .
+    ?statuses ?slot ?status .
+    ?statusConcept skos:inScheme ex:statuses ;
+      skos:notation ?statusKey ;
+      skos:exactMatch ex:Withdrawn .
+    FILTER (?statusKey = LCASE(REPLACE(?status, "^[ \t\r\n]+|[ \t\r\n]+$", "")))
+  }
+}

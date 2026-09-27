@@ -7,6 +7,7 @@
 @prefix mf:     <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .
 @prefix oa:     <http://www.w3.org/ns/oa#> .
 @prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+@prefix dct:    <http://purl.org/dc/terms/> .
 
 <> a owl:Ontology ;
   sh:declare [ sh:prefix "rdf" ;    sh:namespace "http://www.w3.org/1999/02/22-rdf-syntax-ns#"^^xsd:anyURI ] ;
@@ -398,14 +399,31 @@
   ] .
 
 <#RecordSelector> a sh:NodeShape ;
-  sh:class oa:XPathSelector ;
-  sh:message "A record's selector is an oa:XPathSelector." ;
+  sh:or (
+    [ sh:class oa:XPathSelector ]
+    [ sh:class oa:FragmentSelector ; sh:property [ sh:path dct:conformsTo ; sh:hasValue <https://www.rfc-editor.org/rfc/rfc6901> ] ]
+  ) ;
+  sh:message "A record's selector is an oa:XPathSelector, or an oa:FragmentSelector whose dcterms:conformsTo is JSON Pointer, <https://www.rfc-editor.org/rfc/rfc6901>." ;
+  sh:sparql [
+    sh:prefixes <> ;
+    sh:message "A selector refining a record's selector is of its kind: an oa:XPathSelector refines an oa:XPathSelector, and an oa:FragmentSelector an oa:FragmentSelector." ;
+    sh:select """
+      SELECT $this ?value WHERE {
+        $this oa:refinedBy ?value .
+        FILTER NOT EXISTS {
+          $this a ?kind .
+          ?value a ?kind .
+          FILTER (?kind IN (oa:XPathSelector, oa:FragmentSelector))
+        }
+      }
+    """
+  ] ;
   sh:property [
     sh:path rdf:value ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:datatype xsd:string ;
-    sh:message "A selector carries exactly one rdf:value, its XPath, a string."
+    sh:message "A selector carries exactly one rdf:value, its XPath or its JSON Pointer, a string."
   ] ;
   sh:property [
     sh:path oa:refinedBy ;
@@ -415,14 +433,17 @@
   ] .
 
 <#RefinedSelector> a sh:NodeShape ;
-  sh:class oa:XPathSelector ;
-  sh:message "A selector refining a record's selector is an oa:XPathSelector." ;
+  sh:or (
+    [ sh:class oa:XPathSelector ]
+    [ sh:class oa:FragmentSelector ; sh:property [ sh:path dct:conformsTo ; sh:hasValue <https://www.rfc-editor.org/rfc/rfc6901> ] ]
+  ) ;
+  sh:message "A selector refining a record's selector is an oa:XPathSelector, or an oa:FragmentSelector whose dcterms:conformsTo is JSON Pointer, <https://www.rfc-editor.org/rfc/rfc6901>." ;
   sh:property [
     sh:path rdf:value ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:datatype xsd:string ;
-    sh:message "A selector carries exactly one rdf:value, its XPath, a string."
+    sh:message "A selector carries exactly one rdf:value, its XPath or its JSON Pointer, a string."
   ] ;
   sh:property [
     sh:path oa:refinedBy ;

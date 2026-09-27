@@ -101,6 +101,11 @@
     sh:message "The adapter carries exactly one bridge:sourceMediaType, an IANA media type."
   ] ;
   sh:property [
+    sh:path bridge:sourceMediaType ;
+    sh:pattern "^(application/(xml|json)|text/xml|[a-z]+/[a-z0-9.!#$&^_-]+[+](xml|json))$" ;
+    sh:message "The adapter's bridge:sourceMediaType is one a lift applies to: application/xml, text/xml or a +xml type for the XML lift, application/json or a +json type for the JSON lift."
+  ] ;
+  sh:property [
     sh:path bridge:sourceSchema ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
@@ -110,10 +115,29 @@
   ] ;
   sh:property [
     sh:path bridge:elementNameOfEachRecord ;
-    sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:datatype xsd:string ;
-    sh:message "The adapter carries exactly one bridge:elementNameOfEachRecord."
+    sh:message "The adapter carries at most one bridge:elementNameOfEachRecord, a string."
+  ] ;
+  sh:sparql [
+    sh:message "An adapter whose bridge:sourceMediaType is XML carries a bridge:elementNameOfEachRecord, the local name of its record element." ;
+    sh:select """
+      SELECT $this WHERE {
+        $this <https://ns.cascadeprotocol.org/bridge/v1-draft#sourceMediaType> ?mediaType .
+        FILTER (REGEX(?mediaType, "^(application/xml|text/xml|[a-z]+/[a-z0-9.!#$&^_-]+[+]xml)$"))
+        FILTER NOT EXISTS { $this <https://ns.cascadeprotocol.org/bridge/v1-draft#elementNameOfEachRecord> ?name }
+      }
+    """
+  ] ;
+  sh:sparql [
+    sh:message "An adapter whose bridge:sourceMediaType is JSON carries no bridge:elementNameOfEachRecord: each of its envelopes names its records by a bridge:jsonPathOfEachRecord." ;
+    sh:select """
+      SELECT $this ?value WHERE {
+        $this <https://ns.cascadeprotocol.org/bridge/v1-draft#sourceMediaType> ?mediaType ;
+              <https://ns.cascadeprotocol.org/bridge/v1-draft#elementNameOfEachRecord> ?value .
+        FILTER (REGEX(?mediaType, "^(application/json|[a-z]+/[a-z0-9.!#$&^_-]+[+]json)$"))
+      }
+    """
   ] ;
   sh:property [
     sh:path bridge:envelope ;

@@ -1,10 +1,10 @@
 # Building an adapter
 
-An adapter is a package of data for one XML source format, with no code in it.
+An adapter is a package of data for one XML or JSON source format, with no code in it.
 
 | to find out | look at |
 |---|---|
-| what a working package looks like, to copy | [`../fixtures/synthetic-adapter/`](../fixtures/synthetic-adapter/) |
+| what a working package looks like, to copy | [`../fixtures/synthetic-adapter/`](../fixtures/synthetic-adapter/) for XML, [`../fixtures/synthetic-json-adapter/`](../fixtures/synthetic-json-adapter/) for JSON |
 | what is checked, one requirement per file | [`profile/must/`](profile/must/) |
 | how each requirement behaves, one test per rule | [`../tests/adapter_profile/`](../tests/adapter_profile/), `test_<requirement>.py` |
 | whether your package passes | [`validation.md`](validation.md) |

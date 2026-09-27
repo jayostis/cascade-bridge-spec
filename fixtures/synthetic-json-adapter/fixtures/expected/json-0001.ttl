@@ -1,0 +1,15 @@
+@prefix ex:   <https://example.org/synthetic-adapter/v1#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+<https://example.org/synthetic-adapter/record/EX000101>
+  a ex:Record ;
+  ex:accession "EX000101" ;
+  ex:version "3"^^xsd:integer ;
+  rdfs:label "first synthetic JSON record" .
+
+<https://example.org/synthetic-adapter/record/EX000102>
+  a ex:Record ;
+  ex:accession "EX000102" ;
+  ex:version "1"^^xsd:integer ;
+  rdfs:label "second synthetic JSON record" .

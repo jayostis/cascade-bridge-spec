@@ -2,6 +2,7 @@ from rdflib import Graph
 from rdflib.namespace import RDF, SH
 
 from _codes import BODIES_OF_A_SCHEMA_FAILURE
+from _json_source import selected_by
 from _terms import BRIDGE, MF, OA
 
 
@@ -70,3 +71,35 @@ def node_selected_by(document, address):
     if not isinstance(chosen, list) or len(chosen) != 1 or local_name_of(chosen[0]) is None:
         return set()
     return {chosen[0]}
+
+
+def json_nodes_recorded_on(path, value):
+    """The reference tokens, from the document's value, of every node a findings file records a broken JSON
+    Schema keyword on, as sh:Violation: the schema failures its adapter expects."""
+    graph = Graph()
+    try:
+        graph.parse(path, format="turtle")
+    except Exception:
+        return set()
+    recorded = set()
+    for annotation in graph.subjects(RDF.type, OA.Annotation):
+        if graph.value(annotation, SH.resultSeverity) != SH.Violation:
+            continue
+        if BODIES_OF_A_SCHEMA_FAILURE.isdisjoint(graph.objects(annotation, OA.hasBody)):
+            continue
+        target = graph.value(annotation, OA.hasTarget)
+        selector = None if target is None else graph.value(target, OA.hasSelector)
+        if selector is None:
+            continue
+        records = selected_by(value, str(graph.value(selector, RDF.value)))
+        if len(records) != 1:
+            continue
+        record_tokens, record = records[0]
+        refined = graph.value(selector, OA.refinedBy)
+        if refined is None:
+            recorded.add(record_tokens)
+            continue
+        within = selected_by(record, str(graph.value(refined, RDF.value)))
+        if len(within) == 1:
+            recorded.add(record_tokens + within[0][0])
+    return recorded

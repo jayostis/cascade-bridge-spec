@@ -14,8 +14,8 @@ HOW_AN_ISOMORPHIC_CONVERSION_TEST_COMPARES = str(
 
 def test_two_addresses_selecting_the_same_one_node_are_the_same_finding():
     assert (
-        "two oa:XPathSelector rdf:values are equal when both select the same one node"
-        in HOW_AN_ISOMORPHIC_CONVERSION_TEST_COMPARES
+        "two selectors of one kind, oa:XPathSelector or an oa:FragmentSelector conforming to JSON Pointer, are "
+        "equal when their rdf:values select the same one node" in HOW_AN_ISOMORPHIC_CONVERSION_TEST_COMPARES
     )
 
 

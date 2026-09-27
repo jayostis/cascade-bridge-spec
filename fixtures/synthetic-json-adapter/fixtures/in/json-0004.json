@@ -1,0 +1,13 @@
+{
+  "kind": "set",
+  "records": [
+    {
+      "accession": "EX000105",
+      "version": 1,
+      "label": "a record carrying members the accounting names nowhere",
+      "status": ["current", "Retired", "Retired"],
+      "novelty": "the schema allows this member and no entry of the accounting mentions it",
+      "extension": [{"url": "https://example.org/a"}, {"url": "https://example.org/b"}]
+    }
+  ]
+}
