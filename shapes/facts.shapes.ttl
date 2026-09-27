@@ -11,17 +11,20 @@
   sh:declare [ sh:prefix "prov" ;   sh:namespace "http://www.w3.org/ns/prov#"^^xsd:anyURI ] ;
   sh:declare [ sh:prefix "bridge" ; sh:namespace "https://ns.cascadeprotocol.org/bridge/v1-draft#"^^xsd:anyURI ] .
 
-<#Subjects> a sh:NodeShape ;
-  sh:targetNode bridge:thisDocument ;
+<#Subject> a sh:NodeShape ;
+  sh:target [
+    a sh:SPARQLTarget ;
+    sh:prefixes <> ;
+    sh:select "SELECT DISTINCT ?this WHERE { ?this ?predicate ?object }"
+  ] ;
   sh:sparql [
     sh:prefixes <> ;
-    sh:message "Facts are stated of bridge:thisDocument, bridge:thisImport and the attributions and agents the document names, and of nothing else: {?value} is none of them." ;
+    sh:message "Facts are stated of bridge:thisDocument, bridge:thisImport and the attributions and agents the document names, and of nothing else: {$this} is none of them." ;
     sh:select """
-      SELECT $this ?value WHERE {
-        { SELECT DISTINCT ?value WHERE { ?value ?predicate ?object } }
-        FILTER (?value NOT IN (bridge:thisDocument, bridge:thisImport))
-        FILTER NOT EXISTS { bridge:thisDocument prov:qualifiedAttribution ?value }
-        FILTER NOT EXISTS { bridge:thisDocument prov:qualifiedAttribution/prov:agent ?value }
+      SELECT $this WHERE {
+        FILTER ($this NOT IN (bridge:thisDocument, bridge:thisImport))
+        FILTER NOT EXISTS { bridge:thisDocument prov:qualifiedAttribution $this }
+        FILTER NOT EXISTS { bridge:thisDocument prov:qualifiedAttribution/prov:agent $this }
       }
     """
   ] .
