@@ -207,20 +207,36 @@ def test_a_record_held_inside_another_is_named_by_its_holders_name_and_its_own_i
             assert str(record) == record_name([str(by_selector[holder]), own_id])
 
 
-@pytest.mark.parametrize(("adapter", "test"), CONVERSIONS)
-def test_each_version_is_named_by_the_sha256_of_its_content(adapter, test):
-    expected = expected_of(adapter, test)
+def content_of(graph, version):
+    def in_version(node):
+        return isinstance(node, URIRef) and (node == version or str(node).startswith(f"{version}#"))
 
     def term(node):
-        if node == version:
-            return ("iri", PLACEHOLDER)
+        if in_version(node):
+            return ("iri", PLACEHOLDER + str(node)[len(version) :])
         if isinstance(node, URIRef):
             return ("iri", str(node))
         return ("literal", str(node), str(node.datatype or XSD_STRING))
 
-    for version in set(expected.subjects(PROV.specializationOf, None)):
-        content = {tuple(term(node) for node in triple) for triple in expected.triples((version, None, None))}
-        assert str(version) == ni_name(canonical_nquads(content).encode("utf-8"))
+    return {tuple(term(node) for node in triple) for triple in graph if in_version(triple[0])}
+
+
+def misnamed_versions(graph):
+    return {
+        str(version)
+        for version in set(graph.subjects(PROV.specializationOf, None))
+        if str(version) != ni_name(canonical_nquads(content_of(graph, version)).encode("utf-8"))
+    }
+
+
+def test_a_version_holding_nested_nodes_is_named_by_its_content_theirs_included():
+    versioned = ROOT / "fixtures" / "versioning" / "nested-nodes.versioned.nt"
+    assert not misnamed_versions(Graph().parse(versioned, format="nt"))
+
+
+@pytest.mark.parametrize(("adapter", "test"), CONVERSIONS)
+def test_each_version_is_named_by_the_sha256_of_its_content(adapter, test):
+    assert not misnamed_versions(expected_of(adapter, test))
 
 
 @pytest.mark.parametrize(("adapter", "test"), CONVERSIONS)
