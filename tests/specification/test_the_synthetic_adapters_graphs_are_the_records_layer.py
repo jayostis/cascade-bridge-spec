@@ -7,7 +7,7 @@ import pytest
 from rdflib import RDF, RDFS, XSD, BNode, Graph, Literal, Namespace, URIRef
 from rdflib.compare import isomorphic
 
-from json_lift import Members, parsed
+from json_lift import Members, lifted, parsed
 from recomputed import PLACEHOLDER, XSD_STRING, canonical_nquads, ni_name, normalised_base_url, record_name
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -264,8 +264,35 @@ def test_an_arrival_says_when_the_source_last_updated_its_record_in_the_sources_
     for record in expected.subjects(RDF.type, EX.Record):
         updated = adapter.selected(input_of(adapter, test), selector_of(expected, record)).get("lastUpdated")
         if updated is not None:
-            assert expected.value(arrival_of(expected, record), PAV.lastUpdateOn).datatype == XSD.dateTime
-            assert f'pav:lastUpdateOn "{updated}"^^xsd:dateTime' in written
+            stated = "dateTime" if "T" in updated else "date"
+            assert expected.value(arrival_of(expected, record), PAV.lastUpdateOn).datatype == XSD[stated]
+            assert f'pav:lastUpdateOn "{updated}"^^xsd:{stated}' in written
+
+
+def mapped_by_the_synthetic_json_adapter(record):
+    graph = lifted(json.dumps(record).encode("utf-8"))
+    graph += graph.query((JsonAdapter.directory / "in" / "example-table.rq").read_text(encoding="utf-8")).graph
+    graph.add((BRIDGE.thisDocument, BRIDGE.sha256, Literal(ni_name(json.dumps(record).encode("utf-8")))))
+    graph.add((BRIDGE.thisRecord, BRIDGE.selector, Literal("")))
+    return graph.query((JsonAdapter.directory / "in" / "example-record.rq").read_text(encoding="utf-8")).graph
+
+
+@pytest.mark.parametrize(
+    ("updated", "datatype"), [("2026-08-01", XSD.date), ("2026-08-01T09:30:00.000+01:00", XSD.dateTime)]
+)
+def test_the_synthetic_json_mapping_types_a_last_update_as_the_date_or_date_time_its_source_states(updated, datatype):
+    mapped = mapped_by_the_synthetic_json_adapter({"accession": "EX000199", "version": 1, "lastUpdated": updated})
+    assert set(mapped.objects(None, PAV.lastUpdateOn)) == {Literal(updated, datatype=datatype)}
+
+
+def test_a_synthetic_json_arrival_states_a_last_update_as_a_date_and_another_as_a_date_time():
+    stated = {
+        value.datatype
+        for adapter, test in (param.values for param in CONVERSIONS)
+        if adapter is JsonAdapter
+        for value in expected_of(JsonAdapter, test).objects(None, PAV.lastUpdateOn)
+    }
+    assert stated == {XSD.date, XSD.dateTime}
 
 
 def test_the_synthetic_json_adapter_holds_a_record_inside_another_and_a_record_that_is_its_documents_value():

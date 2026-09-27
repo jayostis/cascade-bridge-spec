@@ -41,7 +41,7 @@ WHERE {
   BIND(IRI(CONCAT("https://example.org/synthetic-adapter/version/", ?uuid)) AS ?version)
   OPTIONAL { ?exampleRecord xyz:label ?label }
   OPTIONAL { ?exampleRecord xyz:lastUpdated ?lastUpdated }
-  BIND(STRDT(?lastUpdated, xsd:dateTime) AS ?lastUpdateOn)
+  BIND(STRDT(?lastUpdated, IF(CONTAINS(?lastUpdated, "T"), xsd:dateTime, xsd:date)) AS ?lastUpdateOn)
   FILTER NOT EXISTS {
     ?exampleRecord xyz:status ?statuses .
     ?statuses ?slot ?status .

@@ -2,6 +2,6 @@
   "kind": "set",
   "records": [
     {"accession": "EX000106", "version": 2, "lastUpdated": "2026-08-01T09:30:00.000+01:00", "label": "a record holding another", "note": "a note on the record holding another", "contained": [{"id": "held-1", "label": "a record held inside EX000106"}]},
-    {"accession": "EX000103", "version": 3, "label": "json-0002's record, arriving in a set"}
+    {"accession": "EX000103", "version": 3, "lastUpdated": "2026-07-15", "label": "json-0002's record, arriving in a set"}
   ]
 }

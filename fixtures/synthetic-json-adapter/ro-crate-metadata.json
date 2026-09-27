@@ -278,8 +278,8 @@
       "@type": "File",
       "name": "Mapping",
       "encodingFormat": "application/sparql-query",
-      "contentSize": "2248",
-      "sha256": "b804dee45f56252fac8cc7c04610a796f5728b053036112f8224e3d25ab62d6a",
+      "contentSize": "2291",
+      "sha256": "73368c7895794ae91888f5e22d9c1be74911ef2254df6ace78dedfa6b80c7543",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       }
@@ -608,8 +608,8 @@
       "@type": "File",
       "name": "Synthetic JSON input holding a record inside another",
       "encodingFormat": "application/example+json",
-      "contentSize": "387",
-      "sha256": "a2b2161ee164ddb9dd1ec00a7b212c3318fbfc903ccfe0db4b3c81628b7fb943",
+      "contentSize": "416",
+      "sha256": "da2df1436cdca58dd79b328ecd0abcafa37d3249ce99e893ec135cb9fc5da345",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       }
@@ -630,8 +630,8 @@
       "@type": "File",
       "name": "Expected graph for json-0006",
       "encodingFormat": "text/turtle",
-      "contentSize": "3000",
-      "sha256": "399c0b215db5e8d79fef6b5be8cfc581f48d55e2c341f2305fdaef47dd541ea5",
+      "contentSize": "3044",
+      "sha256": "825221f1466b14ada25e1f95b0ed297f4593c9f917f11ae29ba11b9dd82a070f",
       "isBasedOn": {
         "@id": "fixtures/in/json-0006.json"
       },

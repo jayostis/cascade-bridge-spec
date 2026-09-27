@@ -18,7 +18,7 @@
   pav:version "2" ;
   pav:lastUpdateOn "2026-08-01T09:30:00.000+01:00"^^xsd:dateTime ;
   bridge:selector "/records/0" ;
-  prov:wasDerivedFrom <ni:///sha-256;orIWHuFk3bndHsAKeyEsMxj7_JA8z-DbSzyBYot_uUM> ;
+  prov:wasDerivedFrom <ni:///sha-256;2i3xQ2zcpY3XmzKOzQq8r6N9MknOmeiT7BNcufxdo0U> ;
   prov:wasGeneratedBy _:import .
 
 <urn:uuid:91c9282d-22c5-8951-bf65-390ff3d9aea5>
@@ -31,7 +31,7 @@
 
 [] bridge:arrivedAs <ni:///sha-256;1b-glcWo67AsWVIsn_2VilyppnwG55KytClCKy8X3AA> ;
   bridge:selector "/records/0/contained/0" ;
-  prov:wasDerivedFrom <ni:///sha-256;orIWHuFk3bndHsAKeyEsMxj7_JA8z-DbSzyBYot_uUM> ;
+  prov:wasDerivedFrom <ni:///sha-256;2i3xQ2zcpY3XmzKOzQq8r6N9MknOmeiT7BNcufxdo0U> ;
   prov:wasGeneratedBy _:import .
 
 <urn:uuid:9ac45ebb-6035-85d5-b7b2-113739375ce2>
@@ -44,11 +44,12 @@
 
 [] bridge:arrivedAs <ni:///sha-256;cZ2Xysn1XZQwomHoAxlqwQw-VydIxg-4AlDq37SeRro> ;
   pav:version "3" ;
+  pav:lastUpdateOn "2026-07-15"^^xsd:date ;
   bridge:selector "/records/1" ;
-  prov:wasDerivedFrom <ni:///sha-256;orIWHuFk3bndHsAKeyEsMxj7_JA8z-DbSzyBYot_uUM> ;
+  prov:wasDerivedFrom <ni:///sha-256;2i3xQ2zcpY3XmzKOzQq8r6N9MknOmeiT7BNcufxdo0U> ;
   prov:wasGeneratedBy _:import .
 
-<ni:///sha-256;orIWHuFk3bndHsAKeyEsMxj7_JA8z-DbSzyBYot_uUM>
+<ni:///sha-256;2i3xQ2zcpY3XmzKOzQq8r6N9MknOmeiT7BNcufxdo0U>
   a prov:Entity ;
   bridge:serverBaseUrl "https://records.example.org/api" ;
   pav:retrievedFrom <https://records.example.org/api/ExampleRecordSet> ;
@@ -62,7 +63,7 @@
 
 _:import
   a prov:Activity ;
-  prov:used <ni:///sha-256;orIWHuFk3bndHsAKeyEsMxj7_JA8z-DbSzyBYot_uUM> ;
+  prov:used <ni:///sha-256;2i3xQ2zcpY3XmzKOzQq8r6N9MknOmeiT7BNcufxdo0U> ;
   rdfs:label "synthetic example import" ;
   prov:startedAtTime "2026-09-01T10:00:00Z"^^xsd:dateTime ;
   prov:qualifiedAssociation [
