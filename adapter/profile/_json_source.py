@@ -8,7 +8,8 @@ from _terms import BRIDGE
 RFC_6901 = "https://www.rfc-editor.org/rfc/rfc6901"
 JSON_MEDIA_TYPE = re.compile(r"^(application/json|[a-z]+/[a-z0-9.!#$&^_-]+[+]json)$")
 XML_MEDIA_TYPE = re.compile(r"^(application/xml|text/xml|[a-z]+/[a-z0-9.!#$&^_-]+[+]xml)$")
-A_SEGMENT = re.compile(r"\.([^.\[\]\s'\"*0-9][^.\[\]\s'\"*]*)|\['((?:[^'\\]|\\.)*)'\]|\[\*\]")
+NAME_FIRST = r"A-Za-z_\u0080-퟿-\U0010ffff"
+A_SEGMENT = re.compile(rf"\.([{NAME_FIRST}][{NAME_FIRST}0-9]*)|\['((?:[^'\\]|\\.)*)'\]|\[\*\]")
 A_PATH = re.compile(r"^(/(?:[^/~]|~[01])+)+$")
 FRAGMENT_SAFE = "/?:@!$&'()*+,;=-._~"
 
@@ -39,7 +40,7 @@ def parsed(data):
     if data.startswith(b"\xef\xbb\xbf"):
         raise NotJson("it begins with a byte order mark")
     try:
-        return json.loads(
+        value = json.loads(
             data.decode("utf-8"),
             object_pairs_hook=Members,
             parse_float=str,
@@ -48,6 +49,23 @@ def parsed(data):
         )
     except (UnicodeDecodeError, ValueError) as error:
         raise NotJson(str(error)) from error
+    if any(lone_surrogate_in(text) for text in texts_of(value)):
+        raise NotJson("it escapes a lone surrogate")
+    return value
+
+
+def texts_of(node):
+    """Every member name and string a value holds."""
+    if isinstance(node, str):
+        yield node
+    for name, child in children(node):
+        if is_object(node):
+            yield name
+        yield from texts_of(child)
+
+
+def lone_surrogate_in(text):
+    return any(0xD800 <= ord(character) <= 0xDFFF for character in text)
 
 
 def validated_value(data):
@@ -115,7 +133,11 @@ def tokens_of(pointer):
     if not pointer.startswith("/"):
         return None
     tokens = []
-    for escaped in unquote(pointer, errors="strict")[1:].split("/"):
+    try:
+        unescaped = unquote(pointer, errors="strict")
+    except UnicodeDecodeError:
+        return None
+    for escaped in unescaped[1:].split("/"):
         if re.search(r"~(?![01])", escaped):
             return None
         tokens.append(escaped.replace("~1", "/").replace("~0", "~"))
@@ -130,10 +152,7 @@ def selected_by(value, pointer):
     reached = [((), value)]
     for token in tokens:
         reached = [
-            (walked + (token,), child)
-            for walked, node in reached
-            for name, child in children(node)
-            if name == token and child is not None
+            (walked + (token,), child) for walked, node in reached for name, child in children(node) if name == token
         ]
     return reached
 

@@ -1,9 +1,11 @@
+import pytest
 from rdflib import Literal
 
 import expected_findings
 import inputs
 import queries
 import source_accounting
+from _json_source import segments_of
 from _terms import BRIDGE, SCHEMA
 from adapter_profile_world import shape_file_messages
 
@@ -83,6 +85,19 @@ def test_reports_a_record_path_outside_the_subset(json_crate):
     assert "written in the subset of RFC 9535 JSONPath" in shape_file_messages(json_crate, "envelope.ttl")
 
 
+@pytest.mark.parametrize("path", ["$.record-list[*]", "$.a$b", "$.x~y"])
+def test_reports_a_record_path_whose_name_shorthand_rfc_9535_does_not_allow(json_crate, path):
+    json_crate.graph.set((envelope_named(json_crate, "set"), BRIDGE.jsonPathOfEachRecord, Literal(path)))
+    assert "written in the subset of RFC 9535 JSONPath" in shape_file_messages(json_crate, "envelope.ttl")
+    with pytest.raises(ValueError):
+        segments_of(path)
+
+
+def test_reports_nothing_for_a_record_path_whose_name_shorthand_is_not_ascii(json_crate):
+    json_crate.graph.set((envelope_named(json_crate, "set"), BRIDGE.jsonPathOfEachRecord, Literal("$.récords[*]")))
+    assert not shape_file_messages(json_crate, "envelope.ttl")
+
+
 def test_reports_nothing_for_a_record_path_written_with_brackets(json_crate):
     json_crate.graph.set((envelope_named(json_crate, "set"), BRIDGE.jsonPathOfEachRecord, Literal("$['records'][*]")))
     assert not shape_file_messages(json_crate, "envelope.ttl")
@@ -101,6 +116,17 @@ def test_reports_a_json_schema_failure_the_expected_findings_do_not_record(json_
 def test_reports_a_json_input_that_is_not_a_json_text(json_package):
     json_package.edit("fixtures/in/json-0002.json", '"kind": "record",', '"kind": "record"')
     assert "json-0002.json is not a JSON text in UTF-8" in said(inputs, json_package.crate)
+
+
+def test_reports_a_json_input_escaping_a_lone_surrogate(json_package):
+    json_package.edit("fixtures/in/json-0003.json", '"label": 5', '"label": "\\ud800"')
+    assert "json-0003.json is not a JSON text in UTF-8" in said(inputs, json_package.crate)
+
+
+def test_reports_nothing_for_a_json_schema_failure_on_a_null_member_its_findings_record(json_package):
+    json_package.edit("fixtures/in/json-0003.json", '"label": 5', '"label": null')
+    assert not said(inputs, json_package.crate)
+    assert not said(expected_findings, json_package.crate)
 
 
 def test_reports_a_json_schema_naming_another_draft(json_package):
@@ -150,6 +176,12 @@ def test_reports_a_json_pointer_selecting_a_node_that_is_no_record(json_package)
 def test_reports_a_refinement_selecting_no_node_of_the_record(json_package):
     json_package.edit(FINDINGS_0003, 'rdf:value "/label"', 'rdf:value "/absent"')
     assert "'/absent' selects no node of the record '/records/0' selects" in said(expected_findings, json_package.crate)
+
+
+def test_reports_a_json_pointer_whose_percent_encoding_is_not_utf_8_as_selecting_no_node(json_package):
+    json_package.edit(FINDINGS_0003, 'rdf:value "/label"', 'rdf:value "/%FF"')
+    assert "'/%FF' selects no node of the record '/records/0' selects" in said(expected_findings, json_package.crate)
+    assert "/records/0/label: " in said(inputs, json_package.crate)
 
 
 def test_reports_an_xsd_rule_as_the_body_of_a_json_schema_finding(json_package):

@@ -36,7 +36,7 @@
     sh:path bridge:jsonPathOfEachRecord ;
     sh:maxCount 1 ;
     sh:datatype xsd:string ;
-    sh:pattern "^\\$(\\.[^.\\[\\]\\s'\"*0-9][^.\\[\\]\\s'\"*]*|\\['([^'\\\\]|\\\\.)*'\\]|\\[\\*\\])*$" ;
+    sh:pattern "^\\$(\\.[A-Za-z_\u0080-퟿-\U0010FFFF][A-Za-z0-9_\u0080-퟿-\U0010FFFF]*|\\['([^'\\\\]|\\\\.)*'\\]|\\[\\*\\])*$" ;
     sh:message "An envelope carries at most one bridge:jsonPathOfEachRecord, written in the subset of RFC 9535 JSONPath engine/sparql.md specifies: $ followed by segments each .name, ['name'] or [*]."
   ] ;
   sh:sparql [
