@@ -76,7 +76,7 @@ def vocabulary(path):
 
 
 def name_vocabulary(crate_file, url, commit, files=VOCABULARY_FILES):
-    """An adapter's crate, naming the-cascade-protocol/spec at a commit and the files it reads there."""
+    """An adapter's crate, naming a vocabulary repository at a commit and the files it reads there."""
     document = json.loads(crate_file.read_text(encoding="utf-8"))
     document["@context"][1]["bridge:vocabularyFile"] = "bridge:vocabularyFile"
     root = next(entity for entity in document["@graph"] if entity["@id"] == "./")
@@ -128,6 +128,16 @@ def pin_vocabulary(origins, commit):
         git("commit", "-q", "--allow-empty", "-m", "the vocabulary this adapter reads", cwd=origin)
         heads[name] = git("rev-parse", "HEAD", cwd=origin)
     return heads
+
+
+def pin_another_vocabulary(world, name):
+    """The adapter's origin, naming a copy of this world's the-cascade-protocol/spec published as jayostis/<name>."""
+    shutil.copytree(world.origin(VOCABULARY), world.origins / OWNER / name)
+    origin = world.origin("adapter")
+    name_vocabulary(origin / CRATE, f"https://github.com/{OWNER}/{name}", world.commits[VOCABULARY])
+    git("add", "-A", cwd=origin)
+    git("commit", "-q", "-m", f"the adapter reads {name}", cwd=origin)
+    return world.commits[VOCABULARY]
 
 
 def depends_on(repository, number, owner=OWNER):

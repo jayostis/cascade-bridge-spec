@@ -1,4 +1,4 @@
-"""Which version of the-cascade-protocol/spec a run reads an adapter's vocabularies at, and what it does with it."""
+"""Which version of the vocabulary repository an adapter pins a run reads its vocabularies at, and what it does with it."""
 
 import shutil
 from pathlib import Path
@@ -19,6 +19,7 @@ from compatibility_world import (
     depends_on,
     git,
     name_vocabulary,
+    pin_another_vocabulary,
 )
 
 GIVEN = "fake engine: vocabularies "
@@ -114,3 +115,16 @@ def test_two_adapters_naming_different_commits_stop_the_run_naming_both(tmp_path
 
     with pytest.raises(Stop, match="name one bridge:cascadeVocabularyPin"):
         vocabularies.read_from(tmp_path, paired)
+
+
+def test_a_pin_naming_another_vocabulary_repository_is_checked_out_at_its_commit_under_that_repositorys_name(world):
+    commit = pin_another_vocabulary(world, "cascade-vocabulary")
+    engine, event = world.engine_under_test()
+
+    said = world.tool(engine, **world.ci(event=event))
+
+    given = given_to_the_engine(said)
+    assert given.name == "cascade-vocabulary"
+    assert git("rev-parse", "HEAD", cwd=given) == commit
+    assert world.record()["repositories"]["cascade-vocabulary"]["commit"] == commit
+    assert VOCABULARY not in world.record()["repositories"]

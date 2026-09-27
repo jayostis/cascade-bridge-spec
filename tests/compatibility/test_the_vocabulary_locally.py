@@ -1,4 +1,4 @@
-"""A local run reads an adapter's vocabularies from the spec sibling, as it is on disk."""
+"""A local run reads an adapter's vocabularies from the sibling named as the repository its pin names, as it is on disk."""
 
 from compatibility_world import (
     CRATE,
@@ -7,6 +7,7 @@ from compatibility_world import (
     VOCABULARY_NAMESPACE,
     VOCABULARY_URL,
     name_vocabulary,
+    pin_another_vocabulary,
 )
 
 AN_EDIT = "# an edit the sibling has not committed\n"
@@ -69,3 +70,16 @@ def test_the_run_refuses_an_adapter_whose_named_files_declare_none_of_its_vocabu
     said = world.tool(adapter, 1)
 
     assert VOCABULARY_NAMESPACE in said
+
+
+def test_a_pin_naming_another_vocabulary_repository_reads_the_sibling_named_as_that_repository(world):
+    pin_another_vocabulary(world, "cascade-vocabulary")
+    engine = world.engine([world.url("adapter")])
+    world.clone("adapter")
+    sibling = world.clone("cascade-vocabulary")
+    world.offline()
+
+    said = world.tool(engine)
+
+    assert f"fake engine: vocabularies {sibling}" in said
+    assert "1 counterpart: 1 hold" in said
