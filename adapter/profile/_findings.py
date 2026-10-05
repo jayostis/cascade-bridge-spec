@@ -1,13 +1,34 @@
+from functools import cache
 from pathlib import Path
 
 from pyshacl import validate as shacl_validate
 from rdflib import BNode
 from rdflib.namespace import SH
+from rdflib.plugins.sparql import processor
+from rdflib.plugins.sparql.algebra import translateQuery
+from rdflib.plugins.sparql.parser import parseQuery
 
 from _crate import from_context
 from _terms import BRIDGE
 
 SHAPES = Path(__file__).resolve().parents[2] / "shapes" / "bridge.shapes.ttl"
+
+
+@cache
+def translated(text, base, prefixes):
+    return translateQuery(parseQuery(text), base, dict(prefixes))
+
+
+def parse_each_sparql_text_once(query):
+    def reusing_the_parse(self, text_or_query, initBindings=None, initNs=None, base=None, DEBUG=False):  # noqa: N803
+        if isinstance(text_or_query, str):
+            text_or_query = translated(text_or_query, base, tuple(sorted((initNs or {}).items())))
+        return query(self, text_or_query, initBindings, initNs, base, DEBUG)
+
+    return reusing_the_parse
+
+
+processor.SPARQLProcessor.query = parse_each_sparql_text_once(processor.SPARQLProcessor.query)
 
 
 def named(node, graph, within=frozenset()):
