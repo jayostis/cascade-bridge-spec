@@ -72,9 +72,12 @@ def on_its_own(record, etree):
     return etree.fromstring(etree.tostring(record, with_tail=False))
 
 
-def rooted_at_the_document(record, refinement, etree):
-    standing = chosen_by(record, refinement, etree)
-    return bool(standing) and chosen_by(on_its_own(record, etree), refinement, etree) == []
+def rooted_at_the_document(record, refinement, etree, records_on_their_own):
+    if not chosen_by(record, refinement, etree):
+        return False
+    if record not in records_on_their_own:
+        records_on_their_own[record] = on_its_own(record, etree)
+    return chosen_by(records_on_their_own[record], refinement, etree) == []
 
 
 def about_the_document(document, node):
@@ -82,6 +85,7 @@ def about_the_document(document, node):
 
 
 def unselected(graph, document, document_name, source, record_name, etree):
+    records_on_their_own = {}
     for annotation in graph.subjects(RDF.type, OA.Annotation):
         target = graph.value(annotation, OA.hasTarget)
         if target is None:
@@ -119,7 +123,7 @@ def unselected(graph, document, document_name, source, record_name, etree):
         if refined is None:
             continue
         refinement = str(graph.value(refined, RDF.value))
-        if rooted_at_the_document(record, refinement, etree):
+        if rooted_at_the_document(record, refinement, etree, records_on_their_own):
             yield (
                 f"{refinement} is an XPath rooted at {document_name}, "
                 "where a refinement is relative to the record its selector names"
