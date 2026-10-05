@@ -2,6 +2,7 @@ import contextlib
 import io
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -135,10 +136,12 @@ def pin_vocabulary(origins, commit):
 def describe_the_pin(specification, url, commit):
     """The library's description of the synthetic adapter follows the crate the world rewrote."""
     described = specification / "fixtures" / "library" / "synthetic-adapter.described.ttl"
-    was = "https://example.org/synthetic-adapter/vocabulary/commit/0000000000000000000000000000000000000000"
+    pinned = re.compile(r"bridge:cascadeVocabularyPin <[^>]*>")
     text = described.read_text(encoding="utf-8")
-    assert was in text
-    described.write_text(text.replace(was, f"{url}/commit/{commit}"), encoding="utf-8", newline="")
+    assert pinned.search(text), text
+    described.write_text(
+        pinned.sub(f"bridge:cascadeVocabularyPin <{url}/commit/{commit}>", text), encoding="utf-8", newline=""
+    )
 
 
 def pin_another_vocabulary(world, name):
