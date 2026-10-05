@@ -16,7 +16,17 @@ def install():
     if os.environ.get("CI") != "true":
         return
     subprocess.run(
-        [sys.executable, "-m", "pip", "install", "--quiet", "--group", f"{SPEC_ROOT / 'pyproject.toml'}:validators"],
+        [
+            sys.executable,
+            "-m",
+            "pip",
+            "install",
+            "--quiet",
+            "--disable-pip-version-check",
+            "--no-compile",
+            "--group",
+            f"{SPEC_ROOT / 'pyproject.toml'}:validators",
+        ],
         check=False,
     )
 

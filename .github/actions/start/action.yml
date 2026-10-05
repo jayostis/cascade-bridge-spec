@@ -56,6 +56,7 @@ runs:
       shell: bash
       env:
         ACTION_REPOSITORY: ${{ github.action_repository }}
+        ACTION_REF: ${{ github.action_ref }}
         SERVER_URL: ${{ github.server_url }}
       run: |
         set -euo pipefail
@@ -68,15 +69,20 @@ runs:
           exit 0
         fi
         repository="${SERVER_URL}/${ACTION_REPOSITORY}"
+        echo "repository=${repository}" >> "$GITHUB_OUTPUT"
+        branch="$(git ls-remote --symref "${repository}" HEAD | sed -n 's|^ref: refs/heads/||p' | cut -f1)"
+        if [ "${ACTION_REF}" = "${branch}" ]; then
+          echo "called at ${branch}, the default branch: the entry point runs from ${own}"
+          echo "entry-point=${own}/scripts/compatibility.py" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
         bootstrap="${RUNNER_TEMP}/cascade-bridge-spec-bootstrap"
         rm -rf "${bootstrap}"
         git init --quiet "${bootstrap}"
-        branch="$(git ls-remote --symref "${repository}" HEAD | sed -n 's|^ref: refs/heads/||p' | cut -f1)"
         git -C "${bootstrap}" fetch --quiet --depth 1 "${repository}" "refs/heads/${branch}"
         git -C "${bootstrap}" checkout --quiet --detach FETCH_HEAD
         echo "${repository} ${branch} is $(git -C "${bootstrap}" rev-parse HEAD), at ${bootstrap}"
         echo "entry-point=${bootstrap}/scripts/compatibility.py" >> "$GITHUB_OUTPUT"
-        echo "repository=${repository}" >> "$GITHUB_OUTPUT"
 
     - name: run the check
       shell: bash
