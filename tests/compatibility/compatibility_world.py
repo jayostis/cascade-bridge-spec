@@ -201,6 +201,7 @@ class PullRequests:
         self.by_repository = {}
         self.refusals = {}
         self.check_runs_by_commit = {}
+        self.releases = {}
 
     def refuse(self, repository, number, status, headers=None):
         self.refusals[(repository, number)] = (status, dict(headers or {}))
@@ -273,6 +274,9 @@ class Handler(BaseHTTPRequestHandler):
         if len(parts) == 6 and parts[0] == "repos" and parts[3] == "commits" and parts[5] == "check-runs":
             page, per_page = self.query("page", 1), self.query("per_page", 30)
             return self.answer(200, self.server.pull_requests.check_runs(parts[2], parts[4], page, per_page))
+        if len(parts) == 6 and parts[0] == "repos" and parts[3:5] == ["releases", "tags"]:
+            release = self.server.pull_requests.releases.get((parts[2], parts[5]))
+            return self.answer(200 if release else 404, release or {"message": "Not Found"})
         if len(parts) == 5 and parts[0] == "repos" and parts[3] == "check-runs":
             run = self.server.pull_requests.check_run_by_id(int(parts[4]))
             return self.answer(200, run) if run else self.answer(404, {"message": "Not Found"})

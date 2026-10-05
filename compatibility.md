@@ -24,6 +24,16 @@ An engine's file:
 }
 ```
 
+A host may carry a `release`: `asset`, a glob naming one asset of the engine
+repository's release tagged `build-<commit>`; `path`, where in the engine's
+checkout it goes (an archive is unpacked there from its `package/` folder); and
+`command`, run in place of the host's when it differs. When an adapter's run, in
+CI on an x86_64 Linux runner, picks the engine at a commit with that release,
+or merges into it pull requests that change nothing but its `compatibility.json`,
+the asset is placed in place of the host's setup, once its bytes match a digest
+the release's notes give (a `sha256-`, `sha384-` or `sha512-` integrity, or a
+SHA-256 in hex). Otherwise the setup runs.
+
 An adapter's file has only `mustPassWith`.
 
 A runtime is a repository holding `cascade-runtime.json`, which pins the
