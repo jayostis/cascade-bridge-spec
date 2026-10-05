@@ -4,33 +4,57 @@ import base64
 import binascii
 import fnmatch
 import hashlib
+import http.client
 import io
+import json
 import platform
 import re
 import shutil
 import tarfile
+import tempfile
 import urllib.error
 import urllib.request
 from pathlib import Path
 
 from compatibility_tool import git, github
 from compatibility_tool.console import Stop, note
-from compatibility_tool.document import FILE
+from compatibility_tool.document import FILE, hosts
 
 TAG = "build-{commit}"
 PACKAGED = "package/"
 ARCHIVES = (".tgz", ".tar.gz")
 SUBRESOURCE_INTEGRITY = re.compile(r"^(sha256|sha384|sha512)-([A-Za-z0-9+/=]+)$")
 HEX_SHA256 = re.compile(r"^[0-9a-fA-F]{64}$")
+DOWNLOAD_TIMEOUT_SECONDS = 60
 
 
 def on_a_runner_releases_serve():
     return platform.system() == "Linux" and platform.machine() in ("x86_64", "AMD64")
 
 
+def hosts_at(path, commit):
+    try:
+        document = json.loads(git.blob(path, commit, FILE) or b"null")
+    except ValueError:
+        return None
+    return {host.get("name"): host for host in hosts(document) if isinstance(host, dict)}
+
+
+def set_up_alike(path, branch):
+    """Whether each host declaring a release has the setup here that it has at the branch, which built its release."""
+    here, there = hosts_at(path, "HEAD"), hosts_at(path, branch)
+    if here is None or there is None:
+        return False
+    return all(
+        name in there and there[name].get("setup") == host.get("setup")
+        for name, host in here.items()
+        if "release" in host
+    )
+
+
 def released_commit(row):
     """The commit whose release holds this engine's build: its own, or, where the pull requests merged into it change
-    nothing but its compatibility.json, the branch's; None where it is to be built."""
+    nothing but its compatibility.json and no setup in it, the branch's; None where it is to be built."""
     if row.uncommitted_edits or not row.commit or row.path is None:
         return None
     if not row.from_named_pull_requests:
@@ -41,7 +65,7 @@ def released_commit(row):
     changed = git.git("diff", "--name-only", branch, "HEAD", cwd=row.path)
     if changed.returncode != 0 or set(changed.stdout.split()) - {FILE}:
         return None
-    return branch
+    return branch if set_up_alike(row.path, branch) else None
 
 
 def release_of(row):
@@ -52,7 +76,7 @@ def release_of(row):
     tag = TAG.format(commit=commit)
     try:
         return github.Api().get(f"repos/{github.repository_path(row.repository)}/releases/tags/{tag}")
-    except (urllib.error.HTTPError, Stop) as error:
+    except (urllib.error.HTTPError, http.client.HTTPException, ValueError, Stop) as error:
         note(f"{row.name} has no release {tag} to read ({error}), so each host is built by its setup")
         return None
 
@@ -77,20 +101,27 @@ def vouched_for(data, notes):
 
 def download(url):
     request = urllib.request.Request(url, headers={"User-Agent": "cascade-compatibility"})
-    with urllib.request.urlopen(request) as answer:
+    with urllib.request.urlopen(request, timeout=DOWNLOAD_TIMEOUT_SECONDS) as answer:
         return answer.read()
 
 
 def unpack(data, into):
+    """The archive's package laid at into, which is left as it was where the archive cannot be unpacked."""
+    into.parent.mkdir(parents=True, exist_ok=True)
+    staged = Path(tempfile.mkdtemp(dir=into.parent))
+    try:
+        with tarfile.open(fileobj=io.BytesIO(data), mode="r:gz") as archive:
+            members = []
+            for member in archive.getmembers():
+                if member.name.startswith(PACKAGED) and member.name != PACKAGED:
+                    member.name = member.name.removeprefix(PACKAGED)
+                    members.append(member)
+            archive.extractall(staged, members=members, filter="data")
+    except BaseException:
+        shutil.rmtree(staged, ignore_errors=True)
+        raise
     shutil.rmtree(into, ignore_errors=True)
-    into.mkdir(parents=True)
-    with tarfile.open(fileobj=io.BytesIO(data), mode="r:gz") as archive:
-        members = []
-        for member in archive.getmembers():
-            if member.name.startswith(PACKAGED) and member.name != PACKAGED:
-                member.name = member.name.removeprefix(PACKAGED)
-                members.append(member)
-        archive.extractall(into, members=members, filter="data")
+    staged.rename(into)
 
 
 def place(data, name, into):
@@ -118,17 +149,21 @@ def placed(release, engine, host):
         return None
     asset = assets[0]
     into = (engine / str(declared.get("path"))).resolve()
-    if not into.is_relative_to(engine.resolve()):
+    if into == engine.resolve() or not into.is_relative_to(engine.resolve()):
         note(f"{declared.get('path')} is no path in {engine}, so {name} is built")
         return None
     try:
         data = download(asset["browser_download_url"])
-    except (urllib.error.URLError, OSError, KeyError) as error:
+    except (urllib.error.URLError, http.client.HTTPException, OSError, KeyError) as error:
         note(f"{asset['name']} could not be downloaded ({error}), so {name} is built")
         return None
     if not vouched_for(data, release.get("body")):
         note(f"{asset['name']} matches no digest the notes of {release.get('tag_name')} give, so {name} is built")
         return None
-    place(data, asset["name"], into)
+    try:
+        place(data, asset["name"], into)
+    except (tarfile.TarError, OSError) as error:
+        note(f"{asset['name']} could not be placed at {declared.get('path')} ({error}), so {name} is built")
+        return None
     print(f"  release {asset['name']} of {release.get('tag_name')}, placed at {Path(declared['path'])}   (for {name})")
     return declared.get("command") or host.get("command")

@@ -2,13 +2,15 @@
 
 import base64
 import hashlib
+import http.client
 import io
+import json
 import sys
 import tarfile
 
 import pytest
 
-from compatibility_tool import releases
+from compatibility_tool import github, releases
 from compatibility_world import FAKE_ENGINE, a_host, depends_on, engine_document, git, write_compatibility
 
 
@@ -80,16 +82,18 @@ def test_a_host_whose_name_is_no_file_name_is_still_run_and_judged_by_its_report
     assert entry["holds"] is True
 
 
-def released_engine(world, monkeypatch, tmp_path, vouched=True):
+def released_engine(world, monkeypatch, tmp_path, vouched=True, node_path="dist", packed=None):
     """Each host of the engine at main has a build in that commit's release, and a setup that fails."""
     monkeypatch.setattr(releases, "on_a_runner_releases_serve", lambda: True)
     script = (FAKE_ENGINE / "engine.py").read_bytes()
-    packed = io.BytesIO()
-    with tarfile.open(fileobj=packed, mode="w:gz") as archive:
-        member = tarfile.TarInfo("package/engine.py")
-        member.size = len(script)
-        archive.addfile(member, io.BytesIO(script))
-    assets = {"engine-linux": script, "engine-0.1.0.tgz": packed.getvalue()}
+    if packed is None:
+        archive_bytes = io.BytesIO()
+        with tarfile.open(fileobj=archive_bytes, mode="w:gz") as archive:
+            member = tarfile.TarInfo("package/engine.py")
+            member.size = len(script)
+            archive.addfile(member, io.BytesIO(script))
+        packed = archive_bytes.getvalue()
+    assets = {"engine-linux": script, "engine-0.1.0.tgz": packed}
     for name, data in assets.items():
         (tmp_path / name).write_bytes(data)
     failing = [sys.executable, "-c", "raise SystemExit(1)"]
@@ -107,7 +111,7 @@ def released_engine(world, monkeypatch, tmp_path, vouched=True):
             "node",
             setup=failing,
             command=[sys.executable, "dist/engine.py", "--canned", "passed"],
-            release={"asset": "engine-*.tgz", "path": "dist"},
+            release={"asset": "engine-*.tgz", "path": node_path},
         ),
     ]
     origin = world.origin("engine")
@@ -141,6 +145,13 @@ def code(engine):
     (engine / "engine.py").write_text((engine / "engine.py").read_text(encoding="utf-8") + "\n", encoding="utf-8")
 
 
+def a_setup(engine):
+    path = engine / "compatibility.json"
+    document = json.loads(path.read_text(encoding="utf-8"))
+    document["host"][1]["setup"] = [*document["host"][1]["setup"], "--features"]
+    path.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8", newline="")
+
+
 @pytest.mark.parametrize(
     "merging", [None, only_compatibility_json], ids=["at main", "pr-changing-only-compatibility.json"]
 )
@@ -158,7 +169,9 @@ def test_an_adapters_run_runs_each_host_of_a_released_engine_from_its_release_an
 
 
 @pytest.mark.parametrize(
-    "vouched,merging", [(False, None), (True, code)], ids=["digest-not-in-notes", "pr-changing-code"]
+    "vouched,merging",
+    [(False, None), (True, code), (True, a_setup)],
+    ids=["digest-not-in-notes", "pr-changing-code", "pr-changing-only-a-setup-in-compatibility.json"],
 )
 def test_an_engines_host_is_built_by_its_setup_where_its_release_does_not_serve(
     world, monkeypatch, tmp_path, vouched, merging
@@ -168,4 +181,72 @@ def test_an_engines_host_is_built_by_its_setup_where_its_release_does_not_serve(
 
     said = world.tool(adapter, 1, **variables)
 
+    assert f"  setup {sys.executable} -c raise SystemExit(1)" in said
+
+
+@pytest.mark.parametrize("node_path", [".", "", "dist/.."])
+def test_a_release_path_naming_the_engine_itself_is_built_by_its_setup_and_leaves_the_engine_in_place(
+    world, monkeypatch, tmp_path, node_path
+):
+    adapter = released_engine(world, monkeypatch, tmp_path, node_path=node_path)
+
+    said = world.tool(adapter, 1, **world.ci(repository="adapter"))
+
+    assert "is no path in" in said
+    assert f"  setup {sys.executable} -c raise SystemExit(1)" in said
+    assert [entry["holds"] for entry in entries(world)].count(True) == 1
+
+
+def not_gzip():
+    return b"vouched for, but no gzip"
+
+
+def holding_a_link():
+    packed = io.BytesIO()
+    with tarfile.open(fileobj=packed, mode="w:gz") as archive:
+        member = tarfile.TarInfo("package/escape")
+        member.type = tarfile.SYMTYPE
+        member.linkname = "/etc/passwd"
+        archive.addfile(member)
+    return packed.getvalue()
+
+
+@pytest.mark.parametrize("packed", [not_gzip, holding_a_link], ids=["not-gzip", "a-link-the-data-filter-refuses"])
+def test_a_vouched_archive_that_cannot_be_unpacked_is_built_by_its_setup(world, monkeypatch, tmp_path, packed):
+    adapter = released_engine(world, monkeypatch, tmp_path, packed=packed())
+
+    said = world.tool(adapter, 1, **world.ci(repository="adapter"))
+
+    assert "could not be placed" in said
+    assert f"  setup {sys.executable} -c raise SystemExit(1)" in said
+
+
+def test_a_download_cut_off_partway_is_built_by_its_setup(world, monkeypatch, tmp_path):
+    adapter = released_engine(world, monkeypatch, tmp_path)
+
+    def cut_off(url):
+        raise http.client.IncompleteRead(b"part", 10)
+
+    monkeypatch.setattr(releases, "download", cut_off)
+
+    said = world.tool(adapter, 1, **world.ci(repository="adapter"))
+
+    assert "could not be downloaded" in said
+    assert f"  setup {sys.executable} -c raise SystemExit(1)" in said
+
+
+def test_a_release_answered_with_no_json_is_built_by_its_setup(world, monkeypatch, tmp_path):
+    adapter = released_engine(world, monkeypatch, tmp_path)
+    reading = github.Api.get
+
+    def no_json(api, path):
+        if "/releases/tags/" in path:
+            raise json.JSONDecodeError("Expecting value", "<html>", 0)
+        return reading(api, path)
+
+    monkeypatch.setattr(github.Api, "get", no_json)
+
+    said = world.tool(adapter, 1, **world.ci(repository="adapter"))
+
+    assert "has no release" in said
     assert f"  setup {sys.executable} -c raise SystemExit(1)" in said
