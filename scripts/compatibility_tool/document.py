@@ -141,12 +141,10 @@ def name_clashes(directory, urls, listing="mustPassWith"):
 def form_problem(directory, document):
     carried = [key for key in ("host", *VECTORS) if key in document]
     if is_vocabulary(directory):
-        return (
-            f"{directory} holds a {CRATE} whose root is no {ADAPTER_TYPE}, so it is a vocabulary, and a vocabulary's "
-            f"{FILE} carries no {', '.join(carried)}: the runtimes it names are run"
-            if carried
-            else None
-        )
+        found = f"{directory} holds a {CRATE} whose root is no {ADAPTER_TYPE}, so it is a vocabulary"
+        if carried:
+            return f"{found}, and a vocabulary's {FILE} carries no {', '.join(carried)}: the runtimes it names are run"
+        return None if counterparts(document) else f"{found}, and a vocabulary's {FILE} names a runtime in mustPassWith"
     if is_adapter(directory) and carried:
         return (
             f"{directory} holds {CRATE}, so it is an adapter, and an adapter's "

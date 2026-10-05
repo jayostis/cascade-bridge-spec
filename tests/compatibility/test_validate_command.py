@@ -99,3 +99,10 @@ def test_a_runtimes_adapters_written_as_an_object_stop_the_run(tmp_path):
     (tmp_path / "cascade-runtime.json").write_text(json.dumps({"vocabulary": pin, "adapters": pin}), encoding="utf-8")
     with pytest.raises(Stop, match="adapters"):
         pinned_repositories(tmp_path)
+
+
+@pytest.mark.parametrize("must_pass_with", [None, []], ids=["no mustPassWith", "an empty one"])
+def test_a_vocabulary_naming_no_runtime_is_refused_so_an_adapter_typed_wrongly_is_not_passed(tmp_path, must_pass_with):
+    (tmp_path / CRATE).write_text('{"@graph": [{"@id": "./", "@type": "Dataset"}]}', encoding="utf-8")
+    document = {"@context": CONTEXT_IRI} if must_pass_with is None else {"@context": CONTEXT_IRI, "mustPassWith": []}
+    assert "names a runtime in mustPassWith" in "\n".join(problems(tmp_path, document))

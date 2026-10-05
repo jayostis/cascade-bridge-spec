@@ -7,7 +7,16 @@ from dataclasses import replace
 
 from compatibility_tool import engines, picking, placing
 from compatibility_tool.console import Stop, report
-from compatibility_tool.document import FILE, RUNTIME, hosts, is_runtime, pinned_repositories, read_file, read_json
+from compatibility_tool.document import (
+    FILE,
+    RUNTIME,
+    hosts,
+    is_runtime,
+    name_clashes,
+    pinned_repositories,
+    read_file,
+    read_json,
+)
 from compatibility_tool.github import repository_name, repository_path, url_on_this_server
 from compatibility_tool.record import Role, Row
 
@@ -78,6 +87,9 @@ def named_by(directory, listed, options, event, api):
         for _, url, commit, role in pins(row.path):
             if role is Role.ADAPTER and adapters.setdefault(url, (commit, row.name))[0] != commit:
                 raise Stop(f"{adapters[url][1]} and {row.name} pin {url} at two commits, and one checkout serves both")
+    clashes = name_clashes(directory, [*listed, *adapters], f"{FILE} and the {RUNTIME} of each runtime it names")
+    if clashes:
+        raise Stop("; ".join(clashes))
     if options.mode == "ci":
         reached = picking.follow(api, event, [*listed, *adapters], options.spec_repository)
     rows += [

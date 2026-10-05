@@ -48,8 +48,14 @@ def validate(directory, document, spec):
         report(False, f"{directory} does not pass the Cascade Bridge Adapter profile")
         return Status.FAIL
     if document is None:
-        if is_adapter(directory) or is_vocabulary(directory):
+        if is_adapter(directory):
             return Status.OK
+        if is_vocabulary(directory):
+            report(
+                False,
+                f"{directory} holds a {CRATE} whose root is no bridge:Adapter, so it is a vocabulary, and a vocabulary states {FILE}",
+            )
+            return Status.FAIL
         report(False, f"{directory} holds no {CRATE}, so it is {kind(directory)}, and {kind(directory)} states {FILE}")
         return Status.FAIL
     violations = shape_violations(directory, document, spec.path)
