@@ -1,0 +1,72 @@
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix prov:   <http://www.w3.org/ns/prov#> .
+@prefix pav:    <http://purl.org/pav/> .
+@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+@prefix rec:    <https://ns.cascadeprotocol.org/records/v1-draft#> .
+@prefix ex:     <https://example.org/synthetic-adapter/v1#> .
+
+<urn:uuid:b59ed688-8d7f-8e7e-a40b-f4a0691ebad4>
+  a ex:Record ;
+  ex:accession "EX000106" .
+
+<ni:///sha-256;Jp7CO54gyS-9ZznDqIne7ieou8RrXs1dXzIbLDY_s9A>
+  prov:specializationOf <urn:uuid:b59ed688-8d7f-8e7e-a40b-f4a0691ebad4> ;
+  rdfs:label "a record holding another" .
+
+[] bridge:arrivedAs <ni:///sha-256;Jp7CO54gyS-9ZznDqIne7ieou8RrXs1dXzIbLDY_s9A> ;
+  pav:version "2" ;
+  pav:lastUpdateOn "2026-08-01T09:30:00.000+01:00"^^xsd:dateTime ;
+  bridge:selector "/records/0" ;
+  prov:wasDerivedFrom <ni:///sha-256;2i3xQ2zcpY3XmzKOzQq8r6N9MknOmeiT7BNcufxdo0U> ;
+  prov:wasGeneratedBy _:import .
+
+<urn:uuid:91c9282d-22c5-8951-bf65-390ff3d9aea5>
+  a ex:Record ;
+  ex:accession "held-1" .
+
+<ni:///sha-256;1b-glcWo67AsWVIsn_2VilyppnwG55KytClCKy8X3AA>
+  prov:specializationOf <urn:uuid:91c9282d-22c5-8951-bf65-390ff3d9aea5> ;
+  rdfs:label "a record held inside EX000106" .
+
+[] bridge:arrivedAs <ni:///sha-256;1b-glcWo67AsWVIsn_2VilyppnwG55KytClCKy8X3AA> ;
+  bridge:selector "/records/0/contained/0" ;
+  prov:wasDerivedFrom <ni:///sha-256;2i3xQ2zcpY3XmzKOzQq8r6N9MknOmeiT7BNcufxdo0U> ;
+  prov:wasGeneratedBy _:import .
+
+<urn:uuid:9ac45ebb-6035-85d5-b7b2-113739375ce2>
+  a ex:Record ;
+  ex:accession "EX000103" .
+
+<ni:///sha-256;cZ2Xysn1XZQwomHoAxlqwQw-VydIxg-4AlDq37SeRro>
+  prov:specializationOf <urn:uuid:9ac45ebb-6035-85d5-b7b2-113739375ce2> ;
+  rdfs:label "json-0002's record, arriving in a set" .
+
+[] bridge:arrivedAs <ni:///sha-256;cZ2Xysn1XZQwomHoAxlqwQw-VydIxg-4AlDq37SeRro> ;
+  pav:version "3" ;
+  pav:lastUpdateOn "2026-07-15"^^xsd:date ;
+  bridge:selector "/records/1" ;
+  prov:wasDerivedFrom <ni:///sha-256;2i3xQ2zcpY3XmzKOzQq8r6N9MknOmeiT7BNcufxdo0U> ;
+  prov:wasGeneratedBy _:import .
+
+<ni:///sha-256;2i3xQ2zcpY3XmzKOzQq8r6N9MknOmeiT7BNcufxdo0U>
+  a prov:Entity ;
+  bridge:serverBaseUrl "https://records.example.org/api" ;
+  pav:retrievedFrom <https://records.example.org/api/ExampleRecordSet> ;
+  pav:retrievedOn "2026-08-30T22:14:00Z"^^xsd:dateTime ;
+  prov:qualifiedAttribution
+    [ prov:agent [ rdfs:label "Example Records Registry" ] ; prov:hadRole rec:author ] ,
+    [ prov:agent [ rdfs:label "Example Fetcher" ] ; prov:hadRole rec:transmitter ] ;
+  bridge:authenticatedPatient "Patient/example-patient" ;
+  bridge:authenticatedAsProxy false ;
+  bridge:sourceFormatVersion "1" .
+
+_:import
+  a prov:Activity ;
+  prov:used <ni:///sha-256;2i3xQ2zcpY3XmzKOzQq8r6N9MknOmeiT7BNcufxdo0U> ;
+  rdfs:label "synthetic example import" ;
+  prov:startedAtTime "2026-09-01T10:00:00Z"^^xsd:dateTime ;
+  prov:qualifiedAssociation [
+    prov:hadPlan [ a prov:Plan ; rdfs:label "synthetic-json-example" ; pav:version "0.1.0" ] ;
+    prov:agent [ ]
+  ] .

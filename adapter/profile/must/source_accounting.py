@@ -44,7 +44,8 @@ A_JSON_PATH_IS_STEPS = (
     "JSON Pointer reference token, ~ as ~0 and / as ~1, and the record itself is no path"
 )
 
-A_TERM = re.compile(r"[^\s<>\"'{}()\[\];,/:#?*+=!|&^$@\\]+")
+A_TERM = re.compile(r"(?:[^\s<>\"'{}()\[\];,/:#?*+=!|&^$@\\]|\\[-_~.!$&'()*+,;=/?#@%])+")
+AN_ESCAPE = re.compile(r"\\(.)")
 
 
 def shortened(term):
@@ -95,7 +96,7 @@ def mentioned_by_the_mappings(crate, written=A_NAME):
         path = crate.file_at(mapping)
         if path is None:
             return None
-        mentioned.update(written.findall(path.read_text(encoding="utf-8")))
+        mentioned.update(AN_ESCAPE.sub(r"\1", term) for term in written.findall(path.read_text(encoding="utf-8")))
     return mentioned
 
 

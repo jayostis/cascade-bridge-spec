@@ -6,9 +6,14 @@ CONVERT = " ".join(CONTRACT.split("## `convert`", 1)[1].split())
 
 def test_convert_takes_a_findings_file():
     assert (
-        "convert <adapter directory> <document> [--envelope <iri>] [--out <file>] [--findings <file>] [--format turtle|ntriples] "
-        "[--vocabularies <directory>]" in CONVERT
+        "convert <adapter directory> <document> [--envelope <iri>] [--facts <file>] [--out <file>] "
+        "[--findings <file>] [--format turtle|ntriples] [--vocabularies <directory>]" in CONVERT
     )
+
+
+def test_convert_is_handed_the_facts_supplied_with_the_document_as_a_turtle_file():
+    assert "`--facts` names a Turtle file of the facts supplied with `<document>`" in CONVERT
+    assert "Without it, the document is converted with none." in CONVERT
 
 
 def test_the_findings_go_to_that_file_and_never_to_standard_output():

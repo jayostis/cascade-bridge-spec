@@ -76,6 +76,24 @@
     """
   ] ;
   sh:property [
+    sh:path bridge:sourceSchema ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "An envelope carries at most one bridge:sourceSchema, by IRI."
+  ] ;
+  sh:sparql [
+    sh:message "An envelope's bridge:sourceSchema names a crate File entity (schema:MediaObject), or a fragment of one, not a bare IRI naming nothing: {?value} does not." ;
+    sh:select """
+      SELECT $this ?value WHERE {
+        $this <https://ns.cascadeprotocol.org/bridge/v1-draft#sourceSchema> ?value .
+        FILTER NOT EXISTS {
+          ?file a <http://schema.org/MediaObject> .
+          FILTER (STR(?file) = STRBEFORE(CONCAT(STR(?value), "#"), "#"))
+        }
+      }
+    """
+  ] ;
+  sh:property [
     sh:path bridge:documentSchema ;
     sh:maxCount 1 ;
     sh:nodeKind sh:IRI ;

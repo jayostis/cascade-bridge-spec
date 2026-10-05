@@ -5,6 +5,7 @@
 @prefix owl:    <http://www.w3.org/2002/07/owl#> .
 @prefix schema: <http://schema.org/> .
 @prefix mf:     <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .
+@prefix qt:     <http://www.w3.org/2001/sw/DataAccess/tests/test-query#> .
 @prefix oa:     <http://www.w3.org/ns/oa#> .
 @prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 @prefix dct:    <http://purl.org/dc/terms/> .
@@ -39,11 +40,6 @@
     sh:message "The manifest carries at most one bridge:adapter, a bridge:Adapter by IRI: the root entity of the adapter's crate."
   ] ;
   sh:property [
-    sh:path bridge:stampPredicate ;
-    sh:nodeKind sh:IRI ;
-    sh:message "bridge:stampPredicate on the manifest names a stamp predicate by IRI, the set every entry inherits."
-  ] ;
-  sh:property [
     sh:path mf:entries ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
@@ -58,11 +54,11 @@
   ] ;
   sh:sparql [
     sh:prefixes <> ;
-    sh:message "A manifest listing an adapter's test (bridge:IsomorphicConversionTest, bridge:InputOnlyTest, bridge:DatasetCompletionTest) carries exactly one bridge:adapter, a bridge:Adapter by IRI: the root entity of the adapter's crate." ;
+    sh:message "A manifest listing an adapter's test (bridge:IsomorphicConversionTest, bridge:InputOnlyTest, bridge:DatasetCompletionTest, bridge:IdentityRelationTest) carries exactly one bridge:adapter, a bridge:Adapter by IRI: the root entity of the adapter's crate." ;
     sh:select """
       SELECT DISTINCT $this (bridge:adapter AS ?path) WHERE {
         $this mf:entries/rdf:rest*/rdf:first/rdf:type ?type .
-        FILTER (?type IN (bridge:IsomorphicConversionTest, bridge:InputOnlyTest, bridge:DatasetCompletionTest))
+        FILTER (?type IN (bridge:IsomorphicConversionTest, bridge:InputOnlyTest, bridge:DatasetCompletionTest, bridge:IdentityRelationTest))
         FILTER NOT EXISTS { $this bridge:adapter ?adapter }
       }
     """
@@ -83,7 +79,7 @@
     sh:select """
       SELECT $this ?value WHERE {
         $this bridge:adapter ?adapter ;
-              mf:entries/rdf:rest*/rdf:first/mf:action/bridge:envelope ?value .
+              mf:entries/rdf:rest*/rdf:first/mf:action/bridge:conversion?/bridge:envelope ?value .
         FILTER NOT EXISTS { ?adapter bridge:envelope ?value }
       }
     """
@@ -97,11 +93,16 @@
     [ sh:class bridge:DatasetCompletionTest ]
     [ sh:class bridge:LiftTest ]
     [ sh:class bridge:SkeletonTest ]
+    [ sh:class bridge:NamingTest ]
+    [ sh:class bridge:BaseUrlNormalisationTest ]
+    [ sh:class bridge:VersioningTest ]
+    [ sh:class bridge:IdentityRelationTest ]
   ) ;
-  sh:message "A manifest entry is an IRI typed with exactly one of bridge:IsomorphicConversionTest, bridge:InputOnlyTest, bridge:DatasetCompletionTest, bridge:LiftTest, bridge:SkeletonTest." .
+  sh:message "A manifest entry is an IRI typed with exactly one of bridge:IsomorphicConversionTest, bridge:InputOnlyTest, bridge:DatasetCompletionTest, bridge:LiftTest, bridge:SkeletonTest, bridge:NamingTest, bridge:BaseUrlNormalisationTest, bridge:VersioningTest, bridge:IdentityRelationTest." .
 
 <#Test> a sh:NodeShape ;
-  sh:targetClass bridge:IsomorphicConversionTest, bridge:InputOnlyTest, bridge:DatasetCompletionTest, bridge:LiftTest, bridge:SkeletonTest ;
+  sh:targetClass bridge:IsomorphicConversionTest, bridge:InputOnlyTest, bridge:DatasetCompletionTest, bridge:LiftTest, bridge:SkeletonTest, bridge:NamingTest,
+    bridge:BaseUrlNormalisationTest, bridge:VersioningTest, bridge:IdentityRelationTest ;
   sh:nodeKind sh:IRI ;
   sh:property [
     sh:path mf:name ;
@@ -131,11 +132,75 @@
     sh:maxCount 1 ;
     sh:node <#ConversionResult> ;
     sh:message "An isomorphic conversion test carries exactly one mf:result naming the expected graph and findings."
+  ] .
+
+<#IdentityRelationTest> a sh:NodeShape ;
+  sh:targetClass bridge:IdentityRelationTest ;
+  sh:property [
+    sh:path mf:action ;
+    sh:node <#IdentityAction>
   ] ;
   sh:property [
-    sh:path bridge:stampPredicate ;
+    sh:path mf:result ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:node <#IdentityResult> ;
+    sh:message "An identity relation test carries exactly one mf:result, saying whether its conversions name one record."
+  ] .
+
+<#IdentityAction> a sh:NodeShape ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property [
+    sh:path bridge:conversion ;
+    sh:minCount 2 ;
+    sh:maxCount 2 ;
+    sh:node <#Conversion> ;
+    sh:message "The action of an identity relation test carries exactly two bridge:conversion, each naming an input and its envelope, at most one file of facts and at most one bridge:selector."
+  ] .
+
+<#Conversion> a sh:NodeShape ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property [
+    sh:path bridge:input ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
     sh:nodeKind sh:IRI ;
-    sh:message "bridge:stampPredicate names a predicate by IRI."
+    sh:class schema:MediaObject ;
+    sh:message "A conversion names exactly one bridge:input, a crate File entity (schema:MediaObject)."
+  ] ;
+  sh:property [
+    sh:path bridge:envelope ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:class bridge:Envelope ;
+    sh:message "A conversion names exactly one bridge:envelope, a bridge:Envelope by IRI."
+  ] ;
+  sh:property [
+    sh:path bridge:facts ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:class schema:MediaObject ;
+    sh:message "A conversion names at most one bridge:facts, a crate File entity (schema:MediaObject)."
+  ] ;
+  sh:property [
+    sh:path bridge:selector ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "A conversion carries at most one bridge:selector, a plain string: where the record it names stood in its input."
+  ] .
+
+<#IdentityResult> a sh:NodeShape ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property [
+    sh:path bridge:sameRecord ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:boolean ;
+    sh:message "The result of an identity relation test carries exactly one bridge:sameRecord, an xsd:boolean."
   ] .
 
 <#InputOnlyTest> a sh:NodeShape ;
@@ -148,11 +213,6 @@
     sh:path mf:result ;
     sh:maxCount 0 ;
     sh:message "An input-only test has no mf:result: nothing is judged."
-  ] ;
-  sh:property [
-    sh:path bridge:stampPredicate ;
-    sh:maxCount 0 ;
-    sh:message "An input-only test has no bridge:stampPredicate: nothing is compared."
   ] .
 
 <#DatasetCompletionTest> a sh:NodeShape ;
@@ -169,26 +229,20 @@
   ] .
 
 <#BridgeTest> a sh:NodeShape ;
-  sh:targetClass bridge:LiftTest, bridge:SkeletonTest ;
+  sh:targetClass bridge:LiftTest, bridge:SkeletonTest, bridge:NamingTest, bridge:BaseUrlNormalisationTest, bridge:VersioningTest ;
   sh:property [
     sh:path mf:result ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
-    sh:node <#LiftResult> ;
-    sh:message "A test of a Bridge carries exactly one mf:result naming the expected graph."
-  ] ;
-  sh:property [
-    sh:path bridge:stampPredicate ;
-    sh:maxCount 0 ;
-    sh:message "A test of a Bridge has no bridge:stampPredicate."
+    sh:message "A test of a Bridge carries exactly one mf:result."
   ] ;
   sh:sparql [
     sh:prefixes <> ;
-    sh:message "A test of a Bridge is listed only in a manifest that names no bridge:adapter and no bridge:stampPredicate." ;
+    sh:message "A test of a Bridge is listed only in a manifest that names no bridge:adapter." ;
     sh:select """
       SELECT $this ?value WHERE {
-        ?manifest mf:entries/rdf:rest*/rdf:first $this .
-        { ?manifest bridge:adapter ?value } UNION { ?manifest bridge:stampPredicate ?value }
+        ?manifest mf:entries/rdf:rest*/rdf:first $this ;
+          bridge:adapter ?value .
       }
     """
   ] .
@@ -198,6 +252,10 @@
   sh:property [
     sh:path mf:action ;
     sh:node <#LiftAction>
+  ] ;
+  sh:property [
+    sh:path mf:result ;
+    sh:node <#LiftResult>
   ] .
 
 <#SkeletonTest> a sh:NodeShape ;
@@ -205,6 +263,136 @@
   sh:property [
     sh:path mf:action ;
     sh:node <#SkeletonAction>
+  ] ;
+  sh:property [
+    sh:path mf:result ;
+    sh:node <#LiftResult>
+  ] .
+
+<#NamingTest> a sh:NodeShape ;
+  sh:targetClass bridge:NamingTest ;
+  sh:property [
+    sh:path mf:action ;
+    sh:node <#NamingAction>
+  ] ;
+  sh:property [
+    sh:path mf:result ;
+    sh:node <#NamingResult>
+  ] .
+
+<#NamingAction> a sh:NodeShape ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property [
+    sh:path qt:query ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "The action of a naming test names exactly one qt:query, the query computing a name from ?input, by IRI."
+  ] ;
+  sh:property [
+    sh:path bridge:nameInputs ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:message "The action of a naming test carries exactly one bridge:nameInputs list."
+  ] ;
+  sh:property [
+    sh:path ( bridge:nameInputs [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "bridge:nameInputs lists at least one input, each a plain string."
+  ] .
+
+<#NamingResult> a sh:NodeShape ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property [
+    sh:path bridge:expectedName ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:pattern "^urn:uuid:[0-9a-f]{8}-[0-9a-f]{4}-8[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$" ;
+    sh:message "The result of a naming test names exactly one bridge:expectedName, urn:uuid: and a lower-case UUID of version 8 and variant 10."
+  ] .
+
+<#BaseUrlNormalisationTest> a sh:NodeShape ;
+  sh:targetClass bridge:BaseUrlNormalisationTest ;
+  sh:property [
+    sh:path mf:action ;
+    sh:node <#ServerBaseUrl>
+  ] ;
+  sh:property [
+    sh:path mf:result ;
+    sh:node <#ServerBaseUrl>
+  ] .
+
+<#ServerBaseUrl> a sh:NodeShape ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property [
+    sh:path bridge:serverBaseUrl ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "The action and the result of a base URL normalisation test each carry exactly one bridge:serverBaseUrl, a plain string."
+  ] .
+
+<#VersioningTest> a sh:NodeShape ;
+  sh:targetClass bridge:VersioningTest ;
+  sh:property [
+    sh:path mf:action ;
+    sh:node <#VersioningAction>
+  ] ;
+  sh:property [
+    sh:path mf:result ;
+    sh:node <#VersioningResult>
+  ] .
+
+<#VersioningAction> a sh:NodeShape ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property [
+    sh:path bridge:input ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "The action of a versioning test names exactly one bridge:input, the N-Triples a mapping constructed, by IRI."
+  ] .
+
+<#VersioningResult> a sh:NodeShape ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property [
+    sh:path bridge:expectedGraph ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "The result of a versioning test names exactly one bridge:expectedGraph, the graph with every version named, by IRI."
+  ] ;
+  sh:property [
+    sh:path bridge:expectedVersion ;
+    sh:minCount 1 ;
+    sh:node <#ExpectedVersion> ;
+    sh:message "The result of a versioning test carries a bridge:expectedVersion for each version the input holds."
+  ] .
+
+<#ExpectedVersion> a sh:NodeShape ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property [
+    sh:path bridge:expectedName ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:pattern "^ni:///sha-256;[A-Za-z0-9_-]{43}$" ;
+    sh:message "An expected version names exactly one bridge:expectedName, ni:///sha-256; and 43 unpadded base64url characters."
+  ] ;
+  sh:property [
+    sh:path bridge:canonicalContent ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "An expected version names exactly one bridge:canonicalContent, the N-Quads its name is the hash of, by IRI."
   ] .
 
 <#CommittedAction> a sh:NodeShape ;
@@ -225,6 +413,13 @@
     sh:nodeKind sh:IRI ;
     sh:class bridge:Envelope ;
     sh:message "The action names exactly one bridge:envelope, a bridge:Envelope by IRI."
+  ] ;
+  sh:property [
+    sh:path bridge:facts ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:class schema:MediaObject ;
+    sh:message "The action names at most one bridge:facts, the Turtle file of facts supplied with its input, and it is a crate File entity (schema:MediaObject), not a bare IRI naming nothing."
   ] .
 
 <#DatasetAction> a sh:NodeShape ;

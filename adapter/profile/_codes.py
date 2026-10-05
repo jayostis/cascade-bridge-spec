@@ -6,6 +6,7 @@ from _terms import BRIDGE
 
 KINDS_A_GAP_MAY_NAME = (
     BRIDGE.carriedWithLoss,
+    BRIDGE.idRepeated,
     BRIDGE.noPredicate,
     BRIDGE.schemaRuleUnnamed,
     BRIDGE.sourceLacksRequired,

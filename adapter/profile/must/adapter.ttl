@@ -65,6 +65,11 @@
     sh:message "Each bridge:findingsQuery is a SPARQL 1.1 CONSTRUCT whose graph is a record's findings: a crate File entity (schema:MediaObject) by IRI, declared application/sparql-query."
   ] ;
   sh:property [
+    sh:path bridge:documentTableQuery ;
+    sh:node <#Query> ;
+    sh:message "Each bridge:documentTableQuery is a SPARQL 1.1 CONSTRUCT a Bridge runs on each record of a document before any mapping: a crate File entity (schema:MediaObject) by IRI, declared application/sparql-query."
+  ] ;
+  sh:property [
     sh:path bridge:gapScheme ;
     sh:node <#GapScheme> ;
     sh:message "Each bridge:gapScheme is the adapter's file of skos:Concepts, one for each gap a finding's body names: a crate File entity (schema:MediaObject) by IRI, declared text/turtle."
@@ -79,7 +84,7 @@
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:nodeKind sh:IRI ;
-    sh:message "The adapter carries exactly one bridge:cascadeVocabularyPin, the pinned commit of the-cascade-protocol/spec, by IRI."
+    sh:message "The adapter carries exactly one bridge:cascadeVocabularyPin, the pinned commit of the Cascade vocabulary repository the adapter reads, by IRI."
   ] ;
   sh:property [
     sh:path bridge:vocabulary ;
@@ -110,8 +115,19 @@
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:nodeKind sh:IRI ;
-    sh:class schema:MediaObject ;
-    sh:message "The adapter carries exactly one bridge:sourceSchema, the pinned source-side schema, and it is a crate File entity (schema:MediaObject), not a bare IRI naming nothing."
+    sh:message "The adapter carries exactly one bridge:sourceSchema, the pinned source-side schema, by IRI."
+  ] ;
+  sh:sparql [
+    sh:message "The adapter's bridge:sourceSchema names a crate File entity (schema:MediaObject), or a fragment of one, not a bare IRI naming nothing: {?value} does not." ;
+    sh:select """
+      SELECT $this ?value WHERE {
+        $this <https://ns.cascadeprotocol.org/bridge/v1-draft#sourceSchema> ?value .
+        FILTER NOT EXISTS {
+          ?file a <http://schema.org/MediaObject> .
+          FILTER (STR(?file) = STRBEFORE(CONCAT(STR(?value), "#"), "#"))
+        }
+      }
+    """
   ] ;
   sh:property [
     sh:path bridge:elementNameOfEachRecord ;

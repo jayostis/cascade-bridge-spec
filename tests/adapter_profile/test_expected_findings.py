@@ -174,9 +174,9 @@ def test_reports_a_finding_with_no_body(package):
     assert "carries exactly one oa:hasBody" in "\n".join(expected_findings.faulty(package.crate))
 
 
-def test_reports_expected_findings_holding_no_finding_at_all(package):
+def test_an_empty_findings_graph_is_valid_and_means_the_input_produces_no_findings(package):
     package.write(FINDINGS, PREFIXES_OF_FINDINGS)
-    assert "carries no oa:Annotation" in "\n".join(expected_findings.faulty(package.crate))
+    assert not list(expected_findings.faulty(package.crate))
 
 
 def test_reports_expected_findings_whose_only_finding_mistypes_the_annotation_class(package):

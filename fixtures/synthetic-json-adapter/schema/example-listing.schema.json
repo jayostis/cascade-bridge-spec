@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "type": "object",
+  "required": ["kind", "records"],
+  "properties": {
+    "kind": {"const": "listing"},
+    "records": {"type": "array", "items": {"$ref": "#/definitions/record"}}
+  },
+  "definitions": {
+    "record": {
+      "type": "object",
+      "required": ["accession", "label"],
+      "properties": {
+        "accession": {"type": "string"},
+        "version": {"$ref": "#/definitions/positiveInteger"},
+        "label": {"type": "string"}
+      }
+    },
+    "positiveInteger": {"type": "integer", "minimum": 1}
+  }
+}

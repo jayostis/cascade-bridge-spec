@@ -106,6 +106,11 @@ def test_reports_a_detect_query_that_is_not_an_ask(package):
     assert "where bridge:detectQuery requires ASK" in "\n".join(queries.malformed(package.crate))
 
 
+def test_reports_a_document_table_query_that_is_not_a_construct(package):
+    package.write("in/example-table.rq", "SELECT ?accession WHERE { ?record ?slot ?accession }\n")
+    assert "where bridge:documentTableQuery requires CONSTRUCT" in "\n".join(queries.malformed(package.crate))
+
+
 def test_reports_a_findings_query_that_is_an_ask(package):
     package.write(FINDINGS_QUERY, "ASK { ?record ?slot ?note }\n")
     assert "where bridge:findingsQuery requires CONSTRUCT" in "\n".join(queries.malformed(package.crate))
@@ -382,8 +387,8 @@ ENDPOINT = "<https://example.org/sparql>"
     [
         pytest.param(
             "in/example-record.rq",
-            "  OPTIONAL {",
-            f"  SERVICE {ENDPOINT} {{ ?exampleRecord ?p ?o }}\n  OPTIONAL {{",
+            "  OPTIONAL { bridge:thisDocument",
+            f"  SERVICE {ENDPOINT} {{ ?exampleRecord ?p ?o }}\n  OPTIONAL {{ bridge:thisDocument",
             id="at-the-top-of-a-mapping",
         ),
         pytest.param(
@@ -416,8 +421,8 @@ def test_reports_a_query_holding_a_service_pattern(package, query, old, new):
     [
         pytest.param(
             "in/example-record.rq",
-            "WHERE {",
-            "FROM <https://example.org/graph>\nWHERE {",
+            "\nWHERE {",
+            "\nFROM <https://example.org/graph>\nWHERE {",
             id="from-on-a-mapping",
         ),
         pytest.param(

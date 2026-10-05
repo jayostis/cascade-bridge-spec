@@ -1,0 +1,7 @@
+{
+  "kind": "set",
+  "records": [
+    {"accession": "EX000107", "version": 1, "label": "one of two records holding one accession"},
+    {"accession": "EX000107", "version": 4, "label": "the other record holding that accession"}
+  ]
+}

@@ -28,3 +28,19 @@
   bridge:verdict bridge:consumed ;
   bridge:lookupIn <example-statuses.ttl> ;
   bridge:lookupNamesGap ex:a-status-outside-the-set-the-vocabulary-fixes .
+
+[] a bridge:PathEntry ;
+  bridge:sourcePath "/contained" ;
+  bridge:verdict bridge:carried .
+
+[] a bridge:PathEntry ;
+  bridge:sourcePath "/contained/id" ;
+  bridge:verdict bridge:carried .
+
+[] a bridge:PathEntry ;
+  bridge:sourcePath "/contained/label" ;
+  bridge:verdict bridge:carried .
+
+[] a bridge:PathEntry ;
+  bridge:sourcePath "/lastUpdated" ;
+  bridge:verdict bridge:carried .

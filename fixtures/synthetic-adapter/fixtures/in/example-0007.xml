@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ExampleRecordSet>
+  <ExampleRecord Accession="EX000003" Version="3">
+    <Label>third synthetic record, relabelled since example-0002</Label>
+  </ExampleRecord>
+</ExampleRecordSet>

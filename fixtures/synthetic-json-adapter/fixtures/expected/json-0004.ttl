@@ -1,9 +1,43 @@
-@prefix ex:   <https://example.org/synthetic-adapter/v1#> .
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix prov:   <http://www.w3.org/ns/prov#> .
+@prefix pav:    <http://purl.org/pav/> .
+@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+@prefix rec:    <https://ns.cascadeprotocol.org/records/v1-draft#> .
+@prefix ex:     <https://example.org/synthetic-adapter/v1#> .
 
-<https://example.org/synthetic-adapter/record/EX000105>
+<urn:uuid:6004a646-16cd-8a20-8b6a-37d4f2ab0d73>
   a ex:Record ;
-  ex:accession "EX000105" ;
-  ex:version "1"^^xsd:integer ;
+  ex:accession "EX000105" .
+
+<ni:///sha-256;T-3b-SA6En9RkeOYVYtBxCoRDn9AEvksr3EYRcrPeIU>
+  prov:specializationOf <urn:uuid:6004a646-16cd-8a20-8b6a-37d4f2ab0d73> ;
   rdfs:label "a record carrying members the accounting names nowhere" .
+
+[] bridge:arrivedAs <ni:///sha-256;T-3b-SA6En9RkeOYVYtBxCoRDn9AEvksr3EYRcrPeIU> ;
+  pav:version "1" ;
+  bridge:selector "/records/0" ;
+  prov:wasDerivedFrom <ni:///sha-256;ahuVsX4Hc8sCQCJV07MHA5wBxxnc9kxNnPuG9uJOQaE> ;
+  prov:wasGeneratedBy _:import .
+
+<ni:///sha-256;ahuVsX4Hc8sCQCJV07MHA5wBxxnc9kxNnPuG9uJOQaE>
+  a prov:Entity ;
+  bridge:serverBaseUrl "https://records.example.org/api" ;
+  pav:retrievedFrom <https://records.example.org/api/ExampleRecordSet> ;
+  pav:retrievedOn "2026-08-30T22:14:00Z"^^xsd:dateTime ;
+  prov:qualifiedAttribution
+    [ prov:agent [ rdfs:label "Example Records Registry" ] ; prov:hadRole rec:author ] ,
+    [ prov:agent [ rdfs:label "Example Fetcher" ] ; prov:hadRole rec:transmitter ] ;
+  bridge:authenticatedPatient "Patient/example-patient" ;
+  bridge:authenticatedAsProxy false ;
+  bridge:sourceFormatVersion "1" .
+
+_:import
+  a prov:Activity ;
+  prov:used <ni:///sha-256;ahuVsX4Hc8sCQCJV07MHA5wBxxnc9kxNnPuG9uJOQaE> ;
+  rdfs:label "synthetic example import" ;
+  prov:startedAtTime "2026-09-01T10:00:00Z"^^xsd:dateTime ;
+  prov:qualifiedAssociation [
+    prov:hadPlan [ a prov:Plan ; rdfs:label "synthetic-json-example" ; pav:version "0.1.0" ] ;
+    prov:agent [ ]
+  ] .

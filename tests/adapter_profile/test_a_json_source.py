@@ -1,5 +1,5 @@
 import pytest
-from rdflib import Literal
+from rdflib import Literal, URIRef
 
 import expected_findings
 import inputs
@@ -219,3 +219,75 @@ def test_reports_a_json_findings_query_constructing_an_xpath_selector(json_packa
 
 def test_reports_nothing_for_the_committed_json_queries(json_crate):
     assert not list(queries.malformed(json_crate))
+
+
+def test_reports_nothing_for_a_fractional_value_the_schema_holds_to_a_fractional_multiple(json_package):
+    json_package.edit(
+        RECORD_SCHEMA, '"label": {"type": "string"}', '"label": {"type": ["string", "number"], "multipleOf": 0.5}'
+    )
+    json_package.edit("fixtures/in/json-0001.json", '"label": "first synthetic JSON record"', '"label": 1.5')
+    assert "json-0001" not in said(inputs, json_package.crate)
+
+
+def test_reports_a_fractional_value_that_is_no_multiple_of_the_schemas_fraction(json_package):
+    json_package.edit(
+        RECORD_SCHEMA, '"label": {"type": "string"}', '"label": {"type": ["string", "number"], "multipleOf": 0.5}'
+    )
+    json_package.edit("fixtures/in/json-0001.json", '"label": "first synthetic JSON record"', '"label": 1.2')
+    assert "is not a multiple of 0.5" in said(inputs, json_package.crate)
+
+
+def test_reports_nothing_for_an_integer_written_with_a_zero_fraction(json_package):
+    json_package.edit("fixtures/in/json-0001.json", '"version": 3', '"version": 3.0')
+    assert "json-0001" not in said(inputs, json_package.crate)
+
+
+def test_reports_nothing_for_a_carried_json_path_a_mapping_mentions_with_an_escaped_local_name(json_package):
+    json_package.edit("vocab/example-accounting.ttl", '"/label"', '"/a~0b"')
+    json_package.edit("in/example-record.rq", "xyz:label ?label", "xyz:a\~b ?label")
+    assert "mentions a~b" not in said(source_accounting, json_package.crate)
+
+
+LISTING_SCHEMA = "schema/example-listing.schema.json"
+LISTING_INPUT = "fixtures/in/json-0008.json"
+THE_SUBSCHEMA = "example-listing.schema.json#/definitions/record, the envelope's bridge:sourceSchema"
+
+
+def test_validates_a_record_read_in_an_envelope_naming_a_source_schema_against_it_not_the_adapters(json_package):
+    json_package.edit(LISTING_INPUT, ', "label": "a record read in the listing envelope"', "")
+    assert f"/records/0 of json-0008.json does not validate against {THE_SUBSCHEMA}" in said(inputs, json_package.crate)
+
+
+def test_resolves_a_ref_of_the_subschema_a_fragment_names_against_the_whole_schema_document(json_package):
+    json_package.edit(LISTING_INPUT, '"version": 1,', '"version": 0,')
+    assert "/records/0/version: 0 is less than the minimum of 1" in said(inputs, json_package.crate)
+    assert THE_SUBSCHEMA in said(inputs, json_package.crate)
+
+
+def test_reports_a_source_schema_fragment_naming_no_subschema(json_package):
+    json_package.edit("ro-crate-metadata.json", "#/definitions/record", "#/definitions/absent")
+    assert "example-listing.schema.json holds no subschema at #/definitions/absent" in said(inputs, json_package.crate)
+
+
+def test_reports_a_source_schema_fragment_that_is_no_json_pointer(json_package):
+    json_package.edit("ro-crate-metadata.json", "#/definitions/record", "#record")
+    assert "#record is not a JSON Pointer" in said(inputs, json_package.crate)
+
+
+def test_reports_an_envelope_carrying_two_source_schemas(json_crate):
+    listing = envelope_named(json_crate, "listing")
+    json_crate.graph.add((listing, BRIDGE.sourceSchema, json_crate.graph.value(json_crate.root, BRIDGE.sourceSchema)))
+    assert "at most one bridge:sourceSchema" in shape_file_messages(json_crate, "envelope.ttl")
+
+
+def test_reports_an_envelope_source_schema_naming_no_file_of_the_crate(json_crate):
+    listing = envelope_named(json_crate, "listing")
+    schema = json_crate.graph.value(listing, BRIDGE.sourceSchema)
+    json_crate.graph.set((listing, BRIDGE.sourceSchema, URIRef(str(schema).replace("listing", "absent"))))
+    assert "names a crate File entity" in shape_file_messages(json_crate, "envelope.ttl")
+
+
+def test_reports_nothing_for_an_adapters_source_schema_naming_a_subschema_of_a_crate_file(json_crate):
+    listing = envelope_named(json_crate, "listing")
+    json_crate.graph.set((json_crate.root, BRIDGE.sourceSchema, json_crate.graph.value(listing, BRIDGE.sourceSchema)))
+    assert not shape_file_messages(json_crate, "adapter.ttl")

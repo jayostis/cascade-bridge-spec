@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ExampleRecordSet>
+  <ExampleRecord Accession="EX000008" Version="1">
+    <Label>a record whose accession the next record repeats</Label>
+  </ExampleRecord>
+  <ExampleRecord Accession="EX000008" Version="1">
+    <Label>a record repeating the accession of the one before it</Label>
+  </ExampleRecord>
+</ExampleRecordSet>

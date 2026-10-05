@@ -239,10 +239,13 @@ def faulty(crate):
         except Exception as error:
             yield f"{name}: {path.name} does not parse as Turtle\n{error}"
             continue
+        if not len(graph):
+            continue
         if (None, RDF.type, OA.Annotation) not in graph:
             yield (
-                f"{name}: {path.name} carries no oa:Annotation, where an entry's bridge:expectedFindings "
-                "is every finding its input produces, each one an oa:Annotation"
+                f"{name}: {path.name} holds statements and carries no oa:Annotation, where an entry's "
+                "bridge:expectedFindings is every finding its input produces, each one an oa:Annotation, "
+                "and is empty where it produces none"
             )
             continue
         for message in unmet(graph, shapes):

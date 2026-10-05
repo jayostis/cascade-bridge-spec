@@ -42,3 +42,8 @@ ex:the-record-names-no-submitter a skos:Concept ;
   skos:prefLabel "the record names no submitter" ;
   skos:inScheme ex:gaps ;
   skos:broader bridge:sourceLacksRequired .
+
+ex:an-accession-repeated-within-its-document a skos:Concept ;
+  skos:prefLabel "an accession repeated within its document" ;
+  skos:inScheme ex:gaps ;
+  skos:broader bridge:idRepeated .

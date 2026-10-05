@@ -1,0 +1,57 @@
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix prov:   <http://www.w3.org/ns/prov#> .
+@prefix pav:    <http://purl.org/pav/> .
+@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+@prefix rec:    <https://ns.cascadeprotocol.org/records/v1-draft#> .
+@prefix ex:     <https://example.org/synthetic-adapter/v1#> .
+
+<urn:uuid:279ae78d-ea82-899c-a7c6-4d23f20adc98>
+  a ex:Record ;
+  ex:accession "EX000107" .
+
+<ni:///sha-256;28ZsgkZXrZ-95LershhTmtPKXlcsSGsF_MAnKM1VuTE>
+  prov:specializationOf <urn:uuid:279ae78d-ea82-899c-a7c6-4d23f20adc98> ;
+  rdfs:label "one of two records holding one accession" .
+
+[] bridge:arrivedAs <ni:///sha-256;28ZsgkZXrZ-95LershhTmtPKXlcsSGsF_MAnKM1VuTE> ;
+  pav:version "1" ;
+  bridge:selector "/records/0" ;
+  prov:wasDerivedFrom <ni:///sha-256;jo_WTAf-65KdN4gSHJMPv1s4-UY3ck_jdSVYxj771Fk> ;
+  prov:wasGeneratedBy _:import .
+
+<urn:uuid:bad72f10-8b8a-8450-bc22-70da13803dda>
+  a ex:Record ;
+  ex:accession "EX000107" .
+
+<ni:///sha-256;rUnwnAr1vhyuY_s1Q1egktKvdjIxDXkeF9xbzMgdF4w>
+  prov:specializationOf <urn:uuid:bad72f10-8b8a-8450-bc22-70da13803dda> ;
+  rdfs:label "the other record holding that accession" .
+
+[] bridge:arrivedAs <ni:///sha-256;rUnwnAr1vhyuY_s1Q1egktKvdjIxDXkeF9xbzMgdF4w> ;
+  pav:version "4" ;
+  bridge:selector "/records/1" ;
+  prov:wasDerivedFrom <ni:///sha-256;jo_WTAf-65KdN4gSHJMPv1s4-UY3ck_jdSVYxj771Fk> ;
+  prov:wasGeneratedBy _:import .
+
+<ni:///sha-256;jo_WTAf-65KdN4gSHJMPv1s4-UY3ck_jdSVYxj771Fk>
+  a prov:Entity ;
+  bridge:serverBaseUrl "https://records.example.org/api" ;
+  pav:retrievedFrom <https://records.example.org/api/ExampleRecordSet> ;
+  pav:retrievedOn "2026-08-30T22:14:00Z"^^xsd:dateTime ;
+  prov:qualifiedAttribution
+    [ prov:agent [ rdfs:label "Example Records Registry" ] ; prov:hadRole rec:author ] ,
+    [ prov:agent [ rdfs:label "Example Fetcher" ] ; prov:hadRole rec:transmitter ] ;
+  bridge:authenticatedPatient "Patient/example-patient" ;
+  bridge:authenticatedAsProxy false ;
+  bridge:sourceFormatVersion "1" .
+
+_:import
+  a prov:Activity ;
+  prov:used <ni:///sha-256;jo_WTAf-65KdN4gSHJMPv1s4-UY3ck_jdSVYxj771Fk> ;
+  rdfs:label "synthetic example import" ;
+  prov:startedAtTime "2026-09-01T10:00:00Z"^^xsd:dateTime ;
+  prov:qualifiedAssociation [
+    prov:hadPlan [ a prov:Plan ; rdfs:label "synthetic-json-example" ; pav:version "0.1.0" ] ;
+    prov:agent [ ]
+  ] .

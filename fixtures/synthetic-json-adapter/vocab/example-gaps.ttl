@@ -13,3 +13,8 @@ ex:a-status-outside-the-set-the-vocabulary-fixes a skos:Concept ;
   skos:prefLabel "a status outside the set the vocabulary fixes" ;
   skos:inScheme ex:gaps ;
   skos:broader bridge:valueNotMapped .
+
+ex:an-accession-repeated-within-its-document a skos:Concept ;
+  skos:prefLabel "an accession repeated within its document" ;
+  skos:inScheme ex:gaps ;
+  skos:broader bridge:idRepeated .

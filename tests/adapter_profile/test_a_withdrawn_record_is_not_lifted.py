@@ -1,4 +1,4 @@
-from rdflib import Graph
+from rdflib import Graph, Literal
 
 from _terms import BRIDGE
 
@@ -18,16 +18,28 @@ def lifted(*statuses):
     return A_RECORD + "".join(f" ;\n  {element}" for element in held) + " .\n"
 
 
+A_DOCUMENT = "ni:///sha-256;tGm9FWfUKGlKI5ifQdPtjK86ZoCkfBTJr0IBDqbDSE8"
+
+
+def dataset(crate, *statuses):
+    """The record above in its dataset, as sparql.md's steps build it, a document of that one record, supplied no facts."""
+    graph = Graph().parse(data=lifted(*statuses), format="turtle")
+    for table in crate.graph.objects(crate.root, BRIDGE.table):
+        graph.parse(crate.file_at(table), format="turtle")
+    graph.add((BRIDGE.thisDocument, BRIDGE.sha256, Literal(A_DOCUMENT)))
+    graph.add((BRIDGE.thisRecord, BRIDGE.selector, Literal("/ExampleRecord")))
+    for query in crate.graph.objects(crate.root, BRIDGE.documentTableQuery):
+        graph += graph.query(crate.file_at(query).read_text(encoding="utf-8")).graph
+    return graph
+
+
 def mapped(crate, *statuses):
-    """What the adapter's one bridge:mapping constructs from that record, over the dataset its tables are loaded into."""
+    """What the adapter's one bridge:mapping constructs from that record's dataset."""
     named = list(crate.graph.objects(crate.root, BRIDGE.mapping))
     assert len(named) == 1, (
         f"the synthetic adapter names {len(named)} bridge:mapping queries, where the vector names one"
     )
-    dataset = Graph().parse(data=lifted(*statuses), format="turtle")
-    for table in crate.graph.objects(crate.root, BRIDGE.table):
-        dataset.parse(crate.file_at(table), format="turtle")
-    return dataset.query(crate.file_at(named[0]).read_text(encoding="utf-8")).graph
+    return dataset(crate, *statuses).query(crate.file_at(named[0]).read_text(encoding="utf-8")).graph
 
 
 def test_a_record_holding_a_status_the_concept_map_maps_to_something_other_than_withdrawn_is_lifted(crate):

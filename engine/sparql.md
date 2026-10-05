@@ -99,6 +99,36 @@ member named its `bridge:docRootMemberName`, whose value, where the envelope
 names a `bridge:docRootMemberValue`, is a string, number, `true` or `false` the
 lift writes as that value.
 
+## Naming a record
+
+A record's name is `urn:uuid:` and a version 8 UUID laid out as
+[RFC 9562 §5.8](https://www.rfc-editor.org/rfc/rfc9562#section-5.8) lays it
+out, in lower case: the first 128 bits of the SHA-256 of the UTF-8 text
+`90c60849-c5ef-4ca6-bfb8-8662bd07d2b5`, `|`, and the record's inputs joined by
+`|`, with the version bits set to `1000` and the variant bits to `10`.
+[`../fixtures/naming/name.rq`](../fixtures/naming/name.rq) computes it from the
+joined inputs, and a Bridge and an adapter must reproduce the vectors in
+[`../fixtures/naming/`](../fixtures/naming/).
+
+| the source gives | the inputs |
+|---|---|
+| a FHIR resource whose `id` is unique within its document | the server's base URL, the resource type, the `id` |
+| a FHIR Bundle entry with no `id` and a `urn:uuid` `fullUrl`, whether a server is known or not | the `fullUrl` |
+| a FHIR contained resource | the containing record's name, the contained resource's `id` |
+| a C-CDA entry whose id is unique within its document | the id's `root` and `extension`, or its `root` where it has no `extension` |
+| a ClinVar `VariationArchive` or `ClinicalAssertion` | `https://www.ncbi.nlm.nih.gov/clinvar`, its VCV or SCV accession |
+| a ClinVar interpretation, one for each `ClassifiedCondition` of an RCV | `https://www.ncbi.nlm.nih.gov/clinvar`, the RCV accession, the condition's position in its `ClassifiedConditionList`, counted from 0 |
+| any of these whose id repeats within its document, a record with none of these ids, or a FHIR resource with an `id` and no known server | the document's SHA-256 and the `rdf:value` of the record's selector |
+
+A server's base URL has its scheme and host lower-cased and every trailing `/`
+removed, and a Bridge normalises it so before a mapping reads it. A document's
+SHA-256 is written `ni:///sha-256;` and the digest of its bytes in unpadded
+base64url ([RFC 6920](https://www.rfc-editor.org/rfc/rfc6920)).
+
+A reference relative to a server, as FHIR's `Patient/123` is, in a document
+with no known server names no record: a mapping writes no link for it, and the
+adapter reports it as a finding.
+
 ## Running an adapter
 
 A Bridge refuses to prepare an adapter one of whose queries holds a `SERVICE`
@@ -112,9 +142,16 @@ For each source record of a document, in document order, a Bridge:
 1. lifts the record into the default graph of an empty dataset;
 2. loads every `bridge:table` declared `text/turtle` into the same default
    graph. No other table format is specified;
-3. runs every `bridge:mapping`, a CONSTRUCT, over that dataset. The record's
+3. loads into the same default graph the facts supplied with the document,
+   with `bridge:serverBaseUrl` normalised, `bridge:thisDocument bridge:sha256`
+   the document's SHA-256, and `bridge:thisRecord bridge:selector` the
+   `rdf:value` of the record's selector;
+4. loads into the same default graph the document table: the RDF merge, over
+   every record of the document, of the graph each `bridge:documentTableQuery`
+   constructs over that record's dataset as the steps before this one leave it;
+5. runs every `bridge:mapping`, a CONSTRUCT, over that dataset. The record's
    graph is the union of their results;
-4. runs every `bridge:findingsQuery`, a CONSTRUCT, over the same dataset. The
+6. runs every `bridge:findingsQuery`, a CONSTRUCT, over the same dataset. The
    record's findings are the union of their graphs, with `bridge:thisRecord`
    replaced by the IRI the Bridge was given for the document the record was
    read from — the entry's `bridge:input` as [`executing.md`](executing.md)
@@ -124,13 +161,13 @@ For each source record of a document, in document order, a Bridge:
    of its own, and an annotation whose query constructed none is about the
    record itself: its target carries the record's selector and no
    `oa:refinedBy`.
-5. adds, where the adapter names a `bridge:sourceAccounting`, one finding for
+7. adds, where the adapter names a `bridge:sourceAccounting`, one finding for
    each distinct path of the record that no `bridge:PathEntry` of that file
    carries as its `bridge:sourcePath`;
-6. adds, where the adapter names a `bridge:sourceAccounting`, one finding for
+8. adds, where the adapter names a `bridge:sourceAccounting`, one finding for
    each distinct path of the record whose `bridge:PathEntry` carries a verdict a
    Bridge reports from and names a gap of a kind that reports;
-7. adds, for each `bridge:PathEntry` declaring a `bridge:lookupIn`, one finding
+9. adds, for each `bridge:PathEntry` declaring a `bridge:lookupIn`, one finding
    for each distinct value the record holds at that entry's path whose key no
    concept of that file's scheme carries as its `skos:notation`.
 
@@ -146,9 +183,9 @@ concept declares none, where its body is no concept of the adapter's
 A Bridge reports from an entry whose verdict is `bridge:carriedInPart` or
 `bridge:noHome`, and from no other. A gap of kind `bridge:noPredicate` or
 `bridge:sourceLacksRequired` is true of the path, and the entry naming it
-reports it. A gap of kind `bridge:carriedWithLoss`, `bridge:valueNotMapped` or
-`bridge:schemaRuleUnnamed` is true of what a record holds at the path, which a
-verdict cannot name, and reports nothing.
+reports it. A gap of kind `bridge:carriedWithLoss`, `bridge:valueNotMapped`,
+`bridge:schemaRuleUnnamed` or `bridge:idRepeated` is true of what a record holds
+at the path, which a verdict cannot name, and reports nothing.
 
 A finding an entry reports is addressed as a census finding is, and carries the
 gap as its body, `oa:classifying` as its `oa:motivatedBy`, the path as its
@@ -220,7 +257,11 @@ each one node for more than one finding, so which selector standing on it
 belongs to which finding is unrecoverable.
 
 A record's selector is an XPath selecting the record, and a refinement is an
-XPath relative to the record, selecting one node of it.
+XPath relative to the record, selecting one node of it. A record's selector is
+written `/` and the document element's step, then, for each element from the
+document element's child down to the record, `/`, its step and `[n]`, its
+position from 1 among its parent's element children of its name in its
+namespace. A step names an element as a path's step does.
 
 In a JSON document, a record's selector is an `oa:FragmentSelector` whose
 `dcterms:conformsTo` is `<https://www.rfc-editor.org/rfc/rfc6901>` and whose

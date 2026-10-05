@@ -12,6 +12,9 @@
     <#example-0004>
     <#example-0005>
     <#example-0006>
+    <#example-0008>
+    <#example-0002-and-example-0007-name-one-record>
+    <#example-0008-names-two-records>
     <#example-release-2026-01>
   ) .
 
@@ -19,7 +22,8 @@
   mf:name "example-0001" ;
   mf:action [
     bridge:input <in/example-0001.xml> ;
-    bridge:envelope <../ro-crate-metadata.json#envelope-set>
+    bridge:envelope <../ro-crate-metadata.json#envelope-set> ;
+    bridge:facts <facts/example-registry.ttl>
   ] ;
   mf:result [
     bridge:expectedGraph <expected/example-0001.ttl> ;
@@ -30,7 +34,8 @@
   mf:name "example-0002" ;
   mf:action [
     bridge:input <in/example-0002.xml> ;
-    bridge:envelope <../ro-crate-metadata.json#envelope-record>
+    bridge:envelope <../ro-crate-metadata.json#envelope-record> ;
+    bridge:facts <facts/example-registry.ttl>
   ] .
 
 <#example-0003> a bridge:IsomorphicConversionTest ;
@@ -38,7 +43,8 @@
   rdfs:comment "A document that fails its bridge:documentSchema around a record that passes bridge:sourceSchema: its findings are about the document, one for each W3C rule the undeclared element breaks, each refined to that element." ;
   mf:action [
     bridge:input <in/example-0003.xml> ;
-    bridge:envelope <../ro-crate-metadata.json#envelope-set>
+    bridge:envelope <../ro-crate-metadata.json#envelope-set> ;
+    bridge:facts <facts/example-registry.ttl>
   ] ;
   mf:result [
     bridge:expectedGraph <expected/example-0003.ttl> ;
@@ -50,7 +56,8 @@
   rdfs:comment "A record carrying nodes the adapter's bridge:sourceAccounting names nowhere — an element, an attribute of a child element, an attribute of the record element, and an attribute in a namespace: its findings are the census finding for each path, addressed at its first occurrence in the record." ;
   mf:action [
     bridge:input <in/example-0004.xml> ;
-    bridge:envelope <../ro-crate-metadata.json#envelope-set>
+    bridge:envelope <../ro-crate-metadata.json#envelope-set> ;
+    bridge:facts <facts/example-registry.ttl>
   ] ;
   mf:result [
     bridge:expectedGraph <expected/example-0004.ttl> ;
@@ -62,7 +69,8 @@
   rdfs:comment "A record standing at a path its entry names a gap for more than once, at another exactly once, at a path in a namespace whose gap declares sh:Warning, at a path whose entry names no gap and looks its values up in a concept map, and at a path the accounting names nowhere more than once: each is one finding at the path's first occurrence, carrying bridge:occurrences where the path repeats. The gap at /ExampleRecord/Note is reported by its entry and constructed by the findings query, and both findings stand. The status the concept map lacks is one finding at that value's first occurrence, carrying the value as the record wrote it." ;
   mf:action [
     bridge:input <in/example-0005.xml> ;
-    bridge:envelope <../ro-crate-metadata.json#envelope-set>
+    bridge:envelope <../ro-crate-metadata.json#envelope-set> ;
+    bridge:facts <facts/example-registry.ttl>
   ] ;
   mf:result [
     bridge:expectedGraph <expected/example-0005.ttl> ;
@@ -74,12 +82,60 @@
   rdfs:comment "A record whose findings query writes a severity for one gap whose concept declares another, leaves the second to the sh:resultSeverity its gap concept declares, and leaves the third to neither: the three findings carry sh:Violation, sh:Warning and sh:Info." ;
   mf:action [
     bridge:input <in/example-0006.xml> ;
-    bridge:envelope <../ro-crate-metadata.json#envelope-set>
+    bridge:envelope <../ro-crate-metadata.json#envelope-set> ;
+    bridge:facts <facts/example-registry.ttl>
   ] ;
   mf:result [
     bridge:expectedGraph <expected/example-0006.ttl> ;
     bridge:expectedFindings <findings/example-0006.ttl>
   ] .
+
+<#example-0008> a bridge:IsomorphicConversionTest ;
+  mf:name "example-0008" ;
+  rdfs:comment "A document whose two records hold one accession: each is named from the document's SHA-256 and its selector, and each carries a finding of the repeated accession." ;
+  mf:action [
+    bridge:input <in/example-0008.xml> ;
+    bridge:envelope <../ro-crate-metadata.json#envelope-set> ;
+    bridge:facts <facts/example-registry.ttl>
+  ] ;
+  mf:result [
+    bridge:expectedGraph <expected/example-0008.ttl> ;
+    bridge:expectedFindings <findings/example-0008.ttl>
+  ] .
+
+<#example-0002-and-example-0007-name-one-record> a bridge:IdentityRelationTest ;
+  mf:name "example-0002-and-example-0007-name-one-record" ;
+  rdfs:comment "One accession on one server is one record, whatever envelope, label and version it arrives with." ;
+  mf:action [
+    bridge:conversion [
+      bridge:input <in/example-0002.xml> ;
+      bridge:envelope <../ro-crate-metadata.json#envelope-record> ;
+      bridge:facts <facts/example-registry.ttl>
+    ] , [
+      bridge:input <in/example-0007.xml> ;
+      bridge:envelope <../ro-crate-metadata.json#envelope-set> ;
+      bridge:facts <facts/example-registry.ttl>
+    ]
+  ] ;
+  mf:result [ bridge:sameRecord true ] .
+
+<#example-0008-names-two-records> a bridge:IdentityRelationTest ;
+  mf:name "example-0008-names-two-records" ;
+  rdfs:comment "Two records of one document holding one accession are two records." ;
+  mf:action [
+    bridge:conversion [
+      bridge:input <in/example-0008.xml> ;
+      bridge:envelope <../ro-crate-metadata.json#envelope-set> ;
+      bridge:facts <facts/example-registry.ttl> ;
+      bridge:selector "/ExampleRecordSet/ExampleRecord[1]"
+    ] , [
+      bridge:input <in/example-0008.xml> ;
+      bridge:envelope <../ro-crate-metadata.json#envelope-set> ;
+      bridge:facts <facts/example-registry.ttl> ;
+      bridge:selector "/ExampleRecordSet/ExampleRecord[2]"
+    ]
+  ] ;
+  mf:result [ bridge:sameRecord false ] .
 
 <#example-release-2026-01> a bridge:DatasetCompletionTest ;
   mf:name "example-release-2026-01" ;

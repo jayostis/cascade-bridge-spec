@@ -68,9 +68,15 @@ def lone_surrogate_in(text):
     return any(0xD800 <= ord(character) <= 0xDFFF for character in text)
 
 
+def a_number_as_validated(text):
+    """Exact, and an integer where its fraction is zero, as draft-06 counts one."""
+    number = Decimal(text)
+    return int(number) if number == number.to_integral_value() else number
+
+
 def validated_value(data):
     """The document's value as a JSON Schema validator reads it."""
-    return json.loads(data.decode("utf-8-sig"), parse_float=Decimal, parse_constant=_refuse_constant)
+    return json.loads(data.decode("utf-8-sig"), parse_float=a_number_as_validated, parse_constant=_refuse_constant)
 
 
 def children(node):

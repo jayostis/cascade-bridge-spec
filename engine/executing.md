@@ -5,9 +5,12 @@ JSON-LD and the manifest as Turtle, each with its own file location as base, so
 the manifest's `<../>` is the crate's root entity.
 
 **Apply each entry's type's rule**: its `rdfs:comment` in
-[`../vocab/bridge.ttl`](../vocab/bridge.ttl). A Bridge offering
-`bridge:sparql-1.1` also executes
-[`../fixtures/lift/manifest.ttl`](../fixtures/lift/manifest.ttl), loaded on its own.
+[`../vocab/bridge.ttl`](../vocab/bridge.ttl). A Bridge also executes
+[`../fixtures/versioning/manifest.ttl`](../fixtures/versioning/manifest.ttl), and
+one offering `bridge:sparql-1.1`
+[`../fixtures/lift/manifest.ttl`](../fixtures/lift/manifest.ttl) and
+[`../fixtures/naming/manifest.ttl`](../fixtures/naming/manifest.ttl), each
+loaded on its own.
 
 **Report in EARL**: one `earl:Assertion` per entry, `earl:test` the entry's IRI,
 `earl:subject` the Bridge, `earl:mode earl:automatic`, and an `earl:TestResult`

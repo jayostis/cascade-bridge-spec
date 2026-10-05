@@ -1,6 +1,7 @@
 """The repository an adapter reads its ontologies and shapes from: which version a run picks, and what it reads there."""
 
 from dataclasses import dataclass
+from pathlib import Path
 
 from compatibility_tool import git, packages, picking, placing
 from compatibility_tool.console import Status, Stop, detail, first_line, note, report
@@ -18,11 +19,12 @@ OWL_ONTOLOGY = "http://www.w3.org/2002/07/owl#Ontology"
 
 @dataclass(frozen=True)
 class Reading:
-    """Where an adapter's vocabularies are read from, at which commit, and which files of it."""
+    """Where adapters' vocabularies are read from, at which commit, which files of it, and which adapters read it."""
 
     url: str
     commit: str
     files: tuple[str, ...]
+    adapters: tuple[Path, ...] = ()
 
 
 def strings(root, key):
@@ -51,26 +53,27 @@ def pinned(adapter):
 
 
 def read_from(directory, counterparts):
-    """The one vocabulary every adapter of this run reads; none where the run pairs nothing, and runs nothing."""
+    """Each vocabulary repository the adapters of this run read; none where the run pairs nothing, and runs nothing."""
     if not counterparts:
-        return None
+        return []
     adapters = [directory] if is_adapter(directory) else [entry.path for entry in counterparts]
-    pins, files = [], []
+    by_repository = {}
     for adapter in adapters:
         if adapter is None or not is_adapter(adapter):
             continue
         reading = pinned(adapter)
-        if (reading.url, reading.commit) not in pins:
-            pins.append((reading.url, reading.commit))
-        files += [name for name in reading.files if name not in files]
-    if not pins:
-        return None
-    if len(pins) > 1:
-        raise Stop(
-            f"the adapters of this run name one {PIN} or the run cannot check one version out for them: "
-            + ", ".join(f"{url} at {commit}" for url, commit in pins)
-        )
-    return Reading(*pins[0], tuple(files))
+        by_repository.setdefault(reading.url, []).append((adapter, reading))
+    readings = []
+    for url, pinning in by_repository.items():
+        commits = list(dict.fromkeys(reading.commit for _, reading in pinning))
+        if len(commits) > 1:
+            raise Stop(
+                f"the adapters of this run pin one commit of {url} or the run cannot check one version out for them: "
+                + ", ".join(commits)
+            )
+        files = list(dict.fromkeys(name for _, reading in pinning for name in reading.files))
+        readings.append(Reading(url, commits[0], tuple(files), tuple(adapter for adapter, _ in pinning)))
+    return readings
 
 
 def place(directory, reading, options, event, reached):

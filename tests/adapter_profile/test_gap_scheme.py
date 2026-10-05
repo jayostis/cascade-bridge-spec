@@ -18,7 +18,7 @@ THE_GAP = "https://example.org/synthetic-adapter/v1#no-term-for-a-free-text-note
 THE_SCHEME = "https://example.org/synthetic-adapter/v1#gaps"
 
 THE_KINDS_A_GAP_MAY_NAME = (
-    "bridge:carriedWithLoss, bridge:noPredicate, bridge:schemaRuleUnnamed, "
+    "bridge:carriedWithLoss, bridge:idRepeated, bridge:noPredicate, bridge:schemaRuleUnnamed, "
     "bridge:sourceLacksRequired, bridge:valueNotMapped"
 )
 

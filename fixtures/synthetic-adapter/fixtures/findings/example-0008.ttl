@@ -1,0 +1,22 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix sh:  <http://www.w3.org/ns/shacl#> .
+@prefix oa:  <http://www.w3.org/ns/oa#> .
+@prefix ex:  <https://example.org/synthetic-adapter/v1#> .
+
+[] a oa:Annotation ;
+  oa:hasTarget [
+    oa:hasSource <../in/example-0008.xml> ;
+    oa:hasSelector [ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ]
+  ] ;
+  oa:hasBody ex:an-accession-repeated-within-its-document ;
+  oa:motivatedBy oa:classifying ;
+  sh:resultSeverity sh:Info .
+
+[] a oa:Annotation ;
+  oa:hasTarget [
+    oa:hasSource <../in/example-0008.xml> ;
+    oa:hasSelector [ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[2]" ]
+  ] ;
+  oa:hasBody ex:an-accession-repeated-within-its-document ;
+  oa:motivatedBy oa:classifying ;
+  sh:resultSeverity sh:Info .

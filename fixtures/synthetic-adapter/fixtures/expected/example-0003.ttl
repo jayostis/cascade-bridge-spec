@@ -1,9 +1,43 @@
-@prefix ex:   <https://example.org/synthetic-adapter/v1#> .
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix prov:   <http://www.w3.org/ns/prov#> .
+@prefix pav:    <http://purl.org/pav/> .
+@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+@prefix rec:    <https://ns.cascadeprotocol.org/records/v1-draft#> .
+@prefix ex:     <https://example.org/synthetic-adapter/v1#> .
 
-<https://example.org/synthetic-adapter/record/EX000004>
+<urn:uuid:35fde6a1-cbc5-80d0-9e87-a1bf5c26f146>
   a ex:Record ;
-  ex:accession "EX000004" ;
-  ex:version "1"^^xsd:integer ;
+  ex:accession "EX000004" .
+
+<ni:///sha-256;O54jlpNEXI5CwAimq0jvaR5DmtYr1WQiDi_TJN_u9jM>
+  prov:specializationOf <urn:uuid:35fde6a1-cbc5-80d0-9e87-a1bf5c26f146> ;
   rdfs:label "a record that is valid where the document around it is not" .
+
+[] bridge:arrivedAs <ni:///sha-256;O54jlpNEXI5CwAimq0jvaR5DmtYr1WQiDi_TJN_u9jM> ;
+  pav:version "1" ;
+  bridge:selector "/ExampleRecordSet/ExampleRecord[1]" ;
+  prov:wasDerivedFrom <ni:///sha-256;cAsvZNrWbawF8X2-odKv1514dtDecgj1Ot9DKFIUa_o> ;
+  prov:wasGeneratedBy _:import .
+
+<ni:///sha-256;cAsvZNrWbawF8X2-odKv1514dtDecgj1Ot9DKFIUa_o>
+  a prov:Entity ;
+  bridge:serverBaseUrl "https://records.example.org/api" ;
+  pav:retrievedFrom <https://records.example.org/api/ExampleRecordSet> ;
+  pav:retrievedOn "2026-08-30T22:14:00Z"^^xsd:dateTime ;
+  prov:qualifiedAttribution
+    [ prov:agent [ rdfs:label "Example Records Registry" ] ; prov:hadRole rec:author ] ,
+    [ prov:agent [ rdfs:label "Example Fetcher" ] ; prov:hadRole rec:transmitter ] ;
+  bridge:authenticatedPatient "Patient/example-patient" ;
+  bridge:authenticatedAsProxy false ;
+  bridge:sourceFormatVersion "1" .
+
+_:import
+  a prov:Activity ;
+  prov:used <ni:///sha-256;cAsvZNrWbawF8X2-odKv1514dtDecgj1Ot9DKFIUa_o> ;
+  rdfs:label "synthetic example import" ;
+  prov:startedAtTime "2026-09-01T10:00:00Z"^^xsd:dateTime ;
+  prov:qualifiedAssociation [
+    prov:hadPlan [ a prov:Plan ; rdfs:label "synthetic-example" ; pav:version "0.1.0" ] ;
+    prov:agent [ ]
+  ] .

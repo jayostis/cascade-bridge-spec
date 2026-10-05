@@ -1,9 +1,43 @@
-@prefix ex:   <https://example.org/synthetic-adapter/v1#> .
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix prov:   <http://www.w3.org/ns/prov#> .
+@prefix pav:    <http://purl.org/pav/> .
+@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+@prefix rec:    <https://ns.cascadeprotocol.org/records/v1-draft#> .
+@prefix ex:     <https://example.org/synthetic-adapter/v1#> .
 
-<https://example.org/synthetic-adapter/record/EX000104>
+<urn:uuid:bc3e9add-c20e-83c2-8da3-4b006a74852a>
   a ex:Record ;
-  ex:accession "EX000104" ;
-  ex:version "0"^^xsd:integer ;
+  ex:accession "EX000104" .
+
+<ni:///sha-256;Iv3NB4OD0i3jC22m6BfYr9MTvates3PWXgS0c6aFFNI>
+  prov:specializationOf <urn:uuid:bc3e9add-c20e-83c2-8da3-4b006a74852a> ;
   rdfs:label "5" .
+
+[] bridge:arrivedAs <ni:///sha-256;Iv3NB4OD0i3jC22m6BfYr9MTvates3PWXgS0c6aFFNI> ;
+  pav:version "0" ;
+  bridge:selector "/records/0" ;
+  prov:wasDerivedFrom <ni:///sha-256;OTPDMS9w3FIM8tM2arIxHXOBK96uyAUjXRVyZtn8fuU> ;
+  prov:wasGeneratedBy _:import .
+
+<ni:///sha-256;OTPDMS9w3FIM8tM2arIxHXOBK96uyAUjXRVyZtn8fuU>
+  a prov:Entity ;
+  bridge:serverBaseUrl "https://records.example.org/api" ;
+  pav:retrievedFrom <https://records.example.org/api/ExampleRecordSet> ;
+  pav:retrievedOn "2026-08-30T22:14:00Z"^^xsd:dateTime ;
+  prov:qualifiedAttribution
+    [ prov:agent [ rdfs:label "Example Records Registry" ] ; prov:hadRole rec:author ] ,
+    [ prov:agent [ rdfs:label "Example Fetcher" ] ; prov:hadRole rec:transmitter ] ;
+  bridge:authenticatedPatient "Patient/example-patient" ;
+  bridge:authenticatedAsProxy false ;
+  bridge:sourceFormatVersion "1" .
+
+_:import
+  a prov:Activity ;
+  prov:used <ni:///sha-256;OTPDMS9w3FIM8tM2arIxHXOBK96uyAUjXRVyZtn8fuU> ;
+  rdfs:label "synthetic example import" ;
+  prov:startedAtTime "2026-09-01T10:00:00Z"^^xsd:dateTime ;
+  prov:qualifiedAssociation [
+    prov:hadPlan [ a prov:Plan ; rdfs:label "synthetic-json-example" ; pav:version "0.1.0" ] ;
+    prov:agent [ ]
+  ] .

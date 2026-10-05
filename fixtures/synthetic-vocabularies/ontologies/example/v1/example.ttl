@@ -8,6 +8,4 @@ ex:Record a owl:Class .
 
 ex:accession a owl:DatatypeProperty .
 
-ex:version a owl:DatatypeProperty .
-
 rdfs:label a owl:AnnotationProperty .
