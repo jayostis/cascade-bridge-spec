@@ -1,0 +1,68 @@
+@prefix schema: <http://schema.org/> .
+@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+<https://example.org/adapters/synthetic-json-adapter/> a bridge:Adapter ;
+  schema:identifier "synthetic-json-example" ;
+  schema:version "0.1.0" ;
+  bridge:sourceMediaType "application/example+json" ;
+  bridge:envelope
+    <https://example.org/adapters/synthetic-json-adapter/ro-crate-metadata.json#envelope-set> ,
+    <https://example.org/adapters/synthetic-json-adapter/ro-crate-metadata.json#envelope-record> ,
+    <https://example.org/adapters/synthetic-json-adapter/ro-crate-metadata.json#envelope-listing> ;
+  bridge:cascadeVocabularyPin <https://example.org/synthetic-adapter/vocabulary/commit/0000000000000000000000000000000000000000> ;
+  bridge:vocabularyFile
+    "ontologies/example/v1/example.ttl" ,
+    "ontologies/example/v1/example.shapes.ttl" ;
+  bridge:loadFile
+    "ro-crate-metadata.json" ,
+    "in/example-record.rq" ,
+    "in/example-contained.rq" ,
+    "in/example-findings.rq" ,
+    "in/example-repeated-accession.rq" ,
+    "in/example-table.rq" ,
+    "in/example-detect.rq" ,
+    "schema/example-record.schema.json" ,
+    "schema/example-set.schema.json" ,
+    "schema/example-listing.schema.json" ,
+    "vocab/example-gaps.ttl" ,
+    "vocab/example-statuses.ttl" ,
+    "vocab/example-accounting.ttl" ;
+  bridge:crateFile
+    "ro-crate-metadata.json" ,
+    "in/example-record.rq" ,
+    "in/example-contained.rq" ,
+    "in/example-findings.rq" ,
+    "in/example-repeated-accession.rq" ,
+    "in/example-table.rq" ,
+    "in/example-detect.rq" ,
+    "schema/example-record.schema.json" ,
+    "schema/example-set.schema.json" ,
+    "schema/example-listing.schema.json" ,
+    "vocab/example-gaps.ttl" ,
+    "vocab/example-statuses.ttl" ,
+    "vocab/example-accounting.ttl" ,
+    "fixtures/manifest.ttl" ,
+    "fixtures/facts/example-registry.ttl" ,
+    "fixtures/in/json-0001.json" ,
+    "fixtures/in/json-0002.json" ,
+    "fixtures/in/json-0003.json" ,
+    "fixtures/in/json-0004.json" ,
+    "fixtures/in/json-0006.json" ,
+    "fixtures/in/json-0007.json" ,
+    "fixtures/in/json-0008.json" ,
+    "fixtures/expected/json-0001.ttl" ,
+    "fixtures/expected/json-0002.ttl" ,
+    "fixtures/expected/json-0003.ttl" ,
+    "fixtures/expected/json-0004.ttl" ,
+    "fixtures/expected/json-0005.ttl" ,
+    "fixtures/expected/json-0006.ttl" ,
+    "fixtures/expected/json-0007.ttl" ,
+    "fixtures/expected/json-0008.ttl" ,
+    "fixtures/findings/json-0001.ttl" ,
+    "fixtures/findings/json-0002.ttl" ,
+    "fixtures/findings/json-0003.ttl" ,
+    "fixtures/findings/json-0004.ttl" ,
+    "fixtures/findings/json-0005.ttl" ,
+    "fixtures/findings/json-0006.ttl" ,
+    "fixtures/findings/json-0007.ttl" ,
+    "fixtures/findings/json-0008.ttl" .
