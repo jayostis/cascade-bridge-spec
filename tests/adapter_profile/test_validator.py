@@ -14,6 +14,7 @@ SYNTHETIC_ADAPTER = FIXTURE
 
 CRATE = "ro-crate-metadata.json"
 MANIFEST = "fixtures/manifest.ttl"
+VALIDATED_ONCE = pytest.mark.xdist_group("the committed synthetic adapter, validated once")
 
 
 def restate_digest(package, relative):
@@ -46,6 +47,7 @@ def the_committed_fixture():
     return validated(SYNTHETIC_ADAPTER)
 
 
+@VALIDATED_ONCE
 def test_the_committed_synthetic_adapter_passes_the_profile(the_committed_fixture):
     assert the_committed_fixture.passed(), "\n".join(issue.message for issue in the_committed_fixture.get_issues())
 
@@ -55,6 +57,7 @@ def test_the_committed_synthetic_json_adapter_passes_the_profile():
     assert result.passed(), "\n".join(issue.message for issue in result.get_issues())
 
 
+@VALIDATED_ONCE
 def test_every_file_the_profile_makes_a_check_of_is_run(the_committed_fixture):
     requirements = services.get_profile(PROFILE, profiles_path=PROFILES).get_requirements()
     declared = files_of(check for requirement in requirements for check in requirement.get_checks())
@@ -63,6 +66,7 @@ def test_every_file_the_profile_makes_a_check_of_is_run(the_committed_fixture):
     assert not the_committed_fixture.skipped_checks
 
 
+@VALIDATED_ONCE
 def test_the_checks_of_ro_crate_1_2_are_inherited(the_committed_fixture):
     assert any(check.requirement.profile.identifier == INHERITED for check in the_committed_fixture.executed_checks)
 
