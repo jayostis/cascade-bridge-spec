@@ -64,8 +64,9 @@ def has_uncommitted_edits(path):
     return bool(git("status", "--porcelain", cwd=path).stdout.strip())
 
 
-def clone_branch(url, path, branch):
-    run = git("clone", "--quiet", "--branch", branch, url, str(path))
+def clone_branch(url, path, branch, history=True):
+    depth = () if history else ("--depth", "1")
+    run = git("clone", "--quiet", *depth, "--branch", branch, url, str(path))
     if run.returncode != 0:
         raise unreachable(url, run)
     return path

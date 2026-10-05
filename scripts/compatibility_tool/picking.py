@@ -116,7 +116,7 @@ def remove(path):
 def place(url, choice, into):
     """The repository at its chosen branch, with every named pull request merged in."""
     remove(into)  # an earlier run's checkout is not this run's version
-    git.clone_branch(url, into, choice.branch)
+    git.clone_branch(url, into, choice.branch, history=bool(choice.merging))
     for entry in choice.merging:
         head = git.fetch(url, f"refs/pull/{entry.named.number}/head", into)
         conflict = git.merge(into, head, entry.named.label)
