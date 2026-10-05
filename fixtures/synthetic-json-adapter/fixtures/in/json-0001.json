@@ -1,0 +1,7 @@
+{
+  "kind": "set",
+  "records": [
+    {"accession": "EX000101", "version": 3, "label": "first synthetic JSON record", "note": "a free-text note the mapping has no term for"},
+    {"accession": "EX000102", "version": 1, "label": "second synthetic JSON record", "note": "a second note, so each finding names the record it is about"}
+  ]
+}

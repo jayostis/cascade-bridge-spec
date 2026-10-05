@@ -6,7 +6,7 @@ adapter contributes data to them through these terms.
 
 | stage | Enterprise Integration Pattern | the adapter contributes |
 |---|---|---|
-| read and chunk | **Splitter** | `bridge:elementNameOfEachRecord` |
+| read and chunk | **Splitter** | `bridge:elementNameOfEachRecord`, `bridge:jsonPathOfEachRecord` |
 | transform | **Message Translator** | `bridge:mapping`, `bridge:table` |
 | Cascade RDF as target | **Canonical Data Model** | `bridge:vocabulary`, `bridge:cascadeVocabularyPin`, `bridge:vocabularyFile` |
 | link within the batch | **Aggregator** | nothing: the mapping emits the links, the Bridge resolves them |
@@ -27,6 +27,9 @@ adapter contributes data to them through these terms.
   or of XLink (`http://www.w3.org/1999/xlink`) whose `schemaLocation` is absent
   or names no file in the package, W3C's own address included, resolves to the
   Bridge's own copy of that W3C schema. Nothing is fetched.
+- **A JSON Schema's `$ref` resolves as its draft says**, against the schema's
+  `$id` or, where it declares none, its own IRI, and only within the schema or
+  to files in the adapter package. Nothing is fetched.
 - **The stamp is the Bridge's**, never the adapter's.
 - **Re-import changes nothing**: an adapter's output is a function of its input.
 - **A format has one adapter**, with vendor quirks as data, never one adapter per vendor.

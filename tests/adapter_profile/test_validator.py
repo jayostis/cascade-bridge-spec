@@ -5,7 +5,7 @@ import pytest
 from rocrate_validator import services
 from rocrate_validator.models import ValidationSettings
 
-from adapter_profile_world import FIXTURE, ROOT
+from adapter_profile_world import FIXTURE, JSON_FIXTURE, ROOT
 
 PROFILES = ROOT / "adapter"
 PROFILE = "cascade-bridge-adapter"
@@ -48,6 +48,11 @@ def the_committed_fixture():
 
 def test_the_committed_synthetic_adapter_passes_the_profile(the_committed_fixture):
     assert the_committed_fixture.passed(), "\n".join(issue.message for issue in the_committed_fixture.get_issues())
+
+
+def test_the_committed_synthetic_json_adapter_passes_the_profile():
+    result = validated(JSON_FIXTURE)
+    assert result.passed(), "\n".join(issue.message for issue in result.get_issues())
 
 
 def test_every_file_the_profile_makes_a_check_of_is_run(the_committed_fixture):

@@ -1,18 +1,25 @@
 # The `sparql-1.1` profile
 
-What a Bridge offering `bridge:sparql-1.1` does: lift XML to RDF, and run an
-adapter's SPARQL 1.1 queries over the lift. A Bridge must reproduce the vectors
-in [`../fixtures/lift/`](../fixtures/lift/).
+What a Bridge offering `bridge:sparql-1.1` does: lift XML or JSON to RDF, and
+run an adapter's SPARQL 1.1 queries over the lift. A Bridge must reproduce the
+vectors in [`../fixtures/lift/`](../fixtures/lift/).
 
 ## The lift
 
-The lift turns one element, the lift root, and everything under it into
-triples in the shape of SPARQL Anything's Facade-X. Every node is a blank node.
+The lift turns one node of a document, the lift root, and everything under it
+into triples in the shape of SPARQL Anything's Facade-X. Every node is a blank
+node, and the lift root is also typed `http://sparql.xyz/facade-x/ns/root`.
+
+The adapter's `bridge:sourceMediaType` says which lift applies: the XML lift to
+`application/xml`, `text/xml` and a media type with the `+xml` suffix, the JSON
+lift to `application/json` and a media type with the `+json` suffix
+([RFC 6839](https://www.rfc-editor.org/rfc/rfc6839)).
+
+### XML
 
 - **An element** is a node typed with an IRI naming it: its namespace IRI
   followed by its local name, or `http://sparql.xyz/facade-x/data/` followed by
-  its local name when it has no namespace. The lift root is also typed
-  `http://sparql.xyz/facade-x/ns/root`.
+  its local name when it has no namespace.
 - **An attribute** is a triple from its element's node, whose predicate names
   the attribute the way an element's type names the element, and whose object
   is the attribute's value as a plain string literal. A namespace declaration
@@ -25,17 +32,48 @@ triples in the shape of SPARQL Anything's Facade-X. Every node is a blank node.
   dropped takes no number. Whitespace is XML's `S` production, and no other
   character.
 
-A name is appended to the namespace IRI as its own characters, each one outside
+### JSON
+
+The JSON lift reads a JSON text ([RFC 8259](https://www.rfc-editor.org/rfc/rfc8259))
+in UTF-8 whose value is an object or an array, and lifts nothing from any other
+document, one beginning with a byte order mark or escaping a lone surrogate
+among them.
+
+- **An object or an array** is a node, and is typed only where it is the lift
+  root.
+- **A member** is a triple from its object's node, whose predicate is
+  `http://sparql.xyz/facade-x/data/` followed by the member's name, and whose
+  object is the member's value. A name an object repeats is lifted once for
+  each member carrying it.
+- **An array's items**, in order, are the objects of `rdf:_1`, `rdf:_2`, …
+  from its node.
+- **A string, a number, `true` and `false`** are each a plain string literal:
+  a string's characters with its escapes decoded, and a number, `true` and
+  `false` as the document writes them.
+- **`null`** is lifted as nothing, and takes its number among an array's items.
+- **An empty object or array** is a node with no triples from it.
+
+A name, an element's, an attribute's or a member's, is appended to its IRI as
+its own characters, each one outside
 [RFC 3987's `iunreserved`](https://www.rfc-editor.org/rfc/rfc3987#section-2.2)
 percent-encoded as its UTF-8 octets.
 
 ## What is lifted
 
 **A mapping and a findings query** run over one source record at a time, lifted
-with the record's element as the lift root: nothing outside the record is lifted.
-A record is an element whose local name is the adapter's
+with the record as the lift root: nothing outside the record is lifted.
+
+A record of an XML document is an element whose local name is the adapter's
 `bridge:elementNameOfEachRecord`, in any namespace or none; a record inside
 another is not specified.
+
+A record of a JSON document is an object the `bridge:jsonPathOfEachRecord` of
+the envelope it is read in selects, in document order; a value it selects that is
+not an object is no record. That path is a query of
+[RFC 9535 JSONPath](https://www.rfc-editor.org/rfc/rfc9535) made only of `$`
+followed by any sequence of child segments, each a name selector, written
+`.name` or `['name']`, or the wildcard `[*]`: `$` is the document's value
+itself, and `$.entry[*]` each item of its `entry` member.
 
 **The detect query** runs over the document's *envelope skeleton*: the lift of
 the whole document, with the document element as the lift root, except that
@@ -43,6 +81,23 @@ every record is lifted as an empty container — its type triples and its place
 among its parent's children, without its attributes or its children. A record
 that is the document element is lifted as an empty container too: the skeleton
 is then its type triples alone.
+
+The envelope skeleton of a JSON document is the lift of the whole document,
+except that every record is lifted with its place among its parent's members or
+items and its members whose value is a string, a number, `true` or `false`, and
+without its members whose value is an object or an array. A record that is the
+document's value is lifted in the same way.
+
+## Envelopes
+
+A document is read in one of the adapter's envelopes: under `test`, the one its
+entry names; under `convert`, as [`command.md`](command.md) says.
+
+An envelope *admits* an XML document whose document element's local name is its
+`bridge:docRootElementName`, and a JSON document whose value is an object with a
+member named its `bridge:docRootMemberName`, whose value, where the envelope
+names a `bridge:docRootMemberValue`, is a string, number, `true` or `false` the
+lift writes as that value.
 
 ## Running an adapter
 
@@ -105,7 +160,9 @@ verdict is, and an entry naming a `bridge:namesGap` as well reports from both.
 
 A path's value is the value of an attribute, and the text of an element that has
 no element child. An element with an element child has no value, and a lookup at
-its path reports nothing.
+its path reports nothing. In a JSON record, a path's value is what the lift
+writes for a string, a number, `true` or `false`, and an object or an array has
+none.
 
 A value's key is the value under SPARQL's `LCASE`, stripped of leading and
 trailing XML whitespace, and a `skos:notation` is written in that form. Values are
@@ -127,12 +184,20 @@ namespace by that name, and one in a namespace by `*[local-name()='…' and
 namespace-uri()='…']`, an attribute's after its `@`. The record element itself
 is no path. A path is the same under every envelope the adapter declares.
 
+In a JSON record, a path is the names of the members from the record down to the
+node, each written as a JSON Pointer reference token after a `/`, `~` as `~0`
+and `/` as `~1`. An array is no node of a path: its items stand at its path, so
+no step carries a position. `null` stands at no path, and the record itself is
+no path. The nodes of a JSON record are in document order, an object before
+what it holds.
+
 A census finding is addressed at the path's first occurrence in the record and
 carries `bridge:pathNotAccounted` as its body, the path as its `sh:value`, and
 `sh:Info` as its `sh:resultSeverity`. It is refined under the record's selector
 as any other finding is, onto the element at that occurrence or, for an
 attribute, onto the element the attribute stands on. An attribute of the record
-element is refined no further.
+element is refined no further. In a JSON record, it is refined onto the node at
+that occurrence.
 
 A finding addressed at a path carries `bridge:occurrences`, how many nodes of the
 record stand at that path, an `xsd:integer` of 2 or more, omitted where it is 1.
@@ -156,6 +221,15 @@ belongs to which finding is unrecoverable.
 
 A record's selector is an XPath selecting the record, and a refinement is an
 XPath relative to the record, selecting one node of it.
+
+In a JSON document, a record's selector is an `oa:FragmentSelector` whose
+`dcterms:conformsTo` is `<https://www.rfc-editor.org/rfc/rfc6901>` and whose
+`rdf:value` is a [JSON Pointer](https://www.rfc-editor.org/rfc/rfc6901), in its
+URI fragment identifier representation without the `#`, selecting the record
+from the document's value; a refinement is one of the same form, relative to
+the record. A pointer through a name its object repeats selects more than one
+node. Where a finding selects the document element, in a JSON document it
+selects the document's value, by the empty pointer.
 
 An address a Bridge writes that selects no node, or more than one, carries
 `bridge:addressNotOneNode` as its body, the address as written as its
@@ -182,3 +256,15 @@ names carries `bridge:schemaRuleUnnamed`. Which Part defines a rule is not a
 choice: the adapter profile refuses a body naming the other, and lists every
 anchor a body may take. Each rule a node breaks is a finding of its own,
 refined to that node.
+
+A finding about a JSON document breaking its JSON Schema carries as its body the
+anchor of the section defining the keyword it fails, in the validation
+specification of the draft the schema's `$schema` names: under draft-06,
+`required` is
+`https://datatracker.ietf.org/doc/html/draft-wright-json-schema-validation-01#section-6.17`.
+Draft-06 is the only draft specified, and `format` is not asserted. A keyword
+that fails only because a keyword of a subschema it applies fails, as `allOf`,
+`$ref`, `properties` or `items` do, is not the finding: that keyword is, at the
+node it fails at. `anyOf`, `oneOf`, `not` and `contains` fail as themselves.
+Each failure is a finding of its own, refined to the node it fails at, and no
+further where that node is the record or the document's value.

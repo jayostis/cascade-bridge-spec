@@ -1,0 +1,30 @@
+@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+@prefix ex:     <https://example.org/synthetic-adapter/v1#> .
+
+[] a bridge:PathEntry ;
+  bridge:sourcePath "/kind" ;
+  bridge:verdict bridge:ignored ;
+  bridge:because "A kind says which envelope a document is in, not what the record says." .
+
+[] a bridge:PathEntry ;
+  bridge:sourcePath "/accession" ;
+  bridge:verdict bridge:carried .
+
+[] a bridge:PathEntry ;
+  bridge:sourcePath "/version" ;
+  bridge:verdict bridge:carried .
+
+[] a bridge:PathEntry ;
+  bridge:sourcePath "/label" ;
+  bridge:verdict bridge:carried .
+
+[] a bridge:PathEntry ;
+  bridge:sourcePath "/note" ;
+  bridge:verdict bridge:noHome ;
+  bridge:namesGap ex:no-term-for-a-free-text-note .
+
+[] a bridge:PathEntry ;
+  bridge:sourcePath "/status" ;
+  bridge:verdict bridge:consumed ;
+  bridge:lookupIn <example-statuses.ttl> ;
+  bridge:lookupNamesGap ex:a-status-outside-the-set-the-vocabulary-fixes .

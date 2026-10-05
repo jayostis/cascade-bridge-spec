@@ -16,10 +16,64 @@
   ] ;
   sh:property [
     sh:path bridge:docRootElementName ;
-    sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:datatype xsd:string ;
-    sh:message "An envelope carries exactly one bridge:docRootElementName, the local name of its document element."
+    sh:message "An envelope carries at most one bridge:docRootElementName, the local name of its document element."
+  ] ;
+  sh:property [
+    sh:path bridge:docRootMemberName ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "An envelope carries at most one bridge:docRootMemberName, the name of a member the object a JSON document holds carries."
+  ] ;
+  sh:property [
+    sh:path bridge:docRootMemberValue ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "An envelope carries at most one bridge:docRootMemberValue, the value of the member its bridge:docRootMemberName names, as the JSON lift writes it."
+  ] ;
+  sh:property [
+    sh:path bridge:jsonPathOfEachRecord ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:pattern "^\\$(\\.[A-Za-z_\u0080-퟿-\U0010FFFF][A-Za-z0-9_\u0080-퟿-\U0010FFFF]*|\\['([^'\\\\]|\\\\.)*'\\]|\\[\\*\\])*$" ;
+    sh:message "An envelope carries at most one bridge:jsonPathOfEachRecord, written in the subset of RFC 9535 JSONPath engine/sparql.md specifies: $ followed by segments each .name, ['name'] or [*]."
+  ] ;
+  sh:sparql [
+    sh:message "An envelope of an adapter whose bridge:sourceMediaType is XML carries a bridge:docRootElementName, and none of bridge:docRootMemberName, bridge:docRootMemberValue and bridge:jsonPathOfEachRecord." ;
+    sh:select """
+      SELECT $this WHERE {
+        ?adapter <https://ns.cascadeprotocol.org/bridge/v1-draft#envelope> $this ;
+                 <https://ns.cascadeprotocol.org/bridge/v1-draft#sourceMediaType> ?mediaType .
+        FILTER (REGEX(?mediaType, "^(application/xml|text/xml|[a-z]+/[a-z0-9.!#$&^_-]+[+]xml)$"))
+        FILTER (
+          NOT EXISTS { $this <https://ns.cascadeprotocol.org/bridge/v1-draft#docRootElementName> ?name }
+          || EXISTS {
+            $this ?term ?value .
+            FILTER (?term IN (
+              <https://ns.cascadeprotocol.org/bridge/v1-draft#docRootMemberName>,
+              <https://ns.cascadeprotocol.org/bridge/v1-draft#docRootMemberValue>,
+              <https://ns.cascadeprotocol.org/bridge/v1-draft#jsonPathOfEachRecord>
+            ))
+          }
+        )
+      }
+    """
+  ] ;
+  sh:sparql [
+    sh:message "An envelope of an adapter whose bridge:sourceMediaType is JSON carries a bridge:docRootMemberName and a bridge:jsonPathOfEachRecord, and no bridge:docRootElementName." ;
+    sh:select """
+      SELECT $this WHERE {
+        ?adapter <https://ns.cascadeprotocol.org/bridge/v1-draft#envelope> $this ;
+                 <https://ns.cascadeprotocol.org/bridge/v1-draft#sourceMediaType> ?mediaType .
+        FILTER (REGEX(?mediaType, "^(application/json|[a-z]+/[a-z0-9.!#$&^_-]+[+]json)$"))
+        FILTER (
+          NOT EXISTS { $this <https://ns.cascadeprotocol.org/bridge/v1-draft#docRootMemberName> ?name }
+          || NOT EXISTS { $this <https://ns.cascadeprotocol.org/bridge/v1-draft#jsonPathOfEachRecord> ?path }
+          || EXISTS { $this <https://ns.cascadeprotocol.org/bridge/v1-draft#docRootElementName> ?element }
+        )
+      }
+    """
   ] ;
   sh:property [
     sh:path bridge:documentSchema ;

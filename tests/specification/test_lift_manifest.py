@@ -2,7 +2,7 @@ import shutil
 from pathlib import Path
 
 from pyshacl import validate
-from rdflib import RDF, Graph, Namespace, URIRef
+from rdflib import RDF, Graph, Literal, Namespace, URIRef
 
 ROOT = Path(__file__).resolve().parents[2]
 LIFT = ROOT / "fixtures" / "lift"
@@ -10,7 +10,7 @@ SHAPES = ROOT / "shapes" / "bridge.shapes.ttl"
 
 MF = Namespace("http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#")
 BRIDGE = Namespace("https://ns.cascadeprotocol.org/bridge/v1-draft#")
-VECTOR_SUFFIXES = (".xml", ".nt")
+VECTOR_SUFFIXES = (".xml", ".json", ".nt")
 
 
 def manifest_of(lift):
@@ -61,3 +61,37 @@ def test_an_entry_naming_a_file_that_is_not_there_is_reported(tmp_path):
     lift = shutil.copytree(LIFT, tmp_path / "lift")
     (lift / "cdata.xml").unlink()
     assert any("cdata.xml, not a file in lift" in problem for problem in unaccounted(lift))
+
+
+def said_about(graph):
+    _, _, text = validate(graph, shacl_graph=Graph().parse(SHAPES, format="turtle"), advanced=True)
+    return text
+
+
+def action_of(graph, name):
+    entry = next(graph.subjects(MF.name, Literal(name)))
+    return graph.value(entry, MF.action)
+
+
+def test_a_lift_test_naming_no_media_type_is_refused():
+    _, graph = manifest_of(LIFT)
+    graph.remove((action_of(graph, "json-null"), BRIDGE.sourceMediaType, None))
+    assert "names exactly one bridge:sourceMediaType, which selects the lift" in said_about(graph)
+
+
+def test_a_lift_test_naming_a_media_type_neither_lift_applies_to_is_refused():
+    _, graph = manifest_of(LIFT)
+    graph.set((action_of(graph, "attributes"), BRIDGE.sourceMediaType, Literal("text/csv")))
+    assert "names exactly one bridge:sourceMediaType, which selects the lift" in said_about(graph)
+
+
+def test_a_skeleton_test_naming_both_an_element_name_and_a_json_path_is_refused():
+    _, graph = manifest_of(LIFT)
+    graph.add((action_of(graph, "skeleton-json"), BRIDGE.elementNameOfEachRecord, Literal("Unit")))
+    assert "names exactly one of bridge:elementNameOfEachRecord" in said_about(graph)
+
+
+def test_a_skeleton_test_naming_neither_an_element_name_nor_a_json_path_is_refused():
+    _, graph = manifest_of(LIFT)
+    graph.remove((action_of(graph, "skeleton"), BRIDGE.elementNameOfEachRecord, None))
+    assert "names exactly one of bridge:elementNameOfEachRecord" in said_about(graph)
