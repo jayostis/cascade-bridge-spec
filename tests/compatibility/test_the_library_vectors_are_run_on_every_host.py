@@ -24,8 +24,11 @@ def case_names(failing_only=False):
     kinds = set(Graph().parse(ROOT / "vocab" / "bridge.ttl", format="turtle").subjects(RDF.type, BRIDGE.FailureKind))
     names = []
     for case, name in graph.subject_objects(MF.name):
-        reached = {node for _, _, node in graph.triples((case, None, None))}
-        reached |= {node for subject in reached for _, _, node in graph.triples((subject, None, None))}
+        reached, frontier = set(), {case}
+        while frontier:
+            found = {node for subject in frontier for _, _, node in graph.triples((subject, None, None))}
+            frontier = found - reached
+            reached |= found
         if not failing_only or reached & kinds:
             names.append(str(name))
     return names
