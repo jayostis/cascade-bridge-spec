@@ -1,3 +1,4 @@
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -89,3 +90,13 @@ def test_convert_asked_for_findings_without_the_vocabularies_its_adapter_names_e
     run = engine("convert", str(ADAPTER), str(DOCUMENT), "--findings", str(findings), succeeds=False)
     assert run.stdout == ""
     assert not findings.exists()
+
+
+def test_library_writes_a_result_for_each_call_of_the_calls_file(tmp_path):
+    metadata = ADAPTER / "ro-crate-metadata.json"
+    describe = {"adapter": "https://example.org/adapter/", "metadata": str(metadata), "format": "turtle"}
+    calls = tmp_path / "calls.json"
+    calls.write_text(json.dumps({"cases": [{"name": "a-case", "calls": [{"describe": describe}]}]}), encoding="utf-8")
+    engine("library", str(calls), str(tmp_path / "results"))
+    assert json.loads((tmp_path / "results" / "a-case" / "1.json").read_text(encoding="utf-8")) == {}
+    assert Graph().parse(tmp_path / "results" / "a-case" / "1.graph", format="turtle")

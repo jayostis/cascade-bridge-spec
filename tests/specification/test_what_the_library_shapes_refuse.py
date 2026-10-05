@@ -91,7 +91,10 @@ REFUSED = {
     "an ask before any load": (ask_before_any_load, "comes after a bridge:LoadCall"),
     "a missing file with another kind": (missing_file_with_another_kind, "fails with bridge:fileMissingFailure"),
     "the missing-file kind naming no file": (missing_file_kind_naming_no_file, "names the bridge:missingFile"),
-    "a convert expecting nothing": (convert_expecting_nothing, "exactly one of bridge:expectedGraph and bridge:failure"),
+    "a convert expecting nothing": (
+        convert_expecting_nothing,
+        "exactly one of bridge:expectedGraph and bridge:failure",
+    ),
     "a convert in another format": (convert_in_another_format, "turtle or ntriples"),
     "a map with an unknown term": (a_map_with_an_unknown_term, "carries only a bridge:iri, a bridge:directory"),
     "a map whose IRI is no directory": (a_map_whose_iri_is_no_directory, "ending in /, that each key resolves"),

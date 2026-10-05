@@ -85,7 +85,7 @@ an object of one member, named for the operation:
 - Every path is absolute.
 
 `ask` and `convert` are made on the adapter the latest `load` before them in
-their case returned. Where no `load` before them returned one, the call is not
+their case that did not fail returned. Where there is none, the call is not
 made and nothing is written for it. After a `bridge:bridgeFailure`, the next
 call of the case is made on the adapter loaded again from that `load`'s maps.
 
