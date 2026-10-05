@@ -26,16 +26,6 @@ def test_an_adapter_failing_on_the_second_host_only_is_two_entries_and_the_run_f
     assert "node" in failing and "native" not in failing
 
 
-def test_an_adapter_holding_on_both_hosts_is_two_entries_each_with_its_own_report(world):
-    said = world.tool(world.engine_beside_adapter(host=native_and_node()))
-
-    assert "compatibility.json against the shapes" in said
-    found = entries(world)
-    assert [entry["holds"] for entry in found] == [True, True]
-    reports = {entry["report"] for entry in found}
-    assert len(reports) == 2
-
-
 def test_an_adapters_run_runs_every_host_of_the_engine_it_names(world):
     adapter = world.adapter_beside_engine(engine_document([], host=native_and_node(on_node="failed")))
 

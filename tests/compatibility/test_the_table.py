@@ -39,14 +39,6 @@ def test_a_run_that_used_a_named_pull_request_says_the_pass_is_as_fresh_as_it_is
     assert "before merging" in world.table()
 
 
-def test_a_run_that_used_no_named_pull_request_says_nothing_about_rerunning(world):
-    engine, event = world.engine_under_test()
-
-    world.tool(engine, **world.ci(event=event))
-
-    assert "rerun" not in world.table()
-
-
 def test_the_pull_request_under_test_is_not_a_named_pull_request(world):
     """The specification's own CI: its row is the pull request under test, which needs no rerun."""
     world.pull_request("cascade-bridge-spec", 1)

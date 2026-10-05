@@ -3,14 +3,6 @@
 from compatibility_world import depends_on
 
 
-def test_a_run_says_one_verdict(world):
-    engine, event = world.engine_under_test()
-
-    said = world.tool(engine, **world.ci(event=event))
-
-    assert said.count("compatibility: ") == 1
-
-
 def test_nothing_to_check_is_not_reported_as_a_pass(world):
     adapter = world.clone("adapter")
     world.pull_request("adapter", 1)
@@ -28,6 +20,7 @@ def test_the_checks_run_from_the_version_picked_not_the_one_fetched_to_start(wor
 
     assert "the checks run from" in said
     assert str(world.workspace / "cascade-bridge-spec") in said
+    assert said.count("compatibility: ") == 1
 
 
 def test_the_merge_gate_runs_from_the_version_picked_too(world):

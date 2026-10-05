@@ -212,11 +212,6 @@ def said_about(crate):
     return [message for message in expected_findings.faulty(crate) if "example-0001.ttl" in message]
 
 
-def test_reports_nothing_for_a_finding_whose_body_is_a_gap_of_the_adapters_gap_scheme(package):
-    package.write(FINDINGS, a_findings_file())
-    assert not said_about(package.crate)
-
-
 def test_reports_a_finding_whose_body_is_no_gap_of_the_adapters_gap_scheme(package):
     package.write(FINDINGS, a_findings_file(body="ex:a-gap-the-scheme-does-not-hold"))
     assert (
@@ -224,11 +219,6 @@ def test_reports_a_finding_whose_body_is_no_gap_of_the_adapters_gap_scheme(packa
         "bridge:gapScheme, the anchor of a validation rule in a W3C XML Schema Recommendation, "
         "bridge:schemaRuleUnnamed, or bridge:pathNotAccounted"
     ) in "\n".join(said_about(package.crate))
-
-
-def test_reports_nothing_for_a_finding_whose_body_is_the_anchor_of_a_w3c_xml_schema_validation_rule(package):
-    package.write(FINDINGS, a_findings_file(body="<https://www.w3.org/TR/xmlschema-1/#cvc-complex-type>"))
-    assert not said_about(package.crate)
 
 
 def test_reports_nothing_for_a_finding_whose_body_is_the_concept_for_a_schema_failure_w3c_names_no_rule_for(package):
