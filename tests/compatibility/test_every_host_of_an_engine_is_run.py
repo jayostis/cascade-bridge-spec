@@ -1,6 +1,15 @@
 """Each adapter on each host of each engine, an entry of its own."""
 
-from compatibility_world import a_host, engine_document
+import base64
+import hashlib
+import io
+import sys
+import tarfile
+
+import pytest
+
+from compatibility_tool import releases
+from compatibility_world import FAKE_ENGINE, a_host, depends_on, engine_document, git, write_compatibility
 
 
 def native_and_node(on_node="passed"):
@@ -69,3 +78,94 @@ def test_a_host_whose_name_is_no_file_name_is_still_run_and_judged_by_its_report
     assert "node/22" in holding
     [entry] = entries(world)
     assert entry["holds"] is True
+
+
+def released_engine(world, monkeypatch, tmp_path, vouched=True):
+    """Each host of the engine at main has a build in that commit's release, and a setup that fails."""
+    monkeypatch.setattr(releases, "on_a_runner_releases_serve", lambda: True)
+    script = (FAKE_ENGINE / "engine.py").read_bytes()
+    packed = io.BytesIO()
+    with tarfile.open(fileobj=packed, mode="w:gz") as archive:
+        member = tarfile.TarInfo("package/engine.py")
+        member.size = len(script)
+        archive.addfile(member, io.BytesIO(script))
+    assets = {"engine-linux": script, "engine-0.1.0.tgz": packed.getvalue()}
+    for name, data in assets.items():
+        (tmp_path / name).write_bytes(data)
+    failing = [sys.executable, "-c", "raise SystemExit(1)"]
+    hosts = [
+        a_host(
+            "native",
+            setup=failing,
+            release={
+                "asset": "engine-linux",
+                "path": "prebuilt/engine",
+                "command": [sys.executable, "prebuilt/engine", "--canned", "passed"],
+            },
+        ),
+        a_host(
+            "node",
+            setup=failing,
+            command=[sys.executable, "dist/engine.py", "--canned", "passed"],
+            release={"asset": "engine-*.tgz", "path": "dist"},
+        ),
+    ]
+    origin = world.origin("engine")
+    write_compatibility(origin, engine_document([], host=hosts))
+    git("commit", "-q", "-am", "engine: hosts with releases", cwd=origin)
+    commit = git("rev-parse", "HEAD", cwd=origin)
+    integrity = base64.b64encode(hashlib.sha512(assets["engine-0.1.0.tgz"]).digest()).decode()
+    native = hashlib.sha256(assets["engine-linux"] if vouched else b"other bytes").hexdigest()
+    world.pull_requests.releases["engine", f"build-{commit}"] = {
+        "tag_name": f"build-{commit}",
+        "body": f"Commit: {commit}\nIntegrity: sha512-{integrity}\nNative SHA-256: {native}\n",
+        "assets": [{"name": name, "browser_download_url": (tmp_path / name).as_uri()} for name in assets],
+    }
+    adapter = world.clone("adapter")
+    write_compatibility(adapter, {"mustPassWith": [world.url("engine")]})
+    return adapter
+
+
+def named_engine_pull_request(world, adapter, change):
+    world.pull_request("engine", 2, fill=change)
+    world.pull_request("adapter", 1, body=depends_on("engine", 2))
+    return world.ci(repository="adapter", event=world.event(1, "adapter"))
+
+
+def only_compatibility_json(engine):
+    path = engine / "compatibility.json"
+    path.write_text(path.read_text(encoding="utf-8") + "\n", encoding="utf-8", newline="")
+
+
+def code(engine):
+    (engine / "engine.py").write_text((engine / "engine.py").read_text(encoding="utf-8") + "\n", encoding="utf-8")
+
+
+@pytest.mark.parametrize(
+    "merging", [None, only_compatibility_json], ids=["at main", "pr-changing-only-compatibility.json"]
+)
+def test_an_adapters_run_runs_each_host_of_a_released_engine_from_its_release_and_runs_no_setup(
+    world, monkeypatch, tmp_path, merging
+):
+    adapter = released_engine(world, monkeypatch, tmp_path)
+    variables = named_engine_pull_request(world, adapter, merging) if merging else world.ci(repository="adapter")
+
+    said = world.tool(adapter, **variables)
+
+    assert "  setup " not in said
+    assert said.count("  release ") == 2
+    assert [entry["holds"] for entry in entries(world)] == [True, True]
+
+
+@pytest.mark.parametrize(
+    "vouched,merging", [(False, None), (True, code)], ids=["digest-not-in-notes", "pr-changing-code"]
+)
+def test_an_engines_host_is_built_by_its_setup_where_its_release_does_not_serve(
+    world, monkeypatch, tmp_path, vouched, merging
+):
+    adapter = released_engine(world, monkeypatch, tmp_path, vouched=vouched)
+    variables = named_engine_pull_request(world, adapter, merging) if merging else world.ci(repository="adapter")
+
+    said = world.tool(adapter, 1, **variables)
+
+    assert f"  setup {sys.executable} -c raise SystemExit(1)" in said

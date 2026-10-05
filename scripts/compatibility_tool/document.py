@@ -10,7 +10,8 @@ CONTEXT_IRI = "https://ns.cascadeprotocol.org/bridge/v1-draft/compatibility.json
 ADAPTER_TYPE = "bridge:Adapter"
 
 VECTORS = ("setup", "command")
-HOST_KEYS = {"name", *VECTORS}
+HOST_KEYS = {"name", "release", *VECTORS}
+RELEASE_KEYS = {"asset", "path", "command"}
 TOP_KEYS = {"@context", "host", "mustPassWith", *VECTORS}
 PICKED_WHEN_THE_CHECK_RUNS = "which version of it is picked when the check runs"
 
@@ -108,6 +109,12 @@ def problems_json_ld_hides_from_shacl(document):
         if isinstance(host, dict):
             problems += [f"{key} is not a key a host carries" for key in host if key not in HOST_KEYS]
             problems += vector_problems(host)
+            release = host.get("release", {})
+            if not isinstance(release, dict):
+                problems.append("a host's release is a JSON object")
+                continue
+            problems += [f"{key} is not a key a host's release carries" for key in release if key not in RELEASE_KEYS]
+            problems += vector_problems(release)
     listed = document.get("mustPassWith")
     if "mustPassWith" in document and not isinstance(listed, list):
         problems.append("mustPassWith is a list of repositories, written as a JSON array, even of one")

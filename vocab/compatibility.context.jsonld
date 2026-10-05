@@ -7,7 +7,14 @@
       "@id": "bridge:host",
       "@container": "@set",
       "@context": {
-        "name": "http://schema.org/name"
+        "name": "http://schema.org/name",
+        "release": {
+          "@id": "bridge:release",
+          "@context": {
+            "asset": "bridge:asset",
+            "path": "bridge:path"
+          }
+        }
       }
     },
     "setup": {

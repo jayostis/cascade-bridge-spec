@@ -2,6 +2,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
+from compatibility_tool import releases
 from compatibility_tool.console import report
 from compatibility_tool.document import hosts, is_adapter, read_file
 
@@ -57,6 +58,8 @@ def run(directory, record, options, set_up):
             report(False, f"{engine} {problem}, so {pairing.name} was not run")
             continue
         found = {host["name"]: host for host in listed}
+        if adapter_side and options.mode == "ci":
+            from_release(pairing, engine, found, set_up)
         for index, entry in enumerate(record.on_each_host(pairing, found), 1):
             earl = reports / f"{entry.name}-on-host-{index}.ttl"
             run_on_host(entry, engine, found[entry.host], set_up, earl, record)
@@ -71,13 +74,22 @@ def prepared(engine, name, host, set_up, what):
     setup, command = found
     if (engine, name) not in set_up:
         print(f"  setup {' '.join(setup)}   (in {engine}, for {name})")
-        set_up[engine, name] = execute(setup, engine) == 0
-        if not set_up[engine, name]:
+        set_up[engine, name] = command if execute(setup, engine) == 0 else None
+        if set_up[engine, name] is None:
             report(False, f"the setup for {name} failed in {engine}")
-    if not set_up[engine, name]:
+    if set_up[engine, name] is None:
         report(False, f"{what} was not run on {name}: its setup failed")
-        return None
-    return command
+    return set_up[engine, name]
+
+
+def from_release(pairing, engine, found, set_up):
+    """Each host whose release the engine's commit has, placed from it rather than set up."""
+    declaring = [host for name, host in found.items() if "release" in host and (engine, name) not in set_up]
+    release = releases.release_of(pairing) if declaring else None
+    for host in declaring:
+        command = releases.placed(release, engine, host)
+        if command is not None:
+            set_up[engine, host["name"]] = command
 
 
 def run_on_host(entry, engine, host, set_up, earl, record):

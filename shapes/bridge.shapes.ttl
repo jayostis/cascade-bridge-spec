@@ -1236,9 +1236,35 @@
 <#SetupAndCommandInAHost> a sh:NodeShape ;
   sh:targetSubjectsOf bridge:setup, bridge:command ;
   sh:property [
-    sh:path [ sh:inversePath bridge:host ] ;
+    sh:path [ sh:alternativePath ( [ sh:inversePath bridge:host ] [ sh:inversePath bridge:release ] ) ] ;
     sh:minCount 1 ;
     sh:message "A setup and a command belong to a host, in an engine's list of hosts, never at the top of a compatibility.json."
+  ] .
+
+<#Release> a sh:NodeShape ;
+  sh:property [
+    sh:path bridge:asset ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "A host's release names exactly one asset, a glob, as a string."
+  ] ;
+  sh:property [
+    sh:path bridge:path ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "A host's release names exactly one path in the engine's checkout, a string."
+  ] ;
+  sh:property [
+    sh:path bridge:command ;
+    sh:maxCount 1 ;
+    sh:message "A host's release carries at most one command."
+  ] ;
+  sh:property [
+    sh:path ( bridge:command [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ;
+    sh:datatype xsd:string ;
+    sh:message "A release's command is an argument vector, a JSON array of strings."
   ] .
 
 <#Host> a sh:NodeShape ;
@@ -1272,4 +1298,10 @@
     sh:minCount 1 ;
     sh:datatype xsd:string ;
     sh:message "A host's command is an argument vector, a JSON array of one or more strings."
+  ] ;
+  sh:property [
+    sh:path bridge:release ;
+    sh:maxCount 1 ;
+    sh:node <#Release> ;
+    sh:message "A host carries at most one release, a JSON object naming an asset and a path."
   ] .
