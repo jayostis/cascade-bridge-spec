@@ -3,7 +3,7 @@ import subprocess
 
 from compatibility_tool import packages
 from compatibility_tool.console import Status, detail, report
-from compatibility_tool.document import CRATE, FILE, is_adapter
+from compatibility_tool.document import CRATE, FILE, is_adapter, kind
 
 
 def shape_violations(directory, document, spec):
@@ -50,7 +50,7 @@ def validate(directory, document, spec):
     if document is None:
         if is_adapter(directory):
             return Status.OK
-        report(False, f"{directory} holds no {CRATE}, so it is an engine, and an engine states {FILE}")
+        report(False, f"{directory} holds no {CRATE}, so it is {kind(directory)}, and {kind(directory)} states {FILE}")
         return Status.FAIL
     violations = shape_violations(directory, document, spec.path)
     for message in violations:

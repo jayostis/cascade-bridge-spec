@@ -5,6 +5,7 @@ from compatibility_tool.github import repository_name
 
 FILE = "compatibility.json"
 CRATE = "ro-crate-metadata.json"
+RUNTIME = "cascade-runtime.json"
 CONTEXT_IRI = "https://ns.cascadeprotocol.org/bridge/v1-draft/compatibility.jsonld"
 
 VECTORS = ("setup", "command")
@@ -27,6 +28,33 @@ def read_file(directory):
 
 def is_adapter(directory):
     return (directory / CRATE).is_file()
+
+
+def is_runtime(directory):
+    return not is_adapter(directory) and (directory / RUNTIME).is_file()
+
+
+def kind(directory):
+    return "an adapter" if is_adapter(directory) else "a runtime" if is_runtime(directory) else "an engine"
+
+
+def pinned_repositories(directory):
+    """Each repository cascade-runtime.json pins, as it writes it, with the commit it pins."""
+    document = read_json(directory / RUNTIME)
+    if not isinstance(document, dict):
+        raise Stop(f"{directory / RUNTIME} is not a JSON object")
+    adapters = document.get("adapters", [])
+    if not isinstance(adapters, list):
+        raise Stop(f"{directory / RUNTIME} pins adapters by no JSON array")
+    entries = [("vocabulary", document.get("vocabulary"))]
+    entries += [(f"adapters[{index}]", entry) for index, entry in enumerate(adapters)]
+    pins = []
+    for where, entry in entries:
+        repository, commit = (entry.get("repository"), entry.get("commit")) if isinstance(entry, dict) else (None, None)
+        if not isinstance(repository, str) or not isinstance(commit, str):
+            raise Stop(f"{directory / RUNTIME} pins {where} by no repository and commit")
+        pins.append((where, repository, commit))
+    return pins
 
 
 def crate_root(directory):
@@ -79,7 +107,7 @@ def problems_json_ld_hides_from_shacl(document):
     return problems
 
 
-def name_clashes(directory, urls):
+def name_clashes(directory, urls, listing="mustPassWith"):
     reserved = {
         "cascade-bridge-spec": "that is where the check checks the specification out beside this repository",
         directory.resolve().name.casefold(): "that is this repository's own directory",
@@ -91,11 +119,11 @@ def name_clashes(directory, urls):
         folded = name.casefold()
         if folded in seen:
             clashes.append(
-                "Each repository name appears in mustPassWith at most once, "
+                f"Each repository name appears in {listing} at most once, "
                 f"compared without case: {seen[folded]} and {url} would both be checked out at ../{name}"
             )
         if folded in reserved:
-            clashes.append(f"No repository in mustPassWith is named {name}, compared without case: {reserved[folded]}")
+            clashes.append(f"No repository in {listing} is named {name}, compared without case: {reserved[folded]}")
         seen[folded] = url
     return clashes
 
@@ -109,10 +137,16 @@ def form_problem(directory, document):
         )
     if is_adapter(directory):
         return None
+    if is_runtime(directory):
+        found = f"{directory} holds {RUNTIME}, so it is a runtime"
+        if "mustPassWith" in document:
+            return f"{found}, and a runtime's {FILE} names no mustPassWith: its counterparts are what {RUNTIME} pins"
+    else:
+        found = f"{directory} holds no {CRATE}, so it is an engine"
     if not hosts(document):
-        return f"{directory} holds no {CRATE}, so it is an engine, and an engine's {FILE} names at least one host"
+        return f"{found}, and {kind(directory)}'s {FILE} names at least one host"
     if not all(isinstance(host, dict) and all(key in host for key in VECTORS) for host in hosts(document)):
-        return f"{directory} holds no {CRATE}, so it is an engine, and each host of it carries setup and command"
+        return f"{found}, and each host of it carries setup and command"
     return None
 
 
@@ -124,5 +158,7 @@ def problems(directory, document):
         found = document.get("@context") if isinstance(document, dict) else document
         return [f"its @context is {found!r}, where a {FILE} names {CONTEXT_IRI}"]
     found = problems_json_ld_hides_from_shacl(document) + name_clashes(directory, counterparts(document))
+    if is_runtime(directory):
+        found += name_clashes(directory, [url for _, url, _ in pinned_repositories(directory)], RUNTIME)
     form = form_problem(directory, document)
     return [*found, form] if form else found

@@ -28,7 +28,7 @@ class Verdict:
     unjudged: str | None = None
     tally: dict[str, int] = field(default_factory=dict)
     unreadable_manifest: str | None = None
-    tests: int = 0
+    tests: int | None = None
     faults: list[str] = field(default_factory=list)
 
     @property
@@ -42,7 +42,7 @@ class Verdict:
         if self.unreadable_manifest is not None:
             unread = f"the adapter's test manifest could not be read: {self.unreadable_manifest}"
             return "; ".join(filter(None, [said, *self.faults, unread]))
-        if not self.faults:
+        if not self.faults and self.tests is not None:
             said += f", covering all {self.tests} of the manifest's tests"
         return "; ".join(filter(None, [said, *self.faults]))
 
@@ -77,6 +77,8 @@ def judge_report(path, adapter):
     for outcome in graph.objects(None, packages.installed("rdflib").URIRef(EARL + "outcome")):
         name = outcome_name(outcome)
         tally[name] = tally.get(name, 0) + 1
+    if adapter is None:
+        return Verdict(tally=tally, faults=faults_of(graph))
 
     adapter = adapter.resolve()
     try:
@@ -94,38 +96,41 @@ def faults_of(graph):
     return [str(row.fault) for row in graph.query(FAULTS_OF_A_REPORT.read_text(encoding="utf-8"))]
 
 
+def plural(count, word):
+    return f"{count} {word}{'' if count == 1 else 's'}"
+
+
+def tallied(label, rows):
+    if rows:
+        held = sum(bool(entry.holds) for entry in rows)
+        print(f"  {label}: {held} hold, {len(rows) - held} do not")
+
+
 def judge(record, options):
     print("Each counterpart, judged by its EARL report")
-    counterparts, libraries = record.counterparts, record.libraries
-    if not counterparts and not libraries:
+    counterparts, libraries, runs = record.counterparts, record.libraries, record.conformance
+    if not counterparts and not libraries and not runs:
         report(True, f"{record.directory} lists no counterpart: nothing to check")
         return Status.NOTHING_TO_CHECK
-    held = 0
-    for entry in counterparts:
+    for entry in [*counterparts, *runs]:
         verdict = judge_report(entry.report, entry.adapter)
         entry.holds = verdict.holds
         entry.result = verdict.describe()
-        held += verdict.holds
+        whose = "the conformance of " if entry.role is Role.CONFORMANCE else ""
         report(
             verdict.holds,
-            f"{entry.describe()}: {'holds' if verdict.holds else 'does not hold'}; {verdict.describe()}",
+            f"{whose}{entry.describe()}: {'holds' if verdict.holds else 'does not hold'}; {verdict.describe()}",
         )
-    if any(entry.uncommitted_edits for entry in counterparts):
+    handed = [entry for entry in record.used if entry.role in (Role.VOCABULARY, Role.ADAPTER)] if runs else []
+    if any(entry.uncommitted_edits for entry in [*counterparts, *runs, *handed]):
         note("a result produced from uncommitted edits is feedback, never evidence")
-    count = len(counterparts)
-    if counterparts:
-        print(f"  {count} counterpart{'' if count == 1 else 's'}: {held} hold, {count - held} do not")
+    tallied(plural(len(counterparts), "counterpart"), counterparts)
     for entry in libraries:
-        held += entry.holds
         verdict = "holds" if entry.holds else "does not hold"
         report(entry.holds, f"the library of {entry.describe()}: {verdict}; {entry.result}")
-    if libraries:
-        hosts = len(libraries)
-        library_held = sum(entry.holds for entry in libraries)
-        print(
-            f"  the library on {hosts} host{'' if hosts == 1 else 's'}: {library_held} hold, {hosts - library_held} do not"
-        )
-    return Status.OK if held == count + len(libraries) else Status.FAIL
+    tallied(f"the library on {plural(len(libraries), 'host')}", libraries)
+    tallied(f"the runtime on {plural(len(runs), 'host')}", runs)
+    return Status.OK if all(entry.holds for entry in [*counterparts, *libraries, *runs]) else Status.FAIL
 
 
 def linked(text, url):
@@ -145,8 +150,8 @@ def result_cell(entry):
 
 
 def version_cell(entry):
-    """The vocabulary is at the adapter's pin unless a Depends-On: line named a pull request of it instead."""
-    if entry.role is Role.VOCABULARY and entry.from_named_pull_requests:
+    """A pinned repository is at its pin unless a Depends-On: line named a pull request of it instead."""
+    if entry.role in (Role.VOCABULARY, Role.ADAPTER) and entry.from_named_pull_requests:
         return f"Depends-On: {entry.how}"
     return entry.how
 
