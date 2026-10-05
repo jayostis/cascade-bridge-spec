@@ -19,6 +19,7 @@ class Role(Enum):
     VOCABULARY = "vocabulary"
     COUNTERPART = "counterpart"
     NOT_USED = "not used"
+    LIBRARY = "library"
 
 
 def optional_path(value):
@@ -106,6 +107,11 @@ class Record:
     @property
     def counterparts(self):
         return [entry for entry in self.used if entry.role is Role.COUNTERPART]
+
+    @property
+    def libraries(self):
+        """The engine under test's library, a row for each of its hosts."""
+        return [entry for entry in self.used if entry.role is Role.LIBRARY]
 
     def on_each_host(self, entry, hosts):
         """The entry, replaced by one row for each host."""

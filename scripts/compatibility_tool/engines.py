@@ -42,13 +42,12 @@ def unrunnable(listed):
     return f"names more than one host {', '.join(repeated)}" if repeated else None
 
 
-def run(directory, record, options):
+def run(directory, record, options, set_up):
     reports = options.results / "earl"
     shutil.rmtree(reports, ignore_errors=True)
     reports.mkdir(parents=True)
     print("Each adapter on each host of each engine")
     adapter_side = is_adapter(directory)
-    set_up = {}
     for pairing in record.counterparts:
         engine, adapter = (pairing.path, directory) if adapter_side else (directory, pairing.path)
         pairing.adapter = adapter
@@ -63,19 +62,27 @@ def run(directory, record, options):
             run_on_host(entry, engine, found[entry.host], set_up, earl, record)
 
 
-def run_on_host(entry, engine, host, set_up, earl, record):
+def prepared(engine, name, host, set_up, what):
+    """The host's command once its setup has run in the engine, which happens once a run; None where it cannot run."""
     found = vectors(host)
     if found is None:
-        report(False, f"{engine} states no setup and command for {entry.host}, so {entry.name} was not run on it")
-        return
+        report(False, f"{engine} states no setup and command for {name}, so {what} was not run on it")
+        return None
     setup, command = found
-    if (engine, entry.host) not in set_up:
-        print(f"  setup {' '.join(setup)}   (in {engine}, for {entry.host})")
-        set_up[engine, entry.host] = execute(setup, engine) == 0
-        if not set_up[engine, entry.host]:
-            report(False, f"the setup for {entry.host} failed in {engine}")
-    if not set_up[engine, entry.host]:
-        report(False, f"{entry.name} was not run on {entry.host}: its setup failed")
+    if (engine, name) not in set_up:
+        print(f"  setup {' '.join(setup)}   (in {engine}, for {name})")
+        set_up[engine, name] = execute(setup, engine) == 0
+        if not set_up[engine, name]:
+            report(False, f"the setup for {name} failed in {engine}")
+    if not set_up[engine, name]:
+        report(False, f"{what} was not run on {name}: its setup failed")
+        return None
+    return command
+
+
+def run_on_host(entry, engine, host, set_up, earl, record):
+    command = prepared(engine, entry.host, host, set_up, entry.name)
+    if command is None:
         return
     argv = [*command, "test", str(entry.adapter), "--earl", str(earl)]
     if entry.vocabularies is not None:
