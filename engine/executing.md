@@ -1,8 +1,9 @@
 # Executing a test manifest
 
 **Load the crate and the manifest as one graph**: `ro-crate-metadata.json` as
-JSON-LD and the manifest as Turtle, each with its own file location as base, so
-the manifest's `<../>` is the crate's root entity.
+JSON-LD and the manifest as Turtle, each with the adapter IRI the caller gave
+([`library.md`](library.md)) followed by its path as base, so the manifest's
+`<../>` is the crate's root entity.
 
 **Apply each entry's type's rule**: its `rdfs:comment` in
 [`../vocab/bridge.ttl`](../vocab/bridge.ttl). A Bridge also executes

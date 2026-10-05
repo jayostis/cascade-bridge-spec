@@ -9,7 +9,8 @@ implementation that runs adapters, one per language) follows.
 
 Normative: [`vocab/`](vocab/), [`shapes/`](shapes/),
 [`adapter/profile/`](adapter/profile/), [`engine/sparql.md`](engine/sparql.md),
-[`engine/command.md`](engine/command.md), [`pinning.md`](pinning.md) and
+[`engine/library.md`](engine/library.md), [`engine/command.md`](engine/command.md),
+[`pinning.md`](pinning.md) and
 [`compatibility.md`](compatibility.md).
 
 | you are building | start at |
