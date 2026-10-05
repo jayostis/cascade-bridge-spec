@@ -10,7 +10,7 @@ RECORD = "record.json"
 
 
 def pairing(entry):
-    return entry.name, entry.repository, entry.path, entry.pull_request
+    return entry.name, entry.repository, entry.path, entry.pull_request, entry.release
 
 
 class Role(Enum):
@@ -52,6 +52,7 @@ class Row:
     pull_request: str | None = None
     host: str | None = None
     vocabularies: Path | None = None
+    release: str | None = None
 
     @property
     def on_host(self):
@@ -78,6 +79,7 @@ class Row:
             "pullRequest": self.pull_request,
             "host": self.host,
             "vocabularies": optional_text(self.vocabularies),
+            "release": self.release,
         }
 
     @classmethod
@@ -99,6 +101,7 @@ class Row:
             pull_request=data.get("pullRequest"),
             host=data.get("host"),
             vocabularies=optional_path(data.get("vocabularies")),
+            release=data.get("release"),
         )
 
 
@@ -135,13 +138,15 @@ class Record:
         return self.repository_key(entry) + (entry.on_host if on_hosts > 1 else "")
 
     def repository_key(self, entry):
-        """A name, owner/name where two repositories share one, or the pull request where two rows share that."""
+        """A name, owner/name where two repositories share one, or the pull request or release where two rows share that."""
         others = list({pairing(other): other for other in self.used}.values())
         if sum(other.name == entry.name for other in others) == 1 or not entry.repository:
             return entry.name
         path = repository_path(entry.repository)
         sharing = sum(bool(other.repository) and repository_path(other.repository) == path for other in others)
-        return path if sharing == 1 or not entry.pull_request else entry.pull_request
+        if sharing == 1:
+            return path
+        return entry.pull_request or (f"{path}@{entry.release}" if entry.release else path)
 
     def save(self, results):
         results.mkdir(parents=True, exist_ok=True)

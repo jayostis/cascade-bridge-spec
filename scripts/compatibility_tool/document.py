@@ -44,10 +44,10 @@ def pinned_repositories(directory):
     if not isinstance(document, dict):
         raise Stop(f"{directory / RUNTIME} is not a JSON object")
     adapters = document.get("adapters", [])
+    if not isinstance(adapters, list):
+        raise Stop(f"{directory / RUNTIME} pins adapters by no JSON array")
     entries = [("vocabulary", document.get("vocabulary"))]
-    entries += [
-        (f"adapters[{index}]", entry) for index, entry in enumerate(adapters if isinstance(adapters, list) else [])
-    ]
+    entries += [(f"adapters[{index}]", entry) for index, entry in enumerate(adapters)]
     pins = []
     for where, entry in entries:
         repository, commit = (entry.get("repository"), entry.get("commit")) if isinstance(entry, dict) else (None, None)

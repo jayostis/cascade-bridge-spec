@@ -4,7 +4,8 @@ import json
 
 import pytest
 
-from compatibility_tool.document import problems
+from compatibility_tool.console import Stop
+from compatibility_tool.document import pinned_repositories, problems
 from compatibility_world import CONTEXT_IRI, CRATE, VOCABULARY, engine_document
 
 PICKED_WHEN_THE_CHECK_RUNS = "picked when the check runs"
@@ -91,3 +92,10 @@ def test_a_runtimes_file_is_refused_where_it_names_counterparts_or_a_pin_clashes
     pin = {"repository": pinned, "commit": "a" * 40}
     (tmp_path / "cascade-runtime.json").write_text(json.dumps({"vocabulary": pin, "adapters": []}), encoding="utf-8")
     assert says in "\n".join(problems(tmp_path, {"@context": CONTEXT_IRI, **engine_document([], **document)}))
+
+
+def test_a_runtimes_adapters_written_as_an_object_stop_the_run(tmp_path):
+    pin = {"repository": ADAPTER, "commit": "a" * 40}
+    (tmp_path / "cascade-runtime.json").write_text(json.dumps({"vocabulary": pin, "adapters": pin}), encoding="utf-8")
+    with pytest.raises(Stop, match="adapters"):
+        pinned_repositories(tmp_path)

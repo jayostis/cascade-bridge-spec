@@ -43,6 +43,7 @@ def released_packages(directory):
             commit=None,
             how=f"the release {tag}, as {LOCKFILE} pins it",
             role=Role.PACKAGE,
+            release=tag,
         )
         for url, tag in releases
     ]

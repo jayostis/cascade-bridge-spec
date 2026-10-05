@@ -60,3 +60,13 @@ def test_a_vocabulary_pull_request_named_on_a_depends_on_line_is_handed_in_and_a
     repositories = world.record()["repositories"]
     assert repositories[VOCABULARY]["how"] == "pull request #5 merged into main"
     assert repositories[f"{BRIDGE_OWNER}/{BRIDGE}/pull/3"]["role"] == "not used"
+
+
+def test_a_local_run_on_a_pinned_sibling_with_uncommitted_edits_says_its_result_is_feedback(world):
+    world.clone("adapter")
+    (world.clone(VOCABULARY) / "NOTICE").write_text("an uncommitted edit\n", encoding="utf-8")
+    world.offline()
+
+    said = world.tool(world.runtime())
+
+    assert "a result produced from uncommitted edits is feedback, never evidence" in said
