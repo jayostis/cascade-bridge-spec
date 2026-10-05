@@ -6,8 +6,8 @@ from pathlib import Path
 from compatibility_tool import git, packages, picking, placing
 from compatibility_tool.console import Status, Stop, detail, first_line, note, report
 from compatibility_tool.document import CRATE, crate_root, is_adapter, referenced_id
-from compatibility_tool.github import repository_name, repository_path, url_on_this_server
-from compatibility_tool.record import Role, Row
+from compatibility_tool.github import repository_path, url_on_this_server
+from compatibility_tool.record import Role
 
 PIN = "bridge:cascadeVocabularyPin"
 NAMED_FILE = "bridge:vocabularyFile"
@@ -77,23 +77,8 @@ def read_from(directory, counterparts):
 
 
 def place(directory, reading, options, event, reached):
-    name = repository_name(reading.url)
-    if options.mode == "local":
-        return placing.on_disk(name, reading.url, placing.sibling(directory, reading.url), Role.VOCABULARY)
-    into = directory.parent / name
-    if picking.merging(reached, repository_path(reading.url)):
-        return placing.in_ci(reading.url, reached, event, into, Role.VOCABULARY)
-    picking.remove(into)
-    if not git.clone_at(reading.url, into, reading.commit):
-        raise Stop(f"{reading.url} holds no commit {reading.commit}, which is what the adapter's {PIN} names")
-    return Row(
-        name=name,
-        repository=reading.url,
-        commit=reading.commit,
-        how=f"the adapter's {PIN}",
-        role=Role.VOCABULARY,
-        path=into,
-    )
+    how = f"the adapter's {PIN}"
+    return placing.pinned(directory, reading.url, reading.commit, Role.VOCABULARY, how, options, event, reached)
 
 
 def compared(row, reading):

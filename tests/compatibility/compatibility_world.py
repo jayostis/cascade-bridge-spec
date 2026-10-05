@@ -21,8 +21,13 @@ TOOL = ROOT / "scripts" / "compatibility.py"
 SYNTHETIC_ADAPTER = ROOT / "fixtures" / "synthetic-adapter"
 SYNTHETIC_VOCABULARIES = ROOT / "fixtures" / "synthetic-vocabularies"
 FAKE_ENGINE = ROOT / "fixtures" / "fake-engine"
+FAKE_RUNTIME = ROOT / "fixtures" / "fake-runtime"
+BRIDGE = "example-bridge"
+BRIDGE_OWNER = "example-org"
+BRIDGE_RELEASE = f"https://github.com/{BRIDGE_OWNER}/{BRIDGE}/releases/download/build-1/{BRIDGE}-0.1.0.tgz"
 CONTEXT_IRI = "https://ns.cascadeprotocol.org/bridge/v1-draft/compatibility.jsonld"
 OWNER = "jayostis"
+ADAPTER_URL = f"https://github.com/{OWNER}/adapter"
 CRATE = "ro-crate-metadata.json"
 MATCHING = "main, the branch matching the pull request's target"
 NOWHERE = "https://example.invalid/gone.git"
@@ -384,6 +389,29 @@ class World:
         self.clone(VOCABULARY)
         self.offline()
         return adapter
+
+    def runtime(self, canned="passed"):
+        """A runtime pinning this world's vocabulary and adapter, and a Bridge its lockfile resolves from a release."""
+        runtime = self.workspace / "runtime"
+        shutil.copytree(FAKE_RUNTIME, runtime)
+        write_compatibility(
+            runtime, {"host": [a_host("node", command=[sys.executable, "runtime.py", "--canned", canned])]}
+        )
+        pins = {
+            "vocabulary": {"repository": VOCABULARY_URL, "commit": self.commits[VOCABULARY]},
+            "adapters": [{"repository": ADAPTER_URL, "commit": self.commits["adapter"]}],
+        }
+        lockfile = {"packages": {f"node_modules/{BRIDGE}": {"resolved": BRIDGE_RELEASE}}}
+        for name, body in (("cascade-runtime.json", pins), ("package-lock.json", lockfile)):
+            (runtime / name).write_text(json.dumps(body, indent=2) + "\n", encoding="utf-8", newline="")
+        git("init", "-q", "-b", "main", str(runtime))
+        git("add", "-A", cwd=runtime)
+        git("commit", "-q", "-m", "runtime: first", cwd=runtime)
+        return runtime
+
+    def runtime_under_test(self, body="", canned="passed"):
+        self.pull_request("runtime", 1, body=body)
+        return self.runtime(canned), self.ci(repository="runtime", event=self.event(1, repository="runtime"))
 
     def event(self, number, repository="engine"):
         pull = self.pull_requests.get(repository, number)

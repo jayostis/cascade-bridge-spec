@@ -14,11 +14,12 @@ from compatibility_tool import (
     picking,
     placing,
     ready,
+    runtimes,
     validate,
     vocabularies,
 )
 from compatibility_tool.console import Status, Stop, report
-from compatibility_tool.document import counterparts, is_adapter, problems, read_file
+from compatibility_tool.document import counterparts, is_adapter, is_runtime, problems, read_file
 from compatibility_tool.record import Record, Role
 
 CHECKS = ("compatibility", "ready-to-merge")
@@ -65,9 +66,33 @@ def under_test(directory, options, event):
     )
 
 
+def counterparts_placed(directory, listed, options, event, api):
+    """The counterparts mustPassWith names and the vocabularies their adapters read, each with its reading."""
+    reached = picking.follow(api, event, listed, options.spec_repository) if options.mode == "ci" else []
+    counterpart_rows = []
+    for url in listed:
+        if options.mode == "local":
+            counterpart_rows.append(placing.locally(directory, url, Role.COUNTERPART))
+        else:
+            into = directory.parent / github.repository_name(url)
+            counterpart_rows.append(placing.in_ci(url, reached, event, into, Role.COUNTERPART))
+
+    # A checked-out adapter is what names the vocabulary, so a Depends-On: line of it is reached only now.
+    readings = vocabularies.read_from(directory, counterpart_rows)
+    if readings and options.mode == "ci":
+        reached = picking.follow(api, event, [*listed, *(reading.url for reading in readings)], options.spec_repository)
+    placed = [(reading, vocabularies.place(directory, reading, options, event, reached)) for reading in readings]
+
+    for entry in counterpart_rows:
+        entry.adapter = directory if is_adapter(directory) else entry.path
+        entry.vocabularies = next(
+            (vocabulary.path for reading, vocabulary in placed if entry.adapter in reading.adapters), None
+        )
+    return [*counterpart_rows, *(vocabulary for _, vocabulary in placed), *placing.not_used(reached)], placed
+
+
 def compatibility(directory, options, event, api, spec):
     document = read_file(directory)
-    listed = counterparts(document)
     refused = problems(directory, document)
     for problem in refused:
         report(False, problem)
@@ -77,30 +102,12 @@ def compatibility(directory, options, event, api, spec):
         Record(directory, options.mode, used).save(options.results)
         return Status.FAIL
 
-    reached = picking.follow(api, event, listed, options.spec_repository) if options.mode == "ci" else []
-    counterpart_rows = []
-    for url in listed:
-        if options.mode == "local":
-            counterpart_rows.append(placing.locally(directory, url, Role.COUNTERPART))
-        else:
-            into = directory.parent / github.repository_name(url)
-            counterpart_rows.append(placing.in_ci(url, reached, event, into, Role.COUNTERPART))
-    used += counterpart_rows
-
-    # A checked-out adapter is what names the vocabulary, so a Depends-On: line of it is reached only now.
-    readings = vocabularies.read_from(directory, counterpart_rows)
-    if readings and options.mode == "ci":
-        reached = picking.follow(api, event, [*listed, *(reading.url for reading in readings)], options.spec_repository)
-    placed = [(reading, vocabularies.place(directory, reading, options, event, reached)) for reading in readings]
-    used += [vocabulary for _, vocabulary in placed]
-
-    used += placing.not_used(reached)
-    for entry in used:
-        if entry.role is Role.COUNTERPART:
-            entry.adapter = directory if is_adapter(directory) else entry.path
-            entry.vocabularies = next(
-                (vocabulary.path for reading, vocabulary in placed if entry.adapter in reading.adapters), None
-            )
+    runtime = is_runtime(directory)
+    if runtime:
+        found, placed = runtimes.placed(directory, options, event, api), []
+    else:
+        found, placed = counterparts_placed(directory, counterparts(document), options, event, api)
+    used += found
     record = Record(directory, options.mode, used)
     record.save(options.results)
     for entry in used:
@@ -115,8 +122,11 @@ def compatibility(directory, options, event, api, spec):
             status = vocabularies.check(directory, vocabulary, reading)
     if status is not Status.FAIL:
         set_up = {}
-        engines.run(directory, record, options, set_up)
-        library.run(directory, record, options, set_up)
+        if runtime:
+            runtimes.run(directory, record, options, set_up)
+        else:
+            engines.run(directory, record, options, set_up)
+            library.run(directory, record, options, set_up)
         status = judge.judge(record, options)
         record.save(options.results)
     judge.write_table(record, options)

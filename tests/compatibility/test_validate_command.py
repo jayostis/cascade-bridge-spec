@@ -1,5 +1,7 @@
 """compatibility.json's form: what a run refuses before it picks anything."""
 
+import json
+
 import pytest
 
 from compatibility_tool.document import problems
@@ -71,3 +73,21 @@ def test_two_counterparts_whose_repositories_share_a_name_are_refused(tmp_path):
 def test_a_counterpart_named_cascade_bridge_spec_is_refused(tmp_path):
     said = refused(tmp_path, mustPassWith=["https://github.com/jayostis/cascade-bridge-spec"])
     assert "No repository in mustPassWith is named cascade-bridge-spec" in said
+
+
+@pytest.mark.parametrize(
+    "document, pinned, says",
+    [
+        pytest.param({"mustPassWith": [ADAPTER]}, ADAPTER, "names no mustPassWith", id="mustPassWith"),
+        pytest.param(
+            {"mustPassWith": None},
+            "https://github.com/jayostis/cascade-bridge-spec",
+            "is named cascade-bridge-spec",
+            id="a pin",
+        ),
+    ],
+)
+def test_a_runtimes_file_is_refused_where_it_names_counterparts_or_a_pin_clashes(tmp_path, document, pinned, says):
+    pin = {"repository": pinned, "commit": "a" * 40}
+    (tmp_path / "cascade-runtime.json").write_text(json.dumps({"vocabulary": pin, "adapters": []}), encoding="utf-8")
+    assert says in "\n".join(problems(tmp_path, {"@context": CONTEXT_IRI, **engine_document([], **document)}))

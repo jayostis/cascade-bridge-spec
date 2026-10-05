@@ -58,6 +58,20 @@ def in_ci(url, reached, event, into, role):
     )
 
 
+def pinned(directory, url, commit, role, how, options, event, reached):
+    """A repository pinned by commit: the sibling locally; in CI, the pull requests named of it, otherwise the pin."""
+    name = repository_name(url)
+    if options.mode == "local":
+        return on_disk(name, url, sibling(directory, url), role)
+    into = directory.parent / name
+    if picking.merging(reached, repository_path(url)):
+        return in_ci(url, reached, event, into, role)
+    picking.remove(into)
+    if not git.clone_at(url, into, commit):
+        raise Stop(f"{url} holds no commit {commit}, which is what {how} names")
+    return Row(name=name, repository=url, commit=commit, how=how, role=role, path=into)
+
+
 def not_used(reached):
     """A named pull request the run merges into nothing."""
     return [

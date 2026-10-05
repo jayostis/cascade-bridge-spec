@@ -20,6 +20,9 @@ class Role(Enum):
     COUNTERPART = "counterpart"
     NOT_USED = "not used"
     LIBRARY = "library"
+    ADAPTER = "adapter"
+    CONFORMANCE = "conformance"
+    PACKAGE = "package"
 
 
 def optional_path(value):
@@ -56,7 +59,8 @@ class Row:
 
     def describe(self):
         flag = ", with uncommitted edits" if self.uncommitted_edits else ""
-        return f"{self.repository or self.name}{self.on_host} is {self.commit} ({self.how}{flag})"
+        at = f" is {self.commit}" if self.commit else ""
+        return f"{self.repository or self.name}{self.on_host}{at} ({self.how}{flag})"
 
     def to_json(self):
         return {
@@ -112,6 +116,11 @@ class Record:
     def libraries(self):
         """The engine under test's library, a row for each of its hosts."""
         return [entry for entry in self.used if entry.role is Role.LIBRARY]
+
+    @property
+    def conformance(self):
+        """The runtime under test's conformance command, a row for each of its hosts."""
+        return [entry for entry in self.used if entry.role is Role.CONFORMANCE]
 
     def on_each_host(self, entry, hosts):
         """The entry, replaced by one row for each host."""
