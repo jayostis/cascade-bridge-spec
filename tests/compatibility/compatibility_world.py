@@ -14,7 +14,7 @@ from urllib.parse import parse_qs, urlsplit
 
 import pytest
 
-from compatibility_tool import bootstrap, cli, validate
+from compatibility_tool import bootstrap, cli, library, validate
 
 ROOT = Path(__file__).resolve().parents[2]
 TOOL = ROOT / "scripts" / "compatibility.py"
@@ -26,6 +26,7 @@ OWNER = "jayostis"
 CRATE = "ro-crate-metadata.json"
 MATCHING = "main, the branch matching the pull request's target"
 NOWHERE = "https://example.invalid/gone.git"
+VECTORS_ONLY_THESE_TESTS_READ = ("lift", "naming", "versioning")
 
 VOCABULARY = "spec"
 VOCABULARY_OWNER = "the-cascade-protocol"
@@ -66,8 +67,13 @@ def publish(origins, name, fill, owner=OWNER):
 
 def specification(path):
     """What a run fetches and runs the checks from: this working tree, uncommitted edits included."""
+
+    def ignored(directory, names):
+        unread = VECTORS_ONLY_THESE_TESTS_READ if Path(directory) == ROOT / "fixtures" else ()
+        return {name for name in names if name == "__pycache__" or name in unread}
+
     for directory in ("scripts", "vocab", "shapes", "adapter", "engine", "fixtures"):
-        shutil.copytree(ROOT / directory, path / directory, ignore=shutil.ignore_patterns("__pycache__"))
+        shutil.copytree(ROOT / directory, path / directory, ignore=ignored)
     shutil.copy(ROOT / "pyproject.toml", path / "pyproject.toml")
 
 
@@ -279,7 +285,7 @@ class Api:
     def __init__(self, pull_requests):
         self.server = HTTPServer(("127.0.0.1", 0), Handler)
         self.server.pull_requests = pull_requests
-        threading.Thread(target=self.server.serve_forever, daemon=True).start()
+        threading.Thread(target=self.server.serve_forever, args=(0.01,), daemon=True).start()
 
     @property
     def url(self):
@@ -431,11 +437,14 @@ class World:
             variables["CASCADE_CHECK_RUN_ID"] = own
         return variables
 
-    def tool(self, subject, expected=0, check=None, interpreter=None, in_a_process=False, **variables):
+    def tool(
+        self, subject, expected=0, check=None, interpreter=None, in_a_process=False, library_cases=False, **variables
+    ):
         """The tool's run, in this Python unless the test is about a process: then as a caller's workflow starts it.
 
-        In this Python the run does not hop to the version it picks, which holds this checkout's code, and does not
-        lint an adapter with rocrate-validator; a run in a process does both.
+        In this Python the run does not hop to the version it picks, which holds this checkout's code, does not
+        lint an adapter with rocrate-validator, and runs the library cases only where the test asks; a run in a
+        process does all three.
         """
         argv = [str(subject), "--results", str(self.results)]
         if check:
@@ -453,11 +462,11 @@ class World:
             )
             status, said = run.returncode, run.stdout + run.stderr
         else:
-            status, said = self.in_this_python(argv, environment)
+            status, said = self.in_this_python(argv, environment, library_cases)
         assert status == expected, f"exited {status}, {expected} expected\n{said}"
         return said
 
-    def in_this_python(self, argv, environment):
+    def in_this_python(self, argv, environment, library_cases):
         printed = io.TextIOWrapper(io.BytesIO(), encoding="utf-8", errors="replace")
         was = dict(os.environ)
         try:
@@ -468,6 +477,8 @@ class World:
                 patch.setattr(tempfile, "tempdir", None)
                 patch.setattr(bootstrap, "hop", lambda spec, directory, options: None)
                 patch.setattr(validate, "lint_adapter", lambda directory, spec: True)
+                if not library_cases:
+                    patch.setattr(library, "run", lambda directory, record, options, set_up: None)
                 status = cli.main("", argv)
         finally:
             os.environ.clear()

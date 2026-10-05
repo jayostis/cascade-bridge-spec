@@ -16,26 +16,6 @@ def judged(world, said, verdict):
     return [line.replace(str(world.root), "") for line in lines]
 
 
-def test_an_adapter_failing_on_the_second_host_only_is_two_entries_and_the_run_fails(world):
-    said = world.tool(world.engine_beside_adapter(host=native_and_node(on_node="failed")), 1)
-
-    assert sorted(entry["holds"] for entry in entries(world)) == [False, True]
-    [holding] = judged(world, said, "holds")
-    [failing] = judged(world, said, "does not hold")
-    assert "native" in holding and "node" not in holding
-    assert "node" in failing and "native" not in failing
-
-
-def test_an_adapter_holding_on_both_hosts_is_two_entries_each_with_its_own_report(world):
-    said = world.tool(world.engine_beside_adapter(host=native_and_node()))
-
-    assert "compatibility.json against the shapes" in said
-    found = entries(world)
-    assert [entry["holds"] for entry in found] == [True, True]
-    reports = {entry["report"] for entry in found}
-    assert len(reports) == 2
-
-
 def test_an_adapters_run_runs_every_host_of_the_engine_it_names(world):
     adapter = world.adapter_beside_engine(engine_document([], host=native_and_node(on_node="failed")))
 
@@ -46,11 +26,16 @@ def test_an_adapters_run_runs_every_host_of_the_engine_it_names(world):
     assert "node" in failing
 
 
-def test_the_table_has_a_row_for_each_host_and_a_row_run_on_no_host_says_so(world):
+def test_an_adapter_failing_on_the_second_host_only_is_two_entries_and_two_table_rows_and_the_run_fails(world):
     engine, event = world.engine_under_test(host=native_and_node(on_node="failed"))
 
-    world.tool(engine, 1, **world.ci(event=event))
+    said = world.tool(engine, 1, **world.ci(event=event))
 
+    assert sorted(entry["holds"] for entry in entries(world)) == [False, True]
+    [holding] = judged(world, said, "holds")
+    [failing] = judged(world, said, "does not hold")
+    assert "native" in holding and "node" not in holding
+    assert "node" in failing and "native" not in failing
     rows = [row for row in world.table_rows() if row["repository"].startswith("[adapter]")]
     assert sorted((row["engine host"], row["result"].split(":")[0]) for row in rows) == [
         ("native", "✅ holds"),

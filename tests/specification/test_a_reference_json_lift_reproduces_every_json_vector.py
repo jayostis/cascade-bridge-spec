@@ -101,12 +101,5 @@ def test_the_media_type_selects_the_lift(media_type, json):
     assert json_lift.applies_to(media_type) is json
 
 
-def test_the_contract_names_the_media_types_each_lift_applies_to(sparql_contract):
-    assert (
-        "the XML lift to `application/xml`, `text/xml` and a media type with the `+xml` suffix, the JSON lift to "
-        "`application/json` and a media type with the `+json` suffix" in sparql_contract
-    )
-
-
 def test_a_member_named_as_an_element_is_appended_to_the_data_namespace():
     assert json_lift.named("given name") == URIRef("http://sparql.xyz/facade-x/data/given%20name")

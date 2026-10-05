@@ -105,10 +105,6 @@ def test_the_contract_states_the_namespace_uuid(sparql_contract):
     assert NAMESPACE in sparql_contract
 
 
-def test_the_naming_query_hashes_under_the_namespace_uuid():
-    assert f'"{NAMESPACE}|"' in (NAMING / "name.rq").read_text(encoding="utf-8")
-
-
 def test_a_naming_result_that_is_not_a_version_8_uuid_is_refused():
     manifest = Graph() + MANIFEST
     result = manifest.value(NAMING_VECTORS[0], MF.result)

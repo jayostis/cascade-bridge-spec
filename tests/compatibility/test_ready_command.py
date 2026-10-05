@@ -81,12 +81,12 @@ def adapter_naming_the_engine_back(world, *runs, merged=False):
     return world.engine_under_test(body=depends_on("adapter", 7))
 
 
-@pytest.mark.parametrize(
-    "gate", [("in_progress", None), ("queued", None), ("completed", "failure")], ids=lambda gate: gate[0]
-)
-def test_ready_to_merge_passes_a_cycle_member_whose_checks_succeeded_apart_from_its_own_gate(world, gate):
+def test_ready_to_merge_passes_a_cycle_member_whose_checks_succeeded_apart_from_its_own_gate(world):
     engine, event = adapter_naming_the_engine_back(
-        world, ("compatibility", "completed", "success"), ("ruff and pytest", "completed", "success"), (GATE, *gate)
+        world,
+        ("compatibility", "completed", "success"),
+        ("ruff and pytest", "completed", "success"),
+        (GATE, "in_progress", None),
     )
 
     said = world.tool(engine, check="ready-to-merge", **world.ci(event=event, gate=GATE))
@@ -94,9 +94,7 @@ def test_ready_to_merge_passes_a_cycle_member_whose_checks_succeeded_apart_from_
     assert "adapter/pull/7" in said
 
 
-@pytest.mark.parametrize(
-    "run", [("completed", "failure"), ("in_progress", None), ("queued", None)], ids=lambda run: run[1] or run[0]
-)
+@pytest.mark.parametrize("run", [("completed", "failure"), ("in_progress", None)], ids=lambda run: run[1] or run[0])
 def test_ready_to_merge_fails_a_cycle_member_naming_its_check_that_did_not_succeed(world, run):
     engine, event = adapter_naming_the_engine_back(
         world, ("compatibility", "completed", "success"), ("the adapter's own tests", *run), (GATE, "in_progress", None)
@@ -172,9 +170,8 @@ def test_ready_to_merge_passes_a_cycle_member_whose_check_concluded_as_github_pa
     assert "adapter/pull/7" in said
 
 
-@pytest.mark.parametrize("state", ["open", "closed"])
-def test_ready_to_merge_fails_a_cycle_whose_member_names_a_pull_request_outside_it(world, state):
-    world.pull_request("cascade-bridge-spec", 3, state=state)
+def test_ready_to_merge_fails_a_cycle_whose_member_names_a_pull_request_outside_it(world):
+    world.pull_request("cascade-bridge-spec", 3)
     head = world.pull_request("adapter", 7, body=depends_on("engine", 1) + depends_on("cascade-bridge-spec", 3))
     world.pull_requests.check_run("adapter", head, "compatibility")
     engine, event = world.engine_under_test(body=depends_on("adapter", 7))

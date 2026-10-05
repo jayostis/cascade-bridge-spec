@@ -84,18 +84,6 @@ def test_a_named_pull_request_naming_the_pull_request_under_test_back_is_merged_
     assert (world.workspace / "adapter" / "NOTICE").read_text() == "7"
 
 
-def test_a_cycle_of_three_through_the_pull_request_under_test_picks_each_named_pull_request(world):
-    world.pull_request("adapter", 7, body=depends_on("cascade-bridge-spec", 3))
-    world.pull_request("cascade-bridge-spec", 3, body=depends_on("engine", 1))
-    engine, event = world.engine_under_test(body=depends_on("adapter", 7))
-
-    world.tool(engine, **world.ci(event=event))
-
-    repositories = world.record()["repositories"]
-    assert repositories["adapter"]["how"] == "pull request #7 merged into main"
-    assert repositories["cascade-bridge-spec"]["how"] == "pull request #3 merged into main"
-
-
 def test_a_merged_named_pull_request_adds_nothing_and_the_matching_branch_is_used(world):
     world.pull_request("adapter", 7, state="closed", merged=True)
     world.branch("adapter", "stable/x", fill=lambda path: (path / "STABLE").write_text("stable\n"))

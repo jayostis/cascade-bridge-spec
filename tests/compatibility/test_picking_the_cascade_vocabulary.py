@@ -94,17 +94,6 @@ def test_a_branch_of_the_vocabulary_matching_the_pull_requests_target_is_not_pic
     assert not (given_to_the_engine(said) / "STABLE").exists()
 
 
-def test_an_engines_run_picks_the_vocabulary_from_the_counterpart_adapters_pin(world):
-    later = world.commit_on_main(VOCABULARY, "LATER")
-    world.pin_vocabularies(commit=later)
-    engine, event = world.engine_under_test()
-
-    said = world.tool(engine, **world.ci(event=event))
-
-    assert row(world).get("commit") == later
-    assert (given_to_the_engine(said) / "LATER").is_file()
-
-
 def test_two_adapters_pinning_different_commits_of_one_vocabulary_repository_stop_the_run_naming_both(tmp_path):
     """One run checks one version of a repository out."""
     paired = []

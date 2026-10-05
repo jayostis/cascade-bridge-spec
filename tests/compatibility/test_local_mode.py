@@ -12,7 +12,8 @@ def test_a_sibling_on_another_branch_with_uncommitted_edits_is_used_as_it_is(wor
     said = world.tool(engine)
 
     assert "feat/next" in said
-    assert "uncommitted edits" in said
+    assert "uncommitted edits): holds" in said
+    assert "a result produced from uncommitted edits is feedback, never evidence" in said
     assert git("symbolic-ref", "--short", "HEAD", cwd=adapter) == "feat/next"
     assert world.record()["repositories"]["adapter"]["how"] == "the sibling's working tree, on feat/next"
 
