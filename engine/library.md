@@ -67,7 +67,8 @@ compared against, and never change the graph.
 
 The document is read in the envelope the caller names, whether or not it
 admits the document ([`sparql.md`](sparql.md)), as `test` reads an entry's
-input in the envelope the entry names. Without one, it is read in the envelope
+input in the envelope the entry names, and a Bridge refuses nothing for it.
+Without one, it is read in the envelope
 that admits it, a JSON envelope naming a `bridge:docRootMemberValue` before one
 naming none; where that leaves more than one, or none, which is used is not
 specified. Without facts, the document is converted with none
