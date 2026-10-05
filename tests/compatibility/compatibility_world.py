@@ -67,12 +67,13 @@ def publish(origins, name, fill, owner=OWNER):
 
 def specification(path):
     """What a run fetches and runs the checks from: this working tree, uncommitted edits included."""
+
+    def ignored(directory, names):
+        unread = VECTORS_ONLY_THESE_TESTS_READ if Path(directory) == ROOT / "fixtures" else ()
+        return {name for name in names if name == "__pycache__" or name in unread}
+
     for directory in ("scripts", "vocab", "shapes", "adapter", "engine", "fixtures"):
-        shutil.copytree(
-            ROOT / directory,
-            path / directory,
-            ignore=shutil.ignore_patterns("__pycache__", *VECTORS_ONLY_THESE_TESTS_READ),
-        )
+        shutil.copytree(ROOT / directory, path / directory, ignore=ignored)
     shutil.copy(ROOT / "pyproject.toml", path / "pyproject.toml")
 
 
