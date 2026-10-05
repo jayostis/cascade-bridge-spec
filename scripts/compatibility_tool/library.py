@@ -130,7 +130,7 @@ def read_cases():
         latest, calls = None, []
         for node in graph.items(graph.value(entry, rdflib.URIRef(MF + "action"))):
             call = a_call(graph, node, latest)
-            if call.operation == "load":
+            if call.operation == "load" and call.failure is None:
                 latest = call.adapter
             calls.append(call)
         cases.append(Case(str(entry), str(graph.value(entry, rdflib.URIRef(MF + "name"))), calls))
