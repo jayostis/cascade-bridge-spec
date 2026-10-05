@@ -3,7 +3,7 @@ import subprocess
 
 from compatibility_tool import packages
 from compatibility_tool.console import Status, detail, report
-from compatibility_tool.document import CRATE, FILE, is_adapter, kind
+from compatibility_tool.document import CRATE, FILE, is_adapter, is_vocabulary, kind
 
 
 def shape_violations(directory, document, spec):
@@ -48,7 +48,7 @@ def validate(directory, document, spec):
         report(False, f"{directory} does not pass the Cascade Bridge Adapter profile")
         return Status.FAIL
     if document is None:
-        if is_adapter(directory):
+        if is_adapter(directory) or is_vocabulary(directory):
             return Status.OK
         report(False, f"{directory} holds no {CRATE}, so it is {kind(directory)}, and {kind(directory)} states {FILE}")
         return Status.FAIL

@@ -409,6 +409,10 @@ class World:
         git("commit", "-q", "-m", "runtime: first", cwd=runtime)
         return runtime
 
+    def runtime_origin(self):
+        """The runtime as a repository a run clones, rather than a checkout beside the one under test."""
+        shutil.move(self.runtime(), self.origin("runtime"))
+
     def runtime_under_test(self, body="", canned="passed"):
         self.pull_request("runtime", 1, body=body)
         return self.runtime(canned), self.ci(repository="runtime", event=self.event(1, repository="runtime"))

@@ -19,7 +19,7 @@ from compatibility_tool import (
     vocabularies,
 )
 from compatibility_tool.console import Status, Stop, report
-from compatibility_tool.document import counterparts, is_adapter, is_runtime, problems, read_file
+from compatibility_tool.document import counterparts, is_adapter, is_runtime, is_vocabulary, problems, read_file
 from compatibility_tool.record import Record, Role
 
 CHECKS = ("compatibility", "ready-to-merge")
@@ -102,9 +102,11 @@ def compatibility(directory, options, event, api, spec):
         Record(directory, options.mode, used).save(options.results)
         return Status.FAIL
 
-    runtime = is_runtime(directory)
-    if runtime:
+    runs_runtimes = is_runtime(directory) or is_vocabulary(directory)
+    if is_runtime(directory):
         found, placed = runtimes.placed(directory, options, event, api), []
+    elif runs_runtimes:
+        found, placed = runtimes.named_by(directory, counterparts(document), options, event, api), []
     else:
         found, placed = counterparts_placed(directory, counterparts(document), options, event, api)
     used += found
@@ -122,7 +124,7 @@ def compatibility(directory, options, event, api, spec):
             status = vocabularies.check(directory, vocabulary, reading)
     if status is not Status.FAIL:
         set_up = {}
-        if runtime:
+        if runs_runtimes:
             runtimes.run(directory, record, options, set_up)
         else:
             engines.run(directory, record, options, set_up)

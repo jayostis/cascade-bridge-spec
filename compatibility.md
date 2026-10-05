@@ -37,6 +37,16 @@ vocabulary's conformance kit there and writes an EARL report, which is judged by
 alone: no manifest says which entries it must hold. **A host on which it does not
 hold blocks the merge.**
 
+A vocabulary is a repository holding a crate whose root is no `bridge:Adapter`,
+as [`jayostis/cascade-vocabulary`](https://github.com/jayostis/cascade-vocabulary)
+does. Its `compatibility.json` has only `mustPassWith`, naming runtimes. Each is
+picked as a counterpart is, and its conformance command run as a runtime under
+test's is, with the vocabulary under test handed in for the one it pins and each
+adapter it pins picked as that runtime's pin is. **A runtime whose report does
+not hold blocks the merge.** A change a runtime must follow lands as a pair: the
+vocabulary's pull request and the runtime's, each naming the other on a
+`Depends-On:` line.
+
 A runtime pins its Bridge as a built package, by its release's URL in
 `package-lock.json`. The run lists each package that file resolves from a
 repository's release, naming the release, and runs nothing of it itself.
