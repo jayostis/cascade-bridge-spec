@@ -6,11 +6,14 @@ from compatibility_world import (
     ADAPTER_URL,
     BRIDGE,
     BRIDGE_OWNER,
+    CRATE,
+    OWNER,
     VOCABULARY,
     VOCABULARY_OWNER,
     VOCABULARY_URL,
     depends_on,
     git,
+    write_compatibility,
 )
 
 HANDED = "fake runtime: folder "
@@ -61,3 +64,20 @@ def test_a_vocabulary_pull_request_named_on_a_depends_on_line_is_handed_in_and_a
     repositories = world.record()["repositories"]
     assert repositories[VOCABULARY]["how"] == "pull request #5 merged into main"
     assert repositories[f"{BRIDGE_OWNER}/{BRIDGE}/pull/3"]["role"] == "not used"
+
+
+def test_a_vocabulary_is_handed_in_for_the_vocabulary_of_each_runtime_it_names_picked_by_a_depends_on_line(world):
+    world.runtime_origin()
+    world.pull_request("runtime", 2)
+    world.pull_request(VOCABULARY, 1, body=depends_on("runtime", 2, owner=OWNER))
+    vocabulary = world.clone(VOCABULARY)
+    (vocabulary / CRATE).write_text('{"@graph": [{"@id": "./", "@type": "Dataset"}]}', encoding="utf-8")
+    write_compatibility(vocabulary, {"mustPassWith": [world.url("runtime")]})
+
+    said = world.tool(vocabulary, **world.ci(repository=VOCABULARY, event=world.event(1, repository=VOCABULARY)))
+
+    folders = handed(said)
+    assert folders[VOCABULARY_URL] == vocabulary
+    assert git("rev-parse", "HEAD", cwd=folders[ADAPTER_URL]) == world.commits["adapter"]
+    assert world.record()["repositories"]["runtime"]["how"] == "pull request #2 merged into main"
+    assert "the runtime on 1 host: 1 hold, 0 do not" in said

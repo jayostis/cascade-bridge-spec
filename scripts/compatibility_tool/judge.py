@@ -121,7 +121,11 @@ def judge(record, options):
             verdict.holds,
             f"{whose}{entry.describe()}: {'holds' if verdict.holds else 'does not hold'}; {verdict.describe()}",
         )
-    handed = [entry for entry in record.used if entry.role in (Role.VOCABULARY, Role.ADAPTER)] if runs else []
+    handed = (
+        [entry for entry in record.used if entry.role in (Role.UNDER_TEST, Role.VOCABULARY, Role.ADAPTER)]
+        if runs
+        else []
+    )
     if any(entry.uncommitted_edits for entry in [*counterparts, *runs, *handed]):
         note("a result produced from uncommitted edits is feedback, never evidence")
     tallied(plural(len(counterparts), "counterpart"), counterparts)

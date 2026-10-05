@@ -1,12 +1,22 @@
 """A runtime: the repositories its cascade-runtime.json pins, each picked as a counterpart is, and its conformance
-command run on each host with a folder for each."""
+command run on each host with a folder for each. A vocabulary under test is handed in for the one it pins."""
 
 import re
 import shutil
+from dataclasses import replace
 
 from compatibility_tool import engines, picking, placing
-from compatibility_tool.console import report
-from compatibility_tool.document import RUNTIME, hosts, pinned_repositories, read_file, read_json
+from compatibility_tool.console import Stop, report
+from compatibility_tool.document import (
+    FILE,
+    RUNTIME,
+    hosts,
+    is_runtime,
+    name_clashes,
+    pinned_repositories,
+    read_file,
+    read_json,
+)
 from compatibility_tool.github import repository_name, repository_path, url_on_this_server
 from compatibility_tool.record import Role, Row
 
@@ -60,44 +70,77 @@ def placed(directory, options, event, api):
     return [*rows, *placing.not_used(reached), *released_packages(directory)]
 
 
-def folders(directory, record):
+def named_by(directory, listed, options, event, api):
+    """Each runtime a vocabulary under test names, picked as a counterpart is, and each adapter it pins."""
+    reached = picking.follow(api, event, listed, options.spec_repository) if options.mode == "ci" else []
+    rows = []
+    for url in listed:
+        if options.mode == "local":
+            row = placing.locally(directory, url, Role.CONFORMANCE)
+        else:
+            row = placing.in_ci(url, reached, event, directory.parent / repository_name(url), Role.CONFORMANCE)
+        if not is_runtime(row.path):
+            raise Stop(f"{url} holds no {RUNTIME}, and a vocabulary's {FILE} names runtimes alone")
+        rows.append(row)
+    adapters = {}
+    for row in rows:
+        for _, url, commit, role in pins(row.path):
+            if role is Role.ADAPTER and adapters.setdefault(url, (commit, row.name))[0] != commit:
+                raise Stop(f"{adapters[url][1]} and {row.name} pin {url} at two commits, and one checkout serves both")
+    clashes = name_clashes(directory, [*listed, *adapters], f"{FILE} and the {RUNTIME} of each runtime it names")
+    if clashes:
+        raise Stop("; ".join(clashes))
+    if options.mode == "ci":
+        reached = picking.follow(api, event, [*listed, *adapters], options.spec_repository)
+    rows += [
+        placing.pinned(directory, url, commit, Role.ADAPTER, f"{name}'s {RUNTIME}", options, event, reached)
+        for url, (commit, name) in adapters.items()
+    ]
+    return [*rows, *placing.not_used(reached)]
+
+
+def folders(runtime, paths):
     """--folder <repository>=<folder> for each pin, keyed as cascade-runtime.json writes the repository."""
-    paths = {entry.repository: entry.path for entry in record.used if entry.role in (Role.VOCABULARY, Role.ADAPTER)}
-    return [argument for written, url, _, _ in pins(directory) for argument in ("--folder", f"{written}={paths[url]}")]
+    return [argument for written, url, _, _ in pins(runtime) for argument in ("--folder", f"{written}={paths[url]}")]
 
 
 def run(directory, record, options, set_up):
-    """Each host of the runtime under test, its conformance command run: a row of its own per host."""
+    """Each host of each runtime the run checks, its conformance command run: a row of its own per host."""
     print("The runtime's conformance command on each host")
     reports = options.results / "earl"
     shutil.rmtree(reports, ignore_errors=True)
     reports.mkdir(parents=True)
-    handed = folders(directory, record)
-    under_test = next(entry for entry in record.used if entry.role is Role.UNDER_TEST)
-    for index, host in enumerate(hosts(read_file(directory)), 1):
-        row = Row(
-            name=under_test.name,
-            repository=under_test.repository,
-            commit=under_test.commit,
-            how="its conformance command",
-            role=Role.CONFORMANCE,
-            uncommitted_edits=under_test.uncommitted_edits,
-            path=directory,
-            pull_request=under_test.pull_request,
-            host=host["name"],
+    paths = {entry.repository: entry.path for entry in record.used if entry.role in (Role.VOCABULARY, Role.ADAPTER)}
+    if is_runtime(directory):
+        under_test = next(entry for entry in record.used if entry.role is Role.UNDER_TEST)
+        record.used.append(replace(under_test, how="its conformance command", role=Role.CONFORMANCE, path=directory))
+    index = 0
+    for runtime in record.conformance:
+        vocabulary = (
+            {}
+            if is_runtime(directory)
+            else {url: directory for _, url, _, role in pins(runtime.path) if role is Role.VOCABULARY}
         )
-        record.used.append(row)
-        command = engines.prepared(directory, row.host, host, set_up, "the conformance command")
-        if command is None:
+        handed = folders(runtime.path, {**paths, **vocabulary})
+        listed = hosts(read_file(runtime.path))
+        problem = engines.unrunnable(listed)
+        if problem:
+            report(False, f"{runtime.path} {problem}, so its conformance command was not run")
             continue
-        earl = reports / f"conformance-on-host-{index}.ttl"
-        argv = [*command, "--report", str(earl), *handed]
-        print(f"  run   {' '.join(argv)}   (in {directory}, on {row.host})")
-        status = engines.execute(argv, directory)
-        if status is None:
-            continue
-        row.report = earl
-        wrote = f"its report is {earl}" if earl.is_file() else "it wrote no report"
-        report(
-            True, f"the conformance command ran on {row.host}, exit status {status}, which nothing relies on; {wrote}"
-        )
+        for row, host in zip(record.on_each_host(runtime, [host["name"] for host in listed]), listed, strict=True):
+            index += 1
+            run_on_host(row, host, handed, set_up, reports / f"conformance-on-host-{index}.ttl")
+
+
+def run_on_host(row, host, handed, set_up, earl):
+    command = engines.prepared(row.path, row.host, host, set_up, "the conformance command")
+    if command is None:
+        return
+    argv = [*command, "--report", str(earl), *handed]
+    print(f"  run   {' '.join(argv)}   (in {row.path}, on {row.host})")
+    status = engines.execute(argv, row.path)
+    if status is None:
+        return
+    row.report = earl
+    wrote = f"its report is {earl}" if earl.is_file() else "it wrote no report"
+    report(True, f"the conformance command ran on {row.host}, exit status {status}, which nothing relies on; {wrote}")

@@ -7,6 +7,7 @@ FILE = "compatibility.json"
 CRATE = "ro-crate-metadata.json"
 RUNTIME = "cascade-runtime.json"
 CONTEXT_IRI = "https://ns.cascadeprotocol.org/bridge/v1-draft/compatibility.jsonld"
+ADAPTER_TYPE = "bridge:Adapter"
 
 VECTORS = ("setup", "command")
 HOST_KEYS = {"name", *VECTORS}
@@ -26,12 +27,21 @@ def read_file(directory):
     return read_json(path) if path.is_file() else None
 
 
+def is_vocabulary(directory):
+    """A crate whose root is typed, and not bridge:Adapter: the terms and queries adapters and runtimes read."""
+    if not (directory / CRATE).is_file():
+        return False
+    _, root = crate_root(directory)
+    types = root.get("@type")
+    return bool(types) and ADAPTER_TYPE not in (types if isinstance(types, list) else [types])
+
+
 def is_adapter(directory):
-    return (directory / CRATE).is_file()
+    return (directory / CRATE).is_file() and not is_vocabulary(directory)
 
 
 def is_runtime(directory):
-    return not is_adapter(directory) and (directory / RUNTIME).is_file()
+    return not (directory / CRATE).is_file() and (directory / RUNTIME).is_file()
 
 
 def kind(directory):
@@ -130,6 +140,11 @@ def name_clashes(directory, urls, listing="mustPassWith"):
 
 def form_problem(directory, document):
     carried = [key for key in ("host", *VECTORS) if key in document]
+    if is_vocabulary(directory):
+        found = f"{directory} holds a {CRATE} whose root is no {ADAPTER_TYPE}, so it is a vocabulary"
+        if carried:
+            return f"{found}, and a vocabulary's {FILE} carries no {', '.join(carried)}: the runtimes it names are run"
+        return None if counterparts(document) else f"{found}, and a vocabulary's {FILE} names a runtime in mustPassWith"
     if is_adapter(directory) and carried:
         return (
             f"{directory} holds {CRATE}, so it is an adapter, and an adapter's "
