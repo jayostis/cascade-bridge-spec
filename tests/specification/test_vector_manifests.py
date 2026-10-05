@@ -8,7 +8,7 @@ from rdflib import RDF, Graph, Literal, Namespace, URIRef
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURES = ROOT / "fixtures"
 SHAPES = ROOT / "shapes" / "bridge.shapes.ttl"
-VECTORS = ["lift", "naming", "versioning"]
+VECTORS = ["lift", "naming", "versioning", "library"]
 
 MF = Namespace("http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#")
 BRIDGE = Namespace("https://ns.cascadeprotocol.org/bridge/v1-draft#")
@@ -16,6 +16,7 @@ BRIDGE = Namespace("https://ns.cascadeprotocol.org/bridge/v1-draft#")
 
 def manifest_of(directory):
     manifest = directory.resolve() / "manifest.ttl"
+    assert manifest.is_file(), f"{manifest} is not there"
     return manifest, Graph().parse(manifest, format="turtle", publicID=manifest.as_uri())
 
 
@@ -99,3 +100,17 @@ def test_a_skeleton_test_naming_neither_an_element_name_nor_a_json_path_is_refus
     _, graph = manifest_of(FIXTURES / "lift")
     graph.remove((action_of(graph, "skeleton"), BRIDGE.elementNameOfEachRecord, None))
     assert "names exactly one of bridge:elementNameOfEachRecord" in said_about(graph)
+
+
+def test_a_library_case_naming_a_failure_kind_that_is_not_one_of_the_six_is_refused():
+    kinds = set(Graph().parse(ROOT / "vocab" / "bridge.ttl", format="turtle").subjects(RDF.type, BRIDGE.FailureKind))
+    assert len(kinds) == 6, kinds
+    _, graph = manifest_of(FIXTURES / "library")
+    naming = [(subject, predicate, kind) for subject, predicate, kind in graph if kind in kinds]
+    assert naming, "no library case names a failure kind"
+    subject, predicate, kind = naming[0]
+    graph.remove((subject, predicate, kind))
+    graph.add((subject, predicate, BRIDGE.NotAFailureKind))
+    said = said_about(graph)
+    assert "Conforms: False" in said
+    assert all(str(kind).removeprefix(str(BRIDGE)) in said for kind in kinds), said

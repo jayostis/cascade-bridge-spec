@@ -118,6 +118,9 @@ def convert(args, adapter):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--canned", choices=("passed", "failed", "partial", "none", "garbled"), default="passed")
+    parser.add_argument(
+        "--library", choices=("holds", "document-kind-for-adapter", "file-iri-in-findings", "none"), default="holds"
+    )
     parser.add_argument("command", choices=("test", "convert"))
     parser.add_argument("adapter", type=Path)
     parser.add_argument("document", type=Path, nargs="?")
