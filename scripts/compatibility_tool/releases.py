@@ -76,7 +76,7 @@ def release_of(row):
     tag = TAG.format(commit=commit)
     try:
         return github.Api().get(f"repos/{github.repository_path(row.repository)}/releases/tags/{tag}")
-    except (urllib.error.HTTPError, http.client.HTTPException, ValueError, Stop) as error:
+    except (OSError, http.client.HTTPException, ValueError, Stop) as error:
         note(f"{row.name} has no release {tag} to read ({error}), so each host is built by its setup")
         return None
 
@@ -115,6 +115,8 @@ def unpack(data, into):
             for member in archive.getmembers():
                 if member.name.startswith(PACKAGED) and member.name != PACKAGED:
                     member.name = member.name.removeprefix(PACKAGED)
+                    if member.islnk():
+                        member.linkname = member.linkname.removeprefix(PACKAGED)
                     members.append(member)
             archive.extractall(staged, members=members, filter="data")
     except BaseException:
