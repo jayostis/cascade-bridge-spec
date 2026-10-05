@@ -96,8 +96,8 @@ def faults_of(graph):
 
 def judge(record, options):
     print("Each counterpart, judged by its EARL report")
-    counterparts = record.counterparts
-    if not counterparts:
+    counterparts, libraries = record.counterparts, record.libraries
+    if not counterparts and not libraries:
         report(True, f"{record.directory} lists no counterpart: nothing to check")
         return Status.NOTHING_TO_CHECK
     held = 0
@@ -113,8 +113,19 @@ def judge(record, options):
     if any(entry.uncommitted_edits for entry in counterparts):
         note("a result produced from uncommitted edits is feedback, never evidence")
     count = len(counterparts)
-    print(f"  {count} counterpart{'' if count == 1 else 's'}: {held} hold, {count - held} do not")
-    return Status.OK if held == count else Status.FAIL
+    if counterparts:
+        print(f"  {count} counterpart{'' if count == 1 else 's'}: {held} hold, {count - held} do not")
+    for entry in libraries:
+        held += entry.holds
+        verdict = "holds" if entry.holds else "does not hold"
+        report(entry.holds, f"the library of {entry.describe()}: {verdict}; {entry.result}")
+    if libraries:
+        hosts = len(libraries)
+        library_held = sum(entry.holds for entry in libraries)
+        print(
+            f"  the library on {hosts} host{'' if hosts == 1 else 's'}: {library_held} hold, {hosts - library_held} do not"
+        )
+    return Status.OK if held == count + len(libraries) else Status.FAIL
 
 
 def linked(text, url):

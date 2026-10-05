@@ -3,7 +3,10 @@
 An engine commits a `compatibility.json` at its root, and an adapter may, naming
 the adapters (in an engine) or engines (in an adapter) it must pass with, and an
 engine names each host it ships to. **Every adapter that does not hold on a host
-blocks the merge.**
+blocks the merge.** An engine under test also runs the library cases of
+[`fixtures/library/`](fixtures/library/) on each of its hosts, through its
+`library` command ([`engine/command.md`](engine/command.md)), and a host on which
+they do not hold blocks the merge too, whatever its `mustPassWith` names.
 
 Its keys are [`vocab/compatibility.context.jsonld`](vocab/compatibility.context.jsonld),
 each a `bridge:` term in [`vocab/bridge.ttl`](vocab/bridge.ttl), checked by the

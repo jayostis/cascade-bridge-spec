@@ -97,12 +97,13 @@
     [ sh:class bridge:BaseUrlNormalisationTest ]
     [ sh:class bridge:VersioningTest ]
     [ sh:class bridge:IdentityRelationTest ]
+    [ sh:class bridge:LibraryTest ]
   ) ;
-  sh:message "A manifest entry is an IRI typed with exactly one of bridge:IsomorphicConversionTest, bridge:InputOnlyTest, bridge:DatasetCompletionTest, bridge:LiftTest, bridge:SkeletonTest, bridge:NamingTest, bridge:BaseUrlNormalisationTest, bridge:VersioningTest, bridge:IdentityRelationTest." .
+  sh:message "A manifest entry is an IRI typed with exactly one of bridge:IsomorphicConversionTest, bridge:InputOnlyTest, bridge:DatasetCompletionTest, bridge:LiftTest, bridge:SkeletonTest, bridge:NamingTest, bridge:BaseUrlNormalisationTest, bridge:VersioningTest, bridge:IdentityRelationTest, bridge:LibraryTest." .
 
 <#Test> a sh:NodeShape ;
   sh:targetClass bridge:IsomorphicConversionTest, bridge:InputOnlyTest, bridge:DatasetCompletionTest, bridge:LiftTest, bridge:SkeletonTest, bridge:NamingTest,
-    bridge:BaseUrlNormalisationTest, bridge:VersioningTest, bridge:IdentityRelationTest ;
+    bridge:BaseUrlNormalisationTest, bridge:VersioningTest, bridge:IdentityRelationTest, bridge:LibraryTest ;
   sh:nodeKind sh:IRI ;
   sh:property [
     sh:path mf:name ;
@@ -938,6 +939,273 @@
     sh:maxCount 1 ;
     sh:nodeKind sh:IRI ;
     sh:message "The result of a lift test names exactly one bridge:expectedGraph, the graph the lift must be isomorphic to, by IRI."
+  ] .
+
+<#LibraryTest> a sh:NodeShape ;
+  sh:targetClass bridge:LibraryTest ;
+  sh:property [
+    sh:path ( mf:action [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ;
+    sh:minCount 1 ;
+    sh:node <#LibraryCall> ;
+    sh:message "The action of a library test is a list of at least one call, each a blank node typed with exactly one of bridge:DescribeCall, bridge:LoadCall, bridge:AskCall, bridge:ConvertCall, bridge:TestCall."
+  ] ;
+  sh:property [
+    sh:path mf:result ;
+    sh:maxCount 0 ;
+    sh:message "A library test has no mf:result: each call carries what it must return."
+  ] ;
+  sh:sparql [
+    sh:prefixes <> ;
+    sh:message "A bridge:AskCall or bridge:ConvertCall comes after a bridge:LoadCall in its library test's list of calls." ;
+    sh:select """
+      SELECT $this ?value WHERE {
+        $this mf:action ?calls .
+        ?calls rdf:rest* ?at .
+        ?at rdf:first ?value .
+        ?value a ?type .
+        FILTER (?type IN (bridge:AskCall, bridge:ConvertCall))
+        FILTER NOT EXISTS {
+          ?calls rdf:rest* ?earlier .
+          ?earlier rdf:rest+ ?at ; rdf:first/a bridge:LoadCall .
+        }
+      }
+    """
+  ] .
+
+<#LibraryCall> a sh:NodeShape ;
+  sh:nodeKind sh:BlankNode ;
+  sh:xone (
+    [ sh:class bridge:DescribeCall ]
+    [ sh:class bridge:LoadCall ]
+    [ sh:class bridge:AskCall ]
+    [ sh:class bridge:ConvertCall ]
+    [ sh:class bridge:TestCall ]
+  ) ;
+  sh:message "A library call is a blank node typed with exactly one of bridge:DescribeCall, bridge:LoadCall, bridge:AskCall, bridge:ConvertCall, bridge:TestCall." .
+
+<#DescribeCall> a sh:NodeShape ;
+  sh:targetClass bridge:DescribeCall ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property [
+    sh:path bridge:adapterFiles ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:node <#FileMap> ;
+    sh:message "A describe call names exactly one bridge:adapterFiles, the map its ro-crate-metadata.json is read from."
+  ] ;
+  sh:property <#GraphFormat> ;
+  sh:property [
+    sh:path bridge:expectedGraph ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "A describe call names at most one bridge:expectedGraph, the description it must return, by IRI."
+  ] ;
+  sh:property <#ExpectedFailure> ;
+  sh:xone (
+    [ sh:path bridge:expectedGraph ; sh:minCount 1 ]
+    [ sh:path bridge:failure ; sh:minCount 1 ]
+  ) ;
+  sh:message "A describe call names exactly one of bridge:expectedGraph and bridge:failure." .
+
+<#LoadCall> a sh:NodeShape ;
+  sh:targetClass bridge:LoadCall, bridge:TestCall ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property [
+    sh:path bridge:adapterFiles ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:node <#FileMap> ;
+    sh:message "A load or test call names exactly one bridge:adapterFiles, the adapter's map of files."
+  ] ;
+  sh:property [
+    sh:path bridge:vocabularyFiles ;
+    sh:maxCount 1 ;
+    sh:node <#FileMap> ;
+    sh:message "A load or test call names at most one bridge:vocabularyFiles, the vocabulary's map of files."
+  ] ;
+  sh:property <#ExpectedFailure> ;
+  sh:property <#MissingFile> .
+
+<#AskCall> a sh:NodeShape ;
+  sh:targetClass bridge:AskCall ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property <#Document> ;
+  sh:property <#SuppliedFacts> ;
+  sh:property <#NamedEnvelope> ;
+  sh:property [
+    sh:path bridge:expectedAnswer ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:boolean ;
+    sh:message "An ask call carries at most one bridge:expectedAnswer, an xsd:boolean."
+  ] ;
+  sh:property <#ExpectedFailure> ;
+  sh:xone (
+    [ sh:path bridge:expectedAnswer ; sh:minCount 1 ]
+    [ sh:path bridge:failure ; sh:minCount 1 ]
+  ) ;
+  sh:message "An ask call carries exactly one of bridge:expectedAnswer and bridge:failure." .
+
+<#ConvertCall> a sh:NodeShape ;
+  sh:targetClass bridge:ConvertCall ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property <#Document> ;
+  sh:property <#SuppliedFacts> ;
+  sh:property <#NamedEnvelope> ;
+  sh:property <#GraphFormat> ;
+  sh:property [
+    sh:path bridge:expectedGraph ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "A convert call names at most one bridge:expectedGraph, the graph it must return, by IRI."
+  ] ;
+  sh:property [
+    sh:path bridge:expectedFindings ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "A convert call names at most one bridge:expectedFindings, the findings it must return, by IRI: naming none, it must return none."
+  ] ;
+  sh:property <#ExpectedFailure> ;
+  sh:xone (
+    [ sh:path bridge:expectedGraph ; sh:minCount 1 ]
+    [ sh:path bridge:failure ; sh:minCount 1 ]
+  ) ;
+  sh:message "A convert call names exactly one of bridge:expectedGraph and bridge:failure." ;
+  sh:sparql [
+    sh:prefixes <> ;
+    sh:message "A convert call naming a bridge:failure names no bridge:expectedFindings." ;
+    sh:select """
+      SELECT $this ?value WHERE { $this bridge:failure ?kind ; bridge:expectedFindings ?value . }
+    """
+  ] .
+
+<#GraphFormat> a sh:PropertyShape ;
+  sh:path bridge:graphFormat ;
+  sh:minCount 1 ;
+  sh:maxCount 1 ;
+  sh:in ( "turtle" "ntriples" ) ;
+  sh:message "A describe or convert call carries exactly one bridge:graphFormat, the format the graph is returned in: turtle or ntriples." .
+
+<#Document> a sh:PropertyShape ;
+  sh:path bridge:document ;
+  sh:minCount 1 ;
+  sh:maxCount 1 ;
+  sh:node <#NamedFile> ;
+  sh:message "An ask or convert call names exactly one bridge:document." .
+
+<#SuppliedFacts> a sh:PropertyShape ;
+  sh:path bridge:suppliedFacts ;
+  sh:maxCount 1 ;
+  sh:node <#NamedFile> ;
+  sh:message "An ask or convert call names at most one bridge:suppliedFacts." .
+
+<#NamedEnvelope> a sh:PropertyShape ;
+  sh:path bridge:envelope ;
+  sh:maxCount 1 ;
+  sh:nodeKind sh:IRI ;
+  sh:message "An ask or convert call names at most one bridge:envelope, the IRI of the envelope its document is read in." .
+
+<#ExpectedFailure> a sh:PropertyShape ;
+  sh:path bridge:failure ;
+  sh:maxCount 1 ;
+  sh:in ( bridge:documentFailure bridge:factsFailure bridge:adapterFailure bridge:vocabularyFailure bridge:fileMissingFailure bridge:bridgeFailure ) ;
+  sh:message "A call names at most one bridge:failure, the kind it must fail with: one of bridge:documentFailure, bridge:factsFailure, bridge:adapterFailure, bridge:vocabularyFailure, bridge:fileMissingFailure, bridge:bridgeFailure." .
+
+<#MissingFile> a sh:PropertyShape ;
+  sh:path bridge:missingFile ;
+  sh:maxCount 1 ;
+  sh:nodeKind sh:IRI ;
+  sh:message "A load or test call names at most one bridge:missingFile, by IRI: its map's bridge:iri followed by its path." .
+
+<#FailingForAMissingFile> a sh:NodeShape ;
+  sh:target [
+    a sh:SPARQLTarget ;
+    sh:prefixes <> ;
+    sh:select """
+      SELECT ?this WHERE {
+        { ?this bridge:failure bridge:fileMissingFailure } UNION { ?this bridge:missingFile ?file }
+      }
+    """
+  ] ;
+  sh:property [
+    sh:path bridge:failure ;
+    sh:hasValue bridge:fileMissingFailure ;
+    sh:message "A call naming a bridge:missingFile fails with bridge:fileMissingFailure."
+  ] ;
+  sh:property [
+    sh:path bridge:missingFile ;
+    sh:minCount 1 ;
+    sh:message "A call failing with bridge:fileMissingFailure names the bridge:missingFile it must name."
+  ] .
+
+<#FileMap> a sh:NodeShape ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:message "A map of files carries only a bridge:iri, a bridge:directory, its bridge:withholds and its bridge:substitute." ;
+  sh:property [
+    sh:path bridge:iri ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:pattern "/$" ;
+    sh:message "A map of files carries exactly one bridge:iri, ending in /, that each key resolves against."
+  ] ;
+  sh:property [
+    sh:path bridge:directory ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:pattern "/$" ;
+    sh:message "A map of files carries exactly one bridge:directory, ending in /, whose files it holds."
+  ] ;
+  sh:property [
+    sh:path bridge:withholds ;
+    sh:datatype xsd:string ;
+    sh:message "Each bridge:withholds of a map is a key, a plain string."
+  ] ;
+  sh:property [
+    sh:path bridge:substitute ;
+    sh:node <#Substitute> ;
+    sh:message "Each bridge:substitute of a map names a bridge:key and the bridge:file held under it."
+  ] .
+
+<#Substitute> a sh:NodeShape ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property [
+    sh:path bridge:key ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "A substitute carries exactly one bridge:key, a plain string."
+  ] ;
+  sh:property [
+    sh:path bridge:file ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "A substitute names exactly one bridge:file, by IRI."
+  ] .
+
+<#NamedFile> a sh:NodeShape ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property [
+    sh:path bridge:iri ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "A document or its facts carries exactly one bridge:iri, the IRI the caller gives it."
+  ] ;
+  sh:property [
+    sh:path bridge:file ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "A document or its facts names exactly one bridge:file, its bytes, by IRI."
   ] .
 
 <#Compatibility> a sh:NodeShape ;

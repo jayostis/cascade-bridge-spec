@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ns.cascadeprotocol.org/bridge/v1-draft/library-result.schema.json",
+  "title": "What one call of an engine's library command returned",
+  "oneOf": [
+    {
+      "type": "object",
+      "required": ["failure"],
+      "additionalProperties": false,
+      "properties": {
+        "failure": {
+          "type": "object",
+          "required": ["kind"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "enum": [
+                "documentFailure",
+                "factsFailure",
+                "adapterFailure",
+                "vocabularyFailure",
+                "fileMissingFailure",
+                "bridgeFailure"
+              ]
+            },
+            "map": { "enum": ["adapter", "vocabulary"] },
+            "path": { "type": "string", "minLength": 1 },
+            "message": { "type": "string" }
+          },
+          "if": { "properties": { "kind": { "const": "fileMissingFailure" } } },
+          "then": { "required": ["map", "path"] },
+          "else": { "not": { "anyOf": [{ "required": ["map"] }, { "required": ["path"] }] } }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": ["answer"],
+      "additionalProperties": false,
+      "properties": { "answer": { "type": "boolean" } }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "maxProperties": 0
+    }
+  ]
+}

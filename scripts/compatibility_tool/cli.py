@@ -5,7 +5,18 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
-from compatibility_tool import bootstrap, engines, github, judge, picking, placing, ready, validate, vocabularies
+from compatibility_tool import (
+    bootstrap,
+    engines,
+    github,
+    judge,
+    library,
+    picking,
+    placing,
+    ready,
+    validate,
+    vocabularies,
+)
 from compatibility_tool.console import Status, Stop, report
 from compatibility_tool.document import counterparts, is_adapter, problems, read_file
 from compatibility_tool.record import Record, Role
@@ -103,7 +114,9 @@ def compatibility(directory, options, event, api, spec):
         if status is not Status.FAIL:
             status = vocabularies.check(directory, vocabulary, reading)
     if status is not Status.FAIL:
-        engines.run(directory, record, options)
+        set_up = {}
+        engines.run(directory, record, options, set_up)
+        library.run(directory, record, options, set_up)
         status = judge.judge(record, options)
         record.save(options.results)
     judge.write_table(record, options)

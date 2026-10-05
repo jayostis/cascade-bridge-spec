@@ -62,8 +62,8 @@ reproduce the vectors in [`../fixtures/versioning/`](../fixtures/versioning/).
 
 ## Facts supplied with a document
 
-A caller supplies facts about a document as a Turtle file, `convert`'s
-`--facts` or an entry's `bridge:facts`, stating them of `bridge:thisDocument`
+A caller supplies facts about a document as Turtle, to `convert`
+([`library.md`](library.md)) or as an entry's `bridge:facts`, stating them of `bridge:thisDocument`
 and `bridge:thisImport` as [`../shapes/facts.shapes.ttl`](../shapes/facts.shapes.ttl)
 requires. A record's dataset holds them ([`sparql.md`](sparql.md#running-an-adapter)).
 

@@ -13,7 +13,9 @@ An engine (a Cascade Bridge) runs adapters.
 | the facts a caller supplies with a document, and a file of them | [`../shapes/facts.shapes.ttl`](../shapes/facts.shapes.ttl) and [`../fixtures/synthetic-adapter/fixtures/facts/`](../fixtures/synthetic-adapter/fixtures/facts/) |
 | a document's whole graph: records, versions, arrivals, the document and the import | [`../fixtures/synthetic-adapter/fixtures/expected/`](../fixtures/synthetic-adapter/fixtures/expected/) |
 | the checkout its `bridge:cascadeVocabularyPin` names, to pass as `--vocabularies` | [`../fixtures/synthetic-vocabularies/`](../fixtures/synthetic-vocabularies/) |
-| the commands you must offer | [`command.md`](command.md) |
+| what you offer a program that loads you, bytes in and bytes out | [`library.md`](library.md) |
+| its cases, over the synthetic adapters | [`../fixtures/library/`](../fixtures/library/): `manifest.ttl` |
+| the commands you must offer, the conformance-only `library` among them | [`command.md`](command.md) |
 | the smallest thing that meets them | [`../fixtures/fake-engine/engine.py`](../fixtures/fake-engine/engine.py) |
 | loading and reporting a test manifest | [`executing.md`](executing.md) |
 | each fault of a report, over it and the adapter's test manifest; none means it holds | [`faults-of-a-report.rq`](faults-of-a-report.rq) |

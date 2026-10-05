@@ -1,0 +1,283 @@
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix mf:     <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .
+@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+<> a mf:Manifest ;
+  rdfs:label "a Bridge's library, over the synthetic adapters" ;
+  mf:entries (
+    <#describe-the-synthetic-adapter>
+    <#describe-the-synthetic-json-adapter>
+    <#load-with-no-test-file-then-convert>
+    <#one-load-converts-two-documents>
+    <#ask-answers-the-detect-query>
+    <#test-names-every-entry-under-the-adapter-iri>
+    <#a-document-that-does-not-parse-then-a-good-one>
+    <#facts-that-do-not-parse>
+    <#an-envelope-the-adapter-does-not-declare>
+    <#a-mapping-that-does-not-parse>
+    <#a-vocabulary-file-that-does-not-parse>
+    <#a-mapping-missing-from-the-adapter-map-then-supplied>
+    <#a-vocabulary-file-missing-then-supplied>
+    <#a-file-missing-from-the-map-under-test>
+    <#convert-with-no-vocabulary>
+    <#test-with-no-vocabulary>
+  ) .
+
+_:synthetic-adapter
+  bridge:iri <https://example.org/adapters/synthetic-adapter/> ;
+  bridge:directory <../synthetic-adapter/> .
+
+_:synthetic-adapter-to-load
+  bridge:iri <https://example.org/adapters/synthetic-adapter/> ;
+  bridge:directory <../synthetic-adapter/> ;
+  bridge:withholds "fixtures/" .
+
+_:synthetic-json-adapter
+  bridge:iri <https://example.org/adapters/synthetic-json-adapter/> ;
+  bridge:directory <../synthetic-json-adapter/> .
+
+_:synthetic-json-adapter-to-load
+  bridge:iri <https://example.org/adapters/synthetic-json-adapter/> ;
+  bridge:directory <../synthetic-json-adapter/> ;
+  bridge:withholds "fixtures/" .
+
+_:synthetic-vocabularies
+  bridge:iri <https://example.org/vocabularies/synthetic/> ;
+  bridge:directory <../synthetic-vocabularies/> .
+
+_:example-0001
+  bridge:iri <https://example.org/adapters/synthetic-adapter/fixtures/in/example-0001.xml> ;
+  bridge:file <../synthetic-adapter/fixtures/in/example-0001.xml> .
+
+_:example-registry
+  bridge:iri <https://example.org/adapters/synthetic-adapter/fixtures/facts/example-registry.ttl> ;
+  bridge:file <../synthetic-adapter/fixtures/facts/example-registry.ttl> .
+
+_:convert-example-0001 a bridge:ConvertCall ;
+  bridge:document _:example-0001 ;
+  bridge:suppliedFacts _:example-registry ;
+  bridge:envelope <https://example.org/adapters/synthetic-adapter/ro-crate-metadata.json#envelope-set> ;
+  bridge:graphFormat "turtle" ;
+  bridge:expectedGraph <../synthetic-adapter/fixtures/expected/example-0001.ttl> ;
+  bridge:expectedFindings <../synthetic-adapter/fixtures/findings/example-0001.ttl> .
+
+_:load-the-synthetic-adapter a bridge:LoadCall ;
+  bridge:adapterFiles _:synthetic-adapter-to-load ;
+  bridge:vocabularyFiles _:synthetic-vocabularies .
+
+<#describe-the-synthetic-adapter> a bridge:LibraryTest ;
+  mf:name "describe-the-synthetic-adapter" ;
+  mf:action (
+    [ a bridge:DescribeCall ;
+      bridge:adapterFiles _:synthetic-adapter ;
+      bridge:graphFormat "turtle" ;
+      bridge:expectedGraph <synthetic-adapter.described.ttl> ]
+  ) .
+
+<#describe-the-synthetic-json-adapter> a bridge:LibraryTest ;
+  mf:name "describe-the-synthetic-json-adapter" ;
+  mf:action (
+    [ a bridge:DescribeCall ;
+      bridge:adapterFiles _:synthetic-json-adapter ;
+      bridge:graphFormat "ntriples" ;
+      bridge:expectedGraph <synthetic-json-adapter.described.ttl> ]
+  ) .
+
+<#load-with-no-test-file-then-convert> a bridge:LibraryTest ;
+  mf:name "load-with-no-test-file-then-convert" ;
+  rdfs:comment "Loading reads neither the test manifest nor anything under fixtures/, and the findings name the document by the IRI the caller gave." ;
+  mf:action ( _:load-the-synthetic-adapter _:convert-example-0001 ) .
+
+<#one-load-converts-two-documents> a bridge:LibraryTest ;
+  mf:name "one-load-converts-two-documents" ;
+  mf:action (
+    [ a bridge:LoadCall ;
+      bridge:adapterFiles _:synthetic-json-adapter-to-load ;
+      bridge:vocabularyFiles _:synthetic-vocabularies ]
+    [ a bridge:ConvertCall ;
+      bridge:document [
+        bridge:iri <https://example.org/adapters/synthetic-json-adapter/fixtures/in/json-0001.json> ;
+        bridge:file <../synthetic-json-adapter/fixtures/in/json-0001.json>
+      ] ;
+      bridge:suppliedFacts [
+        bridge:iri <https://example.org/adapters/synthetic-json-adapter/fixtures/facts/example-registry.ttl> ;
+        bridge:file <../synthetic-json-adapter/fixtures/facts/example-registry.ttl>
+      ] ;
+      bridge:envelope <https://example.org/adapters/synthetic-json-adapter/ro-crate-metadata.json#envelope-set> ;
+      bridge:graphFormat "ntriples" ;
+      bridge:expectedGraph <../synthetic-json-adapter/fixtures/expected/json-0001.ttl> ;
+      bridge:expectedFindings <../synthetic-json-adapter/fixtures/findings/json-0001.ttl> ]
+    [ a bridge:ConvertCall ;
+      bridge:document [
+        bridge:iri <https://example.org/adapters/synthetic-json-adapter/fixtures/in/json-0002.json> ;
+        bridge:file <../synthetic-json-adapter/fixtures/in/json-0002.json>
+      ] ;
+      bridge:suppliedFacts [
+        bridge:iri <https://example.org/adapters/synthetic-json-adapter/fixtures/facts/example-registry.ttl> ;
+        bridge:file <../synthetic-json-adapter/fixtures/facts/example-registry.ttl>
+      ] ;
+      bridge:envelope <https://example.org/adapters/synthetic-json-adapter/ro-crate-metadata.json#envelope-record> ;
+      bridge:graphFormat "turtle" ;
+      bridge:expectedGraph <../synthetic-json-adapter/fixtures/expected/json-0002.ttl> ;
+      bridge:expectedFindings <../synthetic-json-adapter/fixtures/findings/json-0002.ttl> ]
+  ) .
+
+<#ask-answers-the-detect-query> a bridge:LibraryTest ;
+  mf:name "ask-answers-the-detect-query" ;
+  rdfs:comment "The set envelope admits an empty set, and the detect query does not claim it." ;
+  mf:action (
+    _:load-the-synthetic-adapter
+    [ a bridge:AskCall ;
+      bridge:document _:example-0001 ;
+      bridge:expectedAnswer true ]
+    [ a bridge:AskCall ;
+      bridge:document [
+        bridge:iri <https://example.org/documents/an-empty-set.xml> ;
+        bridge:file <an-empty-set.xml>
+      ] ;
+      bridge:expectedAnswer false ]
+  ) .
+
+<#test-names-every-entry-under-the-adapter-iri> a bridge:LibraryTest ;
+  mf:name "test-names-every-entry-under-the-adapter-iri" ;
+  mf:action (
+    [ a bridge:TestCall ;
+      bridge:adapterFiles _:synthetic-adapter ;
+      bridge:vocabularyFiles _:synthetic-vocabularies ]
+  ) .
+
+<#a-document-that-does-not-parse-then-a-good-one> a bridge:LibraryTest ;
+  mf:name "a-document-that-does-not-parse-then-a-good-one" ;
+  rdfs:comment "A failure leaves the loaded adapter as it was." ;
+  mf:action (
+    _:load-the-synthetic-adapter
+    [ a bridge:ConvertCall ;
+      bridge:document [
+        bridge:iri <https://example.org/documents/not-xml.xml> ;
+        bridge:file <not-xml.xml>
+      ] ;
+      bridge:graphFormat "turtle" ;
+      bridge:failure bridge:documentFailure ]
+    _:convert-example-0001
+  ) .
+
+<#facts-that-do-not-parse> a bridge:LibraryTest ;
+  mf:name "facts-that-do-not-parse" ;
+  mf:action (
+    _:load-the-synthetic-adapter
+    [ a bridge:ConvertCall ;
+      bridge:document _:example-0001 ;
+      bridge:suppliedFacts [
+        bridge:iri <https://example.org/documents/not-turtle.ttl> ;
+        bridge:file <not-turtle.txt>
+      ] ;
+      bridge:graphFormat "turtle" ;
+      bridge:failure bridge:factsFailure ]
+  ) .
+
+<#an-envelope-the-adapter-does-not-declare> a bridge:LibraryTest ;
+  mf:name "an-envelope-the-adapter-does-not-declare" ;
+  mf:action (
+    _:load-the-synthetic-adapter
+    [ a bridge:ConvertCall ;
+      bridge:document _:example-0001 ;
+      bridge:suppliedFacts _:example-registry ;
+      bridge:envelope <https://example.org/adapters/synthetic-adapter/ro-crate-metadata.json#envelope-undeclared> ;
+      bridge:graphFormat "turtle" ;
+      bridge:failure bridge:documentFailure ]
+  ) .
+
+<#a-mapping-that-does-not-parse> a bridge:LibraryTest ;
+  mf:name "a-mapping-that-does-not-parse" ;
+  mf:action (
+    [ a bridge:LoadCall ;
+      bridge:adapterFiles [
+        bridge:iri <https://example.org/adapters/synthetic-adapter/> ;
+        bridge:directory <../synthetic-adapter/> ;
+        bridge:withholds "fixtures/" ;
+        bridge:substitute [ bridge:key "in/example-record.rq" ; bridge:file <not-sparql.rq> ]
+      ] ;
+      bridge:vocabularyFiles _:synthetic-vocabularies ;
+      bridge:failure bridge:adapterFailure ]
+  ) .
+
+<#a-vocabulary-file-that-does-not-parse> a bridge:LibraryTest ;
+  mf:name "a-vocabulary-file-that-does-not-parse" ;
+  mf:action (
+    [ a bridge:LoadCall ;
+      bridge:adapterFiles _:synthetic-adapter-to-load ;
+      bridge:vocabularyFiles [
+        bridge:iri <https://example.org/vocabularies/synthetic/> ;
+        bridge:directory <../synthetic-vocabularies/> ;
+        bridge:substitute [ bridge:key "ontologies/example/v1/example.ttl" ; bridge:file <not-turtle.txt> ]
+      ] ;
+      bridge:failure bridge:vocabularyFailure ]
+  ) .
+
+<#a-mapping-missing-from-the-adapter-map-then-supplied> a bridge:LibraryTest ;
+  mf:name "a-mapping-missing-from-the-adapter-map-then-supplied" ;
+  mf:action (
+    [ a bridge:LoadCall ;
+      bridge:adapterFiles [
+        bridge:iri <https://example.org/adapters/synthetic-adapter/> ;
+        bridge:directory <../synthetic-adapter/> ;
+        bridge:withholds "fixtures/", "in/example-record.rq"
+      ] ;
+      bridge:vocabularyFiles _:synthetic-vocabularies ;
+      bridge:failure bridge:fileMissingFailure ;
+      bridge:missingFile <https://example.org/adapters/synthetic-adapter/in/example-record.rq> ]
+    _:load-the-synthetic-adapter
+    _:convert-example-0001
+  ) .
+
+<#a-vocabulary-file-missing-then-supplied> a bridge:LibraryTest ;
+  mf:name "a-vocabulary-file-missing-then-supplied" ;
+  mf:action (
+    [ a bridge:LoadCall ;
+      bridge:adapterFiles _:synthetic-adapter-to-load ;
+      bridge:vocabularyFiles [
+        bridge:iri <https://example.org/vocabularies/synthetic/> ;
+        bridge:directory <../synthetic-vocabularies/> ;
+        bridge:withholds "ontologies/example/v1/example.shapes.ttl"
+      ] ;
+      bridge:failure bridge:fileMissingFailure ;
+      bridge:missingFile <https://example.org/vocabularies/synthetic/ontologies/example/v1/example.shapes.ttl> ]
+    _:load-the-synthetic-adapter
+    _:convert-example-0001
+  ) .
+
+<#a-file-missing-from-the-map-under-test> a bridge:LibraryTest ;
+  mf:name "a-file-missing-from-the-map-under-test" ;
+  mf:action (
+    [ a bridge:TestCall ;
+      bridge:adapterFiles [
+        bridge:iri <https://example.org/adapters/synthetic-adapter/> ;
+        bridge:directory <../synthetic-adapter/> ;
+        bridge:withholds "fixtures/expected/example-0001.ttl"
+      ] ;
+      bridge:vocabularyFiles _:synthetic-vocabularies ;
+      bridge:failure bridge:fileMissingFailure ;
+      bridge:missingFile <https://example.org/adapters/synthetic-adapter/fixtures/expected/example-0001.ttl> ]
+  ) .
+
+<#convert-with-no-vocabulary> a bridge:LibraryTest ;
+  mf:name "convert-with-no-vocabulary" ;
+  rdfs:comment "The adapter names a bridge:vocabularyFile and none is given: the graph, unvalidated, and no findings." ;
+  mf:action (
+    [ a bridge:LoadCall ;
+      bridge:adapterFiles _:synthetic-adapter-to-load ]
+    [ a bridge:ConvertCall ;
+      bridge:document _:example-0001 ;
+      bridge:suppliedFacts _:example-registry ;
+      bridge:envelope <https://example.org/adapters/synthetic-adapter/ro-crate-metadata.json#envelope-set> ;
+      bridge:graphFormat "turtle" ;
+      bridge:expectedGraph <../synthetic-adapter/fixtures/expected/example-0001.ttl> ]
+  ) .
+
+<#test-with-no-vocabulary> a bridge:LibraryTest ;
+  mf:name "test-with-no-vocabulary" ;
+  mf:action (
+    [ a bridge:TestCall ;
+      bridge:adapterFiles _:synthetic-adapter ;
+      bridge:failure bridge:vocabularyFailure ]
+  ) .

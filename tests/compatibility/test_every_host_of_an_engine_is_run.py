@@ -8,11 +8,12 @@ def native_and_node(on_node="passed"):
 
 
 def entries(world):
-    return [entry for entry in world.record()["repositories"].values() if entry["holds"] is not None]
+    return [entry for entry in world.record()["repositories"].values() if entry["role"] == "counterpart"]
 
 
 def judged(world, said, verdict):
-    return [line.replace(str(world.root), "") for line in said.splitlines() if f": {verdict}" in line]
+    lines = [line for line in said.splitlines() if f": {verdict}" in line and "the library of" not in line]
+    return [line.replace(str(world.root), "") for line in lines]
 
 
 def test_an_adapter_failing_on_the_second_host_only_is_two_entries_and_the_run_fails(world):
@@ -50,7 +51,7 @@ def test_the_table_has_a_row_for_each_host_and_a_row_run_on_no_host_says_so(worl
 
     world.tool(engine, 1, **world.ci(event=event))
 
-    rows = [row for row in world.table_rows() if "hold" in row["result"]]
+    rows = [row for row in world.table_rows() if row["repository"].startswith("[adapter]")]
     assert sorted((row["engine host"], row["result"].split(":")[0]) for row in rows) == [
         ("native", "✅ holds"),
         ("node", "❌ does not hold"),

@@ -12,10 +12,10 @@ def test_a_run_says_one_verdict(world):
 
 
 def test_nothing_to_check_is_not_reported_as_a_pass(world):
-    engine = world.engine([])
-    world.pull_request("engine", 1)
+    adapter = world.clone("adapter")
+    world.pull_request("adapter", 1)
 
-    said = world.tool(engine, **world.ci(event=world.event(1)))
+    said = world.tool(adapter, **world.ci(repository="adapter", event=world.event(1, "adapter")))
 
     assert "nothing to check" in said
     assert "\nPASS\n" not in said

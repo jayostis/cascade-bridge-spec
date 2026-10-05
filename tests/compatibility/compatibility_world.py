@@ -2,6 +2,7 @@ import contextlib
 import io
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -124,10 +125,23 @@ def pin_vocabulary(origins, commit):
     for name, relative in CRATES_NAMING_THE_VOCABULARY:
         origin = origin_of(origins, name)
         name_vocabulary(origin / relative / CRATE, VOCABULARY_URL, commit)
+        if name == "cascade-bridge-spec":
+            describe_the_pin(origin, VOCABULARY_URL, commit)
         git("add", "-A", cwd=origin)
         git("commit", "-q", "--allow-empty", "-m", "the vocabulary this adapter reads", cwd=origin)
         heads[name] = git("rev-parse", "HEAD", cwd=origin)
     return heads
+
+
+def describe_the_pin(specification, url, commit):
+    """The library's description of the synthetic adapter follows the crate the world rewrote."""
+    described = specification / "fixtures" / "library" / "synthetic-adapter.described.ttl"
+    pinned = re.compile(r"bridge:cascadeVocabularyPin <[^>]*>")
+    text = described.read_text(encoding="utf-8")
+    assert pinned.search(text), text
+    described.write_text(
+        pinned.sub(f"bridge:cascadeVocabularyPin <{url}/commit/{commit}>", text), encoding="utf-8", newline=""
+    )
 
 
 def pin_another_vocabulary(world, name):

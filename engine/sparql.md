@@ -91,7 +91,7 @@ document's value is lifted in the same way.
 ## Envelopes
 
 A document is read in one of the adapter's envelopes: under `test`, the one its
-entry names; under `convert`, as [`command.md`](command.md) says.
+entry names; under `convert`, as [`library.md`](library.md) says.
 
 An envelope *admits* an XML document whose document element's local name is its
 `bridge:docRootElementName`, and a JSON document whose value is an object with a
@@ -153,10 +153,9 @@ For each source record of a document, in document order, a Bridge:
    graph is the union of their results;
 6. runs every `bridge:findingsQuery`, a CONSTRUCT, over the same dataset. The
    record's findings are the union of their graphs, with `bridge:thisRecord`
-   replaced by the IRI the Bridge was given for the document the record was
-   read from — the entry's `bridge:input` as [`executing.md`](executing.md)
-   resolves it under `test`, the `<document>` argument as an absolute `file:`
-   IRI under `convert` — and each annotation's selector moved under that
+   replaced by the document IRI ([`library.md`](library.md)) — under `test`,
+   the entry's `bridge:input` as [`executing.md`](executing.md) resolves it —
+   and each annotation's selector moved under that
    record's own selector as its `oa:refinedBy`. Each annotation gets a selector
    of its own, and an annotation whose query constructed none is about the
    record itself: its target carries the record's selector and no

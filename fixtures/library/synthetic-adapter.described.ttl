@@ -1,0 +1,62 @@
+@prefix schema: <http://schema.org/> .
+@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+<https://example.org/adapters/synthetic-adapter/> a bridge:Adapter ;
+  schema:identifier "synthetic-example" ;
+  schema:version "0.1.0" ;
+  bridge:sourceMediaType "application/xml" ;
+  bridge:envelope
+    <https://example.org/adapters/synthetic-adapter/ro-crate-metadata.json#envelope-set> ,
+    <https://example.org/adapters/synthetic-adapter/ro-crate-metadata.json#envelope-record> ;
+  bridge:cascadeVocabularyPin <https://example.org/synthetic-adapter/vocabulary/commit/0000000000000000000000000000000000000000> ;
+  bridge:vocabularyFile
+    "ontologies/example/v1/example.ttl" ,
+    "ontologies/example/v1/example.shapes.ttl" ;
+  bridge:loadFile
+    "ro-crate-metadata.json" ,
+    "in/example-record.rq" ,
+    "in/example-findings.rq" ,
+    "in/example-severities.rq" ,
+    "in/example-repeated-accession.rq" ,
+    "in/example-table.rq" ,
+    "in/example-detect.rq" ,
+    "schema/example-record.xsd" ,
+    "schema/example-set.xsd" ,
+    "vocab/example-gaps.ttl" ,
+    "vocab/example-statuses.ttl" ,
+    "vocab/example-accounting.ttl" ;
+  bridge:crateFile
+    "ro-crate-metadata.json" ,
+    "in/example-record.rq" ,
+    "in/example-findings.rq" ,
+    "in/example-severities.rq" ,
+    "in/example-repeated-accession.rq" ,
+    "in/example-table.rq" ,
+    "in/example-detect.rq" ,
+    "schema/example-record.xsd" ,
+    "schema/example-set.xsd" ,
+    "vocab/example-gaps.ttl" ,
+    "vocab/example-statuses.ttl" ,
+    "vocab/example-accounting.ttl" ,
+    "fixtures/manifest.ttl" ,
+    "fixtures/facts/example-registry.ttl" ,
+    "fixtures/in/example-0001.xml" ,
+    "fixtures/in/example-0002.xml" ,
+    "fixtures/in/example-0003.xml" ,
+    "fixtures/in/example-0004.xml" ,
+    "fixtures/in/example-0005.xml" ,
+    "fixtures/in/example-0006.xml" ,
+    "fixtures/in/example-0007.xml" ,
+    "fixtures/in/example-0008.xml" ,
+    "fixtures/expected/example-0001.ttl" ,
+    "fixtures/expected/example-0003.ttl" ,
+    "fixtures/expected/example-0004.ttl" ,
+    "fixtures/expected/example-0005.ttl" ,
+    "fixtures/expected/example-0006.ttl" ,
+    "fixtures/expected/example-0008.ttl" ,
+    "fixtures/findings/example-0001.ttl" ,
+    "fixtures/findings/example-0003.ttl" ,
+    "fixtures/findings/example-0004.ttl" ,
+    "fixtures/findings/example-0005.ttl" ,
+    "fixtures/findings/example-0006.ttl" ,
+    "fixtures/findings/example-0008.ttl" .
