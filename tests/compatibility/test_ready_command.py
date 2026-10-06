@@ -2,11 +2,19 @@
 
 import pytest
 
+from compatibility_tool import ready
 from compatibility_world import (
     depends_on,
 )
 
 GATE = "ready-to-merge"
+
+
+@pytest.fixture(autouse=True)
+def no_time_passes_but_what_the_gate_sleeps(monkeypatch):
+    now = [0]
+    monkeypatch.setattr(ready, "monotonic", lambda: now[0])
+    monkeypatch.setattr(ready, "sleep", lambda seconds: now.__setitem__(0, now[0] + seconds))
 
 
 def test_ready_to_merge_fails_while_a_named_pull_request_is_open_naming_it(world):
@@ -86,17 +94,51 @@ def test_ready_to_merge_passes_a_cycle_member_whose_checks_succeeded_apart_from_
     assert "adapter/pull/7" in said
 
 
-@pytest.mark.parametrize("run", [("completed", "failure"), ("in_progress", None)], ids=lambda run: run[1] or run[0])
-def test_ready_to_merge_fails_a_cycle_member_naming_its_check_that_did_not_succeed(world, run):
+def test_ready_to_merge_fails_a_cycle_member_naming_its_failed_check_without_waiting_for_the_rest(world):
     engine, event = adapter_naming_the_engine_back(
-        world, ("compatibility", "completed", "success"), ("the adapter's own tests", *run), (GATE, "in_progress", None)
+        world,
+        ("compatibility", "in_progress", None),
+        ("the adapter's own tests", "completed", "failure"),
+        (GATE, "in_progress", None),
     )
 
     said = world.tool(engine, 1, check="ready-to-merge", **world.ci(event=event, gate=GATE))
 
-    failing = [line for line in said.splitlines() if "the adapter's own tests" in line]
-    assert failing, said
-    assert "adapter/pull/7" in said
+    assert "its the adapter's own tests has not succeeded: failure" in said
+    assert "waiting" not in said
+
+
+def test_ready_to_merge_waits_for_a_cycle_member_whose_check_is_still_running(world, monkeypatch):
+    engine, event = adapter_naming_the_engine_back(world, ("compatibility", "in_progress", None))
+    [running] = world.pull_requests.check_runs_by_commit[
+        ("adapter", world.pull_requests.get("adapter", 7)["head"]["sha"])
+    ]
+    monkeypatch.setattr(ready, "sleep", lambda seconds: running.update(status="completed", conclusion="success"))
+
+    said = world.tool(engine, check="ready-to-merge", **world.ci(event=event, gate=GATE))
+
+    assert "waiting" in said
+    assert "adapter/pull/7 names this pull request back, and its checks have succeeded" in said
+
+
+def test_ready_to_merge_fails_naming_the_check_it_waited_for_when_it_stops_waiting(world):
+    engine, event = adapter_naming_the_engine_back(
+        world, ("compatibility", "completed", "success"), ("the adapter's own tests", "in_progress", None)
+    )
+
+    said = world.tool(engine, 1, check="ready-to-merge", **world.ci(event=event, gate=GATE))
+
+    assert "have not finished after waiting 45 minutes: the adapter's own tests is in_progress" in said
+
+
+def test_ready_to_merge_takes_the_latest_run_of_a_cycle_members_check(world):
+    engine, event = adapter_naming_the_engine_back(
+        world, ("compatibility", "completed", "failure"), ("compatibility", "completed", "success")
+    )
+
+    said = world.tool(engine, check="ready-to-merge", **world.ci(event=event, gate=GATE))
+
+    assert "adapter/pull/7 names this pull request back, and its checks have succeeded" in said
 
 
 def test_ready_to_merge_passes_a_cycle_member_that_has_merged(world):

@@ -1,9 +1,12 @@
 import os
+from time import monotonic, sleep
 
 from compatibility_tool.console import Status, Stop, report
 from compatibility_tool.github import named_in
 
 PASSING = ("success", "skipped", "neutral")
+WAIT = 45 * 60
+POLL = 30
 
 
 def is_open(pull):
@@ -43,8 +46,15 @@ def own_gate(api, event):
     return api.check_run(event.repository, identifier).get("name")
 
 
-def not_succeeded(runs):
-    return [run for run in runs if run.get("status") != "completed" or run.get("conclusion") not in PASSING]
+def latest(runs):
+    by_name = {}
+    for run in sorted(runs, key=lambda run: run.get("id") or 0):
+        by_name[run.get("name")] = run
+    return list(by_name.values())
+
+
+def failed(run):
+    return run.get("status") == "completed" and run.get("conclusion") not in PASSING
 
 
 def check(directory, options, event, api):
@@ -59,43 +69,74 @@ def check(directory, options, event, api):
         return Status.OK
     naming = open_pull_requests_reached(api, under_test)
     members = cycle(naming, under_test)
-    failed = 0
+    failures = 0
     for entry in named:
         pull = api.pull_request(entry)
         if pull.get("merged"):
             report(True, f"{entry.label} has merged")
         elif pull.get("state") != "open":
-            failed += 1
+            failures += 1
             report(False, f"{entry.label} is closed without merging: cut the Depends-On: line naming it")
         elif entry not in members:
-            failed += 1
+            failures += 1
             report(False, f"{entry.label} has not merged, and this pull request merges only after it does")
     gate = own_gate(api, event) if members else None
     for member in members:
         for outside in naming[member]:
             if outside == under_test or outside in members or api.pull_request(outside).get("merged"):
                 continue
-            failed += 1
+            failures += 1
             report(
                 False,
                 f"{member.label} names this pull request back, and names {outside.label}, which has not merged "
                 "and does not: a cycle merges only once everything it names outside itself has",
             )
-        pull = api.pull_request(member)
-        runs = [run for run in api.check_runs(member.path, pull.get("head", {}).get("sha")) if run.get("name") != gate]
-        if not runs:
-            failed += 1
-            report(False, f"{member.label} names this pull request back, and has no checks on its head commit yet")
-            continue
-        waiting = not_succeeded(runs)
-        for run in waiting:
-            report(
-                False,
-                f"{member.label} names this pull request back, and its {run.get('name')} has not "
-                f"succeeded: {run.get('conclusion') or run.get('status')}",
+    failures += members_failed(api, members, gate, bool(failures))
+    return Status.FAIL if failures else Status.OK
+
+
+def members_failed(api, members, gate, failed_already):
+    """How many cycle members have a check that did not succeed, waiting for those still running."""
+    deadline = monotonic() + WAIT
+    waiting = list(members)
+    failures = 0
+    while True:
+        unfinished = {}
+        for member in waiting:
+            head = api.pull_request(member, again=True).get("head", {}).get("sha")
+            runs = latest([run for run in api.check_runs(member.path, head) if run.get("name") != gate])
+            broken = [run for run in runs if failed(run)]
+            for run in broken:
+                report(
+                    False,
+                    f"{member.label} names this pull request back, and its {run.get('name')} has not "
+                    f"succeeded: {run.get('conclusion')}",
+                )
+            if broken:
+                failures += 1
+            elif runs and all(run.get("status") == "completed" for run in runs):
+                report(True, f"{member.label} names this pull request back, and its checks have succeeded")
+            else:
+                unfinished[member] = [run for run in runs if run.get("status") != "completed"]
+        if not unfinished:
+            return failures
+        if failed_already or failures or monotonic() >= deadline:
+            waited = (
+                "and the gate has already failed"
+                if failed_already or failures
+                else f"after waiting {WAIT // 60} minutes"
             )
-        if waiting:
-            failed += 1
-        else:
-            report(True, f"{member.label} names this pull request back, and its checks have succeeded")
-    return Status.FAIL if failed else Status.OK
+            for member, runs in unfinished.items():
+                said = (
+                    ", ".join(f"{run.get('name')} is {run.get('status')}" for run in runs)
+                    or "it has no checks on its head commit"
+                )
+                report(
+                    False,
+                    f"{member.label} names this pull request back, and its checks have not finished {waited}: {said}",
+                )
+            return failures + len(unfinished)
+        names = ", ".join(member.label for member in unfinished)
+        print(f"  waiting {POLL} seconds for the checks of {names} to finish")
+        sleep(POLL)
+        waiting = list(unfinished)

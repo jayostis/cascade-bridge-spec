@@ -26,6 +26,7 @@ BRIDGE = "example-bridge"
 BRIDGE_OWNER = "example-org"
 CONTEXT_IRI = "https://ns.cascadeprotocol.org/bridge/v1-draft/compatibility.jsonld"
 OWNER = "jayostis"
+TOKEN = "the job's token"
 ADAPTER_URL = f"https://github.com/{OWNER}/adapter"
 CRATE = "ro-crate-metadata.json"
 MATCHING = "main, the branch matching the pull request's target"
@@ -197,6 +198,7 @@ class PullRequests:
         self.refusals = {}
         self.check_runs_by_commit = {}
         self.releases = {}
+        self.authorizations = []
 
     def refuse(self, repository, number, status, headers=None):
         self.refusals[(repository, number)] = (status, dict(headers or {}))
@@ -260,6 +262,7 @@ class Handler(BaseHTTPRequestHandler):
         return int(parse_qs(urlsplit(self.path).query).get(name, [default])[0])
 
     def do_GET(self):
+        self.server.pull_requests.authorizations.append(self.headers.get("Authorization"))
         parts = self.parts()
         if len(parts) == 6 and parts[0] == "repos" and parts[3] == "commits" and parts[5] == "check-runs":
             page, per_page = self.query("page", 1), self.query("per_page", 30)
@@ -429,6 +432,7 @@ class World:
             "GITHUB_REF_NAME",
             "GITHUB_STEP_SUMMARY",
             "GITHUB_TOKEN",
+            "CASCADE_GITHUB_TOKEN",
             "CASCADE_CHECK_RUN_ID",
         ):
             environment.pop(name, None)
@@ -441,7 +445,7 @@ class World:
             "CI": "true",
             "GITHUB_REPOSITORY": f"{OWNER}/{repository}",
             "GITHUB_API_URL": self.api_url,
-            "GITHUB_TOKEN": "a token the stub does not check",
+            "CASCADE_GITHUB_TOKEN": TOKEN,
             "GITHUB_WORKSPACE": str(self.workspace),
             "GITHUB_SERVER_URL": str(self.origins.as_uri()),
             "GITHUB_STEP_SUMMARY": str(self.summary),
