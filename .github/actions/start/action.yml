@@ -128,7 +128,7 @@ runs:
         API: ${{ github.api_url }}
         GH: ${{ steps.specification.outputs.gh }}
         # A composite action's steps inherit no token; this step is resolved with
-        # the action, at the ref the caller named, and is the only one given one.
+        # the action, at the ref the caller named, and is the only one that posts.
         GITHUB_TOKEN: ${{ github.token }}
       run: |
         set -euo pipefail
