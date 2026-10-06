@@ -162,7 +162,7 @@ def form_problem(directory, document):
     if is_runtime(directory):
         found = f"{directory} holds {RUNTIME}, so it is a runtime"
         if "mustPassWith" in document:
-            return f"{found}, and a runtime's {FILE} names no mustPassWith: its counterparts are what {RUNTIME} pins"
+            return f"{found}, and a runtime's {FILE} names no mustPassWith: its counterparts are what {RUNTIME} names"
     else:
         found = f"{directory} holds no {CRATE}, so it is an engine"
     if not hosts(document):
