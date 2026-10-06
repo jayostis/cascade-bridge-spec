@@ -114,9 +114,6 @@ def compatibility(directory, options, event, api, spec):
     record.save(options.results)
     for entry in used:
         report(True, entry.describe())
-    if options.mode == "local":
-        for reading, vocabulary in placed:
-            vocabularies.compared(vocabulary, reading)
 
     status = validate.validate(directory, document, spec)
     for reading, vocabulary in placed:

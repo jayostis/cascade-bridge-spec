@@ -1,7 +1,7 @@
 # Fixtures
 
 Everything here is invented: this repository must not know that any real adapter
-or engine exists ([`../pinning.md`](../pinning.md)).
+or engine exists ([`../compatibility.md`](../compatibility.md)).
 
 An expected findings file is compared as a graph, as `bridge:comparison` says,
 and a Bridge is not asked to write the same bytes twice: a blank node's label is

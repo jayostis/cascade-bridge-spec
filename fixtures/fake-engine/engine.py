@@ -191,8 +191,8 @@ def described(adapter_iri, metadata):
         *((BRIDGE + "sourceMediaType", literal, value) for value in listed(root.get("bridge:sourceMediaType"))),
         *((BRIDGE + "envelope", iri, urljoin(at, envelope["@id"])) for envelope in envelopes),
         *(
-            (BRIDGE + "cascadeVocabularyPin", iri, urljoin(at, pin["@id"]))
-            for pin in listed(root.get("bridge:cascadeVocabularyPin"))
+            (BRIDGE + "cascadeVocabularyRepository", iri, urljoin(at, repository["@id"]))
+            for repository in listed(root.get("bridge:cascadeVocabularyRepository"))
         ),
         *((BRIDGE + "vocabularyFile", literal, path) for path in listed(root.get("bridge:vocabularyFile"))),
         *((BRIDGE + "loadFile", literal, path) for path in dict.fromkeys(load)),

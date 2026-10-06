@@ -3,13 +3,13 @@
 from dataclasses import dataclass
 from pathlib import Path
 
-from compatibility_tool import git, packages, picking, placing
-from compatibility_tool.console import Status, Stop, detail, first_line, note, report
+from compatibility_tool import packages, placing
+from compatibility_tool.console import Status, Stop, detail, first_line, report
 from compatibility_tool.document import CRATE, crate_root, is_adapter, referenced_id
-from compatibility_tool.github import repository_path, url_on_this_server
+from compatibility_tool.github import repository_name, repository_path, url_on_this_server
 from compatibility_tool.record import Role
 
-PIN = "bridge:cascadeVocabularyPin"
+REPOSITORY = "bridge:cascadeVocabularyRepository"
 NAMED_FILE = "bridge:vocabularyFile"
 VOCABULARY = "bridge:vocabulary"
 
@@ -19,10 +19,9 @@ OWL_ONTOLOGY = "http://www.w3.org/2002/07/owl#Ontology"
 
 @dataclass(frozen=True)
 class Reading:
-    """Where adapters' vocabularies are read from, at which commit, which files of it, and which adapters read it."""
+    """Where adapters' vocabularies are read from, which files of it, and which adapters read it."""
 
     url: str
-    commit: str
     files: tuple[str, ...]
     adapters: tuple[Path, ...] = ()
 
@@ -39,17 +38,12 @@ def named_iris(root, key):
     return [entry["@id"] for entry in listed if isinstance(entry, dict) and isinstance(entry.get("@id"), str)]
 
 
-def pinned(adapter):
-    nodes, root = crate_root(adapter)
-    named = referenced_id(root, PIN)
-    entity = nodes.get(named) or {}
-    url, commit = referenced_id(entity, "codeRepository"), entity.get("version")
-    if not isinstance(url, str) or not isinstance(commit, str):
-        raise Stop(
-            f"{adapter / CRATE} names {PIN} {named}, which carries no codeRepository and version: "
-            "the repository the vocabularies are read from, and the commit they are read at"
-        )
-    return Reading(url_on_this_server(repository_path(url)), commit, tuple(strings(root, NAMED_FILE)))
+def named(adapter):
+    _, root = crate_root(adapter)
+    url = referenced_id(root, REPOSITORY)
+    if not isinstance(url, str):
+        raise Stop(f"{adapter / CRATE} names no {REPOSITORY}: the repository its vocabularies are read from")
+    return Reading(url_on_this_server(repository_path(url)), tuple(strings(root, NAMED_FILE)))
 
 
 def read_from(directory, counterparts):
@@ -61,36 +55,23 @@ def read_from(directory, counterparts):
     for adapter in adapters:
         if adapter is None or not is_adapter(adapter):
             continue
-        reading = pinned(adapter)
+        reading = named(adapter)
         by_repository.setdefault(reading.url, []).append((adapter, reading))
-    readings = []
-    for url, pinning in by_repository.items():
-        commits = list(dict.fromkeys(reading.commit for _, reading in pinning))
-        if len(commits) > 1:
-            raise Stop(
-                f"the adapters of this run pin one commit of {url} or the run cannot check one version out for them: "
-                + ", ".join(commits)
-            )
-        files = list(dict.fromkeys(name for _, reading in pinning for name in reading.files))
-        readings.append(Reading(url, commits[0], tuple(files), tuple(adapter for adapter, _ in pinning)))
-    return readings
+    return [
+        Reading(
+            url,
+            tuple(dict.fromkeys(name for _, reading in naming for name in reading.files)),
+            tuple(adapter for adapter, _ in naming),
+        )
+        for url, naming in by_repository.items()
+    ]
 
 
 def place(directory, reading, options, event, reached):
-    how = f"the adapter's {PIN}"
-    return placing.pinned(directory, reading.url, reading.commit, Role.VOCABULARY, how, options, event, reached)
-
-
-def compared(row, reading):
-    """What the sibling holds on disk, against the bytes the pinned commit holds."""
-    if git.local_commit(row.path, reading.commit) is None:
-        note(f"{row.name} on disk holds no commit {reading.commit}, so the comparison was not made")
-        return
-    for name in reading.files:
-        on_disk = row.path / name
-        if on_disk.is_file() and git.blob(row.path, reading.commit, name) == on_disk.read_bytes():
-            continue
-        note(f"{name} on disk is not what {reading.commit} holds")
+    if options.mode == "local":
+        return placing.locally(directory, reading.url, Role.VOCABULARY)
+    into = directory.parent / repository_name(reading.url)
+    return placing.in_ci(reading.url, reached, event, into, Role.VOCABULARY)
 
 
 def faulty(adapter, path, files):
@@ -127,27 +108,3 @@ def check(directory, row, reading):
         return Status.FAIL
     report(True, f"every {NAMED_FILE} is a file there, declaring every {VOCABULARY} the adapter writes")
     return Status.OK
-
-
-def behind(directory, named, api, into):
-    """Each merged pull request of the vocabulary whose commit the adapter's pin does not contain."""
-    if not is_adapter(directory):
-        return
-    reading = pinned(directory)
-    path = repository_path(reading.url)
-    for entry in named:
-        if entry.path != path:
-            continue
-        pull = api.pull_request(entry)
-        on_target = pull.get("merge_commit_sha") or pull.get("head", {}).get("sha")
-        if not pull.get("merged") or not on_target or contains(reading, on_target, into):
-            continue
-        yield f"{entry.label} merged at {on_target}, and the adapter's {PIN}, {reading.commit}, does not contain it"
-
-
-def contains(reading, commit, into):
-    picking.remove(into)
-    git.init(into)
-    for wanted in (reading.commit, commit):
-        git.fetch(reading.url, wanted, into)
-    return git.holds(into, reading.commit, commit)

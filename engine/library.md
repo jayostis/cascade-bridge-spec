@@ -28,7 +28,7 @@ From the bytes of an adapter's `ro-crate-metadata.json` and the adapter IRI
 alone, a graph about the adapter IRI, `a bridge:Adapter`, in the format the
 caller asks, Turtle or N-Triples, carrying the crate's own:
 `schema:identifier`, `schema:version`, `bridge:sourceMediaType`, each
-`bridge:envelope`, `bridge:cascadeVocabularyPin` and each
+`bridge:envelope`, `bridge:cascadeVocabularyRepository` and each
 `bridge:vocabularyFile`; and
 
 - a `bridge:loadFile` for each file a load needs: the metadata file, and each

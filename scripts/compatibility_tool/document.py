@@ -49,23 +49,23 @@ def kind(directory):
     return "an adapter" if is_adapter(directory) else "a runtime" if is_runtime(directory) else "an engine"
 
 
-def pinned_repositories(directory):
-    """Each repository cascade-runtime.json pins, as it writes it, with the commit it pins."""
+def named_repositories(directory):
+    """Each repository cascade-runtime.json names, as it writes it."""
     document = read_json(directory / RUNTIME)
     if not isinstance(document, dict):
         raise Stop(f"{directory / RUNTIME} is not a JSON object")
     adapters = document.get("adapters", [])
     if not isinstance(adapters, list):
-        raise Stop(f"{directory / RUNTIME} pins adapters by no JSON array")
+        raise Stop(f"{directory / RUNTIME} names adapters by no JSON array")
     entries = [("vocabulary", document.get("vocabulary"))]
     entries += [(f"adapters[{index}]", entry) for index, entry in enumerate(adapters)]
-    pins = []
+    named = []
     for where, entry in entries:
-        repository, commit = (entry.get("repository"), entry.get("commit")) if isinstance(entry, dict) else (None, None)
-        if not isinstance(repository, str) or not isinstance(commit, str):
-            raise Stop(f"{directory / RUNTIME} pins {where} by no repository and commit")
-        pins.append((where, repository, commit))
-    return pins
+        repository = entry.get("repository") if isinstance(entry, dict) else None
+        if not isinstance(repository, str):
+            raise Stop(f"{directory / RUNTIME} names {where} by no repository")
+        named.append((where, repository))
+    return named
 
 
 def crate_root(directory):
@@ -162,7 +162,7 @@ def form_problem(directory, document):
     if is_runtime(directory):
         found = f"{directory} holds {RUNTIME}, so it is a runtime"
         if "mustPassWith" in document:
-            return f"{found}, and a runtime's {FILE} names no mustPassWith: its counterparts are what {RUNTIME} pins"
+            return f"{found}, and a runtime's {FILE} names no mustPassWith: its counterparts are what {RUNTIME} names"
     else:
         found = f"{directory} holds no {CRATE}, so it is an engine"
     if not hosts(document):
@@ -181,6 +181,6 @@ def problems(directory, document):
         return [f"its @context is {found!r}, where a {FILE} names {CONTEXT_IRI}"]
     found = problems_json_ld_hides_from_shacl(document) + name_clashes(directory, counterparts(document))
     if is_runtime(directory):
-        found += name_clashes(directory, [url for _, url, _ in pinned_repositories(directory)], RUNTIME)
+        found += name_clashes(directory, [url for _, url in named_repositories(directory)], RUNTIME)
     form = form_problem(directory, document)
     return [*found, form] if form else found

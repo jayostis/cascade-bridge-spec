@@ -1,5 +1,10 @@
 # Compatibility between engines, adapters and runtimes
 
+**Nothing pins the specification, an engine, an adapter, a runtime or a
+vocabulary to a commit of another.** Each is tested against the others' default
+branch, a change across them lands as pull requests paired by `Depends-On:`
+lines, and a release records the commit of each repository it was tested with.
+
 An engine commits a `compatibility.json` at its root, and an adapter may, naming
 the adapters (in an engine) or engines (in an adapter) it must pass with, and an
 engine names each host it ships to. **Every adapter that does not hold on a host
@@ -36,12 +41,12 @@ SHA-256 in hex). Otherwise the setup runs.
 
 An adapter's file has only `mustPassWith`.
 
-A runtime is a repository holding `cascade-runtime.json`, which pins the
-vocabulary and each adapter it loads by repository and commit: those are its
-counterparts. Its `compatibility.json` names its hosts, as an engine's does, and
-no `mustPassWith`. On each host the run appends `--report <file>` to the host's
+A runtime is a repository holding `cascade-runtime.json`, which names the
+vocabulary and each adapter it loads by repository: those are its counterparts.
+Its `compatibility.json` names its hosts, as an engine's does, and no
+`mustPassWith`. On each host the run appends `--report <file>` to the host's
 command, then `--folder <repository>=<folder>` for each repository
-`cascade-runtime.json` pins, keyed as that file writes it. The command runs the
+`cascade-runtime.json` names, keyed as that file writes it. The command runs the
 vocabulary's conformance kit there and writes an EARL report, which is judged by
 [`engine/faults-of-a-report.rq`](engine/faults-of-a-report.rq) on its outcomes
 alone: no manifest says which entries it must hold. **A host on which it does not
@@ -51,15 +56,14 @@ A vocabulary is a repository holding a crate whose root is no `bridge:Adapter`,
 as [`jayostis/cascade-vocabulary`](https://github.com/jayostis/cascade-vocabulary)
 does. Its `compatibility.json` has only `mustPassWith`, naming runtimes. Each is
 picked as a counterpart is, and its conformance command run as a runtime under
-test's is, with the vocabulary under test handed in for the one it pins and each
-adapter it pins picked as that runtime's pin is. **A runtime whose report does
+test's is, with the vocabulary under test handed in for the one it names and each
+adapter it names picked as a counterpart is. **A runtime whose report does
 not hold blocks the merge.** A change a runtime must follow lands as a pair: the
 vocabulary's pull request and the runtime's, each naming the other on a
 `Depends-On:` line.
 
-A runtime pins its Bridge as a built package, by its release's URL in
-`package-lock.json`. The run lists each package that file resolves from a
-repository's release, naming the release, and runs nothing of it itself.
+A runtime reads the Bridge as the package the Bridge publishes from its default
+branch, and says which build it read; the run builds nothing of it itself.
 
 ## Which version of each repository a run uses
 
@@ -74,20 +78,13 @@ Picked when the run starts, as Zuul checks out a job's required projects
   request under test targets, or the one a push, manual or scheduled run is on;
 - otherwise the default branch.
 
-The vocabulary repository an adapter's `bridge:cascadeVocabularyPin` names,
-[`the-cascade-protocol/spec`](https://github.com/the-cascade-protocol/spec) or
-[`jayostis/cascade-vocabulary`](https://github.com/jayostis/cascade-vocabulary),
-is picked by its own rule, as is each repository a runtime's
-`cascade-runtime.json` pins: the commit the pin names, unless a
-[`Depends-On:`](https://zuul-ci.org/docs/zuul/latest/gating.html) line names a
-pull request of it, which is merged into the branch it targets instead.
+The vocabulary repository an adapter's `bridge:cascadeVocabularyRepository`
+names, and each repository a runtime's `cascade-runtime.json` names, is picked
+as a counterpart is.
 
 A local run uses every sibling checkout as it is on disk, uncommitted edits
 included, the vocabulary repository among them, in the folder named as that
-repository: `spec` or `cascade-vocabulary`. `bridge:cascadeVocabularyPin`
-governs a CI run alone, and no option changes either. A local run says which of the files the
-adapter names differ from the bytes the pinned commit holds, and nothing stops
-where it holds no such commit.
+repository, and no option changes that.
 
 Descriptions are read without credentials, so every repository a run reads must
 be public, and the reads a run makes share GitHub's hourly allowance for the
@@ -110,8 +107,8 @@ GitHub Actions cannot reproduce these, so a person or an agent does it by hand:
 - **There is no gate queue**, so a pass is as fresh as its last run and the
   branches under it can move after it. Rerun `compatibility` and
   `ready-to-merge` before merging; a run says so when it used a named pull
-  request. Nothing pins a counterpart either, so a pass on a default branch
-  goes stale the same way, and the caller's nightly run is what notices.
+  request. A pass on a default branch goes stale the same way, and the
+  caller's nightly run is what notices.
 - **A repository's state is not frozen across a run's jobs**, so two checks of
   one pull request can read different descriptions and branches. Rerun both
   rather than trusting a mixed pair.
@@ -125,9 +122,9 @@ GitHub Actions cannot reproduce these, so a person or an agent does it by hand:
   under test, and the merge gate still holds this one until that one merges.
   Land it first, or fold its changes into this pull request.
 - **A Bridge pull request is not built into a runtime.** A run lists one named
-  on a `Depends-On:` line as not used, and the runtime runs the release its
-  lockfile pins. Try the change from the Bridge's own pull request, and from a
-  runtime pull request moving the pin once it has merged and been published.
+  on a `Depends-On:` line as not used, and the runtime reads the Bridge's
+  newest published build. Try the change from the Bridge's own pull request; a
+  runtime reads it once it has merged and been published.
 - **A change to which pull requests a run follows is tried once it has merged.**
   The default branch's copy follows them to pick the version, before that version
   runs anything, so a run refuses on the rules of the day whatever a pull request

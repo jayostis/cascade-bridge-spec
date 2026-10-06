@@ -1,7 +1,6 @@
-"""A runtime: the repositories its cascade-runtime.json pins, each picked as a counterpart is, and its conformance
-command run on each host with a folder for each. A vocabulary under test is handed in for the one it pins."""
+"""A runtime: the repositories its cascade-runtime.json names, each picked as a counterpart is, and its conformance
+command run on each host with a folder for each. A vocabulary under test is handed in for the one it names."""
 
-import re
 import shutil
 from dataclasses import replace
 
@@ -13,95 +12,68 @@ from compatibility_tool.document import (
     hosts,
     is_runtime,
     name_clashes,
-    pinned_repositories,
+    named_repositories,
     read_file,
-    read_json,
 )
 from compatibility_tool.github import repository_name, repository_path, url_on_this_server
-from compatibility_tool.record import Role, Row
-
-LOCKFILE = "package-lock.json"
-RELEASE = re.compile(r"^(?P<repository>https://[^/]+/[^/]+/[^/]+)/releases/download/(?P<tag>[^/]+)/[^/]+$")
+from compatibility_tool.record import Role
 
 
-def pins(directory):
-    """Each pin as cascade-runtime.json writes the repository, and the URL the run fetches it from."""
+def counterparts(directory):
+    """Each repository as cascade-runtime.json writes it, the URL the run fetches it from, and the role it plays."""
     return [
         (
             written,
             url_on_this_server(repository_path(written)),
-            commit,
             Role.VOCABULARY if where == "vocabulary" else Role.ADAPTER,
         )
-        for where, written, commit in pinned_repositories(directory)
+        for where, written in named_repositories(directory)
     ]
 
 
-def released_packages(directory):
-    """Each package the lockfile resolves from a repository's release: what a runtime pins a Bridge by."""
-    lockfile = directory / LOCKFILE
-    listed = (read_json(lockfile).get("packages") or {}) if lockfile.is_file() else {}
-    releases = {}
-    for entry in listed.values():
-        match = RELEASE.match(entry.get("resolved") or "") if isinstance(entry, dict) else None
-        if match:
-            releases[match["repository"], match["tag"]] = None
-    return [
-        Row(
-            name=repository_name(url),
-            repository=url,
-            commit=None,
-            how=f"the release {tag}, as {LOCKFILE} pins it",
-            role=Role.PACKAGE,
-            release=tag,
-        )
-        for url, tag in releases
-    ]
+def place(directory, url, role, options, event, reached):
+    if options.mode == "local":
+        return placing.locally(directory, url, role)
+    return placing.in_ci(url, reached, event, directory.parent / repository_name(url), role)
 
 
 def placed(directory, options, event, api):
-    pinned = pins(directory)
-    urls = [url for _, url, _, _ in pinned]
-    reached = picking.follow(api, event, urls, options.spec_repository) if options.mode == "ci" else []
-    how = f"the runtime's {RUNTIME}"
-    rows = [
-        placing.pinned(directory, url, commit, role, how, options, event, reached) for _, url, commit, role in pinned
-    ]
-    return [*rows, *placing.not_used(reached), *released_packages(directory)]
+    listed = counterparts(directory)
+    reached = (
+        picking.follow(api, event, [url for _, url, _ in listed], options.spec_repository)
+        if options.mode == "ci"
+        else []
+    )
+    rows = [place(directory, url, role, options, event, reached) for _, url, role in listed]
+    return [*rows, *placing.not_used(reached)]
 
 
 def named_by(directory, listed, options, event, api):
-    """Each runtime a vocabulary under test names, picked as a counterpart is, and each adapter it pins."""
+    """Each runtime a vocabulary under test names, and each adapter one names, each picked as a counterpart is."""
     reached = picking.follow(api, event, listed, options.spec_repository) if options.mode == "ci" else []
     rows = []
     for url in listed:
-        if options.mode == "local":
-            row = placing.locally(directory, url, Role.CONFORMANCE)
-        else:
-            row = placing.in_ci(url, reached, event, directory.parent / repository_name(url), Role.CONFORMANCE)
+        row = place(directory, url, Role.CONFORMANCE, options, event, reached)
         if not is_runtime(row.path):
             raise Stop(f"{url} holds no {RUNTIME}, and a vocabulary's {FILE} names runtimes alone")
         rows.append(row)
-    adapters = {}
-    for row in rows:
-        for _, url, commit, role in pins(row.path):
-            if role is Role.ADAPTER and adapters.setdefault(url, (commit, row.name))[0] != commit:
-                raise Stop(f"{adapters[url][1]} and {row.name} pin {url} at two commits, and one checkout serves both")
+    adapters = list(
+        dict.fromkeys(url for row in rows for _, url, role in counterparts(row.path) if role is Role.ADAPTER)
+    )
     clashes = name_clashes(directory, [*listed, *adapters], f"{FILE} and the {RUNTIME} of each runtime it names")
     if clashes:
         raise Stop("; ".join(clashes))
     if options.mode == "ci":
         reached = picking.follow(api, event, [*listed, *adapters], options.spec_repository)
-    rows += [
-        placing.pinned(directory, url, commit, Role.ADAPTER, f"{name}'s {RUNTIME}", options, event, reached)
-        for url, (commit, name) in adapters.items()
-    ]
+    rows += [place(directory, url, Role.ADAPTER, options, event, reached) for url in adapters]
     return [*rows, *placing.not_used(reached)]
 
 
 def folders(runtime, paths):
-    """--folder <repository>=<folder> for each pin, keyed as cascade-runtime.json writes the repository."""
-    return [argument for written, url, _, _ in pins(runtime) for argument in ("--folder", f"{written}={paths[url]}")]
+    """--folder <repository>=<folder> for each repository, keyed as cascade-runtime.json writes it."""
+    return [
+        argument for written, url, _ in counterparts(runtime) for argument in ("--folder", f"{written}={paths[url]}")
+    ]
 
 
 def run(directory, record, options, set_up):
@@ -119,7 +91,7 @@ def run(directory, record, options, set_up):
         vocabulary = (
             {}
             if is_runtime(directory)
-            else {url: directory for _, url, _, role in pins(runtime.path) if role is Role.VOCABULARY}
+            else {url: directory for _, url, role in counterparts(runtime.path) if role is Role.VOCABULARY}
         )
         handed = folders(runtime.path, {**paths, **vocabulary})
         listed = hosts(read_file(runtime.path))
