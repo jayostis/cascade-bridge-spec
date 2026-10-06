@@ -18,7 +18,7 @@ test <adapter directory> [--earl <file>] [--datasets] [--vocabularies <directory
 
 The library's `test`. `<adapter directory>` is the adapter's map and
 `--vocabularies` the vocabulary's: a checkout of the repository the adapter's
-`bridge:cascadeVocabularyPin` names, at the version the run picked
+`bridge:cascadeVocabularyRepository` names, at the version the run picked
 ([`../compatibility.md`](../compatibility.md)). `--earl` writes the report to
 `<file>`. With `--datasets` the command also streams the datasets of
 `bridge:DatasetCompletionTest` entries.
@@ -35,7 +35,7 @@ convert <adapter directory> <document> [--envelope <iri>] [--facts <file>] [--ou
 
 The library's `convert`, on the adapter loaded from `<adapter directory>` and,
 with `--vocabularies`, a checkout of the repository its
-`bridge:cascadeVocabularyPin` names, at the commit it pins. `<document>` is
+`bridge:cascadeVocabularyRepository` names, at the version the caller picked. `<document>` is
 the document, a file the caller holds rather than one the adapter committed.
 `--envelope` is the envelope IRI, resolved against the adapter's
 `ro-crate-metadata.json`, so `#envelope-set` names the envelope that file

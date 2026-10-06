@@ -12,7 +12,7 @@ An engine (a Cascade Bridge) runs adapters.
 | an adapter to run | [`../fixtures/synthetic-adapter/`](../fixtures/synthetic-adapter/) |
 | the facts a caller supplies with a document, and a file of them | [`../shapes/facts.shapes.ttl`](../shapes/facts.shapes.ttl) and [`../fixtures/synthetic-adapter/fixtures/facts/`](../fixtures/synthetic-adapter/fixtures/facts/) |
 | a document's whole graph: records, versions, arrivals, the document and the import | [`../fixtures/synthetic-adapter/fixtures/expected/`](../fixtures/synthetic-adapter/fixtures/expected/) |
-| the checkout its `bridge:cascadeVocabularyPin` names, to pass as `--vocabularies` | [`../fixtures/synthetic-vocabularies/`](../fixtures/synthetic-vocabularies/) |
+| the checkout its `bridge:cascadeVocabularyRepository` names, to pass as `--vocabularies` | [`../fixtures/synthetic-vocabularies/`](../fixtures/synthetic-vocabularies/) |
 | what you offer a program that loads you, bytes in and bytes out | [`library.md`](library.md) |
 | its cases, over the synthetic adapters | [`../fixtures/library/`](../fixtures/library/): `manifest.ttl` |
 | the commands you must offer, the conformance-only `library` among them | [`command.md`](command.md) |

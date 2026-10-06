@@ -1,26 +1,17 @@
-"""Which version of the vocabulary repository an adapter pins a run reads its vocabularies at, and what it does with it."""
+"""Which version of the vocabulary repository an adapter names a run reads its vocabularies at, and what it does with it."""
 
 import shutil
 from pathlib import Path
 
-import pytest
-
-from compatibility_tool import vocabularies
-from compatibility_tool.console import Stop
-from compatibility_tool.record import Role, Row
 from compatibility_world import (
-    CRATE,
     OWNER,
-    SYNTHETIC_ADAPTER,
     VOCABULARY,
     VOCABULARY_FILES,
     VOCABULARY_OWNER,
     VOCABULARY_PATH,
-    VOCABULARY_URL,
     depends_on,
     git,
-    name_vocabulary,
-    pin_another_vocabulary,
+    name_another_vocabulary,
 )
 
 GIVEN = "fake engine: vocabularies "
@@ -39,7 +30,7 @@ def given_to_the_engine(said):
     return Path(said.split(GIVEN, 1)[1].splitlines()[0].strip())
 
 
-def test_the_engine_is_given_the_vocabulary_checked_out_at_the_adapters_pin_and_the_row_says_the_pin(world):
+def test_the_engine_is_given_the_vocabulary_the_adapter_names_at_the_head_of_its_default_branch(world):
     engine, event = world.engine_under_test()
 
     said = world.tool(engine, **world.ci(event=event))
@@ -48,7 +39,6 @@ def test_the_engine_is_given_the_vocabulary_checked_out_at_the_adapters_pin_and_
     assert git("rev-parse", "HEAD", cwd=given) == world.commits[VOCABULARY]
     assert (given / VOCABULARY_FILES[0]).is_file()
     assert row(world).get("commit") == world.commits[VOCABULARY]
-    assert "bridge:cascadeVocabularyPin" in row(world).get("how", "")
     assert world.commits[VOCABULARY][:7] in table_row(world)
 
 
@@ -84,31 +74,8 @@ def test_a_vocabulary_pull_request_closed_without_merging_fails_the_check_naming
     assert "closed without merging" in said
 
 
-def test_a_branch_of_the_vocabulary_matching_the_pull_requests_target_is_not_picked(world):
-    world.branch(VOCABULARY, "stable/x", fill=lambda path: (path / "STABLE").write_text("stable\n"))
-    engine, event = world.engine_under_test(base="stable/x")
-
-    said = world.tool(engine, **world.ci(event=event, branch="stable/x"))
-
-    assert row(world).get("commit") == world.commits[VOCABULARY]
-    assert not (given_to_the_engine(said) / "STABLE").exists()
-
-
-def test_two_adapters_pinning_different_commits_of_one_vocabulary_repository_stop_the_run_naming_both(tmp_path):
-    """One run checks one version of a repository out."""
-    paired = []
-    for commit in ("a" * 40, "b" * 40):
-        adapter = tmp_path / commit[0]
-        shutil.copytree(SYNTHETIC_ADAPTER, adapter)
-        name_vocabulary(adapter / CRATE, VOCABULARY_URL, commit)
-        paired.append(Row(adapter.name, VOCABULARY_URL, commit, "", Role.COUNTERPART, path=adapter))
-
-    with pytest.raises(Stop, match="pin one commit of"):
-        vocabularies.read_from(tmp_path, paired)
-
-
-def test_a_pin_naming_another_vocabulary_repository_is_checked_out_at_its_commit_under_that_repositorys_name(world):
-    commit = pin_another_vocabulary(world, "cascade-vocabulary")
+def test_another_vocabulary_repository_an_adapter_names_is_checked_out_under_that_repositorys_name(world):
+    commit = name_another_vocabulary(world, "cascade-vocabulary")
     engine, event = world.engine_under_test()
 
     said = world.tool(engine, **world.ci(event=event))
@@ -120,9 +87,9 @@ def test_a_pin_naming_another_vocabulary_repository_is_checked_out_at_its_commit
     assert VOCABULARY not in world.record()["repositories"]
 
 
-def test_an_engine_naming_two_adapters_with_different_vocabulary_pins_runs_each_against_its_own(world):
+def test_an_engine_naming_two_adapters_reading_different_vocabulary_repositories_runs_each_against_its_own(world):
     shutil.copytree(world.origin("adapter"), world.origins / OWNER / "adapter-on-spec")
-    pin_another_vocabulary(world, "cascade-vocabulary")
+    name_another_vocabulary(world, "cascade-vocabulary")
     world.pull_request("engine", 1)
     engine = world.engine([world.url("adapter"), world.url("adapter-on-spec")])
 

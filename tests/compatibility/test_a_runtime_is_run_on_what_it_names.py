@@ -1,4 +1,4 @@
-"""A runtime: handed the repositories cascade-runtime.json pins, each picked as a counterpart is, and judged by its report."""
+"""A runtime: handed the repositories cascade-runtime.json names, each picked as a counterpart is, and judged by its report."""
 
 from pathlib import Path
 
@@ -28,7 +28,7 @@ def handed(said):
     )
 
 
-def test_a_runtime_whose_report_holds_is_handed_each_pin_at_its_commit_and_names_the_bridge_release_it_pins(world):
+def test_a_runtime_whose_report_holds_is_handed_each_repository_it_names_at_the_head_of_its_default_branch(world):
     runtime, ci = world.runtime_under_test()
 
     said = world.tool(runtime, **ci)
@@ -37,10 +37,9 @@ def test_a_runtime_whose_report_holds_is_handed_each_pin_at_its_commit_and_names
     assert git("rev-parse", "HEAD", cwd=folders[VOCABULARY_URL]) == world.commits[VOCABULARY]
     assert git("rev-parse", "HEAD", cwd=folders[ADAPTER_URL]) == world.commits["adapter"]
     assert "the runtime on 1 host: 1 hold, 0 do not" in said
-    assert "build-1" in world.record()["repositories"][BRIDGE]["how"]
 
 
-def test_a_local_run_whose_report_has_a_failure_does_not_hold_and_a_pinned_siblings_edits_make_it_feedback(world):
+def test_a_local_run_whose_report_has_a_failure_does_not_hold_and_a_named_siblings_edits_make_it_feedback(world):
     world.clone("adapter")
     (world.clone(VOCABULARY) / "NOTICE").write_text("an uncommitted edit\n", encoding="utf-8")
     world.offline()
@@ -63,7 +62,7 @@ def test_a_vocabulary_pull_request_named_on_a_depends_on_line_is_handed_in_and_a
     assert (handed(said)[VOCABULARY_URL] / "NOTICE").read_text() == "five\n"
     repositories = world.record()["repositories"]
     assert repositories[VOCABULARY]["how"] == "pull request #5 merged into main"
-    assert repositories[f"{BRIDGE_OWNER}/{BRIDGE}/pull/3"]["role"] == "not used"
+    assert repositories[BRIDGE]["role"] == "not used"
 
 
 def test_a_vocabulary_is_handed_in_for_the_vocabulary_of_each_runtime_it_names_picked_by_a_depends_on_line(world):

@@ -154,7 +154,7 @@ def result_cell(entry):
 
 
 def version_cell(entry):
-    """A pinned repository is at its pin unless a Depends-On: line named a pull request of it instead."""
+    """A vocabulary or an adapter a Depends-On: line picked says so."""
     if entry.role in (Role.VOCABULARY, Role.ADAPTER) and entry.from_named_pull_requests:
         return f"Depends-On: {entry.how}"
     return entry.how

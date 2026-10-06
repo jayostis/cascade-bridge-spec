@@ -44,11 +44,3 @@ def test_a_record_written_by_an_older_tooling_reads_back(tmp_path):
     written = used(tmp_path)[0].to_json()
     del written["fromNamedPullRequests"]
     assert Row.from_json("engine", written).from_named_pull_requests is False
-
-
-def test_a_package_row_keeps_a_key_of_its_own_beside_a_pin_and_another_release_of_its_repository(tmp_path):
-    url = "https://github.com/jayostis/cascade-vocabulary"
-    pinned = Row("cascade-vocabulary", url, "c" * 40, "the pin", Role.VOCABULARY, path=tmp_path / "cascade-vocabulary")
-    packages = [Row("cascade-vocabulary", url, None, tag, Role.PACKAGE, release=tag) for tag in ("v1", "v2")]
-    record = Record(tmp_path / "runtime", "ci", [pinned, *packages])
-    assert len({record.key(entry) for entry in record.used}) == 3

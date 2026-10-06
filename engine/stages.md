@@ -8,7 +8,7 @@ adapter contributes data to them through these terms.
 |---|---|---|
 | read and chunk | **Splitter** | `bridge:elementNameOfEachRecord`, `bridge:jsonPathOfEachRecord` |
 | transform | **Message Translator** | `bridge:mapping`, `bridge:table` |
-| Cascade RDF as target | **Canonical Data Model** | `bridge:vocabulary`, `bridge:cascadeVocabularyPin`, `bridge:vocabularyFile` |
+| Cascade RDF as target | **Canonical Data Model** | `bridge:vocabulary`, `bridge:cascadeVocabularyRepository`, `bridge:vocabularyFile` |
 | link records | **Aggregator** | `bridge:documentTableQuery`: a link within one source record is a name the mapping mints, and to any other record, in the document or not, that record's computed name |
 | name versions, write arrivals | **Message History** | each version, linked to its record by `prov:specializationOf`, and the source's version metadata on its arrival |
 | check, validate | **Message Validator** | `bridge:sourceSchema`, `bridge:documentSchema` |

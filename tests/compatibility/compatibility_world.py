@@ -24,7 +24,6 @@ FAKE_ENGINE = ROOT / "fixtures" / "fake-engine"
 FAKE_RUNTIME = ROOT / "fixtures" / "fake-runtime"
 BRIDGE = "example-bridge"
 BRIDGE_OWNER = "example-org"
-BRIDGE_RELEASE = f"https://github.com/{BRIDGE_OWNER}/{BRIDGE}/releases/download/build-1/{BRIDGE}-0.1.0.tgz"
 CONTEXT_IRI = "https://ns.cascadeprotocol.org/bridge/v1-draft/compatibility.jsonld"
 OWNER = "jayostis"
 ADAPTER_URL = f"https://github.com/{OWNER}/adapter"
@@ -87,21 +86,19 @@ def vocabulary(path):
     shutil.copytree(SYNTHETIC_VOCABULARIES, path, dirs_exist_ok=True)
 
 
-def name_vocabulary(crate_file, url, commit, files=VOCABULARY_FILES):
-    """An adapter's crate, naming a vocabulary repository at a commit and the files it reads there."""
+def name_vocabulary(crate_file, url, files=VOCABULARY_FILES):
+    """An adapter's crate, naming a vocabulary repository and the files it reads there."""
     document = json.loads(crate_file.read_text(encoding="utf-8"))
     document["@context"][1]["bridge:vocabularyFile"] = "bridge:vocabularyFile"
     root = next(entity for entity in document["@graph"] if entity["@id"] == "./")
-    named = f"{url}/commit/{commit}"
-    was = root["bridge:cascadeVocabularyPin"]["@id"]
-    root["bridge:cascadeVocabularyPin"] = {"@id": named}
+    named = url
+    was = root["bridge:cascadeVocabularyRepository"]["@id"]
+    root["bridge:cascadeVocabularyRepository"] = {"@id": named}
     root["bridge:vocabularyFile"] = list(files)
     root["hasPart"] = [{"@id": named} if part == {"@id": was} else part for part in root["hasPart"]]
     for entity in document["@graph"]:
         if entity["@id"] == was:
             entity["@id"] = named
-            entity["codeRepository"] = {"@id": url}
-            entity["version"] = commit
     crate_file.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8", newline="")
 
 
@@ -119,7 +116,7 @@ def publish_origins(origins):
         write_compatibility(path, engine_document([]))
 
     commits["engine"] = publish(origins, "engine", engine)
-    commits.update(pin_vocabulary(origins, commits[VOCABULARY]))
+    commits.update(name_the_vocabulary(origins))
     for name in commits:
         # Every world copies these origins, and one pack copies faster than a file per object.
         git("repack", "-a", "-d", "-q", cwd=origin_of(origins, name))
@@ -130,36 +127,34 @@ def origin_of(origins, name):
     return origins / (VOCABULARY_OWNER if name == VOCABULARY else OWNER) / name
 
 
-def pin_vocabulary(origins, commit):
-    """Every adapter crate in these origins names this world's the-cascade-protocol/spec at a commit of it."""
+def name_the_vocabulary(origins):
+    """Every adapter crate in these origins names this world's the-cascade-protocol/spec."""
     heads = {}
     for name, relative in CRATES_NAMING_THE_VOCABULARY:
         origin = origin_of(origins, name)
-        name_vocabulary(origin / relative / CRATE, VOCABULARY_URL, commit)
+        name_vocabulary(origin / relative / CRATE, VOCABULARY_URL)
         if name == "cascade-bridge-spec":
-            describe_the_pin(origin, VOCABULARY_URL, commit)
+            describe_the_repository(origin, VOCABULARY_URL)
         git("add", "-A", cwd=origin)
         git("commit", "-q", "--allow-empty", "-m", "the vocabulary this adapter reads", cwd=origin)
         heads[name] = git("rev-parse", "HEAD", cwd=origin)
     return heads
 
 
-def describe_the_pin(specification, url, commit):
+def describe_the_repository(specification, url):
     """The library's description of the synthetic adapter follows the crate the world rewrote."""
     described = specification / "fixtures" / "library" / "synthetic-adapter.described.ttl"
-    pinned = re.compile(r"bridge:cascadeVocabularyPin <[^>]*>")
+    named = re.compile(r"bridge:cascadeVocabularyRepository <[^>]*>")
     text = described.read_text(encoding="utf-8")
-    assert pinned.search(text), text
-    described.write_text(
-        pinned.sub(f"bridge:cascadeVocabularyPin <{url}/commit/{commit}>", text), encoding="utf-8", newline=""
-    )
+    assert named.search(text), text
+    described.write_text(named.sub(f"bridge:cascadeVocabularyRepository <{url}>", text), encoding="utf-8", newline="")
 
 
-def pin_another_vocabulary(world, name):
+def name_another_vocabulary(world, name):
     """The adapter's origin, naming a copy of this world's the-cascade-protocol/spec published as jayostis/<name>."""
     shutil.copytree(world.origin(VOCABULARY), world.origins / OWNER / name)
     origin = world.origin("adapter")
-    name_vocabulary(origin / CRATE, f"https://github.com/{OWNER}/{name}", world.commits[VOCABULARY])
+    name_vocabulary(origin / CRATE, f"https://github.com/{OWNER}/{name}")
     git("add", "-A", cwd=origin)
     git("commit", "-q", "-m", f"the adapter reads {name}", cwd=origin)
     return world.commits[VOCABULARY]
@@ -214,14 +209,9 @@ class PullRequests:
             "merged": merged,
             "base": {"ref": base},
             "head": {"sha": head or ""},
-            "merge_commit_sha": None,
         }
         self.by_repository.setdefault(repository, {})[number] = pull
         return pull
-
-    def merged_as(self, repository, number, commit):
-        """The commit the target branch holds once the pull request merged, however it was merged."""
-        self.get(repository, number)["merge_commit_sha"] = commit
 
     def get(self, repository, number):
         return self.by_repository.get(repository, {}).get(number)
@@ -320,10 +310,6 @@ class World:
         self.temporary.mkdir()
         self.summary = root / "summary.md"
 
-    def pin_vocabularies(self, commit):
-        self.commits.update(pin_vocabulary(self.origins, commit))
-        return self
-
     def url(self, name):
         return self.origin(name).as_uri()
 
@@ -395,19 +381,14 @@ class World:
         return adapter
 
     def runtime(self, canned="passed"):
-        """A runtime pinning this world's vocabulary and adapter, and a Bridge its lockfile resolves from a release."""
+        """A runtime naming this world's vocabulary and adapter."""
         runtime = self.workspace / "runtime"
         shutil.copytree(FAKE_RUNTIME, runtime)
         write_compatibility(
             runtime, {"host": [a_host("node", command=[sys.executable, "runtime.py", "--canned", canned])]}
         )
-        pins = {
-            "vocabulary": {"repository": VOCABULARY_URL, "commit": self.commits[VOCABULARY]},
-            "adapters": [{"repository": ADAPTER_URL, "commit": self.commits["adapter"]}],
-        }
-        lockfile = {"packages": {f"node_modules/{BRIDGE}": {"resolved": BRIDGE_RELEASE}}}
-        for name, body in (("cascade-runtime.json", pins), ("package-lock.json", lockfile)):
-            (runtime / name).write_text(json.dumps(body, indent=2) + "\n", encoding="utf-8", newline="")
+        named = {"vocabulary": {"repository": VOCABULARY_URL}, "adapters": [{"repository": ADAPTER_URL}]}
+        (runtime / "cascade-runtime.json").write_text(json.dumps(named, indent=2) + "\n", encoding="utf-8", newline="")
         git("init", "-q", "-b", "main", str(runtime))
         git("add", "-A", cwd=runtime)
         git("commit", "-q", "-m", "runtime: first", cwd=runtime)

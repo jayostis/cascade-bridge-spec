@@ -9,7 +9,7 @@
     <https://example.org/adapters/synthetic-json-adapter/ro-crate-metadata.json#envelope-set> ,
     <https://example.org/adapters/synthetic-json-adapter/ro-crate-metadata.json#envelope-record> ,
     <https://example.org/adapters/synthetic-json-adapter/ro-crate-metadata.json#envelope-listing> ;
-  bridge:cascadeVocabularyPin <https://example.org/synthetic-adapter/vocabulary/commit/0000000000000000000000000000000000000000> ;
+  bridge:cascadeVocabularyRepository <https://example.org/synthetic-adapter/vocabulary> ;
   bridge:vocabularyFile
     "ontologies/example/v1/example.ttl" ,
     "ontologies/example/v1/example.shapes.ttl" ;

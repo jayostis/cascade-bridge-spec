@@ -1,6 +1,5 @@
 import os
 
-from compatibility_tool import vocabularies
 from compatibility_tool.console import Status, Stop, report
 from compatibility_tool.github import named_in
 
@@ -71,9 +70,6 @@ def check(directory, options, event, api):
         elif entry not in members:
             failed += 1
             report(False, f"{entry.label} has not merged, and this pull request merges only after it does")
-    for message in vocabularies.behind(directory, named, api, options.results / "pin"):
-        failed += 1
-        report(False, message)
     gate = own_gate(api, event) if members else None
     for member in members:
         for outside in naming[member]:

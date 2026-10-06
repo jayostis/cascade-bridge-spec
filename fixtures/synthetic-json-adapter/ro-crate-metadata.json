@@ -4,7 +4,7 @@
     {
       "bridge": "https://ns.cascadeprotocol.org/bridge/v1-draft#",
       "bridge:requiresProfile": "bridge:requiresProfile",
-      "bridge:cascadeVocabularyPin": "bridge:cascadeVocabularyPin",
+      "bridge:cascadeVocabularyRepository": "bridge:cascadeVocabularyRepository",
       "bridge:vocabulary": "bridge:vocabulary",
       "bridge:vocabularyFile": "bridge:vocabularyFile",
       "bridge:sourceMediaType": "bridge:sourceMediaType",
@@ -59,8 +59,8 @@
           "@id": "https://ns.cascadeprotocol.org/bridge/v1-draft#sparql-1.1"
         }
       ],
-      "bridge:cascadeVocabularyPin": {
-        "@id": "https://example.org/synthetic-adapter/vocabulary/commit/0000000000000000000000000000000000000000"
+      "bridge:cascadeVocabularyRepository": {
+        "@id": "https://example.org/synthetic-adapter/vocabulary"
       },
       "bridge:vocabulary": [
         {
@@ -235,7 +235,7 @@
           "@id": "fixtures/findings/json-0008.ttl"
         },
         {
-          "@id": "https://example.org/synthetic-adapter/vocabulary/commit/0000000000000000000000000000000000000000"
+          "@id": "https://example.org/synthetic-adapter/vocabulary"
         }
       ]
     },
@@ -282,16 +282,12 @@
       "name": "sparql-1.1"
     },
     {
-      "@id": "https://example.org/synthetic-adapter/vocabulary/commit/0000000000000000000000000000000000000000",
+      "@id": "https://example.org/synthetic-adapter/vocabulary",
       "@type": [
         "SoftwareSourceCode",
         "File"
       ],
-      "name": "synthetic vocabulary at the null commit",
-      "codeRepository": {
-        "@id": "https://example.org/synthetic-adapter/vocabulary"
-      },
-      "version": "0000000000000000000000000000000000000000"
+      "name": "synthetic vocabulary repository"
     },
     {
       "@id": "https://example.org/synthetic-adapter/v1#",
