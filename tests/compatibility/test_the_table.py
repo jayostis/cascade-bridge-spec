@@ -20,7 +20,7 @@ def test_the_table_has_a_row_for_each_repository_used_and_only_a_counterparts_sa
 def test_a_run_with_no_token_picks_a_version_and_writes_the_table(world):
     engine, event = world.engine_under_test()
     variables = world.ci(event=event)
-    del variables["GITHUB_TOKEN"]
+    del variables["CASCADE_GITHUB_TOKEN"]
 
     world.tool(engine, **variables)
 

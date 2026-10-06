@@ -24,6 +24,12 @@ inputs:
     description: The Python the tooling runs on.
     required: false
     default: '3.12'
+  token:
+    description: >-
+      The token every read of GitHub's API is made with, so that reads are not
+      held to the allowance GitHub gives an address without credentials.
+    required: false
+    default: ${{ github.token }}
 
 runs:
   using: composite
@@ -93,10 +99,11 @@ runs:
         SPEC_REPOSITORY: ${{ steps.specification.outputs.repository }}
         RESULTS: ${{ runner.temp }}/compatibility-${{ inputs.check }}
         CASCADE_CHECK_RUN_ID: ${{ job.check_run_id }}
+        # The entry point takes it out of its environment, and hands it only to the
+        # entry point of the specification the run picked.
+        CASCADE_GITHUB_TOKEN: ${{ inputs.token }}
         # Emptied, not omitted: a caller that sets either at workflow or job level
-        # would otherwise hand it to the version the run picked, which for a named
-        # pull request is that pull request's own code. Descriptions are read as a
-        # reader with no credentials reads a public repository's.
+        # would otherwise hand it to the engines and adapters the run starts.
         GITHUB_TOKEN: ''
         GH_TOKEN: ''
       run: |

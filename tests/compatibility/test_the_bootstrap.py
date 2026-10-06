@@ -1,6 +1,6 @@
 """What a caller's workflow starts: it fetches a version, and the checks run from the one picked."""
 
-from compatibility_world import depends_on
+from compatibility_world import TOKEN, depends_on
 
 
 def test_nothing_to_check_is_not_reported_as_a_pass(world):
@@ -32,3 +32,4 @@ def test_the_merge_gate_runs_from_the_version_picked_too(world):
 
     assert "the checks run from" in said
     assert "cascade-bridge-spec/pull/3 has not merged" in said
+    assert set(world.pull_requests.authorizations) == {f"Bearer {TOKEN}"}

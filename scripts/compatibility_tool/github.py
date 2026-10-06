@@ -63,11 +63,21 @@ class Unreadable:
 
 
 RATE_LIMITED = (403, 429)
+TOKEN = "CASCADE_GITHUB_TOKEN"
+token = ""
+
+
+def take_token():
+    """The job's token, out of the environment, so that nothing the run starts but the entry point it hops to has it."""
+    global token
+    token = os.environ.pop(TOKEN, "") or os.environ.get("GITHUB_TOKEN", "")
 
 
 def unreadable(error):
     said = f"{error.code} {error.reason}"
     if error.code in RATE_LIMITED and (error.headers or {}).get("x-ratelimit-remaining") == "0":
+        if token:
+            return Unreadable(f"{said}: the job's token has spent its rate limit")
         return Unreadable(f"{said}: this address has spent GitHub's rate limit for reads without credentials")
     if error.code >= 500:
         return Unreadable(f"{said}: GitHub answered with an error of its own")
@@ -77,7 +87,6 @@ def unreadable(error):
 class Api:
     def __init__(self):
         self.url = (os.environ.get("GITHUB_API_URL") or "https://api.github.com").rstrip("/")
-        self.token = os.environ.get("GITHUB_TOKEN", "")  # start empties it; a local run may have one
         self.pulls = {}
 
     def get(self, path):
@@ -86,7 +95,7 @@ class Api:
             headers={
                 "Accept": "application/vnd.github+json",
                 "User-Agent": "cascade-compatibility",
-                **({"Authorization": f"Bearer {self.token}"} if self.token else {}),
+                **({"Authorization": f"Bearer {token}"} if token else {}),
             },
         )
         try:

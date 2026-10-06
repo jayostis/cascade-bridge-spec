@@ -150,6 +150,7 @@ def main(usage, argv=None):
         spec_picked=args.spec_picked,
     )
     options.results.mkdir(parents=True, exist_ok=True)
+    github.take_token()
     api = github.Api()
     try:
         event = github.event(api) if options.mode == "ci" else github.Event("", None, "")

@@ -86,14 +86,18 @@ A local run uses every sibling checkout as it is on disk, uncommitted edits
 included, the vocabulary repository among them, in the folder named as that
 repository, and no option changes that.
 
-Descriptions are read without credentials, so every repository a run reads must
-be public, and the reads a run makes share GitHub's hourly allowance for the
-address it runs from.
+Every repository a run reads must be public. Every read of GitHub's API is made
+with the job's token, which `.github/actions/start` passes unless the caller
+gives it another, so a run is held to that token's allowance and not to the one
+GitHub gives an address without credentials.
 
 A pull request merges only once every pull request it names directly has merged,
 or names it back, directly or through others, and has passed every check but its
-own merge gate. A cycle merges only once every pull request it names outside
-itself has merged. Pull requests naming each other are how a breaking change across
+own merge gate, counting only the latest run of each check. A cycle merges only
+once every pull request it names outside itself has merged. While a member's
+checks are still running and none has failed, the gate waits for them, up to 45
+minutes, so the members' gates pass without a rerun once every member's checks
+have. Pull requests naming each other are how a breaking change across
 an engine and an adapter lands, as Zuul's
 [circular dependencies](https://zuul-ci.org/docs/zuul/latest/config/queue.html)
 allow.
@@ -137,11 +141,13 @@ These are chosen, and could be otherwise:
   here is tried before it merges, and is how Zuul treats an
   [untrusted project's](https://zuul-ci.org/docs/zuul/latest/concepts.html) job
   content rather than a config project's. Review a pull request here as code
-  that will run in every repository whose pull request names it. It is handed no
-  token there: `.github/actions/start`, which the caller names at `@main` and
+  that will run in every repository whose pull request names it, holding that
+  repository's job token. It posts nothing: `.github/actions/start`, which the caller names at `@main` and
   which no run replaces, posts the table itself, from the workflow's own context
-  rather than anything the run leaves behind. A run and that step share a
-  runner, so this is a boundary and not a sandbox.
+  rather than anything the run leaves behind. The token reaches the entry point
+  of the version picked, to read GitHub's API with, and nothing that entry point
+  starts. A run and that step share a runner, so this is a
+  boundary and not a sandbox.
 - **Nothing here starts a run anywhere else**, because this repository knows of
   no adapter and no engine. A change to what an adapter or a Bridge must do is
   tried from a no-op pull request in one, naming this one on a `Depends-On:`
@@ -203,5 +209,5 @@ renamed job leaves every merge waiting on a check that never reports. `edited` i
 when a description's `Depends-On:` lines change, and `pull-requests: write` is
 what the action posts the table with, in a step of its own: the checks are the
 version the run picked — a named pull request's own code, where one is named —
-and are given no token. On a pull request from a fork the token is read-only
+and are given the token only to read with. On a pull request from a fork the token is read-only
 whatever the workflow asks for, and the run says so rather than failing.
