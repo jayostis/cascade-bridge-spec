@@ -47,7 +47,6 @@ def own_gate(api, event):
 
 
 def latest(runs):
-    """A check's latest run on the commit: a rerun replaces the run it reran, and has the larger id."""
     by_name = {}
     for run in sorted(runs, key=lambda run: run.get("id") or 0):
         by_name[run.get("name")] = run
@@ -92,17 +91,19 @@ def check(directory, options, event, api):
                 f"{member.label} names this pull request back, and names {outside.label}, which has not merged "
                 "and does not: a cycle merges only once everything it names outside itself has",
             )
-    return Status.FAIL if failures + members_checks(api, members, gate, failures) else Status.OK
+    failures += members_failed(api, members, gate, bool(failures))
+    return Status.FAIL if failures else Status.OK
 
 
-def members_checks(api, members, gate, failures):
-    """How many members failed, waiting while a member's checks have not finished and none has failed."""
+def members_failed(api, members, gate, failed_already):
+    """How many cycle members have a check that did not succeed, waiting for those still running."""
     deadline = monotonic() + WAIT
     waiting = list(members)
+    failures = 0
     while True:
         unfinished = {}
         for member in waiting:
-            head = api.pull_request(member).get("head", {}).get("sha")
+            head = api.pull_request(member, again=True).get("head", {}).get("sha")
             runs = latest([run for run in api.check_runs(member.path, head) if run.get("name") != gate])
             broken = [run for run in runs if failed(run)]
             for run in broken:
@@ -119,8 +120,12 @@ def members_checks(api, members, gate, failures):
                 unfinished[member] = [run for run in runs if run.get("status") != "completed"]
         if not unfinished:
             return failures
-        if failures or monotonic() >= deadline:
-            waited = f"after waiting {WAIT // 60} minutes" if not failures else "and the gate has already failed"
+        if failed_already or failures or monotonic() >= deadline:
+            waited = (
+                "and the gate has already failed"
+                if failed_already or failures
+                else f"after waiting {WAIT // 60} minutes"
+            )
             for member, runs in unfinished.items():
                 said = (
                     ", ".join(f"{run.get('name')} is {run.get('status')}" for run in runs)

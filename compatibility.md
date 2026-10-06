@@ -95,10 +95,10 @@ A pull request merges only once every pull request it names directly has merged,
 or names it back, directly or through others, and has passed every check but its
 own merge gate, counting only the latest run of each check. A cycle merges only
 once every pull request it names outside itself has merged. While a member's
-checks are still running and none has failed, the gate waits for them, up to 45
-minutes, so the members' gates pass without a rerun once every member's checks
-have. Pull requests naming each other are how a breaking change across
-an engine and an adapter lands, as Zuul's
+checks are still running and none has failed, the gate waits for them, for a
+time well over a run, so the members' gates pass without a rerun once every
+member's checks have. Pull requests naming each other are how a breaking change
+across an engine and an adapter lands, as Zuul's
 [circular dependencies](https://zuul-ci.org/docs/zuul/latest/config/queue.html)
 allow.
 
@@ -209,5 +209,5 @@ renamed job leaves every merge waiting on a check that never reports. `edited` i
 when a description's `Depends-On:` lines change, and `pull-requests: write` is
 what the action posts the table with, in a step of its own: the checks are the
 version the run picked — a named pull request's own code, where one is named —
-and are given the token only to read with. On a pull request from a fork the token is read-only
+and are given the token to read GitHub's API with, and post nothing. On a pull request from a fork the token is read-only
 whatever the workflow asks for, and the run says so rather than failing.

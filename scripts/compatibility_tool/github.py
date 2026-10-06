@@ -68,7 +68,6 @@ token = ""
 
 
 def take_token():
-    """The job's token, out of the environment, so that nothing the run starts but the entry point it hops to has it."""
     global token
     token = os.environ.pop(TOKEN, "") or os.environ.get("GITHUB_TOKEN", "")
 
@@ -77,7 +76,7 @@ def unreadable(error):
     said = f"{error.code} {error.reason}"
     if error.code in RATE_LIMITED and (error.headers or {}).get("x-ratelimit-remaining") == "0":
         if token:
-            return Unreadable(f"{said}: the job's token has spent its rate limit")
+            return Unreadable(f"{said}: the token the run reads with has spent its rate limit")
         return Unreadable(f"{said}: this address has spent GitHub's rate limit for reads without credentials")
     if error.code >= 500:
         return Unreadable(f"{said}: GitHub answered with an error of its own")
@@ -106,9 +105,9 @@ class Api:
                 raise
             raise Stop(f"{self.url} could not be reached: {error.reason}") from error
 
-    def pull_request(self, named, refuse=True):
+    def pull_request(self, named, refuse=True, again=False):
         """None where the run reads a pull request it uses nothing from and cannot."""
-        if named not in self.pulls:
+        if again or named not in self.pulls:
             try:
                 self.pulls[named] = self.get(f"repos/{named.path}/pulls/{named.number}")
             except urllib.error.HTTPError as error:

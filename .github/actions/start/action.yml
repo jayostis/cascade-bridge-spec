@@ -99,8 +99,6 @@ runs:
         SPEC_REPOSITORY: ${{ steps.specification.outputs.repository }}
         RESULTS: ${{ runner.temp }}/compatibility-${{ inputs.check }}
         CASCADE_CHECK_RUN_ID: ${{ job.check_run_id }}
-        # The entry point takes it out of its environment, and hands it only to the
-        # entry point of the specification the run picked.
         CASCADE_GITHUB_TOKEN: ${{ inputs.token }}
         # Emptied, not omitted: a caller that sets either at workflow or job level
         # would otherwise hand it to the engines and adapters the run starts.
