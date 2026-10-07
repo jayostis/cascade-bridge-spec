@@ -3,10 +3,10 @@ from pathlib import Path
 
 import pytest
 from pyshacl import validate
-from rdflib import RDF, Graph, Literal, Namespace, URIRef
+from rdflib import RDF, BNode, Graph, Literal, Namespace, URIRef
 from rdflib.collection import Collection
 
-from recomputed import NAMESPACE, normalised_base_url, record_name
+from recomputed import NAMESPACE, fingerprint, normalised_base_url, record_name
 
 ROOT = Path(__file__).resolve().parents[2]
 NAMING = ROOT / "fixtures" / "naming"
@@ -32,11 +32,27 @@ def expected_name_of(test):
     return str(MANIFEST.value(MANIFEST.value(test, MF.result), BRIDGE.expectedName))
 
 
+def members_of(test):
+    return [
+        str(member)
+        for member in Collection(MANIFEST, MANIFEST.value(MANIFEST.value(test, MF.action), BRIDGE.fingerprintMembers))
+    ]
+
+
+def expected_fingerprint_of(test):
+    return str(MANIFEST.value(MANIFEST.value(test, MF.result), BRIDGE.expectedFingerprint))
+
+
+def entry(name):
+    return URIRef(f"{(NAMING / 'manifest.ttl').as_uri()}#{name}")
+
+
 def expected_by_name(name):
     return expected_name_of(URIRef(f"{(NAMING / 'manifest.ttl').as_uri()}#{name}"))
 
 
 NAMING_VECTORS = vectors_of(BRIDGE.NamingTest)
+FINGERPRINT_VECTORS = vectors_of(BRIDGE.FingerprintTest)
 BASE_URL_VECTORS = vectors_of(BRIDGE.BaseUrlNormalisationTest)
 
 
@@ -63,6 +79,38 @@ def test_the_naming_query_computes_the_name_in_a_sparql_engine_other_than_a_brid
     assert [str(solution.name) for solution in solutions] == [expected_name_of(test)]
 
 
+@pytest.mark.parametrize("test", FINGERPRINT_VECTORS, ids=vector_id)
+def test_a_fingerprint_is_the_sum_of_the_first_twelve_hex_digits_of_each_distinct_members_sha256(test):
+    assert fingerprint(members_of(test)) == expected_fingerprint_of(test)
+
+
+@pytest.mark.parametrize("test", FINGERPRINT_VECTORS, ids=vector_id)
+def test_the_fingerprint_query_computes_the_fingerprint_in_a_sparql_engine_other_than_a_bridges(test):
+    query_file = NAMING / str(MANIFEST.value(MANIFEST.value(test, MF.action), QT.query)).rpartition("/")[2]
+    members = Graph()
+    for member in members_of(test):
+        members.add((BNode(), RDF.value, Literal(member)))
+    solutions = list(members.query(query_file.read_text(encoding="utf-8")))
+    assert [str(solution.fingerprint) for solution in solutions] == [expected_fingerprint_of(test)]
+
+
+def test_no_order_and_no_repetition_enters_a_fingerprint():
+    assert (
+        expected_fingerprint_of(entry("fingerprint-key-active"))
+        == expected_fingerprint_of(entry("fingerprint-key-active-reordered"))
+        == expected_fingerprint_of(entry("fingerprint-key-active-repeated"))
+    )
+
+
+def test_a_c_cda_record_carrying_a_repeated_identifier_is_named_from_its_keys_fingerprint():
+    for record, key in (
+        ("ccda-repeated-id-active", "fingerprint-key-active"),
+        ("ccda-repeated-id-resolved", "fingerprint-key-resolved"),
+    ):
+        assert inputs_of(entry(record))[2] == expected_fingerprint_of(entry(key))
+    assert expected_by_name("ccda-repeated-id-active") != expected_by_name("ccda-repeated-id-resolved")
+
+
 @pytest.mark.parametrize("test", BASE_URL_VECTORS, ids=vector_id)
 def test_a_base_url_has_its_scheme_and_host_lower_cased_and_no_trailing_slash(test):
     action, result = (
@@ -78,6 +126,10 @@ def test_every_row_of_the_naming_table_has_a_vector():
         "fhir-contained",
         "ccda-root-and-extension",
         "ccda-root-only",
+        "ccda-repeated-id-active",
+        "ccda-no-id-key",
+        "ccda-no-id-members",
+        "ccda-class-alone",
         "clinvar-variation-archive",
         "clinvar-clinical-assertion",
         "clinvar-interpretation-first",

@@ -10,6 +10,7 @@
     <#load-with-no-test-file-then-convert>
     <#one-load-converts-two-documents>
     <#ask-answers-the-detect-query>
+    <#ask-on-a-document-that-does-not-parse>
     <#test-names-every-entry-under-the-adapter-iri>
     <#a-document-that-does-not-parse-then-a-good-one>
     <#facts-that-do-not-parse>
@@ -21,6 +22,7 @@
     <#a-file-missing-from-the-map-under-test>
     <#convert-with-no-vocabulary>
     <#test-with-no-vocabulary>
+    <#a-version-not-kept-is-a-finding>
   ) .
 
 _:synthetic-adapter
@@ -136,6 +138,19 @@ _:load-the-synthetic-adapter a bridge:LoadCall ;
         bridge:file <an-empty-set.xml>
       ] ;
       bridge:expectedAnswer false ]
+  ) .
+
+<#ask-on-a-document-that-does-not-parse> a bridge:LibraryTest ;
+  mf:name "ask-on-a-document-that-does-not-parse" ;
+  rdfs:comment "A document the adapter cannot read is refused, never answered false." ;
+  mf:action (
+    _:load-the-synthetic-adapter
+    [ a bridge:AskCall ;
+      bridge:document [
+        bridge:iri <https://example.org/documents/not-xml.xml> ;
+        bridge:file <not-xml.xml>
+      ] ;
+      bridge:failure bridge:documentFailure ]
   ) .
 
 <#test-names-every-entry-under-the-adapter-iri> a bridge:LibraryTest ;
@@ -280,4 +295,28 @@ _:load-the-synthetic-adapter a bridge:LoadCall ;
     [ a bridge:TestCall ;
       bridge:adapterFiles _:synthetic-adapter ;
       bridge:failure bridge:vocabularyFailure ]
+  ) .
+
+<#a-version-not-kept-is-a-finding> a bridge:LibraryTest ;
+  mf:name "a-version-not-kept-is-a-finding" ;
+  rdfs:comment "A mapping writing two versions of one record from one source record: the Bridge keeps one and reports the other, refined to where it arrived from where the mapping wrote that, as for EX000001, and unrefined where it did not, as for EX000002." ;
+  mf:action (
+    [ a bridge:LoadCall ;
+      bridge:adapterFiles [
+        bridge:iri <https://example.org/adapters/synthetic-adapter/> ;
+        bridge:directory <../synthetic-adapter/> ;
+        bridge:withholds "fixtures/" ;
+        bridge:substitute [ bridge:key "in/example-record.rq" ; bridge:file <../version-not-kept/two-versions-of-one-record.rq> ]
+      ] ;
+      bridge:vocabularyFiles _:synthetic-vocabularies ]
+    [ a bridge:ConvertCall ;
+      bridge:document [
+        bridge:iri <https://example.org/documents/version-not-kept/in/example-0001.xml> ;
+        bridge:file <../version-not-kept/in/example-0001.xml>
+      ] ;
+      bridge:suppliedFacts _:example-registry ;
+      bridge:envelope <https://example.org/adapters/synthetic-adapter/ro-crate-metadata.json#envelope-set> ;
+      bridge:graphFormat "turtle" ;
+      bridge:expectedGraph <../version-not-kept/expected/example-0001.ttl> ;
+      bridge:expectedFindings <../version-not-kept/findings/example-0001.ttl> ]
   ) .

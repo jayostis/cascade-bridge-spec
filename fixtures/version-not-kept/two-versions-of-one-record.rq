@@ -1,0 +1,27 @@
+PREFIX rdfs:   <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX prov:   <http://www.w3.org/ns/prov#>
+PREFIX fx:     <http://sparql.xyz/facade-x/ns/>
+PREFIX xyz:    <http://sparql.xyz/facade-x/data/>
+PREFIX bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#>
+PREFIX ex:     <https://example.org/synthetic-adapter/v1#>
+
+CONSTRUCT {
+  ?record a ex:Record ;
+    ex:accession ?accession .
+  ?stated prov:specializationOf ?record ;
+    rdfs:label "stated" .
+  ?restated prov:specializationOf ?record ;
+    rdfs:label "restated" .
+  _:stated bridge:arrivedAs ?stated ;
+    bridge:selector ?statedAt .
+  _:restated bridge:arrivedAs ?restated .
+}
+WHERE {
+  ?exampleRecord a fx:root, xyz:ExampleRecord ;
+    xyz:Accession ?accession .
+  bridge:thisRecord bridge:selector ?selector .
+  BIND(IRI(CONCAT("urn:example:record:", ?accession)) AS ?record)
+  BIND(IRI(CONCAT("urn:example:version:", ?accession, ":stated")) AS ?stated)
+  BIND(IRI(CONCAT("urn:example:version:", ?accession, ":restated")) AS ?restated)
+  BIND(IF(?accession = "EX000001", CONCAT(?selector, "/Label[1]"), ?noSelector) AS ?statedAt)
+}

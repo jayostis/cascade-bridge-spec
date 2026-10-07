@@ -94,15 +94,16 @@
     [ sh:class bridge:LiftTest ]
     [ sh:class bridge:SkeletonTest ]
     [ sh:class bridge:NamingTest ]
+    [ sh:class bridge:FingerprintTest ]
     [ sh:class bridge:BaseUrlNormalisationTest ]
     [ sh:class bridge:VersioningTest ]
     [ sh:class bridge:IdentityRelationTest ]
     [ sh:class bridge:LibraryTest ]
   ) ;
-  sh:message "A manifest entry is an IRI typed with exactly one of bridge:IsomorphicConversionTest, bridge:InputOnlyTest, bridge:DatasetCompletionTest, bridge:LiftTest, bridge:SkeletonTest, bridge:NamingTest, bridge:BaseUrlNormalisationTest, bridge:VersioningTest, bridge:IdentityRelationTest, bridge:LibraryTest." .
+  sh:message "A manifest entry is an IRI typed with exactly one of bridge:IsomorphicConversionTest, bridge:InputOnlyTest, bridge:DatasetCompletionTest, bridge:LiftTest, bridge:SkeletonTest, bridge:NamingTest, bridge:FingerprintTest, bridge:BaseUrlNormalisationTest, bridge:VersioningTest, bridge:IdentityRelationTest, bridge:LibraryTest." .
 
 <#Test> a sh:NodeShape ;
-  sh:targetClass bridge:IsomorphicConversionTest, bridge:InputOnlyTest, bridge:DatasetCompletionTest, bridge:LiftTest, bridge:SkeletonTest, bridge:NamingTest,
+  sh:targetClass bridge:IsomorphicConversionTest, bridge:InputOnlyTest, bridge:DatasetCompletionTest, bridge:LiftTest, bridge:SkeletonTest, bridge:NamingTest, bridge:FingerprintTest,
     bridge:BaseUrlNormalisationTest, bridge:VersioningTest, bridge:IdentityRelationTest, bridge:LibraryTest ;
   sh:nodeKind sh:IRI ;
   sh:property [
@@ -230,7 +231,7 @@
   ] .
 
 <#BridgeTest> a sh:NodeShape ;
-  sh:targetClass bridge:LiftTest, bridge:SkeletonTest, bridge:NamingTest, bridge:BaseUrlNormalisationTest, bridge:VersioningTest ;
+  sh:targetClass bridge:LiftTest, bridge:SkeletonTest, bridge:NamingTest, bridge:FingerprintTest, bridge:BaseUrlNormalisationTest, bridge:VersioningTest ;
   sh:property [
     sh:path mf:result ;
     sh:minCount 1 ;
@@ -314,6 +315,51 @@
     sh:nodeKind sh:IRI ;
     sh:pattern "^urn:uuid:[0-9a-f]{8}-[0-9a-f]{4}-8[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$" ;
     sh:message "The result of a naming test names exactly one bridge:expectedName, urn:uuid: and a lower-case UUID of version 8 and variant 10."
+  ] .
+
+<#FingerprintTest> a sh:NodeShape ;
+  sh:targetClass bridge:FingerprintTest ;
+  sh:property [
+    sh:path mf:action ;
+    sh:node <#FingerprintAction>
+  ] ;
+  sh:property [
+    sh:path mf:result ;
+    sh:node <#FingerprintResult>
+  ] .
+
+<#FingerprintAction> a sh:NodeShape ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property [
+    sh:path qt:query ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "The action of a fingerprint test names exactly one qt:query, the query computing a fingerprint from what the members hold, by IRI."
+  ] ;
+  sh:property [
+    sh:path bridge:fingerprintMembers ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:message "The action of a fingerprint test carries exactly one bridge:fingerprintMembers list."
+  ] ;
+  sh:property [
+    sh:path ( bridge:fingerprintMembers [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ;
+    sh:datatype xsd:string ;
+    sh:message "Each member of bridge:fingerprintMembers is a plain string."
+  ] .
+
+<#FingerprintResult> a sh:NodeShape ;
+  sh:closed true ;
+  sh:ignoredProperties ( rdf:type ) ;
+  sh:property [
+    sh:path bridge:expectedFingerprint ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:pattern "^(0|[1-9][0-9]*)$" ;
+    sh:message "The result of a fingerprint test carries exactly one bridge:expectedFingerprint, a plain string of decimal digits with no leading zero."
   ] .
 
 <#BaseUrlNormalisationTest> a sh:NodeShape ;
@@ -916,19 +962,19 @@
     sh:path bridge:elementNameOfEachRecord ;
     sh:maxCount 1 ;
     sh:datatype xsd:string ;
-    sh:message "The action of a skeleton test names at most one bridge:elementNameOfEachRecord, the local name of the XML element emptied, a string."
+    sh:message "The action of a skeleton test names at most one bridge:elementNameOfEachRecord, the local name of the XML records, a string."
   ] ;
   sh:property [
     sh:path bridge:jsonPathOfEachRecord ;
     sh:maxCount 1 ;
     sh:datatype xsd:string ;
-    sh:message "The action of a skeleton test names at most one bridge:jsonPathOfEachRecord, the JSONPath selecting the JSON records emptied, a string."
+    sh:message "The action of a skeleton test names at most one bridge:jsonPathOfEachRecord, the JSONPath selecting the JSON records, a string."
   ] ;
   sh:xone (
     [ sh:path bridge:elementNameOfEachRecord ; sh:minCount 1 ]
     [ sh:path bridge:jsonPathOfEachRecord ; sh:minCount 1 ]
   ) ;
-  sh:message "The action of a skeleton test names exactly one of bridge:elementNameOfEachRecord, the local name of the XML element emptied, and bridge:jsonPathOfEachRecord, the JSONPath selecting the JSON records emptied." .
+  sh:message "The action of a skeleton test names exactly one of bridge:elementNameOfEachRecord, the local name of the XML records, and bridge:jsonPathOfEachRecord, the JSONPath selecting the JSON records." .
 
 <#LiftResult> a sh:NodeShape ;
   sh:closed true ;

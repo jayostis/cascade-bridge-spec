@@ -1,0 +1,86 @@
+@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix sh:     <http://www.w3.org/ns/shacl#> .
+@prefix oa:     <http://www.w3.org/ns/oa#> .
+@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+@prefix ex:     <https://example.org/synthetic-adapter/v1#> .
+
+[] a oa:Annotation ;
+  oa:hasTarget [
+    oa:hasSource <https://example.org/documents/version-not-kept/in/example-0001.xml> ;
+    oa:hasSelector [
+      a oa:XPathSelector ;
+      rdf:value "/ExampleRecordSet/ExampleRecord[1]" ;
+      oa:refinedBy [ a oa:XPathSelector ; rdf:value "Label[1]" ]
+    ]
+  ] ;
+  oa:hasBody bridge:versionNotKept ;
+  oa:motivatedBy oa:classifying ;
+  sh:value "ni:///sha-256;4LOXL26w4NmH2053ZCbH362RHqkovIyRWHg8TWSjT2Q" ;
+  sh:resultSeverity sh:Warning .
+
+[] a oa:Annotation ;
+  oa:hasTarget [
+    oa:hasSource <https://example.org/documents/version-not-kept/in/example-0001.xml> ;
+    oa:hasSelector [
+      a oa:XPathSelector ;
+      rdf:value "/ExampleRecordSet/ExampleRecord[2]"
+    ]
+  ] ;
+  oa:hasBody bridge:versionNotKept ;
+  oa:motivatedBy oa:classifying ;
+  sh:value "ni:///sha-256;Mf6mQkPivc-fEIM56B_QtNqAfrQ8fGMQRn0yAP_umug" ;
+  sh:resultSeverity sh:Warning .
+
+[] a oa:Annotation ;
+  oa:hasTarget [
+    oa:hasSource <https://example.org/documents/version-not-kept/in/example-0001.xml> ;
+    oa:hasSelector [
+      a oa:XPathSelector ;
+      rdf:value "/ExampleRecordSet/ExampleRecord[1]" ;
+      oa:refinedBy [ a oa:XPathSelector ; rdf:value "Note" ]
+    ]
+  ] ;
+  oa:hasBody ex:no-term-for-a-free-text-note ;
+  oa:motivatedBy oa:classifying ;
+  sh:resultSeverity sh:Info .
+
+[] a oa:Annotation ;
+  oa:hasTarget [
+    oa:hasSource <https://example.org/documents/version-not-kept/in/example-0001.xml> ;
+    oa:hasSelector [
+      a oa:XPathSelector ;
+      rdf:value "/ExampleRecordSet/ExampleRecord[2]" ;
+      oa:refinedBy [ a oa:XPathSelector ; rdf:value "Note" ]
+    ]
+  ] ;
+  oa:hasBody ex:no-term-for-a-free-text-note ;
+  oa:motivatedBy oa:classifying ;
+  sh:resultSeverity sh:Info .
+
+[] a oa:Annotation ;
+  oa:hasTarget [
+    oa:hasSource <https://example.org/documents/version-not-kept/in/example-0001.xml> ;
+    oa:hasSelector [
+      a oa:XPathSelector ;
+      rdf:value "/ExampleRecordSet/ExampleRecord[1]" ;
+      oa:refinedBy [ a oa:XPathSelector ; rdf:value "Note[1]" ]
+    ]
+  ] ;
+  oa:hasBody ex:no-term-for-a-free-text-note ;
+  oa:motivatedBy oa:classifying ;
+  sh:value "/ExampleRecord/Note" ;
+  sh:resultSeverity sh:Info .
+
+[] a oa:Annotation ;
+  oa:hasTarget [
+    oa:hasSource <https://example.org/documents/version-not-kept/in/example-0001.xml> ;
+    oa:hasSelector [
+      a oa:XPathSelector ;
+      rdf:value "/ExampleRecordSet/ExampleRecord[2]" ;
+      oa:refinedBy [ a oa:XPathSelector ; rdf:value "Note[1]" ]
+    ]
+  ] ;
+  oa:hasBody ex:no-term-for-a-free-text-note ;
+  oa:motivatedBy oa:classifying ;
+  sh:value "/ExampleRecord/Note" ;
+  sh:resultSeverity sh:Info .

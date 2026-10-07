@@ -76,13 +76,13 @@
 
 <#skeleton> a bridge:SkeletonTest ;
   mf:name "skeleton" ;
-  rdfs:comment "A record keeps its type triples and its number among its parent's children, and loses its attributes and its children. A sibling that is not a record is lifted whole, and the numbering counts the emptied records." ;
+  rdfs:comment "A record keeps its type triples, its number among its parent's children and its attributes, and of its children only each element with no element child and no text child the lift keeps, numbered as the whole lift numbers it, with its type triples and its attributes: one holding only whitespace and a comment is kept. A child holding text or an element is left out. A sibling that is not a record is lifted whole." ;
   mf:action [ bridge:sourceMediaType "application/xml" ; bridge:input <skeleton.xml> ; bridge:elementNameOfEachRecord "Unit" ] ;
   mf:result [ bridge:expectedGraph <skeleton.nt> ] .
 
 <#skeleton-record-root> a bridge:SkeletonTest ;
   mf:name "skeleton-record-root" ;
-  rdfs:comment "A record that is the document element is emptied like any other, so the skeleton is its type triples alone: the lift root type and its own. A Bridge that special-cases the root instead routes on a document it has lifted entirely." ;
+  rdfs:comment "A record that is the document element is lifted as any other record is: the lift root type, its own, its attributes and its childless children. A Bridge that special-cases the root instead routes on a document it has lifted entirely." ;
   mf:action [ bridge:sourceMediaType "application/xml" ; bridge:input <skeleton-record-root.xml> ; bridge:elementNameOfEachRecord "Unit" ] ;
   mf:result [ bridge:expectedGraph <skeleton-record-root.nt> ] .
 
