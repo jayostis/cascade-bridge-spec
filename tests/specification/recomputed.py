@@ -1,6 +1,7 @@
 """A second implementation of record names and version names, sharing no code with any Bridge.
 
 python tests/specification/recomputed.py name INPUT...
+python tests/specification/recomputed.py fingerprint MEMBER...
 python tests/specification/recomputed.py base-url URL
 python tests/specification/recomputed.py versions MAPPED.nt
 """
@@ -14,6 +15,7 @@ from urllib.parse import urlsplit, urlunsplit
 NAMESPACE = "90c60849-c5ef-4ca6-bfb8-8662bd07d2b5"
 PLACEHOLDER = "urn:cascade:this-version"
 SPECIALIZATION_OF = "http://www.w3.org/ns/prov#specializationOf"
+ARRIVED_AS = "https://ns.cascadeprotocol.org/bridge/v1-draft#arrivedAs"
 XSD_STRING = "http://www.w3.org/2001/XMLSchema#string"
 
 
@@ -23,6 +25,10 @@ def record_name(inputs):
     digest[8] = (digest[8] & 0x3F) | 0x80
     text = digest.hex()
     return f"urn:uuid:{text[:8]}-{text[8:12]}-{text[12:16]}-{text[16:20]}-{text[20:]}"
+
+
+def fingerprint(members):
+    return str(sum(int(hashlib.sha256(member.encode("utf-8")).hexdigest()[:12], 16) for member in set(members)))
 
 
 def normalised_base_url(url):
@@ -103,12 +109,23 @@ def _in_version(term, version):
     return term[0] == "iri" and (term[1] == version or term[1].startswith(version + "#"))
 
 
+def _dropped(triples, drafts):
+    """The graph without the drafted versions, their content, and what arrived as them."""
+    arrivals = {subject for subject, predicate, obj in triples if predicate[1] == ARRIVED_AS and obj[1] in drafts}
+    return {
+        triple
+        for triple in triples
+        if triple[0] not in arrivals and not any(_in_version(triple[0], draft) for draft in drafts)
+    }
+
+
 def versions(triples):
-    """Each version's name, its canonical content, and the graph with every version named."""
-    drafts = sorted(subject[1] for subject, predicate, _ in triples if predicate[1] == SPECIALIZATION_OF)
-    if len(drafts) != len(set(drafts)):
+    """Each version's name, its canonical content, and the graph with every version named, one kept of each record."""
+    records = {subject[1]: obj for subject, predicate, obj in triples if predicate[1] == SPECIALIZATION_OF}
+    drafts = sorted(records)
+    if len(drafts) != sum(1 for _, predicate, _ in triples if predicate[1] == SPECIALIZATION_OF):
         raise ValueError("a version with more than one prov:specializationOf")
-    named, graph = {}, set(triples)
+    contents = {}
     for version in drafts:
         if "#" in version:
             raise ValueError(f"a version's IRI carries a fragment: {version}")
@@ -118,7 +135,16 @@ def versions(triples):
             if _in_version(triple[0], version)
         }
         nquads = canonical_nquads(content)
-        name = ni_name(nquads.encode("utf-8"))
+        contents[version] = (ni_name(nquads.encode("utf-8")), nquads)
+    kept = {}
+    for version in drafts:
+        record = records[version]
+        if record not in kept or (contents[version][0], version) < (contents[kept[record]][0], kept[record]):
+            kept[record] = version
+    graph = _dropped(set(triples), set(drafts) - set(kept.values()))
+    named = {}
+    for version in kept.values():
+        name, nquads = contents[version]
         named[name] = nquads
         graph = {tuple(_renamed(term, version, name) for term in triple) for triple in graph}
     return named, graph
@@ -128,6 +154,8 @@ if __name__ == "__main__":
     command, *arguments = sys.argv[1:]
     if command == "name":
         print(record_name(arguments))
+    elif command == "fingerprint":
+        print(fingerprint(arguments))
     elif command == "base-url":
         print(normalised_base_url(arguments[0]))
     elif command == "versions":

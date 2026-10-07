@@ -60,6 +60,18 @@ as the mapping wrote it, before any store round trip, and writes the mapping's
 graph with the version's name in place of its IRI in the same way. A Bridge must
 reproduce the vectors in [`../fixtures/versioning/`](../fixtures/versioning/).
 
+A source record's graph holds at most one version of a record. Where a mapping
+writes more than one, as it does for C-CDA records that share a name, a Bridge
+keeps the one whose name is least by code point and, of those with that name, the
+one whose IRI as the mapping wrote it is least. It drops every other, with its
+content and every node the mapping linked to it by `bridge:arrivedAs`, and reports
+each one dropped as a finding: `bridge:versionNotKept` as its body, the kept
+version's name as its `sh:value`, and `sh:Warning` as its `sh:resultSeverity`. It
+is addressed under the record's selector, and refined to the least `bridge:selector`
+the mapping wrote on the dropped version's arrival where that selector stands under
+the record's: an XPath refined by what follows the record's selector and `/`, a
+JSON Pointer by what follows the record's.
+
 ## Facts supplied with a document
 
 A caller supplies facts about a document as Turtle, to `convert`
@@ -93,7 +105,15 @@ version named, and:
   a date and an `xsd:dateTime` where it states a date-time. For a record it finds inside the source record, as a FHIR
   contained resource is, it writes there `bridge:selector` as the `rdf:value`
   of the selector that record would have as a source record of its own:
-  `/entry/0/resource/contained/0` under `/entry/0`.
+  `/entry/0/resource/contained/0` under `/entry/0`, and, in a C-CDA, an
+  observation inside an act inside the second `entry` of the third section,
+  `/ClinicalDocument/component[1]/structuredBody[1]/component[3]/section[1]/entry[2]/act[1]/entryRelationship[1]/observation[1]`,
+  each step written in its namespace and counted among its same-name siblings
+  as [`sparql.md`](sparql.md) writes a selector.
+
+A mapping may also write, of the document's name, a `prov:qualifiedAttribution`
+shaped as a supplied one is: a C-CDA's custodian as its author. A Bridge writes
+it beside the supplied facts.
 
 [`../fixtures/synthetic-adapter/fixtures/expected/example-0001.ttl`](../fixtures/synthetic-adapter/fixtures/expected/example-0001.ttl)
 is a whole document's graph.

@@ -147,9 +147,9 @@ def accounts_for_its_source(crate):
 
 
 def no_gap_of_the_scheme(crate):
-    admitted = "bridge:schemaRuleUnnamed, or bridge:pathNotAccounted"
+    admitted = "bridge:schemaRuleUnnamed, bridge:versionNotKept, or bridge:pathNotAccounted"
     if not accounts_for_its_source(crate):
-        admitted = "or bridge:schemaRuleUnnamed, the adapter naming no bridge:sourceAccounting"
+        admitted = "bridge:schemaRuleUnnamed, or bridge:versionNotKept, the adapter naming no bridge:sourceAccounting"
     if syntax_of(crate) == "json":
         rule, anchors = (
             "the anchor of a JSON Schema draft-06 validation keyword",
@@ -185,5 +185,5 @@ def gaps_of(crate):
 
 def bodies_a_finding_may_carry(crate):
     census = {BRIDGE.pathNotAccounted} if accounts_for_its_source(crate) else set()
-    schema = schema_rule_anchors_of(crate) | {BRIDGE.schemaRuleUnnamed}
+    schema = schema_rule_anchors_of(crate) | {BRIDGE.schemaRuleUnnamed, BRIDGE.versionNotKept}
     return gaps_of(crate) | schema | BODIES_OF_AN_OUTPUT_VALIDATION_FINDING | census

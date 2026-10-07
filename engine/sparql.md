@@ -77,10 +77,13 @@ itself, and `$.entry[*]` each item of its `entry` member.
 
 **The detect query** runs over the document's *envelope skeleton*: the lift of
 the whole document, with the document element as the lift root, except that
-every record is lifted as an empty container — its type triples and its place
-among its parent's children, without its attributes or its children. A record
-that is the document element is lifted as an empty container too: the skeleton
-is then its type triples alone.
+every record is lifted with its type triples, its place among its parent's
+children and its attributes, and of its children only each element that has no
+child of its own, a text child among them: that element's place among the
+record's children, numbered as the whole lift numbers it, its type triples and
+its attributes. A record that is the document element is lifted in the same way.
+A Bridge reading the document as a stream keeps or drops a record's child when
+it reads the child's first child or its end tag.
 
 The envelope skeleton of a JSON document is the lift of the whole document,
 except that every record is lifted with its place among its parent's members or
@@ -115,10 +118,10 @@ joined inputs, and a Bridge and an adapter must reproduce the vectors in
 | a FHIR resource whose `id` is unique within its document | the server's base URL, the resource type, the `id` |
 | a FHIR Bundle entry with no `id` and a `urn:uuid` `fullUrl`, whether a server is known or not | the `fullUrl` |
 | a FHIR contained resource | the containing record's name, the contained resource's `id` |
-| a C-CDA entry whose id is unique within its document | the id's `root` and `extension`, or its `root` where it has no `extension` |
 | a ClinVar `VariationArchive` or `ClinicalAssertion` | `https://www.ncbi.nlm.nih.gov/clinvar`, its VCV or SCV accession |
 | a ClinVar interpretation, one for each `ClassifiedCondition` of an RCV | `https://www.ncbi.nlm.nih.gov/clinvar`, the RCV accession, the condition's position in its `ClassifiedConditionList`, counted from 0 |
-| any of these whose id repeats within its document, a record with none of these ids, or a FHIR resource with an `id` and no known server | the document's SHA-256 and the `rdf:value` of the record's selector |
+| a FHIR or ClinVar record whose id repeats within its document, one with none of these ids, or a FHIR resource with an `id` and no known server | the document's SHA-256 and the `rdf:value` of the record's selector |
+| a C-CDA record | as [Naming a C-CDA record](#naming-a-c-cda-record) says |
 
 A server's base URL has its scheme and host lower-cased and every trailing `/`
 removed, and a Bridge normalises it so before a mapping reads it. A document's
@@ -128,6 +131,50 @@ base64url ([RFC 6920](https://www.rfc-editor.org/rfc/rfc6920)).
 A reference relative to a server, as FHIR's `Patient/123` is, in a document
 with no known server names no record: a mapping writes no link for it, and the
 adapter reports it as a finding.
+
+### Naming a C-CDA record
+
+A C-CDA record is the clinical statement an entry states, never an act wrapping
+it: an Allergy Concern Act's Allergy Observation is the record, and its
+identifier, key, members and selector are the observation's.
+
+- **Its class** is the FHIR R4 resource type a record of its kind is mapped
+  from: `AllergyIntolerance`, `Condition`, `Immunization`, `Procedure`,
+  `Observation` or `Patient`, and `MedicationRequest` for every medication, in
+  either mood.
+- **Its identifier** is read from the first of its `id` children, in document
+  order, with a non-empty `root` and no `nullFlavor`: the `root`, `:` and the
+  `extension`, or the `root` alone where the `extension` is absent or empty.
+- **Its key** is the set of `field=value` strings of its class's key fields, each
+  field a name its adapter declares once for the class, and each value as the
+  source states it. A field the record does not state is left out. A class's key
+  fields include the status the record states: its `statusCode`, and the value of
+  a status observation inside it.
+- **Its members** are the strings its element and each element under it hold:
+  for an attribute, the element's type IRI, `@`, the attribute's predicate IRI,
+  `=` and the value; for a text child, the element's type IRI, `=` and the text.
+  Its adapter declares once for each class the elements and attributes whose
+  members are excluded. Where that excludes every member, none is excluded.
+- **A set's fingerprint** is the sum, over the set's distinct strings, of the
+  integer the first twelve digits of each string's SHA-256 write in lower-case
+  hexadecimal, written in decimal; the empty set's is `0`. No order enters it, so
+  SPARQL 1.1's `SUM` computes it, a digit's value being the length of what
+  precedes it in `0123456789abcdef`:
+  [`../fixtures/naming/fingerprint.rq`](../fixtures/naming/fingerprint.rq).
+  Two different sets share a fingerprint with a chance near one in 2^48, and a
+  set of fewer than 32768 strings has one that fits a 64-bit integer.
+
+| a C-CDA record | the inputs |
+|---|---|
+| whose identifier no record of its class in its document carries with another key | the class, the identifier |
+| whose identifier a record of its class in its document carries with another key | the class, the identifier, its key's fingerprint |
+| with no identifier, and a key | the class, the empty string, its key's fingerprint |
+| with no identifier, no key, and a member | the class, the empty string, the empty string, its members' fingerprint |
+| with none of these | the class |
+
+Records of one class carrying one identifier with one key share a name, as
+records of one class with no identifier and one key do. The adapter reports as a
+finding each record named by its class alone.
 
 ## Running an adapter
 

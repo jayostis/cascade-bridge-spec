@@ -100,6 +100,10 @@ in [`../vocab/bridge.ttl`](../vocab/bridge.ttl):
 | `bridge:fileMissingFailure` | a file a map lacks, which it names by the map and the path, so a host can fetch it and call again |
 | `bridge:bridgeFailure` | the Bridge itself |
 
+A `bridge:documentFailure` from `ask` or `convert` is the document refused, its
+message the reason. It never says the adapter does not accept the document:
+`ask`'s `false` says that.
+
 A file missing from a map under test is a `bridge:fileMissingFailure`, not an
 `earl:failed` entry. Findings are data, never failures.
 
