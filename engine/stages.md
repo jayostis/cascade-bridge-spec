@@ -64,8 +64,9 @@ A source record's graph holds at most one version of a record. Where a mapping
 writes more than one, as it does for C-CDA records that share a name, a Bridge
 keeps the one whose name is least by code point and, of those with that name, the
 one whose IRI as the mapping wrote it is least. It drops every other, with its
-content and every node the mapping linked to it by `bridge:arrivedAs`, and reports
-each one dropped as a finding: `bridge:versionNotKept` as its body, the kept
+content, every node the mapping linked to it by `bridge:arrivedAs`, every triple
+naming it or a node nested in it, and every blank node only what it drops reaches,
+and reports each one dropped as a finding: `bridge:versionNotKept` as its body, the kept
 version's name as its `sh:value`, and `sh:Warning` as its `sh:resultSeverity`. It
 is addressed under the record's selector. A selector stands under the record's
 where it begins with the record's followed by `/`. Where the mapping wrote on the
