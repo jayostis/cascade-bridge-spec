@@ -23,5 +23,5 @@ WHERE {
   BIND(IRI(CONCAT("urn:example:record:", ?accession)) AS ?record)
   BIND(IRI(CONCAT("urn:example:version:", ?accession, ":stated")) AS ?stated)
   BIND(IRI(CONCAT("urn:example:version:", ?accession, ":restated")) AS ?restated)
-  BIND(CONCAT(?selector, "/Label[1]") AS ?statedAt)
+  BIND(IF(?accession = "EX000001", CONCAT(?selector, "/Label[1]"), ?noSelector) AS ?statedAt)
 }

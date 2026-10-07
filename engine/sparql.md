@@ -78,12 +78,12 @@ itself, and `$.entry[*]` each item of its `entry` member.
 **The detect query** runs over the document's *envelope skeleton*: the lift of
 the whole document, with the document element as the lift root, except that
 every record is lifted with its type triples, its place among its parent's
-children and its attributes, and of its children only each element that has no
-child of its own, a text child among them: that element's place among the
+children and its attributes, and of its children only each element with no
+element child and no text child the lift keeps: that element's place among the
 record's children, numbered as the whole lift numbers it, its type triples and
 its attributes. A record that is the document element is lifted in the same way.
 A Bridge reading the document as a stream keeps or drops a record's child when
-it reads the child's first child or its end tag.
+it reads the child's first child the lift keeps, or its end tag.
 
 The envelope skeleton of a JSON document is the lift of the whole document,
 except that every record is lifted with its place among its parent's members or
@@ -120,7 +120,7 @@ joined inputs, and a Bridge and an adapter must reproduce the vectors in
 | a FHIR contained resource | the containing record's name, the contained resource's `id` |
 | a ClinVar `VariationArchive` or `ClinicalAssertion` | `https://www.ncbi.nlm.nih.gov/clinvar`, its VCV or SCV accession |
 | a ClinVar interpretation, one for each `ClassifiedCondition` of an RCV | `https://www.ncbi.nlm.nih.gov/clinvar`, the RCV accession, the condition's position in its `ClassifiedConditionList`, counted from 0 |
-| a FHIR or ClinVar record whose id repeats within its document, one with none of these ids, or a FHIR resource with an `id` and no known server | the document's SHA-256 and the `rdf:value` of the record's selector |
+| a FHIR or ClinVar record whose id repeats within its document, a FHIR resource with an `id` and no known server, or any other record no row names | the document's SHA-256 and the `rdf:value` of the record's selector |
 | a C-CDA record | as [Naming a C-CDA record](#naming-a-c-cda-record) says |
 
 A server's base URL has its scheme and host lower-cased and every trailing `/`
@@ -134,9 +134,11 @@ adapter reports it as a finding.
 
 ### Naming a C-CDA record
 
-A C-CDA record is the clinical statement an entry states, never an act wrapping
-it: an Allergy Concern Act's Allergy Observation is the record, and its
-identifier, key, members and selector are the observation's.
+A C-CDA document is one source record, its `ClinicalDocument`. A C-CDA record
+is the `patientRole` of its header's `recordTarget`, or the clinical statement
+an entry states, never an act wrapping it: an Allergy Concern Act's Allergy
+Observation is the record, and its identifier, key, members and selector are the
+observation's.
 
 - **Its class** is the FHIR R4 resource type a record of its kind is mapped
   from: `AllergyIntolerance`, `Condition`, `Immunization`, `Procedure`,
@@ -147,14 +149,16 @@ identifier, key, members and selector are the observation's.
   `extension`, or the `root` alone where the `extension` is absent or empty.
 - **Its key** is the set of `field=value` strings of its class's key fields, each
   field a name its adapter declares once for the class, and each value as the
-  source states it. A field the record does not state is left out. A class's key
-  fields include the status the record states: its `statusCode`, and the value of
-  a status observation inside it.
+  source states it, stripped of leading and trailing XML whitespace. A field the
+  record does not state is left out. A class's key fields include the status the
+  record states: its `statusCode`, and the value of a status observation inside
+  it.
 - **Its members** are the strings its element and each element under it hold:
   for an attribute, the element's type IRI, `@`, the attribute's predicate IRI,
-  `=` and the value; for a text child, the element's type IRI, `=` and the text.
-  Its adapter declares once for each class the elements and attributes whose
-  members are excluded. Where that excludes every member, none is excluded.
+  `=` and the value; for a text child, the element's type IRI, `=` and the text,
+  each value and text stripped of leading and trailing XML whitespace. Its
+  adapter declares once for each class the elements and attributes whose members
+  are excluded. Where that excludes every member, none is excluded.
 - **A set's fingerprint** is the sum, over the set's distinct strings, of the
   integer the first twelve digits of each string's SHA-256 write in lower-case
   hexadecimal, written in decimal; the empty set's is `0`. No order enters it, so

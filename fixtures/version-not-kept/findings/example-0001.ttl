@@ -23,8 +23,7 @@
     oa:hasSource <https://example.org/documents/version-not-kept/in/example-0001.xml> ;
     oa:hasSelector [
       a oa:XPathSelector ;
-      rdf:value "/ExampleRecordSet/ExampleRecord[2]" ;
-      oa:refinedBy [ a oa:XPathSelector ; rdf:value "Label[1]" ]
+      rdf:value "/ExampleRecordSet/ExampleRecord[2]"
     ]
   ] ;
   oa:hasBody bridge:versionNotKept ;

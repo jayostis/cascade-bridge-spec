@@ -67,10 +67,12 @@ one whose IRI as the mapping wrote it is least. It drops every other, with its
 content and every node the mapping linked to it by `bridge:arrivedAs`, and reports
 each one dropped as a finding: `bridge:versionNotKept` as its body, the kept
 version's name as its `sh:value`, and `sh:Warning` as its `sh:resultSeverity`. It
-is addressed under the record's selector, and refined to the least `bridge:selector`
-the mapping wrote on the dropped version's arrival where that selector stands under
-the record's: an XPath refined by what follows the record's selector and `/`, a
-JSON Pointer by what follows the record's.
+is addressed under the record's selector. A selector stands under the record's
+where it begins with the record's followed by `/`. Where the mapping wrote on the
+dropped version's arrival a `bridge:selector` standing under the record's, the
+finding is refined by the least of them by code point: an XPath by what follows
+the record's selector and `/`, a JSON Pointer by what follows the record's
+selector, its `/` included. Otherwise it carries no refinement.
 
 ## Facts supplied with a document
 
@@ -111,9 +113,10 @@ version named, and:
   each step written in its namespace and counted among its same-name siblings
   as [`sparql.md`](sparql.md) writes a selector.
 
-A mapping may also write, of the document's name, a `prov:qualifiedAttribution`
-shaped as a supplied one is: a C-CDA's custodian as its author. A Bridge writes
-it beside the supplied facts.
+A mapping whose source record is the document element may also write, of the
+document's name, a `prov:qualifiedAttribution` shaped as a supplied one is: a
+C-CDA's custodian as its author. A Bridge writes it beside the supplied facts,
+and an attribution they hold in the same role replaces neither.
 
 [`../fixtures/synthetic-adapter/fixtures/expected/example-0001.ttl`](../fixtures/synthetic-adapter/fixtures/expected/example-0001.ttl)
 is a whole document's graph.
