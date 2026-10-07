@@ -306,14 +306,17 @@ _:load-the-synthetic-adapter a bridge:LoadCall ;
         bridge:iri <https://example.org/adapters/synthetic-adapter/> ;
         bridge:directory <../synthetic-adapter/> ;
         bridge:withholds "fixtures/" ;
-        bridge:substitute [ bridge:key "in/example-record.rq" ; bridge:file <two-versions-of-one-record.rq> ]
+        bridge:substitute [ bridge:key "in/example-record.rq" ; bridge:file <version-not-kept/two-versions-of-one-record.rq> ]
       ] ;
       bridge:vocabularyFiles _:synthetic-vocabularies ]
     [ a bridge:ConvertCall ;
-      bridge:document _:example-0001 ;
+      bridge:document [
+        bridge:iri <https://example.org/documents/version-not-kept/in/example-0001.xml> ;
+        bridge:file <version-not-kept/in/example-0001.xml>
+      ] ;
       bridge:suppliedFacts _:example-registry ;
       bridge:envelope <https://example.org/adapters/synthetic-adapter/ro-crate-metadata.json#envelope-set> ;
       bridge:graphFormat "turtle" ;
-      bridge:expectedGraph <two-versions-of-one-record.ttl> ;
-      bridge:expectedFindings <two-versions-of-one-record.findings.ttl> ]
+      bridge:expectedGraph <version-not-kept/expected/example-0001.ttl> ;
+      bridge:expectedFindings <version-not-kept/findings/example-0001.ttl> ]
   ) .
