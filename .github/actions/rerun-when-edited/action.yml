@@ -1,0 +1,38 @@
+name: Cascade Bridge rerun when edited
+description: >-
+  Re-run the calling repository's workflows on a pull request's head when an
+  edit to the pull request changed its Depends-On: lines or its base. Meant for
+  a job of its own, with actions: write and pull-requests: read, that checks
+  nothing out and runs nothing a Depends-On: line picks.
+
+inputs:
+  workflows:
+    description: >-
+      The workflow files of the calling repository (such as check.yml),
+      whitespace-separated, whose latest run on the pull request's head is
+      re-run when an edit changes what they test.
+    required: true
+  token:
+    description: The token every call to GitHub's API is made with.
+    required: false
+    default: ${{ github.token }}
+  python-version:
+    description: The Python the tooling runs on.
+    required: false
+    default: '3.12'
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v7
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: re-run what the edit made stale
+      shell: bash
+      env:
+        WORKFLOWS: ${{ inputs.workflows }}
+        GITHUB_TOKEN: ${{ inputs.token }}
+        ACTION_PATH: ${{ github.action_path }}
+        PYTHONPATH: ${{ github.action_path }}/../../../scripts
+      run: python3 "${ACTION_PATH}/rerun.py"

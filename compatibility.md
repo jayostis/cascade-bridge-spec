@@ -129,6 +129,11 @@ GitHub Actions cannot reproduce these, so a person or an agent does it by hand:
   on a `Depends-On:` line as not used, and the runtime reads the Bridge's
   newest published build. Try the change from the Bridge's own pull request; a
   runtime reads it once it has merged and been published.
+- **A re-run keeps the run's commit.** After a retarget, a pull request is still
+  tested merged into its old base, while counterparts follow the new one. Push,
+  or run `gh pr update-branch`, for a fresh merge.
+- **On a pull request from a fork, an edit re-runs nothing**, whose token is
+  read-only. The run says so and names the command: `gh run rerun`.
 - **A change to which pull requests a run follows is tried once it has merged.**
   The default branch's copy follows them to pick the version, before that version
   runs anything, so a run refuses on the rules of the day whatever a pull request
@@ -148,6 +153,10 @@ These are chosen, and could be otherwise:
   of the version picked, to read GitHub's API with, and nothing that entry point
   starts. A run and that step share a runner, so this is a
   boundary and not a sandbox.
+- **A re-run is decided by the action at the ref the caller named**, in a job
+  that holds `actions: write` and runs nothing the run picked, not by the
+  version the run picks. A change to it is tried from a caller naming
+  `rerun-when-edited@<branch>`, not from a `Depends-On:` line.
 - **Nothing here starts a run anywhere else**, because this repository knows of
   no adapter and no engine. A change to what an adapter or a Bridge must do is
   tried from a no-op pull request in one, naming this one on a `Depends-On:`
@@ -177,12 +186,14 @@ merged, and everything else the run does comes from the version it picked.
 
 ## The workflow an adapter and an engine both run
 
+`check.yml`, the main workflow:
+
 ```yaml
 on:
   push:
     branches: [main]
   pull_request:
-    types: [opened, synchronize, reopened, edited]
+    types: [opened, synchronize, reopened]
   schedule:
     - cron: '17 3 * * *'
   workflow_dispatch:
@@ -196,18 +207,55 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: jayostis/cascade-bridge-spec/.github/actions/start@main
+```
+
+`ready.yml`, the merge gate:
+
+```yaml
+name: ready-to-merge
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+jobs:
   ready-to-merge:
+    name: ready-to-merge
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    concurrency:
+      group: ready-${{ github.ref }}
+      cancel-in-progress: true
     steps:
       - uses: jayostis/cascade-bridge-spec/.github/actions/start@main
         with:
           check: ready-to-merge
+
+  rerun-when-edited:
+    if: github.event.action == 'edited'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      pull-requests: read
+    steps:
+      - uses: jayostis/cascade-bridge-spec/.github/actions/rerun-when-edited@main
+        with:
+          workflows: check.yml
 ```
 
-Make both jobs required status checks, and keep whatever you have named them: a
-renamed job leaves every merge waiting on a check that never reports. `edited` is what starts a run
-when a description's `Depends-On:` lines change, and `pull-requests: write` is
-what the action posts the table with, in a step of its own: the checks are the
-version the run picked — a named pull request's own code, where one is named —
-and are given the token to read GitHub's API with, and post nothing. On a pull request from a fork the token is read-only
+Make `compatibility` and `ready-to-merge` required status checks, and keep
+whatever you have named them: a renamed job leaves every merge waiting on a
+check that never reports. An edit to a description starts only `ready.yml`,
+because only a changed `Depends-On:` line or base changes what `compatibility`
+reads: then `rerun-when-edited` re-runs the latest run of each workflow it names
+on the pull request's head, in full, cancelling it first where it is still
+running. Any other edit re-runs nothing. `pull-requests: write` is what the
+action posts the table with, in a step of its own: the checks are the version
+the run picked — a named pull request's own code, where one is named — and are
+given the token to read GitHub's API with, and post nothing. `actions: write` is
+what `rerun-when-edited` re-runs with, in a job of its own that checks nothing out and
+runs nothing the run picked. The merge gate cancels its own run in flight, which read the
+description at its start. On a pull request from a fork the token is read-only
 whatever the workflow asks for, and the run says so rather than failing.

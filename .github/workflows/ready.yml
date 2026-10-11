@@ -1,0 +1,47 @@
+name: ready-to-merge
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+jobs:
+  # A cycle's members discount the check that shares their own gate's name, and
+  # the name is the job's: run here under any other name and a pull request of
+  # this repository waits on gates that are waiting on it.
+  ready-to-merge:
+    name: ready-to-merge
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    concurrency:
+      group: ready-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: cascade-bridge-spec
+
+      - name: start action (merge gate) on the synthetic adapter
+        uses: ./cascade-bridge-spec/.github/actions/start
+        with:
+          path: cascade-bridge-spec/fixtures/synthetic-adapter
+          check: ready-to-merge
+
+  rerun-when-edited:
+    if: github.event.action == 'edited'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: cascade-bridge-spec
+          persist-credentials: false
+
+      - name: rerun-when-edited action, by local path
+        uses: ./cascade-bridge-spec/.github/actions/rerun-when-edited
+        with:
+          workflows: validate.yml
