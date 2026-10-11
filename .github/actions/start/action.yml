@@ -115,7 +115,7 @@ runs:
       env:
         REPOSITORY_PATH: ${{ inputs.path }}
         CHECK: ${{ inputs.check }}
-        CHECKOUT_ONLY: ${{ inputs.checkout-only }}
+        CASCADE_CHECKOUT_ONLY: ${{ inputs.checkout-only }}
         ENTRY_POINT: ${{ steps.specification.outputs.entry-point }}
         SPEC_REPOSITORY: ${{ steps.specification.outputs.repository }}
         RESULTS: ${{ runner.temp }}/compatibility-${{ inputs.check }}
@@ -127,13 +127,10 @@ runs:
         GH_TOKEN: ''
       run: |
         set -euo pipefail
-        only=()
-        if [ "${CHECKOUT_ONLY}" = true ]; then only=(--checkout-only); fi
         python3 "${ENTRY_POINT}" "${REPOSITORY_PATH}" \
           --check "${CHECK}" \
           --results "${RESULTS}" \
-          --spec-repository "${SPEC_REPOSITORY}" \
-          ${only[@]+"${only[@]}"}
+          --spec-repository "${SPEC_REPOSITORY}"
 
     - name: name the report the check wrote
       id: report

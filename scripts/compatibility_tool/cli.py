@@ -55,6 +55,7 @@ def parse(usage, argv):
     parser.add_argument(
         "--checkout-only",
         action="store_true",
+        default=os.environ.get("CASCADE_CHECKOUT_ONLY") == "true",
         help="place the counterparts and record them, and run no check; for --check compatibility",
     )
     return parser.parse_args(argv)

@@ -454,6 +454,7 @@ class World:
             "GITHUB_TOKEN",
             "CASCADE_GITHUB_TOKEN",
             "CASCADE_CHECK_RUN_ID",
+            "CASCADE_CHECKOUT_ONLY",
         ):
             environment.pop(name, None)
         environment.update({key: str(value) for key, value in extra.items()})

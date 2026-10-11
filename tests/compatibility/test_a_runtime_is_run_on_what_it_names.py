@@ -43,7 +43,7 @@ def test_a_checkout_only_run_places_each_repository_a_depends_on_line_picks_and_
     world.pull_request(VOCABULARY, 5, fill=lambda path: (path / "NOTICE").write_text("five\n"))
     runtime, ci = world.runtime_under_test(body=depends_on(VOCABULARY, 5, owner=VOCABULARY_OWNER))
 
-    said = world.tool(runtime, checkout_only=True, **ci)
+    said = world.tool(runtime, CASCADE_CHECKOUT_ONLY="true", **ci)
 
     assert world.record()["repositories"][VOCABULARY]["how"] == "pull request #5 merged into main"
     assert (runtime.parent / VOCABULARY / "NOTICE").read_text() == "five\n"
