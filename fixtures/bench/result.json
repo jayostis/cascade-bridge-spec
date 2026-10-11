@@ -1,0 +1,25 @@
+{
+  "env": {
+    "os": "Ubuntu 24.04",
+    "runner": "local",
+    "cpus": 8,
+    "node": "24.16.0",
+    "host": "node",
+    "profile": "wasm"
+  },
+  "commit": {
+    "an-engine": "0123456789abcdef0123456789abcdef01234567",
+    "an-adapter": "89abcdef0123456789abcdef0123456789abcdef-dirty"
+  },
+  "results": [
+    { "name": "entries-x10/convert/first", "unit": "s", "value": 9.84, "kind": "clock", "samples": 5, "range": "9.61-10.2" },
+    { "name": "entries-x10/convert/second", "unit": "s", "value": 9.1, "kind": "clock", "samples": 5, "range": "8.97-9.4" },
+    { "name": "entries-x10/memory.grow/first", "unit": "{count}", "value": 41, "kind": "cost", "samples": 5, "range": "41-41" },
+    { "name": "entries-x10/query-time/result-findings.rq", "unit": "s", "value": 1.2, "kind": "clock", "samples": 5, "range": "1.1-1.4" },
+    { "name": "entries-x10/output-bytes", "unit": "By", "value": 1204332, "kind": "output" },
+    { "name": "entries-x10/findings", "unit": "{count}", "value": 4097, "kind": "output", "extra": "up to blank-node names" },
+    { "name": "package/wasm-bytes/gzip", "unit": "By", "value": 1655640, "kind": "cost" },
+    { "name": "entries-x50/timeout/convert", "unit": "s", "value": 1800, "kind": "output" },
+    { "name": "hostile-deep/refused/documentFailure", "unit": "{count}", "value": 1, "kind": "output", "extra": "nesting deeper than 5000" }
+  ]
+}
