@@ -29,6 +29,7 @@ HEX_SHA256 = re.compile(r"^[0-9a-fA-F]{64}$")
 DOWNLOAD_TIMEOUT_SECONDS = 60
 POLL_SECONDS = 15
 POLL_TIMEOUT_SECONDS = 30
+LAST_LOOK_SECONDS = 5
 WAIT_SECONDS = 6 * 60
 RUNS_THAT_RELEASE = ("push", "pull_request")
 sleep = time.sleep
@@ -115,16 +116,15 @@ def from_a_fork(row, commit):
 
 
 def release_being_made(api, row, path, tag, commit):
-    """The release, once it appears while a run of the engine at the commit is unfinished; None where it does not."""
-    deadline = monotonic() + WAIT_SECONDS
+    """The release, once it appears while a run of the engine at the commit is unfinished; None where it does not.
+    After the last sleep the release is looked for once more, so one published in the final seconds is used."""
+    started = monotonic()
+    deadline = started + WAIT_SECONDS
     unfinished = None
     while True:
         left = deadline - monotonic()
-        if left <= 0:
-            note(f"waited {WAIT_SECONDS // 60} min for {tag}; {', '.join(unfinished)} had not finished")
-            return None
         try:
-            now_unfinished = unfinished_runs(api, path, commit, min(POLL_TIMEOUT_SECONDS, left))
+            now_unfinished = unfinished_runs(api, path, commit, min(POLL_TIMEOUT_SECONDS, max(left, LAST_LOOK_SECONDS)))
         except (OSError, http.client.HTTPException, ValueError, Stop) as error:
             note(f"the runs of {row.name} at {commit} could not be read ({error}), so each host is built by its setup")
             return None
@@ -136,10 +136,12 @@ def release_being_made(api, row, path, tag, commit):
         unfinished = now_unfinished
         sleep(max(0, min(POLL_SECONDS, deadline - monotonic())))
         left = deadline - monotonic()
-        if left <= 0:
-            continue
         try:
-            return api.get(f"{path}/releases/tags/{tag}", timeout=min(POLL_TIMEOUT_SECONDS, left))
+            found = api.get(
+                f"{path}/releases/tags/{tag}", timeout=min(POLL_TIMEOUT_SECONDS, max(left, LAST_LOOK_SECONDS))
+            )
+            note(f"{tag} appeared after {round(monotonic() - started)} s")
+            return found
         except urllib.error.HTTPError as error:
             if error.code != 404:
                 note(f"{row.name} has no release {tag} to read ({error}), so each host is built by its setup")
@@ -147,28 +149,40 @@ def release_being_made(api, row, path, tag, commit):
         except (OSError, http.client.HTTPException, ValueError, Stop) as error:
             note(f"{tag} could not be read ({error}), so each host is built by its setup")
             return None
+        if left <= 0:
+            note(f"waited {WAIT_SECONDS // 60} min for {tag}; {', '.join(unfinished)} had not finished")
+            return None
+
+
+def release_at(api, row, path, commit, wait=True):
+    """The release built from the commit; None where there is none to run."""
+    tag = TAG.format(commit=commit)
+    try:
+        return api.get(f"{path}/releases/tags/{tag}")
+    except urllib.error.HTTPError as error:
+        if error.code == 404 and wait and not from_a_fork(row, commit):
+            return release_being_made(api, row, path, tag, commit)
+        note(f"{row.name} has no release {tag} to read ({error}), so each host is built by its setup")
+    except (OSError, http.client.HTTPException, ValueError, Stop) as error:
+        note(f"{row.name} has no release {tag} to read ({error}), so each host is built by its setup")
+    return None
 
 
 def release_of(row):
-    """The release built from the engine's commit; None where there is none to run."""
+    """The release built from the engine's commit; None where there is none to run. Where the branch's release is
+    missing, the head the run fast-forwarded to may have one."""
     if not on_a_runner_releases_serve():
         return None
     commit = released_commit(row)
     if commit is None:
         say_how_to_stop_merging(row)
         return None
-    tag = TAG.format(commit=commit)
     path = f"repos/{github.repository_path(row.repository)}"
     api = github.Api()
-    try:
-        return api.get(f"{path}/releases/tags/{tag}")
-    except urllib.error.HTTPError as error:
-        if error.code == 404 and not from_a_fork(row, commit):
-            return release_being_made(api, row, path, tag, commit)
-        note(f"{row.name} has no release {tag} to read ({error}), so each host is built by its setup")
-    except (OSError, http.client.HTTPException, ValueError, Stop) as error:
-        note(f"{row.name} has no release {tag} to read ({error}), so each host is built by its setup")
-    return None
+    found = release_at(api, row, path, commit)
+    if found is None and commit != row.commit and a_head_merged(row):
+        found = release_at(api, row, path, row.commit, wait=False)
+    return found
 
 
 def digests(notes):

@@ -39,7 +39,7 @@ or fast-forwards it to the head of a named pull request that has that release,
 the asset is placed in place of the host's setup, once its bytes match a digest
 the release's notes give (a `sha256-`, `sha384-` or `sha512-` integrity, or a
 SHA-256 in hex). A missing release is waited for, up to 6 minutes, while a run
-of the engine at that commit is unfinished, unless the commit is the head of a
+of the engine that a push or a pull request started at that commit is unfinished, unless the commit is the head of a
 fork's pull request. Otherwise the setup runs.
 
 An adapter's file has only `mustPassWith`.

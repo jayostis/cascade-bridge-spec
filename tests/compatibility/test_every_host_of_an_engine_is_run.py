@@ -364,6 +364,40 @@ def test_a_release_being_published_is_waited_for_and_then_used(world, monkeypatc
     assert said.count("  release ") == 2
 
 
+def test_a_release_published_in_the_last_window_is_used(world, monkeypatch, tmp_path):
+    adapter = released_engine(world, monkeypatch, tmp_path)
+    key, release, commit = withheld_release(world)
+    world.pull_requests.run("engine", commit)
+    last = releases.WAIT_SECONDS // releases.POLL_SECONDS
+
+    def publish_in_the_last_window():
+        if len(clock.slept) == last:
+            world.pull_requests.releases[key] = release
+
+    clock = Clock(monkeypatch, on_sleep=publish_in_the_last_window)
+
+    said = world.tool(adapter, **world.ci(repository="adapter"))
+
+    assert sum(clock.slept) == releases.WAIT_SECONDS
+    assert f"build-{commit} appeared after {releases.WAIT_SECONDS} s" in said
+    assert "  setup " not in said
+
+
+def test_a_heads_release_is_used_where_the_branchs_is_missing_and_no_run_is_making_it(world, monkeypatch, tmp_path):
+    adapter = released_engine(world, monkeypatch, tmp_path)
+    variables = named_engine_pull_request(world, adapter, only_compatibility_json)
+    _, release, _ = withheld_release(world)
+    head = head_of(world, 2)
+    world.pull_requests.releases["engine", f"build-{head}"] = {**release, "tag_name": f"build-{head}"}
+    clock = Clock(monkeypatch)
+
+    said = world.tool(adapter, **variables)
+
+    assert clock.slept == []
+    assert "  setup " not in said
+    assert f"of build-{head}" in said
+
+
 @pytest.mark.parametrize(
     "runs",
     [[], [("schedule", "in_progress")], [("push", "completed")]],
@@ -402,6 +436,7 @@ def test_a_release_that_never_appears_is_given_six_minutes_each_request_short_of
 
     assert sum(clock.slept) == releases.WAIT_SECONDS
     assert max(clock.slept) == releases.POLL_SECONDS
+    assert len([path for path, _ in asked if "releases/tags" in path]) == len(clock.slept) + 1
     assert f"waited 6 min for build-{commit}; {run['html_url']} had not finished" in said
     assert f"  setup {sys.executable} -c raise SystemExit(1)" in said
     polls = [timeout for path, timeout in asked if "actions/runs" in path]
