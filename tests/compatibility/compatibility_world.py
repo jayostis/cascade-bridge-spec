@@ -198,19 +198,21 @@ class PullRequests:
         self.refusals = {}
         self.check_runs_by_commit = {}
         self.releases = {}
+        self.runs_by_commit = {}
+        self.runs_read = []
         self.authorizations = []
 
     def refuse(self, repository, number, status, headers=None):
         self.refusals[(repository, number)] = (status, dict(headers or {}))
 
-    def open(self, repository, number, body="", base="main", head=None, state="open", merged=False):
+    def open(self, repository, number, body="", base="main", head=None, state="open", merged=False, fork=False):
         pull = {
             "number": number,
             "body": body,
             "state": state,
             "merged": merged,
-            "base": {"ref": base},
-            "head": {"sha": head or ""},
+            "base": {"ref": base, "repo": {"full_name": f"{OWNER}/{repository}"}},
+            "head": {"sha": head or "", "repo": {"full_name": f"{'a-fork-owner' if fork else OWNER}/{repository}"}},
         }
         self.by_repository.setdefault(repository, {})[number] = pull
         return pull
@@ -235,6 +237,21 @@ class PullRequests:
                 if run["id"] == identifier:
                     return run
         return None
+
+    def run(self, repository, commit, event="push", status="in_progress"):
+        number = sum(len(runs) for runs in self.runs_by_commit.values()) + 1
+        run = {
+            "id": number,
+            "event": event,
+            "status": status,
+            "html_url": f"https://example.org/{repository}/runs/{number}",
+        }
+        self.runs_by_commit.setdefault((repository, commit), []).append(run)
+        return run
+
+    def runs(self, repository, commit):
+        self.runs_read.append((repository, commit))
+        return {"workflow_runs": self.runs_by_commit.get((repository, commit), [])}
 
     def check_runs(self, repository, commit, page, per_page):
         runs = self.check_runs_by_commit.get((repository, commit), [])
@@ -270,6 +287,9 @@ class Handler(BaseHTTPRequestHandler):
         if len(parts) == 6 and parts[0] == "repos" and parts[3:5] == ["releases", "tags"]:
             release = self.server.pull_requests.releases.get((parts[2], parts[5]))
             return self.answer(200 if release else 404, release or {"message": "Not Found"})
+        if len(parts) == 5 and parts[0] == "repos" and parts[3:5] == ["actions", "runs"]:
+            commit = parse_qs(urlsplit(self.path).query).get("head_sha", [""])[0]
+            return self.answer(200, self.server.pull_requests.runs(parts[2], commit))
         if len(parts) == 5 and parts[0] == "repos" and parts[3] == "check-runs":
             run = self.server.pull_requests.check_run_by_id(int(parts[4]))
             return self.answer(200, run) if run else self.answer(404, {"message": "Not Found"})
@@ -343,13 +363,13 @@ class World:
         git("commit", "-q", "-m", line, cwd=origin)
         return git("rev-parse", "HEAD", cwd=origin)
 
-    def pull_request(self, name, number, body="", base="main", fill=None, state="open", merged=False):
+    def pull_request(self, name, number, body="", base="main", fill=None, state="open", merged=False, fork=False):
         if not self.origin(name).exists():  # a repository this run checks nothing out from
-            self.pull_requests.open(name, number, body=body, base=base, state=state, merged=merged)
+            self.pull_requests.open(name, number, body=body, base=base, state=state, merged=merged, fork=fork)
             return None
         head = self.branch(name, f"pull/{number}", fill)
         git("update-ref", f"refs/pull/{number}/head", head, cwd=self.origin(name))
-        self.pull_requests.open(name, number, body=body, base=base, head=head, state=state, merged=merged)
+        self.pull_requests.open(name, number, body=body, base=base, head=head, state=state, merged=merged, fork=fork)
         return head
 
     def engine(self, must_pass_with, canned="passed", **overrides):

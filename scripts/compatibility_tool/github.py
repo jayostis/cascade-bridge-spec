@@ -88,7 +88,7 @@ class Api:
         self.url = (os.environ.get("GITHUB_API_URL") or "https://api.github.com").rstrip("/")
         self.pulls = {}
 
-    def get(self, path):
+    def get(self, path, timeout=None):
         request = urllib.request.Request(
             f"{self.url}/{path}",
             headers={
@@ -98,7 +98,7 @@ class Api:
             },
         )
         try:
-            with urllib.request.urlopen(request) as answer:
+            with urllib.request.urlopen(request, timeout=timeout) as answer:
                 return json.loads(answer.read().decode("utf-8") or "{}")
         except urllib.error.URLError as error:
             if isinstance(error, urllib.error.HTTPError):

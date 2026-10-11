@@ -34,10 +34,13 @@ repository's release tagged `build-<commit>`; `path`, where in the engine's
 checkout it goes (an archive is unpacked there from its `package/` folder); and
 `command`, run in place of the host's when it differs. When an adapter's run, in
 CI on an x86_64 Linux runner, picks the engine at a commit with that release,
-or merges into it pull requests that change nothing but its `compatibility.json`,
+merges into it pull requests that change nothing but its `compatibility.json`,
+or fast-forwards it to the head of a named pull request that has that release,
 the asset is placed in place of the host's setup, once its bytes match a digest
 the release's notes give (a `sha256-`, `sha384-` or `sha512-` integrity, or a
-SHA-256 in hex). Otherwise the setup runs.
+SHA-256 in hex). A missing release is waited for, up to 6 minutes, while a run
+of the engine that a push or a pull request started at that commit is unfinished, unless the commit is the head of a
+fork's pull request. Otherwise the setup runs.
 
 An adapter's file has only `mustPassWith`.
 

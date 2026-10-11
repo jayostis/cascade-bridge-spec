@@ -26,6 +26,12 @@ class Reached:
         return self.pull.get("head", {}).get("sha")
 
     @property
+    def from_this_repository(self):
+        head = (self.pull.get("head") or {}).get("repo") or {}
+        base = (self.pull.get("base") or {}).get("repo") or {}
+        return bool(base.get("full_name")) and head.get("full_name") == base.get("full_name")
+
+    @property
     def open(self):
         return not self.pull.get("merged") and self.pull.get("state") == "open"
 
@@ -114,12 +120,14 @@ def remove(path):
 
 
 def place(url, choice, into):
-    """The repository at its chosen branch, with every named pull request merged in."""
+    """The repository at its chosen branch, with every named pull request merged in; the heads merged, in order."""
     remove(into)  # an earlier run's checkout is not this run's version
     git.clone_branch(url, into, choice.branch, history=bool(choice.merging))
+    heads = []
     for entry in choice.merging:
         head = git.fetch(url, f"refs/pull/{entry.named.number}/head", into)
         conflict = git.merge(into, head, entry.named.label)
         if conflict:
             raise Stop(conflict)
-    return into
+        heads.append(head)
+    return heads

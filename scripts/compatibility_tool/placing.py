@@ -1,7 +1,7 @@
 from compatibility_tool import git, picking
 from compatibility_tool.console import Stop
 from compatibility_tool.github import repository_name, repository_path, url_on_this_server
-from compatibility_tool.record import Role, Row
+from compatibility_tool.record import MergedHead, Role, Row
 
 
 def sibling(directory, url):
@@ -46,7 +46,7 @@ def locally(directory, url, role):
 
 def in_ci(url, reached, event, into, role):
     choice = picking.choose(url, repository_path(url), reached, event)
-    picking.place(url, choice, into)
+    heads = picking.place(url, choice, into)
     return Row(
         name=repository_name(url),
         repository=url,
@@ -55,6 +55,10 @@ def in_ci(url, reached, event, into, role):
         role=role,
         path=into,
         from_named_pull_requests=bool(choice.merging),
+        merged_heads=tuple(
+            MergedHead(head, entry.named.label, entry.base, entry.from_this_repository)
+            for head, entry in zip(heads, choice.merging, strict=True)
+        ),
     )
 
 
