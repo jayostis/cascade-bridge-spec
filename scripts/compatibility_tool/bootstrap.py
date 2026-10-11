@@ -68,6 +68,7 @@ def hop(spec, directory, options):
         options.spec_repository,
         "--spec-picked",
         str(handover),
+        *(["--checkout-only"] if options.checkout_only else []),
     ]
     status = subprocess.run(argv, env={**os.environ, github.TOKEN: github.token}).returncode
     if status not in (0, 1):

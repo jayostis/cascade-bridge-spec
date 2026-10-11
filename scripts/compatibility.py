@@ -3,6 +3,7 @@
 
     python3 scripts/compatibility.py <dir> [--check compatibility|ready-to-merge]
                                           [--results <dir>] [--spec-repository <url>]
+                                          [--checkout-only]
 
 compatibility: the adapter lint where the directory holds an adapter's crate,
 then its compatibility.json's counterparts, each run and judged; in a runtime,
@@ -12,6 +13,8 @@ compatibility.json names, run so with the vocabulary in place of the one it
 names. ready-to-merge: the
 merge gate. The version of every repository the run uses is picked when it
 runs; in a local run every sibling is used as it is on disk.
+--checkout-only (compatibility): place and record the counterparts, run
+nothing, exit 0.
 
 Exit status is 1 when the check fails or did not run, 0 otherwise.
 Requires git; the compatibility check also needs pyshacl, rdflib and

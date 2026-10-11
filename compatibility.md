@@ -191,6 +191,9 @@ adapter pull request naming it on a `Depends-On:` line. A caller depends on no
 more than the entry point's path, its arguments, the results directory and the
 `table.md` it writes there: those names reach a caller only once they have
 merged, and everything else the run does comes from the version it picked.
+A job that needs only the counterparts a `Depends-On:` line picks passes
+`checkout-only: 'true'`; a job that reads the EARL report a run wrote reads the
+action's `report` output, never a path it assumes.
 
 ## The workflow an adapter and an engine both run
 

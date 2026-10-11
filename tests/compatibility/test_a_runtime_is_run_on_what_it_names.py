@@ -39,6 +39,26 @@ def test_a_runtime_whose_report_holds_is_handed_each_repository_it_names_at_the_
     assert "the runtime on 1 host: 1 hold, 0 do not" in said
 
 
+def test_a_checkout_only_run_places_each_repository_a_depends_on_line_picks_and_runs_nothing(world):
+    world.pull_request(VOCABULARY, 5, fill=lambda path: (path / "NOTICE").write_text("five\n"))
+    runtime, ci = world.runtime_under_test(body=depends_on(VOCABULARY, 5, owner=VOCABULARY_OWNER))
+
+    said = world.tool(runtime, checkout_only=True, **ci)
+
+    assert world.record()["repositories"][VOCABULARY]["how"] == "pull request #5 merged into main"
+    assert (runtime.parent / VOCABULARY / "NOTICE").read_text() == "five\n"
+    assert HANDED not in said
+    assert not (world.results / "earl").exists()
+
+
+def test_a_checkout_only_run_of_the_merge_gate_is_refused(world):
+    runtime, ci = world.runtime_under_test()
+
+    said = world.tool(runtime, 1, check="ready-to-merge", checkout_only=True, **ci)
+
+    assert "--checkout-only places the counterparts of compatibility" in said
+
+
 def test_a_local_run_whose_report_has_a_failure_does_not_hold_and_a_named_siblings_edits_make_it_feedback(world):
     world.clone("adapter")
     (world.clone(VOCABULARY) / "NOTICE").write_text("an uncommitted edit\n", encoding="utf-8")
