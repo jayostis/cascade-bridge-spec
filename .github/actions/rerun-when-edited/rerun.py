@@ -109,7 +109,9 @@ class Rerunner:
         for _ in range(ROUNDS):
             before = self.run(identifier)
             if before["status"] != "completed":
+                print(f"run {identifier} is {before['status']}, and read the old description: cancelling it")
                 self.stop(identifier)
+                print(f"run {identifier} stopped")
                 before = self.run(identifier)
             if 200 <= self.api.post(f"{self.runs}/{identifier}/rerun") < 300:
                 return

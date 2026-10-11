@@ -131,7 +131,7 @@ ACTING = {
     "a run of another pull request on the same head": (acting([run(number=8)]), [], 0, "no run"),
     "a completed run": (acting([run()]), ["rerun 1"], 0, "re-ran run 1"),
     "a run queued": (acting([run(status="queued")]), ["cancel 1", "rerun 1"], 0, "re-ran"),
-    "a run in progress": (acting([run(status="in_progress")]), ["cancel 1", "rerun 1"], 0, "re-ran"),
+    "a run in progress": (acting([run(status="in_progress")]), ["cancel 1", "rerun 1"], 0, "is in_progress"),
     "a run pending behind a concurrency group": (acting([run(status="pending")]), ["cancel 1", "rerun 1"], 0, "re-ran"),
     "a run waiting": (acting([run(status="waiting")]), ["cancel 1", "rerun 1"], 0, "re-ran"),
     "a run requested": (acting([run(status="requested")]), ["cancel 1", "rerun 1"], 0, "re-ran"),
