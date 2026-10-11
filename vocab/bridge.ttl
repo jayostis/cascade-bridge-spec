@@ -73,6 +73,11 @@ bridge:sourceSchema a owl:ObjectProperty ;
   rdfs:comment "The schema a Bridge validates every record against, the adapter's or, for the records read in an envelope naming one, the envelope's: XSD 1.0 for an XML source, JSON Schema for a JSON one."@en ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
+bridge:schemaImport a owl:ObjectProperty ;
+  rdfs:label "schema import"@en ;
+  rdfs:comment "A file inside the adapter that a schema the adapter names includes or imports, directly or through another schema, so that describe lists it among the files to load."@en ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
 bridge:envelope a owl:ObjectProperty ;
   rdfs:label "envelope"@en ;
   rdfs:range bridge:Envelope ;

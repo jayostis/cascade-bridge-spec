@@ -28,6 +28,7 @@ CHECKS = {
     "profile/must/lookups.py": 1,
     "profile/must/media_types.ttl": 2,
     "profile/must/queries.py": 1,
+    "profile/must/schema_imports.py": 1,
     "profile/must/shapes.py": 1,
     "profile/must/source_accounting.py": 1,
 }
