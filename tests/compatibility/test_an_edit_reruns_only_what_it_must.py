@@ -1,7 +1,9 @@
+import time
+
 import pytest
 
 from edited import decide
-from rerun import rerun_when_edited
+from rerun import Unread, rerun_when_edited
 
 URL = "https://github.com/o/r/pull/1"
 LINE = f"Depends-On: {URL}"
@@ -98,9 +100,10 @@ def refuse_once_after_another_edit():
 
 
 class Fake:
-    def __init__(self, runs, heads=("h1",), cancel=None, force=None, rerun=None):
+    def __init__(self, runs, heads=("h1",), cancel=None, force=None, rerun=None, forbid=None):
         self.runs = {found["id"]: found for found in runs}
         self.heads = list(heads)
+        self.forbid = forbid
         self.calls = []
         self.hooks = {
             "cancel": cancel or finish(202),
@@ -109,6 +112,8 @@ class Fake:
         }
 
     def get(self, path):
+        if self.forbid and self.forbid in path:
+            raise Unread(f"GET {path} answered 403")
         if "/pulls/" in path:
             return {"head": {"sha": self.heads.pop(0) if len(self.heads) > 1 else self.heads[0]}}
         if "/workflows/" in path:
@@ -164,10 +169,29 @@ ACTING = {
     ),
     "a head that moved before": (acting([run()], heads=("h2",)), [], 0, "moved on"),
     "a head that moved during": (
-        acting([run(), run(2, head="h2")], heads=("h1", "h2")),
+        acting([run(), run(2, head="h2", conclusion="cancelled")], heads=("h1", "h2")),
         ["rerun 1", "cancel 1", "rerun 2"],
         0,
         "cancelled",
+    ),
+    "a head that moved after the re-run, whose newer run is still going": (
+        acting([run(), run(2, head="h2", status="in_progress")], heads=("h1", "h2")),
+        ["rerun 1", "cancel 1"],
+        0,
+        "is left alone",
+    ),
+    "a head that moved while the stale run was stopping": (
+        acting([run(status="in_progress"), run(2, head="h2", status="in_progress")], heads=("h1", "h2")),
+        ["cancel 1"],
+        0,
+        "while run 1 was stopping, so nothing was re-run",
+    ),
+    "a read the API refused": (
+        acting([run()], forbid="/actions/runs/1"),
+        [],
+        1,
+        "::error::GET repos/o/r/actions/runs/1 answered 403: run `gh run list -R o/r --workflow check.yml --commit h1`,"
+        " then `gh run rerun <id> -R o/r`",
     ),
     "a fork, whose token cannot re-run": (
         acting(
@@ -203,3 +227,14 @@ def test_a_stale_run_is_stopped_if_it_runs_and_run_again_and_a_refusal_says_what
 
     assert api.calls == calls
     assert said in capsys.readouterr().out
+
+
+def test_a_description_of_blank_lines_is_read_in_linear_time():
+    newlines = "\n" * 65536
+    spaces = " " * 65536
+    started = time.perf_counter()
+
+    assert decide(body_edit(newlines, newlines + LINE)) == LINES
+    assert decide(body_edit(spaces + "\n", f"{spaces}x\n{LINE}")) == LINES
+
+    assert time.perf_counter() - started < 1

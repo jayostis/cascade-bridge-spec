@@ -35,4 +35,4 @@ runs:
         GITHUB_TOKEN: ${{ inputs.token }}
         ACTION_PATH: ${{ github.action_path }}
         PYTHONPATH: ${{ github.action_path }}/../../../scripts
-      run: python3 "${ACTION_PATH}/rerun.py"
+      run: python3 -u "${ACTION_PATH}/rerun.py"

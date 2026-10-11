@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 
 from compatibility_tool.console import Stop
 
-DEPENDS_ON = re.compile(r"^\s*Depends-On:\s*(\S+)\s*$", re.IGNORECASE | re.MULTILINE)
+DEPENDS_ON = re.compile(r"^[^\S\n]*Depends-On:[^\S\n]*(\S+)[^\S\n]*$", re.IGNORECASE | re.MULTILINE)
 PULL_REQUEST_URL = re.compile(
     r"^(?:https?://[^/]+/)?(?P<owner>[^/\s]+)/(?P<repository>[^/\s]+)/pull/(?P<number>\d+)/?$"
 )

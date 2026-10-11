@@ -31,6 +31,7 @@ jobs:
   rerun-when-edited:
     if: github.event.action == 'edited'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
       actions: write

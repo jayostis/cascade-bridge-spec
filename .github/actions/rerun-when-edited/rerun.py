@@ -20,6 +20,10 @@ class Failure(Exception):
     pass
 
 
+class Unread(Failure):
+    pass
+
+
 class GitHub:
     def __init__(self, token, url):
         self.token = token
@@ -47,7 +51,7 @@ class GitHub:
     def get(self, path):
         status, body = self.request("GET", path)
         if status != 200:
-            raise Failure(f"GET {path} answered {status or 'nothing'}")
+            raise Unread(f"GET {path} answered {status or 'nothing'}")
         return body
 
     def post(self, path):
@@ -105,16 +109,19 @@ class Rerunner:
             f" then `gh run rerun {identifier} -R {self.repository}`"
         )
 
-    def rerun(self, identifier):
+    def rerun(self, identifier, head):
         for _ in range(ROUNDS):
             before = self.run(identifier)
             if before["status"] != "completed":
                 print(f"run {identifier} is {before['status']}, and read the old description: cancelling it")
                 self.stop(identifier)
                 print(f"run {identifier} stopped")
+                moved = self.head()
+                if moved != head:
+                    return moved
                 before = self.run(identifier)
             if 200 <= self.api.post(f"{self.runs}/{identifier}/rerun") < 300:
-                return
+                return None
             after = self.run(identifier)
             if after["run_attempt"] >= LIMIT:
                 raise Failure(
@@ -132,6 +139,15 @@ class Rerunner:
         )
 
     def workflow(self, file, head, reasons, depth=0):
+        try:
+            self.act(file, head, reasons, depth)
+        except Unread as failure:
+            raise Failure(
+                f"{failure}: run `gh run list -R {self.repository} --workflow {file} --commit {head}`,"
+                f" then `gh run rerun <id> -R {self.repository}` on the latest run"
+            ) from failure
+
+    def act(self, file, head, reasons, depth):
         if not WORKFLOW.fullmatch(file):
             raise Failure(f"{file} is not the file name of a workflow, such as check.yml")
         if self.head() != head:
@@ -142,6 +158,9 @@ class Rerunner:
             print(f"{file}: no run on {head[:7]} yet, and the run that starts reads the description then")
             return
         identifier = run["id"]
+        if depth and run.get("conclusion") != "cancelled":
+            print(f"{file}: run {identifier} on the newer head {head[:7]} was not cancelled, and is left alone")
+            return
         if run["status"] == "action_required":
             print(
                 f"{file}: run {identifier} waits for approval, so nothing was re-run; it reads the description once approved"
@@ -153,7 +172,13 @@ class Rerunner:
                 f"{file}: this pull request is from a fork, whose token cannot re-run anything, and {reasons}:"
                 f" run `{by_hand} {identifier} -R {self.repository}`"
             )
-        self.rerun(identifier)
+        moved = self.rerun(identifier, head)
+        if moved:
+            print(
+                f"{file}: the head moved to {moved[:7]} while run {identifier} was stopping,"
+                " so nothing was re-run; the newer head's own run reads the description"
+            )
+            return
         print(f"{file}: re-ran run {identifier} on {head[:7]}")
         moved = self.head()
         if moved == head:
@@ -161,7 +186,7 @@ class Rerunner:
         self.api.post(f"{self.runs}/{identifier}/cancel")
         print(f"{file}: the head moved to {moved[:7]} meanwhile, so that attempt was cancelled")
         if depth < ROUNDS:
-            self.workflow(file, moved, reasons, depth + 1)
+            self.act(file, moved, reasons, depth + 1)
 
 
 def rerun_when_edited(event, workflows, repository, api, sleep=time.sleep):
