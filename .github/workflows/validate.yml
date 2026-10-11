@@ -30,8 +30,8 @@ jobs:
       - name: Validate the adapter profile crate against RO-Crate 1.2
         run: rocrate-validator validate adapter/profile/ --profile-identifier ro-crate-1.2 --no-paging
 
-  pytest:
-    name: "ruff and pytest: the specification's files, the adapter profile and the compatibility tool"
+  ruff:
+    name: ruff
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -51,8 +51,51 @@ jobs:
       - name: Check ruff formatting
         run: python3 -m ruff format --check .
 
+  slice:
+    name: "pytest: ${{ matrix.name }}"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: the compatibility tool
+            tests: tests/compatibility
+          - name: the adapter profile's findings and queries
+            tests: tests/adapter_profile/test_expected_findings.py tests/adapter_profile/test_queries.py
+          - name: the rest
+            tests: >-
+              tests
+              --ignore=tests/compatibility
+              --ignore=tests/adapter_profile/test_expected_findings.py
+              --ignore=tests/adapter_profile/test_queries.py
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Install test dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install --group dev
+
       - name: Run pytest
-        run: python3 -m pytest
+        run: python3 -m pytest ${{ matrix.tests }}
+
+  pytest:
+    name: "ruff and pytest: the specification's files, the adapter profile and the compatibility tool"
+    needs: [ruff, slice]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ruff and every slice of pytest succeeded
+        env:
+          RUFF: ${{ needs.ruff.result }}
+          SLICES: ${{ needs.slice.result }}
+        run: |
+          echo "ruff: $RUFF; pytest slices: $SLICES"
+          test "$RUFF" = success && test "$SLICES" = success
 
   actions:
     name: Published GitHub Actions, run on a synthetic adapter (not pytest)
