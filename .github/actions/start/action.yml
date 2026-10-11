@@ -20,6 +20,13 @@ inputs:
       meant to be a required status check.
     required: false
     default: compatibility
+  checkout-only:
+    description: >-
+      'true': with check compatibility, check the counterparts out beside the
+      repository, a Depends-On: line's pull request among them, and stop before
+      anything is run or posted. The run writes no report, so report is empty.
+    required: false
+    default: 'false'
   python-version:
     description: The Python the tooling runs on.
     required: false
@@ -31,6 +38,13 @@ inputs:
     required: false
     default: ${{ github.token }}
 
+outputs:
+  report:
+    description: >-
+      The path of the EARL report the check wrote, when it wrote exactly one;
+      empty when it wrote none or several.
+    value: ${{ steps.report.outputs.path }}
+
 runs:
   using: composite
   steps:
@@ -40,11 +54,17 @@ runs:
       env:
         REPOSITORY_PATH: ${{ inputs.path }}
         CHECK: ${{ inputs.check }}
+        CHECKOUT_ONLY: ${{ inputs.checkout-only }}
       run: |
         set -euo pipefail
         case "${CHECK}" in
           compatibility|ready-to-merge) ;;
           *) echo "::error::check is compatibility or ready-to-merge, not ${CHECK}"; exit 1 ;;
+        esac
+        case "${CHECKOUT_ONLY}" in
+          true) [ "${CHECK}" = compatibility ] || { echo "::error::checkout-only is for the compatibility check, not ${CHECK}"; exit 1; } ;;
+          false) ;;
+          *) echo "::error::checkout-only is true or false, not ${CHECKOUT_ONLY}"; exit 1 ;;
         esac
         if [ -d "${REPOSITORY_PATH}" ]; then echo "present=true"; else echo "present=false"; fi >> "$GITHUB_OUTPUT"
 
@@ -95,6 +115,7 @@ runs:
       env:
         REPOSITORY_PATH: ${{ inputs.path }}
         CHECK: ${{ inputs.check }}
+        CASCADE_CHECKOUT_ONLY: ${{ inputs.checkout-only }}
         ENTRY_POINT: ${{ steps.specification.outputs.entry-point }}
         SPEC_REPOSITORY: ${{ steps.specification.outputs.repository }}
         RESULTS: ${{ runner.temp }}/compatibility-${{ inputs.check }}
@@ -106,13 +127,26 @@ runs:
         GH_TOKEN: ''
       run: |
         set -euo pipefail
+        rm -rf "${RESULTS}/earl"
         python3 "${ENTRY_POINT}" "${REPOSITORY_PATH}" \
           --check "${CHECK}" \
           --results "${RESULTS}" \
           --spec-repository "${SPEC_REPOSITORY}"
 
+    - name: name the report the check wrote
+      id: report
+      if: always()
+      shell: bash
+      env:
+        EARL: ${{ runner.temp }}/compatibility-${{ inputs.check }}/earl
+      run: |
+        set -euo pipefail
+        shopt -s nullglob
+        reports=("${EARL}"/*.ttl)
+        if [ "${#reports[@]}" -eq 1 ]; then echo "path=${reports[0]}" >> "$GITHUB_OUTPUT"; fi
+
     - name: comment the table the check wrote
-      if: always() && github.event.pull_request.number
+      if: always() && github.event.pull_request.number && inputs.checkout-only != 'true'
       shell: bash
       # Every value comes from the workflow context, and gh from the path read
       # before the check ran: what the check writes to the environment files

@@ -69,7 +69,12 @@ def hop(spec, directory, options):
         "--spec-picked",
         str(handover),
     ]
-    status = subprocess.run(argv, env={**os.environ, github.TOKEN: github.token}).returncode
+    environment = {
+        **os.environ,
+        github.TOKEN: github.token,
+        "CASCADE_CHECKOUT_ONLY": str(options.checkout_only).lower(),
+    }
+    status = subprocess.run(argv, env=environment).returncode
     if status not in (0, 1):
         raise Stop(f"{entry_point} did not run the check: it exited {status}")
     return status

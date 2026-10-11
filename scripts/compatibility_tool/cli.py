@@ -32,6 +32,7 @@ class Options:
     results: Path
     spec_repository: str | None
     spec_picked: Path | None
+    checkout_only: bool = False
 
 
 def parse(usage, argv):
@@ -51,6 +52,12 @@ def parse(usage, argv):
         help="the cascade-bridge-spec the run picks a version of; the checkout this runs from, locally",
     )
     parser.add_argument("--spec-picked", type=Path, default=None, help=argparse.SUPPRESS)
+    parser.add_argument(
+        "--checkout-only",
+        action="store_true",
+        default=os.environ.get("CASCADE_CHECKOUT_ONLY") == "true",
+        help="place the counterparts and record them, and run no check; for --check compatibility",
+    )
     return parser.parse_args(argv)
 
 
@@ -114,6 +121,8 @@ def compatibility(directory, options, event, api, spec):
     record.save(options.results)
     for entry in used:
         report(True, entry.describe())
+    if options.checkout_only:
+        return Status.OK
 
     status = validate.validate(directory, document, spec)
     for reading, vocabulary in placed:
@@ -139,6 +148,9 @@ def main(usage, argv=None):
     if not directory.is_dir():
         report(False, f"{directory} is not a directory")
         return Status.FAIL.exit_code
+    if args.checkout_only and args.check != CHECKS[0]:
+        report(False, f"--checkout-only places the counterparts of {CHECKS[0]}, not of {args.check}")
+        return Status.FAIL.exit_code
 
     options = Options(
         check=args.check,
@@ -148,6 +160,7 @@ def main(usage, argv=None):
         else Path(tempfile.gettempdir()) / "cascade-compatibility" / directory.name,
         spec_repository=args.spec_repository,
         spec_picked=args.spec_picked,
+        checkout_only=args.checkout_only,
     )
     options.results.mkdir(parents=True, exist_ok=True)
     github.take_token()

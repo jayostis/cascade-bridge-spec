@@ -454,6 +454,7 @@ class World:
             "GITHUB_TOKEN",
             "CASCADE_GITHUB_TOKEN",
             "CASCADE_CHECK_RUN_ID",
+            "CASCADE_CHECKOUT_ONLY",
         ):
             environment.pop(name, None)
         environment.update({key: str(value) for key, value in extra.items()})
@@ -479,7 +480,15 @@ class World:
         return variables
 
     def tool(
-        self, subject, expected=0, check=None, interpreter=None, in_a_process=False, library_cases=False, **variables
+        self,
+        subject,
+        expected=0,
+        check=None,
+        interpreter=None,
+        in_a_process=False,
+        library_cases=False,
+        checkout_only=False,
+        **variables,
     ):
         """The tool's run, in this Python unless the test is about a process: then as a caller's workflow starts it.
 
@@ -490,6 +499,8 @@ class World:
         argv = [str(subject), "--results", str(self.results)]
         if check:
             argv += ["--check", check]
+        if checkout_only:
+            argv.append("--checkout-only")
         if variables.get("CI") == "true":  # start passes it as an argument, and sets no variable
             argv += ["--spec-repository", self.url("cascade-bridge-spec")]
         environment = self.environment(**variables)
