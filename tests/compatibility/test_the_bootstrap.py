@@ -1,6 +1,6 @@
 """What a caller's workflow starts: it fetches a version, and the checks run from the one picked."""
 
-from compatibility_world import TOKEN, depends_on
+from compatibility_world import TOKEN, depends_on, git
 
 
 def test_nothing_to_check_is_not_reported_as_a_pass(world):
@@ -20,6 +20,25 @@ def test_the_checks_run_from_the_version_picked_not_the_one_fetched_to_start(wor
 
     assert "the checks run from" in said
     assert str(world.workspace / "cascade-bridge-spec") in said
+    assert said.count("compatibility: ") == 1
+
+
+def test_a_version_picked_that_predates_checkout_only_runs_the_whole_check_quietly(world):
+    origin = world.origin("cascade-bridge-spec")
+    cli = origin / "scripts" / "compatibility_tool" / "cli.py"
+    text = cli.read_text(encoding="utf-8")
+    flag, variable = '"--checkout-only",', 'os.environ.get("CASCADE_CHECKOUT_ONLY") == "true"'
+    assert flag in text and variable in text
+    cli.write_text(
+        text.replace(flag, '"--not-yet-a-flag", dest="checkout_only",').replace(variable, "False"), encoding="utf-8"
+    )
+    git("commit", "-q", "-am", "a version before checkout-only", cwd=origin)
+    engine, event = world.engine_under_test()
+
+    said = world.tool(engine, in_a_process=True, checkout_only=True, **world.ci(event=event))
+
+    assert "the checks run from" in said
+    assert "did not run the check" not in said
     assert said.count("compatibility: ") == 1
 
 

@@ -127,6 +127,7 @@ runs:
         GH_TOKEN: ''
       run: |
         set -euo pipefail
+        rm -rf "${RESULTS}/earl"
         python3 "${ENTRY_POINT}" "${REPOSITORY_PATH}" \
           --check "${CHECK}" \
           --results "${RESULTS}" \
