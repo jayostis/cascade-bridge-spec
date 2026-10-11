@@ -50,8 +50,8 @@ Each holds until the design it describes changes, and then it changes with it.
 ## Layout
 
 Conformance targets are top-level (`adapter/`, `engine/`), each holding its
-contract and the profile that checks it; `vocab/` and `shapes/` are shared;
-`scripts/`, `fixtures/` and `tests/` are machinery. A `CLAUDE.md` holds a rule
+contract and the profile that checks it; `vocab/`, `shapes/` and `bench/` are
+shared; `scripts/`, `fixtures/` and `tests/` are machinery. A `CLAUDE.md` holds a rule
 for changing the directory it sits in, and only that.
 
 ## Conventions
@@ -60,6 +60,8 @@ for changing the directory it sits in, and only that.
 - A change to `vocab/`, `shapes/`, `adapter/profile/`, `engine/sparql.md`,
   `engine/command.md` or `compatibility.md` changes what every
   adapter and Bridge must do; its commit message says why.
+- A change to `bench/` changes what every benchmark harness must write; its
+  commit message says why.
 - A pull request description never puts a closing keyword (`closes`, `fixes`,
   `resolves`) before an issue it does not close: GitHub closes it whatever the
   rest of the sentence says.
