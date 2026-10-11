@@ -32,6 +32,16 @@ def optional_text(value):
     return None if value is None else str(value)
 
 
+@dataclass(frozen=True)
+class MergedHead:
+    """A named pull request's head, as the run fetched and merged it."""
+
+    commit: str
+    label: str
+    base: str
+    from_this_repository: bool
+
+
 @dataclass
 class Row:
     """A repository the run recorded, and what it did with it."""
@@ -48,6 +58,7 @@ class Row:
     result: str | None = None
     holds: bool | None = None
     from_named_pull_requests: bool = False
+    merged_heads: tuple[MergedHead, ...] = ()
     pull_request: str | None = None
     host: str | None = None
     vocabularies: Path | None = None

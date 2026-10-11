@@ -12,6 +12,7 @@ import re
 import shutil
 import tarfile
 import tempfile
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -26,6 +27,12 @@ ARCHIVES = (".tgz", ".tar.gz")
 SUBRESOURCE_INTEGRITY = re.compile(r"^(sha256|sha384|sha512)-([A-Za-z0-9+/=]+)$")
 HEX_SHA256 = re.compile(r"^[0-9a-fA-F]{64}$")
 DOWNLOAD_TIMEOUT_SECONDS = 60
+POLL_SECONDS = 15
+POLL_TIMEOUT_SECONDS = 30
+WAIT_SECONDS = 6 * 60
+RUNS_THAT_RELEASE = ("push", "pull_request")
+sleep = time.sleep
+monotonic = time.monotonic
 
 
 def on_a_runner_releases_serve():
@@ -52,13 +59,9 @@ def set_up_alike(path, branch):
     )
 
 
-def released_commit(row):
-    """The commit whose release holds this engine's build: its own, or, where the pull requests merged into it change
-    nothing but its compatibility.json and no setup in it, the branch's; None where it is to be built."""
-    if row.uncommitted_edits or not row.commit or row.path is None:
-        return None
-    if not row.from_named_pull_requests:
-        return row.commit
+def the_branchs_commit(row):
+    """The branch's commit, where the pull requests merged into the engine change nothing but its compatibility.json
+    and no setup in it; None where they do."""
     branch = git.local_commit(row.path, "@{upstream}")
     if branch is None:
         return None
@@ -68,17 +71,104 @@ def released_commit(row):
     return branch if set_up_alike(row.path, branch) else None
 
 
+def a_head_merged(row):
+    return any(merged.commit == row.commit for merged in row.merged_heads)
+
+
+def released_commit(row):
+    """The commit whose release holds this engine's build: its own, the branch's where the pull requests merged into
+    it change nothing but its compatibility.json, or, where the merge fast-forwarded, the pull request's head; None
+    where it is to be built."""
+    if row.uncommitted_edits or not row.commit or row.path is None:
+        return None
+    if not row.from_named_pull_requests:
+        return row.commit
+    return the_branchs_commit(row) or (row.commit if a_head_merged(row) else None)
+
+
+def say_how_to_stop_merging(row):
+    """A single pull request the run merged, rather than fast-forwarded to, is told to catch up with its base."""
+    if row.uncommitted_edits or not row.commit or row.path is None or len(row.merged_heads) != 1:
+        return
+    [merged] = row.merged_heads
+    if row.commit == git.local_commit(row.path, "@{upstream}"):
+        return
+    note(
+        f"{merged.label} is behind {merged.base}, so {row.name} is a merge made by this run, which no release holds: "
+        f"bring it up to date (git merge origin/{merged.base}, then push) to run from "
+        f"{TAG.format(commit=merged.commit)}"
+    )
+
+
+def unfinished_runs(api, path, commit, timeout):
+    """The pages of the engine's runs at the commit that are not done and that a push or a pull request started."""
+    found = api.get(f"{path}/actions/runs?head_sha={commit}&per_page=100", timeout=timeout)
+    return [
+        str(run.get("html_url") or run.get("id"))
+        for run in found.get("workflow_runs") or []
+        if run.get("event") in RUNS_THAT_RELEASE and run.get("status") != "completed"
+    ]
+
+
+def from_a_fork(row, commit):
+    return any(merged.commit == commit and not merged.from_this_repository for merged in row.merged_heads)
+
+
+def release_being_made(api, row, path, tag, commit):
+    """The release, once it appears while a run of the engine at the commit is unfinished; None where it does not."""
+    deadline = monotonic() + WAIT_SECONDS
+    unfinished = None
+    while True:
+        left = deadline - monotonic()
+        if left <= 0:
+            note(f"waited {WAIT_SECONDS // 60} min for {tag}; {', '.join(unfinished)} had not finished")
+            return None
+        try:
+            now_unfinished = unfinished_runs(api, path, commit, min(POLL_TIMEOUT_SECONDS, left))
+        except (OSError, http.client.HTTPException, ValueError, Stop) as error:
+            note(f"the runs of {row.name} at {commit} could not be read ({error}), so each host is built by its setup")
+            return None
+        if not now_unfinished:
+            note(f"{row.name} has no release {tag} and no run at {commit} to make one, so each host is built")
+            return None
+        if unfinished is None:
+            note(f"{tag} is not there yet: waiting up to {WAIT_SECONDS // 60} min for {', '.join(now_unfinished)}")
+        unfinished = now_unfinished
+        sleep(max(0, min(POLL_SECONDS, deadline - monotonic())))
+        left = deadline - monotonic()
+        if left <= 0:
+            continue
+        try:
+            return api.get(f"{path}/releases/tags/{tag}", timeout=min(POLL_TIMEOUT_SECONDS, left))
+        except urllib.error.HTTPError as error:
+            if error.code != 404:
+                note(f"{row.name} has no release {tag} to read ({error}), so each host is built by its setup")
+                return None
+        except (OSError, http.client.HTTPException, ValueError, Stop) as error:
+            note(f"{tag} could not be read ({error}), so each host is built by its setup")
+            return None
+
+
 def release_of(row):
-    """The release built from the engine's commit, with that commit; None where there is none to run."""
-    commit = released_commit(row) if on_a_runner_releases_serve() else None
+    """The release built from the engine's commit; None where there is none to run."""
+    if not on_a_runner_releases_serve():
+        return None
+    commit = released_commit(row)
     if commit is None:
+        say_how_to_stop_merging(row)
         return None
     tag = TAG.format(commit=commit)
+    path = f"repos/{github.repository_path(row.repository)}"
+    api = github.Api()
     try:
-        return github.Api().get(f"repos/{github.repository_path(row.repository)}/releases/tags/{tag}")
+        return api.get(f"{path}/releases/tags/{tag}")
+    except urllib.error.HTTPError as error:
+        if error.code == 404 and not from_a_fork(row, commit):
+            return release_being_made(api, row, path, tag, commit)
+        note(f"{row.name} has no release {tag} to read ({error}), so each host is built by its setup")
     except (OSError, http.client.HTTPException, ValueError, Stop) as error:
         note(f"{row.name} has no release {tag} to read ({error}), so each host is built by its setup")
-        return None
+    return None
 
 
 def digests(notes):
