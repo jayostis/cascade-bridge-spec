@@ -11,3 +11,4 @@
 *.csv    text eol=lf
 *.sparql text eol=lf
 *.rq     text eol=lf
+*.gz     -text

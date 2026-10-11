@@ -59,4 +59,6 @@
     "fixtures/findings/example-0004.ttl" ,
     "fixtures/findings/example-0005.ttl" ,
     "fixtures/findings/example-0006.ttl" ,
-    "fixtures/findings/example-0008.ttl" .
+    "fixtures/findings/example-0008.ttl" ,
+    "bench/manifest.json" ,
+    "bench/example-0001.xml.gz" .

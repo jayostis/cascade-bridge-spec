@@ -38,6 +38,9 @@
           "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/shapes/gap-scheme.shapes.ttl"
         },
         {
+          "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/bench/manifest.schema.json"
+        },
+        {
           "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/vocab/bridge.ttl"
         }
       ],
@@ -50,6 +53,9 @@
         },
         {
           "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/shapes/gap-scheme.shapes.ttl"
+        },
+        {
+          "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/bench/manifest.schema.json"
         },
         {
           "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/vocab/bridge.ttl"
@@ -103,6 +109,19 @@
         "@id": "https://spdx.org/licenses/Apache-2.0"
       },
       "description": "The SHACL shapes the file a bridge:gapScheme names is validated against on its own."
+    },
+    {
+      "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/bench/manifest.schema.json",
+      "@type": "File",
+      "name": "Cascade Bridge benchmark manifest schema",
+      "encodingFormat": "application/schema+json",
+      "conformsTo": {
+        "@id": "https://json-schema.org/draft/2020-12/schema"
+      },
+      "license": {
+        "@id": "https://spdx.org/licenses/Apache-2.0"
+      },
+      "description": "The JSON Schema an adapter's bench/manifest.json is validated against."
     },
     {
       "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/vocab/bridge.ttl",
