@@ -1,0 +1,14 @@
+{
+  "inputs": [
+    {
+      "id": "synthetic-example-example-0001",
+      "path": "bench/example-0001.xml.gz",
+      "sha256": "8512fdf37ccb2afb9723c576328bb4cb32acdd54337b1ac9f0c0872c7017edce",
+      "bytes": 516,
+      "envelope": "ro-crate-metadata.json#envelope-set",
+      "measures": ["convert", "triples", "findings"],
+      "onPullRequests": true,
+      "timeoutSeconds": 60
+    }
+  ]
+}
