@@ -20,6 +20,6 @@
     { "name": "entries-x10/findings", "unit": "{count}", "value": 4097, "kind": "output", "extra": "up to blank-node names" },
     { "name": "package/wasm-bytes/gzip", "unit": "By", "value": 1655640, "kind": "cost" },
     { "name": "entries-x50/timeout/convert", "unit": "s", "value": 1800, "kind": "output" },
-    { "name": "hostile-deep/refused/depth-limit", "unit": "{count}", "value": 1, "kind": "output", "extra": "nesting deeper than 5000" }
+    { "name": "hostile-deep/refused/documentFailure", "unit": "{count}", "value": 1, "kind": "output", "extra": "nesting deeper than 5000" }
   ]
 }

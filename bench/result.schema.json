@@ -47,7 +47,13 @@
       "required": ["name", "unit", "value", "kind"],
       "additionalProperties": false,
       "properties": {
-        "name": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*(/[a-z0-9][a-z0-9._-]*){1,2}$" },
+        "name": {
+          "type": "string",
+          "anyOf": [
+            { "pattern": "^[a-z0-9][a-z0-9._-]*(/[a-z0-9][a-z0-9._-]*){1,2}$" },
+            { "pattern": "^[a-z0-9][a-z0-9._-]*/refused/[A-Za-z]+$" }
+          ]
+        },
         "unit": { "enum": ["s", "By", "{count}"] },
         "value": { "type": "number", "minimum": 0 },
         "kind": { "enum": ["cost", "output", "clock"] },
@@ -70,7 +76,12 @@
         {
           "if": { "properties": { "name": { "pattern": "^[^/]+/refused/[^/]+$" } }, "required": ["name"] },
           "then": {
-            "properties": { "kind": { "const": "output" }, "unit": { "const": "{count}" }, "value": { "const": 1 } }
+            "properties": {
+              "name": { "pattern": "^[^/]+/refused/(documentFailure|factsFailure|adapterFailure|vocabularyFailure|fileMissingFailure|bridgeFailure)$" },
+              "kind": { "const": "output" },
+              "unit": { "const": "{count}" },
+              "value": { "const": 1 }
+            }
           }
         }
       ]

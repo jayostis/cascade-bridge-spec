@@ -15,10 +15,10 @@ def at(document, name):
     return next(index for index, entry in enumerate(document["results"]) if entry["name"] == name)
 
 
-def renamed(name):
+def renamed(name, validator="anyOf"):
     def edit(document):
         document["results"][0]["name"] = name
-        return ("results", 0, "name"), "does not match"
+        return ("results", 0, "name"), validator
 
     return edit
 
@@ -26,86 +26,126 @@ def renamed(name):
 def a_clock_without(member):
     def edit(document):
         del document["results"][0][member]
-        return ("results", 0), f"'{member}' is a required property"
+        return ("results", 0), "required", member
 
     return edit
 
 
 def kind_removed(document):
     del document["results"][0]["kind"]
-    return ("results", 0), "'kind' is a required property"
+    return ("results", 0), "required", "kind"
 
 
 def kind_time(document):
     document["results"][0]["kind"] = "time"
-    return ("results", 0, "kind"), "is not one of"
+    return ("results", 0, "kind"), "enum"
 
 
 def unit_ms(document):
     document["results"][0]["unit"] = "ms"
-    return ("results", 0, "unit"), "is not one of"
+    return ("results", 0, "unit"), "enum"
 
 
 def negative_value(document):
     document["results"][0]["value"] = -1
-    return ("results", 0, "value"), "less than the minimum"
+    return ("results", 0, "value"), "minimum"
 
 
 def range_with_an_exponent(document):
     document["results"][0]["range"] = "5e-7-1e-6"
-    return ("results", 0, "range"), "does not match"
+    return ("results", 0, "range"), "pattern"
 
 
 def no_results(document):
     document["results"] = []
-    return ("results",), "non-empty"
+    return ("results",), "minItems"
 
 
 def commit_as_a_string(document):
     document["commit"] = document["commit"]["an-engine"]
-    return ("commit",), "is not of type 'object'"
+    return ("commit",), "type"
 
 
 def short_sha(document):
     document["commit"]["an-engine"] = "0123456"
-    return ("commit", "an-engine"), "does not match"
+    return ("commit", "an-engine"), "pattern"
 
 
 def profile_removed(document):
     del document["env"]["profile"]
-    return ("env",), "'profile' is a required property"
+    return ("env",), "required", "profile"
 
 
 def native_with_a_node_version(document):
     document["env"]["host"] = "native"
-    return ("env", "node"), "is not of type 'null'"
+    return ("env", "node"), "type"
 
 
 def node_without_a_node_version(document):
     document["env"]["node"] = None
-    return ("env", "node"), "is not of type 'string'"
+    return ("env", "node"), "type"
 
 
 def unknown_top_level_member(document):
     document["version"] = 1
-    return tuple(), "Additional properties are not allowed"
+    return tuple(), "additionalProperties"
 
 
 def timeout_as_a_clock(document):
     index = at(document, "entries-x50/timeout/convert")
     document["results"][index].update(kind="clock", samples=1, range="1800-1800")
-    return ("results", index, "kind"), "'output' was expected"
+    return ("results", index, "kind"), "const"
 
 
 def refusal_in_seconds(document):
-    index = at(document, "hostile-deep/refused/depth-limit")
+    index = at(document, "hostile-deep/refused/documentFailure")
     document["results"][index]["unit"] = "s"
-    return ("results", index, "unit"), "'{count}' was expected"
+    return ("results", index, "unit"), "const"
 
 
 def timeout_as_a_plain_measure(document):
     document["results"][0]["name"] = "entries-x10/timeout"
-    return ("results", 0), "should not be valid under"
+    return ("results", 0), "not"
+
+
+def refusal_of_an_unlisted_kind(document):
+    index = at(document, "hostile-deep/refused/documentFailure")
+    document["results"][index]["name"] = "hostile-deep/refused/document"
+    return ("results", index, "name"), "pattern"
+
+
+def refusal_of_a_miscased_kind(document):
+    index = at(document, "hostile-deep/refused/documentFailure")
+    document["results"][index]["name"] = "hostile-deep/refused/documentfailure"
+    return ("results", index, "name"), "pattern"
+
+
+def refusal_counted_twice(document):
+    index = at(document, "hostile-deep/refused/documentFailure")
+    document["results"][index]["value"] = 2
+    return ("results", index, "value"), "const"
+
+
+def refusal_as_a_cost(document):
+    index = at(document, "hostile-deep/refused/documentFailure")
+    document["results"][index]["kind"] = "cost"
+    return ("results", index, "kind"), "const"
+
+
+def timeout_in_a_count(document):
+    index = at(document, "entries-x50/timeout/convert")
+    document["results"][index]["unit"] = "{count}"
+    return ("results", index, "unit"), "const"
+
+
+def commit_keyed_by_a_record_key(document):
+    document["commit"]["owner/name"] = document["commit"]["an-engine"]
+    return ("commit",), "pattern"
+
+
+def unknown_entry_member(document):
+    document["results"][0]["note"] = "x"
+    return ("results", 0), "additionalProperties"
 
 
 REFUSED = {
@@ -129,7 +169,26 @@ REFUSED = {
     "a timeout written as a clock": timeout_as_a_clock,
     "a refusal in seconds": refusal_in_seconds,
     "a timeout as a plain measure": timeout_as_a_plain_measure,
+    "a refusal of a kind the library does not define": refusal_of_an_unlisted_kind,
+    "a refusal of a kind in the wrong case": refusal_of_a_miscased_kind,
+    "a refusal counted twice": refusal_counted_twice,
+    "a refusal that is a cost": refusal_as_a_cost,
+    "a timeout in a count": timeout_in_a_count,
+    "a commit keyed by a record key": commit_keyed_by_a_record_key,
+    "an unknown entry member": unknown_entry_member,
 }
+
+
+def test_the_refusal_kinds_are_the_librarys():
+    library = json.loads((ROOT / "engine" / "library-result.schema.json").read_text(encoding="utf-8"))
+    failing = next(branch for branch in library["oneOf"] if "failure" in branch["properties"])
+    kinds = failing["properties"]["failure"]["properties"]["kind"]["enum"]
+    refused = next(
+        branch["then"]["properties"]["name"]["pattern"]
+        for branch in SCHEMA["$defs"]["result"]["allOf"]
+        if "then" in branch and "refused" in json.dumps(branch)
+    )
+    assert refused.endswith("/refused/(" + "|".join(kinds) + ")$")
 
 
 def test_the_schema_is_valid_json_schema():
@@ -149,6 +208,12 @@ def test_the_example_conforms_and_holds_the_rules_the_schema_cannot_say():
 @pytest.mark.parametrize("case", REFUSED)
 def test_the_result_schema_refuses(case):
     document = copy.deepcopy(EXAMPLE)
-    path, said = REFUSED[case](document)
-    refusals = [(tuple(error.absolute_path), error.message) for error in VALIDATOR.iter_errors(document)]
-    assert any(where == path and said in message for where, message in refusals), refusals
+    path, keyword, *member = REFUSED[case](document)
+    member = member[0] if member else None
+    refusals = [
+        (tuple(error.absolute_path), error.validator, error.message) for error in VALIDATOR.iter_errors(document)
+    ]
+    assert any(
+        where == path and validator == keyword and (not member or f"'{member}'" in message)
+        for where, validator, message in refusals
+    ), refusals

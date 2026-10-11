@@ -61,7 +61,9 @@ for changing the directory it sits in, and only that.
   `engine/command.md` or `compatibility.md` changes what every
   adapter and Bridge must do; its commit message says why.
 - A change to `bench/` changes what every benchmark harness must write; its
-  commit message says why.
+  commit message says why. In a `<input>/refused/<kind>` name, `<kind>` is the
+  spec kind of `engine/library-result.schema.json`, `documentFailure` and so on; a
+  writer maps its host's own name to it (a Node host's `document` is `documentFailure`).
 - A pull request description never puts a closing keyword (`closes`, `fixes`,
   `resolves`) before an issue it does not close: GitHub closes it whatever the
   rest of the sentence says.
