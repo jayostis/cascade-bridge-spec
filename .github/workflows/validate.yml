@@ -58,12 +58,16 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: the adapter profile
-            tests: tests/adapter_profile
           - name: the compatibility tool
             tests: tests/compatibility
+          - name: the adapter profile's findings and queries
+            tests: tests/adapter_profile/test_expected_findings.py tests/adapter_profile/test_queries.py
           - name: the rest
-            tests: tests --ignore=tests/adapter_profile --ignore=tests/compatibility
+            tests: >-
+              tests
+              --ignore=tests/compatibility
+              --ignore=tests/adapter_profile/test_expected_findings.py
+              --ignore=tests/adapter_profile/test_queries.py
     steps:
       - uses: actions/checkout@v7
 
