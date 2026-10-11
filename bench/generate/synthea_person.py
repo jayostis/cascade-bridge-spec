@@ -13,10 +13,13 @@ from repeat_entries import ENTRY, digest_line
 NAME = "Bench Hospital"
 ADDRESS = "1 Bench Street"
 TELECOM = "555-0100"
+CITY = "Bench City"
+ZIP = "000000000"
 
 KINDS = {".json.gz": ("fhir", ".json"), ".xml.gz": ("ccda", ".xml")}
 PROVIDER_TYPES = ("Organization", "Location")
 
+NINE_DIGITS = re.compile(r"\d{9}")
 ALNUM_RUN = re.compile(r"[^\W_]+")
 BOUNDED = r"(?<![^\W_]){}(?![^\W_])"
 JSON_STRING = re.compile(r'("(?:[^"\\]|\\.)*")(\s*:)?')
@@ -56,7 +59,7 @@ class Matcher:
 
 
 def removed_values(hospital_documents):
-    names, addresses, telecoms = [], [], []
+    names, addresses, cities, zips, telecoms = [], [], [], [], []
     for document in hospital_documents:
         for entry in document.get("entry", []):
             resource = entry["resource"]
@@ -65,11 +68,15 @@ def removed_values(hospital_documents):
             address = resource.get("address") or []
             for part in address if isinstance(address, list) else [address]:
                 addresses.extend(part.get("line", []))
+                cities.append(part.get("city"))
+                code = part.get("postalCode")
+                if isinstance(code, str) and NINE_DIGITS.fullmatch(code):
+                    zips.append(code)
             for telecom in resource.get("telecom", []):
                 if telecom.get("system") == "phone" and isinstance(telecom.get("value"), str):
                     telecoms.append(telecom["value"])
     replacements = {}
-    for values, placeholder in ((names, NAME), (addresses, ADDRESS), (telecoms, TELECOM)):
+    for values, placeholder in ((names, NAME), (addresses, ADDRESS), (cities, CITY), (zips, ZIP), (telecoms, TELECOM)):
         for value in values:
             if value:
                 replacements.setdefault(value, placeholder)

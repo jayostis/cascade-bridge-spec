@@ -15,7 +15,7 @@ HOSPITALS = {
                 "resourceType": "Organization",
                 "name": "ACME CLINIC",
                 "telecom": [{"system": "phone", "value": "(555) 867-5309"}, {"system": "email", "value": "a@b.c"}],
-                "address": [{"line": ["12 REAL ROAD"], "city": "Springfield"}],
+                "address": [{"line": ["12 REAL ROAD"], "city": "Springfield", "postalCode": "123456789"}],
             }
         },
         {"resource": {"resourceType": "Location", "name": "687", "address": {"line": ["9 FIELD LANE"]}}},
@@ -30,7 +30,7 @@ PRACTITIONERS = {
                 "resourceType": "Practitioner",
                 "name": [{"family": "Doe"}],
                 "telecom": [{"system": "phone", "value": "555-111-2222"}],
-                "address": [{"line": ["34 OTHER AVE"]}],
+                "address": [{"line": ["34 OTHER AVE"], "city": "Shelbyville", "postalCode": "98001"}],
             }
         }
     ],
@@ -65,7 +65,9 @@ FHIR = """{
         "value": "555-111-2222"
       } ],
       "address": [ {
-        "line": [ "34 OTHER AVE", "Suite 687A" ]
+        "line": [ "34 OTHER AVE", "Suite 687A" ],
+        "city": "SHELBYVILLE",
+        "postalCode": "98001"
       } ]
     }
   }, {
@@ -83,6 +85,7 @@ FHIR_SCRUBBED = (
     .replace('"display": "687"', '"display": "Bench Hospital"')
     .replace('"value": "555-111-2222"', '"value": "555-0100"')
     .replace('"34 OTHER AVE"', '"1 Bench Street"')
+    .replace('"city": "SHELBYVILLE"', '"city": "Bench City"')
     .replace(
         'Seen at acme clinic, \\"AT&T Clinic\\".\\nCall (555) 867-5309 or ACME CLINICAL, 687.',
         'Seen at Bench Hospital, \\"Bench Hospital\\".\\nCall 555-0100 or ACME CLINICAL, Bench Hospital.',
@@ -97,7 +100,7 @@ CCDA = """<?xml version="1.0" encoding="UTF-8"?>
     <representedOrganization displayName="AT&amp;T CLINIC">
       <name>ACME CLINIC</name>
       <telecom value="(555) 867-5309"/>
-      <addr><streetAddressLine>12 REAL ROAD</streetAddressLine><city>Springfield</city></addr>
+      <addr><streetAddressLine>12 REAL ROAD</streetAddressLine><city>Springfield</city><postalCode>123456789</postalCode></addr>
       <name>AT&amp;T CLINIC</name>
       <name>urn:uuid:aaaaaaaa-3072-f687-8f6b-000000000001</name>
     </representedOrganization>
@@ -112,6 +115,8 @@ CCDA_SCRUBBED = (
     .replace("<name>ACME CLINIC</name>", "<name>Bench Hospital</name>")
     .replace('value="(555) 867-5309"', 'value="555-0100"')
     .replace("12 REAL ROAD", "1 Bench Street")
+    .replace("<city>Springfield</city>", "<city>Bench City</city>")
+    .replace("<postalCode>123456789</postalCode>", "<postalCode>000000000</postalCode>")
     .replace("<name>AT&amp;T CLINIC</name>", "<name>Bench Hospital</name>")
     .replace("Seen at ACME CLINIC and", "Seen at Bench Hospital and")
     .replace('extension="687"', 'extension="Bench Hospital"')
@@ -174,15 +179,22 @@ def no_hospitals(root):
 
 
 @pytest.mark.parametrize(
-    "damage",
-    [unreadable_name, second_file, no_person, no_hospitals],
+    ("damage", "reason"),
+    [
+        (unreadable_name, "removed values are left"),
+        (second_file, "2 .json files"),
+        (no_person, "0 .json files"),
+        (no_hospitals, "no hospitalInformation"),
+    ],
     ids=["a removed value written in a form the scrub cannot see", "two files", "no file", "no provider files"],
 )
-def test_a_record_it_cannot_make_safe_or_find_is_refused_and_nothing_is_written(tmp_path, damage):
+def test_a_record_it_cannot_make_safe_or_find_is_refused_for_its_reason_and_nothing_is_written(
+    tmp_path, damage, reason
+):
     root = synthea_folder(tmp_path / "synthea")
     damage(root)
     out = tmp_path / "record.json.gz"
-    with pytest.raises(SystemExit):
+    with pytest.raises(SystemExit, match=reason):
         synthea_person.main([str(root), PERSON, str(out)])
     assert not out.exists()
 
