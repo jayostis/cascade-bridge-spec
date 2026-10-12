@@ -12,7 +12,7 @@ from _json_source import syntax_of
 from _terms import BRIDGE
 
 XML_SCHEMA = "http://www.w3.org/2001/XMLSchema"
-REFERENCES = (f"{{{XML_SCHEMA}}}include", f"{{{XML_SCHEMA}}}import")
+REFERENCES = tuple(f"{{{XML_SCHEMA}}}{directive}" for directive in ("include", "import", "redefine", "override"))
 
 
 def bare(iri):
@@ -45,6 +45,12 @@ def reached_from(crate, etree, iri, reached):
             reached_from(crate, etree, referred, reached)
 
 
+def declarations(crate):
+    for subject in (crate.root, *crate.graph.objects(crate.root, BRIDGE.envelope)):
+        for iri in crate.graph.objects(subject, BRIDGE.schemaImport):
+            yield bare(iri)
+
+
 def relative(crate, iri):
     return str(iri)[len(crate.adapter.resolve().as_uri().rstrip("/")) + 1 :]
 
@@ -59,7 +65,7 @@ def undeclared(crate):
     for iri in named:
         reached_from(crate, etree, iri, reached)
     reached -= named
-    declared = {bare(iri) for iri in crate.graph.objects(None, BRIDGE.schemaImport)}
+    declared = set(declarations(crate))
     for iri in sorted(reached - declared):
         yield (
             f"{relative(crate, iri)} is included or imported by a schema of the adapter and no bridge:schemaImport "

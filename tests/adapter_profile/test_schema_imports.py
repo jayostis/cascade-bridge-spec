@@ -80,6 +80,26 @@ def test_accepts_a_declaration_on_an_envelope_as_on_the_root(package):
     assert not said(crate)
 
 
+def test_reports_a_declaration_on_an_entity_that_is_neither_the_root_nor_an_envelope(package):
+    written(package, "example-part")
+    including(package, "example-part")
+    crate = package.crate
+    declared(
+        package,
+        crate,
+        "example-part",
+        on=URIRef(package.path.resolve().as_uri().rstrip("/") + "/schema/example-record.xsd"),
+    )
+    assert "schema/example-part.xsd is included or imported" in said(crate)
+
+
+def test_follows_a_redefine_as_it_follows_an_include(package):
+    written(package, "example-part")
+    including(package, "example-part")
+    package.edit("schema/example-record.xsd", "<xs:include ", "<xs:redefine ")
+    assert "schema/example-part.xsd is included or imported" in said(package.crate)
+
+
 def test_reports_a_declaration_no_schema_of_the_adapter_includes_or_imports(package):
     written(package, "example-part")
     crate = package.crate
