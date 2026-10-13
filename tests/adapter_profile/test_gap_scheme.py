@@ -128,9 +128,9 @@ def test_reports_a_gap_that_is_not_skos_broader_exactly_one_kind_a_gap_may_name(
 @pytest.mark.parametrize(
     "closed_by",
     [
-        '"genomics:assertionDate"',
-        "<https://ns.cascadeprotocol.org/genomics/v1#assertionDate>, "
-        "<https://ns.cascadeprotocol.org/genomics/v1#assertionNote>",
+        '"clinical:onsetDate"',
+        "<https://ns.cascadeprotocol.org/clinical/v1#onsetDate>, "
+        "<https://ns.cascadeprotocol.org/clinical/v1#onsetNote>",
     ],
     ids=["a literal", "two terms"],
 )
@@ -141,7 +141,7 @@ def test_reports_a_closing_term_that_is_a_literal_or_one_of_two(package, closed_
 
 
 def test_reports_nothing_for_a_gap_carrying_a_label_its_scheme_one_kind_and_a_closing_term(package):
-    package.write(GAP_SCHEME, scheme_of_one_gap(closed_by="<https://ns.cascadeprotocol.org/genomics/v1#assertionDate>"))
+    package.write(GAP_SCHEME, scheme_of_one_gap(closed_by="<https://ns.cascadeprotocol.org/clinical/v1#onsetDate>"))
     assert not list(gap_scheme.faulty(package.crate))
 
 

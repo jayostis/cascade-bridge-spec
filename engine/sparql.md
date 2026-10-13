@@ -118,9 +118,7 @@ joined inputs, and a Bridge and an adapter must reproduce the vectors in
 | a FHIR resource whose `id` is unique within its document | the server's base URL, the resource type, the `id` |
 | a FHIR Bundle entry with no `id` and a `urn:uuid` `fullUrl`, whether a server is known or not | the `fullUrl` |
 | a FHIR contained resource | the containing record's name, the contained resource's `id` |
-| a ClinVar `VariationArchive` or `ClinicalAssertion` | `https://www.ncbi.nlm.nih.gov/clinvar`, its VCV or SCV accession |
-| a ClinVar interpretation, one for each `ClassifiedCondition` of an RCV | `https://www.ncbi.nlm.nih.gov/clinvar`, the RCV accession, the condition's position in its `ClassifiedConditionList`, counted from 0 |
-| a FHIR or ClinVar record whose id repeats within its document, a FHIR resource with an `id` and no known server, or any other record no row names | the document's SHA-256 and the `rdf:value` of the record's selector |
+| a FHIR record whose id repeats within its document, a FHIR resource with an `id` and no known server, or any other record no row names | the document's SHA-256 and the `rdf:value` of the record's selector |
 | a C-CDA record | as [Naming a C-CDA record](#naming-a-c-cda-record) says |
 
 A server's base URL has its scheme and host lower-cased and every trailing `/`

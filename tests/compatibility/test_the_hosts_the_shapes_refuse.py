@@ -3,7 +3,7 @@
 from compatibility_tool.validate import shape_violations
 from compatibility_world import CONTEXT_IRI, ROOT, a_host
 
-ADAPTER = "https://github.com/jayostis/cascade-bridge-adapter-clinvar"
+ADAPTER = "https://github.com/jayostis/cascade-bridge-adapter-ccda"
 
 
 def violations(tmp_path, **document):
