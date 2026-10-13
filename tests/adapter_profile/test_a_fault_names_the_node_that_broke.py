@@ -3,7 +3,6 @@ from adapter_profile_world import unmet_over
 
 PREFIXES = """@prefix bridge:  <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 @prefix ex:      <https://example.org/synthetic-adapter/v1#> .
-@prefix clinvar: <https://ns.cascadeprotocol.org/adapter/clinvar/v1-draft#> .
 """
 
 ONE_SOURCE_PATH = "An entry carries exactly one bridge:sourcePath, the path it accounts for, a string."
@@ -20,43 +19,41 @@ TWO_ENTRIES_CARRYING_NO_SOURCE_PATH = f"""
   bridge:verdict bridge:carried .
 """
 
-THE_ENTRY_THAT_BREAKS_IT = (
-    "/VariationArchive/ClassifiedRecord/Classifications/GermlineClassification/@NumberOfSubmitters"
-)
+THE_ENTRY_THAT_BREAKS_IT = "/ClinicalDocument/recordTarget/patientRole/patient/administrativeGenderCode/@code"
 
-CLINVAR_ACCOUNTING_WITH_ONE_NO_HOME_ENTRY_NAMING_NO_GAP = f"""
+C_CDA_ACCOUNTING_WITH_ONE_NO_HOME_ENTRY_NAMING_NO_GAP = f"""
 [] a bridge:PathEntry ;
-  bridge:sourcePath "/VariationArchive/@Accession" ;
+  bridge:sourcePath "/ClinicalDocument/id/@root" ;
   bridge:verdict bridge:carried .
 
 [] a bridge:PathEntry ;
-  bridge:sourcePath "/VariationArchive/@NumberOfSubmissions" ;
+  bridge:sourcePath "/ClinicalDocument/title" ;
   bridge:verdict bridge:noHome ;
-  bridge:namesGap clinvar:aggregateNumberOfSubmissions .
+  bridge:namesGap ex:documentTitle .
 
 [] a bridge:PathEntry ;
-  bridge:sourcePath "/VariationArchive/@NumberOfSubmitters" ;
+  bridge:sourcePath "/ClinicalDocument/effectiveTime/@value" ;
   bridge:verdict bridge:noHome ;
-  bridge:namesGap clinvar:aggregateNumberOfSubmitters .
+  bridge:namesGap ex:documentEffectiveTime .
 
 [] a bridge:PathEntry ;
-  bridge:sourcePath "/VariationArchive/ClassifiedRecord/Classifications/GermlineClassification/@DateLastEvaluated" ;
+  bridge:sourcePath "/ClinicalDocument/languageCode/@code" ;
   bridge:verdict bridge:noHome ;
-  bridge:namesGap clinvar:aggregateClassificationEvaluationDate .
+  bridge:namesGap ex:documentLanguage .
 
 [] a bridge:PathEntry ;
-  bridge:sourcePath "/VariationArchive/ClassifiedRecord/Classifications/GermlineClassification/@NumberOfSubmissions" ;
+  bridge:sourcePath "/ClinicalDocument/versionNumber/@value" ;
   bridge:verdict bridge:noHome ;
-  bridge:namesGap clinvar:aggregateNumberOfSubmissions .
+  bridge:namesGap ex:documentVersion .
 
 [] a bridge:PathEntry ;
   bridge:sourcePath "{THE_ENTRY_THAT_BREAKS_IT}" ;
   bridge:verdict bridge:noHome .
 
 [] a bridge:PathEntry ;
-  bridge:sourcePath "/VariationArchive/ClassifiedRecord/Classifications/GermlineClassification/Citation" ;
+  bridge:sourcePath "/ClinicalDocument/confidentialityCode/@code" ;
   bridge:verdict bridge:noHome ;
-  bridge:namesGap clinvar:aggregateClassificationCitation .
+  bridge:namesGap ex:documentConfidentiality .
 """
 
 
@@ -73,8 +70,8 @@ def test_a_shape_broken_at_two_nodes_gives_two_faults_each_naming_its_node():
     assert sorted(named) == [[THE_LABEL_ENTRY], [THE_NOTE_ENTRY]], faults
 
 
-def test_a_fault_over_the_clinvar_accounting_names_the_source_path_of_the_entry_that_broke_it():
-    faults = faults_over(CLINVAR_ACCOUNTING_WITH_ONE_NO_HOME_ENTRY_NAMING_NO_GAP)
+def test_a_fault_over_a_c_cda_accounting_names_the_source_path_of_the_entry_that_broke_it():
+    faults = faults_over(C_CDA_ACCOUNTING_WITH_ONE_NO_HOME_ENTRY_NAMING_NO_GAP)
 
     assert len(faults) == 1, faults
     assert A_NO_HOME_ENTRY_NAMES_ONE_GAP in faults[0]
