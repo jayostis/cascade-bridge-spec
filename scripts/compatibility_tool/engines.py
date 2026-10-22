@@ -1,3 +1,4 @@
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -15,9 +16,16 @@ def executable(argv, cwd):
     return [shutil.which(first) or first, *argv[1:]]  # so Windows finds npm.cmd
 
 
-def execute(argv, cwd):
+def execute(argv, cwd, env=None):
     try:
-        run = subprocess.run(executable(argv, cwd), cwd=cwd, capture_output=True, encoding="utf-8", errors="replace")
+        run = subprocess.run(
+            executable(argv, cwd),
+            cwd=cwd,
+            env=None if env is None else {**os.environ, **env},
+            capture_output=True,
+            encoding="utf-8",
+            errors="replace",
+        )
     except OSError as error:
         report(False, f"{argv[0]} could not be started in {cwd}: {error}")
         return None

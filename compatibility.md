@@ -49,7 +49,14 @@ vocabulary and each adapter it loads by repository: those are its counterparts.
 Its `compatibility.json` names its hosts, as an engine's does, and no
 `mustPassWith`. On each host the run appends `--report <file>` to the host's
 command, then `--folder <repository>=<folder>` for each repository
-`cascade-runtime.json` names, keyed as that file writes it. The command runs the
+`cascade-runtime.json` names, keyed as that file writes it. The command is also
+given `CASCADE_PULL_REQUESTS`, the path of a JSON file (`{}` in a local run)
+holding every pull request the run read, as it read them with its token: keyed
+`owner/repository/pull/N`, each with its `body`, `state`, `merged`, and `base`
+and `head` (`ref`, `sha` and `repo.full_name`), or `null` where it could not read
+one. The command holds no token (the run empties `GITHUB_TOKEN` and `GH_TOKEN`
+for everything it starts), so this file is how it reads the pull requests that
+pick what it reads from no checkout, the Bridge's build. The command runs the
 vocabulary's conformance kit there and writes an EARL report, which is judged by
 [`engine/faults-of-a-report.rq`](engine/faults-of-a-report.rq) on its outcomes
 alone: no manifest says which entries it must hold. **A host on which it does not
@@ -65,8 +72,24 @@ not hold blocks the merge.** A change a runtime must follow lands as a pair: the
 vocabulary's pull request and the runtime's, each naming the other on a
 `Depends-On:` line.
 
-A runtime reads the Bridge as the package the Bridge publishes from its default
-branch, and says which build it read; the run builds nothing of it itself.
+A runtime reads the Bridge as a package the Bridge publishes as the release
+`build-<commit>`, for every commit of its default branch and every head of a pull
+request from the Bridge's repository itself; the run builds nothing of it, and
+the runtime says which build it read and how it picked it. A `cascade-bridge-rs`
+checkout beside the runtime, or handed in with `--folder`, has its own build used when it was made from the
+checkout as it is, else the release of the commit the checkout is at; a checkout
+with uncommitted files and no build of them stops the run. Otherwise one rule
+applies, with no fall-through to the next once it has picked: the head of an open
+Bridge pull request reached by `Depends-On:` lines (below), read at that head
+alone, unmerged, where a counterpart's is merged into its target; else the head of
+the Bridge's branch named like the branch the run is on, unless that is its
+default branch; else the newest of the last 100 commits of its default branch
+with a build, which is also the pick of a local run with no checkout. A picked
+commit with no build stops the run, saying how it was picked. A runtime refuses
+two Bridge pull requests named, one from a fork (only the Bridge's own get a
+build) and one closed without merging; it stops on a `Depends-On:` line naming no
+pull request and on a named Bridge pull request it cannot read, and passes over
+one elsewhere it cannot read, as the run does.
 
 ## Which version of each repository a run uses
 
@@ -128,10 +151,17 @@ GitHub Actions cannot reproduce these, so a person or an agent does it by hand:
   which its row says: the run checks that repository out as the pull request
   under test, and the merge gate still holds this one until that one merges.
   Land it first, or fold its changes into this pull request.
-- **A Bridge pull request is not built into a runtime.** A run lists one named
-  on a `Depends-On:` line as not used, and the runtime reads the Bridge's
-  newest published build. Try the change from the Bridge's own pull request; a
-  runtime reads it once it has merged and been published.
+- **A Bridge pull request is built by the Bridge, not by the run, and read at
+  its head alone.** The run lists one named on a `Depends-On:` line as not used,
+  because it checks the Bridge out nowhere; the runtime reads the `build-<head>`
+  pre-release the Bridge published for that pull request's head, unmerged with
+  the branch it targets. A picked commit with no build stops the run, saying how
+  it was picked.
+- **A runtime does not wait for a Bridge publish in progress**, as the run waits
+  for an engine's release. Rerun the runtime's pull request once the Bridge's
+  publish run has made `build-<head>`. The Bridge prunes a pull request's older
+  builds when it moves to a new head, merges or closes, so a rerun also picks
+  again past a build pruned under it.
 - **A re-run keeps the run's commit.** After a retarget, a pull request is still
   tested merged into its old base, while counterparts follow the new one. Push,
   or run `gh pr update-branch`, for a fresh merge.
