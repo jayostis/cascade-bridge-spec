@@ -110,6 +110,39 @@ runs:
         echo "${repository} ${branch} is $(git -C "${bootstrap}" rev-parse HEAD), at ${bootstrap}"
         echo "entry-point=${bootstrap}/scripts/compatibility.py" >> "$GITHUB_OUTPUT"
 
+    # The validators the check installs and the packages a runtime's setup fetches come from what a
+    # run on the default branch saved, so that a check does not wait on PyPI and npm each time.
+    - name: the caches of the validators and of npm
+      id: caches
+      if: inputs.check == 'compatibility' && inputs.checkout-only != 'true'
+      shell: bash
+      env:
+        ENTRY_POINT: ${{ steps.specification.outputs.entry-point }}
+      run: |
+        set -euo pipefail
+        pyproject="$(dirname "${ENTRY_POINT}")/../pyproject.toml"
+        {
+          echo "pip-key=cascade-bridge-start-pip-${RUNNER_OS}-$(sha256sum "${pyproject}" | cut -c1-16)"
+          echo "pip-path=$(python3 -m pip cache dir)"
+          echo "npm-path=$(npm config get cache 2>/dev/null || echo "${HOME}/.npm")"
+        } >> "$GITHUB_OUTPUT"
+
+    - if: steps.caches.outcome == 'success'
+      id: pip
+      uses: actions/cache/restore@v6
+      with:
+        path: ${{ steps.caches.outputs.pip-path }}
+        key: ${{ steps.caches.outputs.pip-key }}
+        restore-keys: cascade-bridge-start-pip-${{ runner.os }}-
+
+    - if: steps.caches.outcome == 'success'
+      id: npm
+      uses: actions/cache/restore@v6
+      with:
+        path: ${{ steps.caches.outputs.npm-path }}
+        key: cascade-bridge-start-npm-${{ runner.os }}-
+        restore-keys: cascade-bridge-start-npm-${{ runner.os }}-
+
     - name: run the check
       shell: bash
       env:
@@ -132,6 +165,25 @@ runs:
           --check "${CHECK}" \
           --results "${RESULTS}" \
           --spec-repository "${SPEC_REPOSITORY}"
+
+    - if: >-
+        always() && steps.caches.outcome == 'success' && steps.pip.outputs.cache-hit != 'true'
+        && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+      uses: actions/cache/save@v6
+      with:
+        path: ${{ steps.caches.outputs.pip-path }}
+        key: ${{ steps.caches.outputs.pip-key }}
+
+    # Keyed by the lockfiles of the repositories checked out beside the one under test.
+    - if: >-
+        always() && steps.caches.outcome == 'success'
+        && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        && hashFiles('*/package-lock.json') != ''
+        && steps.npm.outputs.cache-matched-key != format('cascade-bridge-start-npm-{0}-{1}', runner.os, hashFiles('*/package-lock.json'))
+      uses: actions/cache/save@v6
+      with:
+        path: ${{ steps.caches.outputs.npm-path }}
+        key: cascade-bridge-start-npm-${{ runner.os }}-${{ hashFiles('*/package-lock.json') }}
 
     - name: name the report the check wrote
       id: report
