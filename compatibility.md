@@ -65,8 +65,9 @@ not hold blocks the merge.** A change a runtime must follow lands as a pair: the
 vocabulary's pull request and the runtime's, each naming the other on a
 `Depends-On:` line.
 
-A runtime reads the Bridge as the package the Bridge publishes from its default
-branch, and says which build it read; the run builds nothing of it itself.
+A runtime reads the Bridge as the package the Bridge publishes as the release
+`build-<commit>`, picked as a counterpart is (below), and says which build it
+read; the run builds nothing of it itself.
 
 ## Which version of each repository a run uses
 
@@ -128,10 +129,12 @@ GitHub Actions cannot reproduce these, so a person or an agent does it by hand:
   which its row says: the run checks that repository out as the pull request
   under test, and the merge gate still holds this one until that one merges.
   Land it first, or fold its changes into this pull request.
-- **A Bridge pull request is not built into a runtime.** A run lists one named
-  on a `Depends-On:` line as not used, and the runtime reads the Bridge's
-  newest published build. Try the change from the Bridge's own pull request; a
-  runtime reads it once it has merged and been published.
+- **A Bridge pull request is built by the Bridge, not by the run.** The run
+  lists one named on a `Depends-On:` line as not used, because it checks the
+  Bridge out nowhere; the runtime reads the `build-<head>` pre-release the Bridge
+  published for that pull request's head, else the one for the head of the
+  Bridge's branch named like the run's branch, else the newest build of the
+  Bridge's default branch. A runtime that finds none of these says so and fails.
 - **A re-run keeps the run's commit.** After a retarget, a pull request is still
   tested merged into its old base, while counterparts follow the new one. Push,
   or run `gh pr update-branch`, for a fresh merge.
