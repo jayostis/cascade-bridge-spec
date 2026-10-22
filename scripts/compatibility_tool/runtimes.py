@@ -1,6 +1,7 @@
 """A runtime: the repositories its cascade-runtime.json names, each picked as a counterpart is, and its conformance
 command run on each host with a folder for each. A vocabulary under test is handed in for the one it names."""
 
+import json
 import shutil
 from dataclasses import replace
 
@@ -15,8 +16,10 @@ from compatibility_tool.document import (
     named_repositories,
     read_file,
 )
-from compatibility_tool.github import repository_name, repository_path, url_on_this_server
+from compatibility_tool.github import Unreadable, repository_name, repository_path, url_on_this_server
 from compatibility_tool.record import Role
+
+PULL_REQUESTS = "CASCADE_PULL_REQUESTS"
 
 
 def counterparts(directory):
@@ -76,9 +79,38 @@ def folders(runtime, paths):
     ]
 
 
-def run(directory, record, options, set_up):
+def side(pull, name):
+    found = pull.get(name) or {}
+    return {
+        "ref": found.get("ref"),
+        "sha": found.get("sha"),
+        "repo": {"full_name": (found.get("repo") or {}).get("full_name")},
+    }
+
+
+def pull_requests(api, into):
+    """Every pull request the run read, as it read them with its token, keyed owner/repository/pull/N: null where it
+    could not. A runtime picks what it reads from no checkout by them, as the Bridge's build, with no token of its own."""
+    read = {
+        named.label: None
+        if isinstance(pull, Unreadable)
+        else {
+            "body": pull.get("body"),
+            "state": pull.get("state"),
+            "merged": pull.get("merged"),
+            "base": side(pull, "base"),
+            "head": side(pull, "head"),
+        }
+        for named, pull in api.pulls.items()
+    }
+    into.write_text(json.dumps(read, indent=2), encoding="utf-8")
+    return into
+
+
+def run(directory, record, options, set_up, api):
     """Each host of each runtime the run checks, its conformance command run: a row of its own per host."""
     print("The runtime's conformance command on each host")
+    handed = {PULL_REQUESTS: str(pull_requests(api, options.results / "pull-requests.json"))}
     reports = options.results / "earl"
     shutil.rmtree(reports, ignore_errors=True)
     reports.mkdir(parents=True)
@@ -93,7 +125,7 @@ def run(directory, record, options, set_up):
             if is_runtime(directory)
             else {url: directory for _, url, role in counterparts(runtime.path) if role is Role.VOCABULARY}
         )
-        handed = folders(runtime.path, {**paths, **vocabulary})
+        folders_handed = folders(runtime.path, {**paths, **vocabulary})
         listed = hosts(read_file(runtime.path))
         problem = engines.unrunnable(listed)
         if problem:
@@ -101,16 +133,16 @@ def run(directory, record, options, set_up):
             continue
         for row, host in zip(record.on_each_host(runtime, [host["name"] for host in listed]), listed, strict=True):
             index += 1
-            run_on_host(row, host, handed, set_up, reports / f"conformance-on-host-{index}.ttl")
+            run_on_host(row, host, folders_handed, set_up, reports / f"conformance-on-host-{index}.ttl", handed)
 
 
-def run_on_host(row, host, handed, set_up, earl):
+def run_on_host(row, host, handed, set_up, earl, env=None):
     command = engines.prepared(row.path, row.host, host, set_up, "the conformance command")
     if command is None:
         return
     argv = [*command, "--report", str(earl), *handed]
     print(f"  run   {' '.join(argv)}   (in {row.path}, on {row.host})")
-    status = engines.execute(argv, row.path)
+    status = engines.execute(argv, row.path, env)
     if status is None:
         return
     row.report = earl
