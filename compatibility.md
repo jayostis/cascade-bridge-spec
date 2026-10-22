@@ -49,9 +49,9 @@ vocabulary and each adapter it loads by repository: those are its counterparts.
 Its `compatibility.json` names its hosts, as an engine's does, and no
 `mustPassWith`. On each host the run appends `--report <file>` to the host's
 command, then `--folder <repository>=<folder>` for each repository
-`cascade-runtime.json` names, keyed as that file writes it. In CI the command is
-also given `CASCADE_PULL_REQUESTS`, the path of a JSON file holding every pull
-request the run read, as it read them with its token: keyed
+`cascade-runtime.json` names, keyed as that file writes it. The command is also
+given `CASCADE_PULL_REQUESTS`, the path of a JSON file (`{}` in a local run)
+holding every pull request the run read, as it read them with its token: keyed
 `owner/repository/pull/N`, each with its `body`, `state`, `merged`, and `base`
 and `head` (`ref`, `sha` and `repo.full_name`), or `null` where it could not read
 one. The command holds no token (the run empties `GITHUB_TOKEN` and `GH_TOKEN`
@@ -75,8 +75,8 @@ vocabulary's pull request and the runtime's, each naming the other on a
 A runtime reads the Bridge as a package the Bridge publishes as the release
 `build-<commit>`, for every commit of its default branch and every head of a pull
 request from the Bridge's repository itself; the run builds nothing of it, and
-the runtime says which build it read and how it picked it. Locally, a sibling
-`cascade-bridge-rs` checkout's own build is used when it was made from the
+the runtime says which build it read and how it picked it. A `cascade-bridge-rs`
+checkout beside the runtime, or handed in with `--folder`, has its own build used when it was made from the
 checkout as it is, else the release of the commit the checkout is at; a checkout
 with uncommitted files and no build of them stops the run. Otherwise one rule
 applies, with no fall-through to the next once it has picked: the head of an open
