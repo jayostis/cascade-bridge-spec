@@ -1,5 +1,6 @@
 """A runtime: handed the repositories cascade-runtime.json names, each picked as a counterpart is, and judged by its report."""
 
+import json
 from pathlib import Path
 
 from compatibility_world import (
@@ -71,7 +72,7 @@ def test_a_local_run_whose_report_has_a_failure_does_not_hold_and_a_named_siblin
     assert "a result produced from uncommitted edits is feedback, never evidence" in said
 
 
-def test_a_vocabulary_pull_request_named_on_a_depends_on_line_is_handed_in_and_a_bridge_one_is_not_used(world):
+def test_a_vocabulary_pull_request_named_on_a_depends_on_line_is_handed_in_and_a_bridge_one_is_not_used_but_read(world):
     world.pull_request(VOCABULARY, 5, fill=lambda path: (path / "NOTICE").write_text("five\n"))
     world.pull_request(BRIDGE, 3)
     body = depends_on(VOCABULARY, 5, owner=VOCABULARY_OWNER) + depends_on(BRIDGE, 3, owner=BRIDGE_OWNER)
@@ -83,6 +84,9 @@ def test_a_vocabulary_pull_request_named_on_a_depends_on_line_is_handed_in_and_a
     repositories = world.record()["repositories"]
     assert repositories[VOCABULARY]["how"] == "pull request #5 merged into main"
     assert repositories[BRIDGE]["role"] == "not used"
+    read = json.loads(Path(said.split("fake runtime: pull requests ", 1)[1].splitlines()[0]).read_text())
+    assert read[f"{BRIDGE_OWNER}/{BRIDGE}/pull/3"]["state"] == "open"
+    assert read[f"{OWNER}/runtime/pull/1"]["body"] == body
 
 
 def test_a_vocabulary_is_handed_in_for_the_vocabulary_of_each_runtime_it_names_picked_by_a_depends_on_line(world):
