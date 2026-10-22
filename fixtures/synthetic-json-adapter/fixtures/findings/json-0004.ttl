@@ -4,6 +4,7 @@
 @prefix dcterms: <http://purl.org/dc/terms/> .
 @prefix bridge:  <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 @prefix ex:      <https://example.org/synthetic-adapter/v1#> .
+@prefix cascade: <https://ns.cascadeprotocol.org/cascade#> .
 
 [] a oa:Annotation ;
   oa:hasTarget [
@@ -15,7 +16,7 @@
       oa:refinedBy [ a oa:FragmentSelector ; dcterms:conformsTo <https://www.rfc-editor.org/rfc/rfc6901> ; rdf:value "/novelty" ]
     ]
   ] ;
-  oa:hasBody bridge:pathNotAccounted ;
+  oa:hasBody cascade:SourcePathNotAccounted ;
   oa:motivatedBy oa:classifying ;
   sh:value "/novelty" ;
   sh:resultSeverity sh:Info .
@@ -30,10 +31,10 @@
       oa:refinedBy [ a oa:FragmentSelector ; dcterms:conformsTo <https://www.rfc-editor.org/rfc/rfc6901> ; rdf:value "/extension/0" ]
     ]
   ] ;
-  oa:hasBody bridge:pathNotAccounted ;
+  oa:hasBody cascade:SourcePathNotAccounted ;
   oa:motivatedBy oa:classifying ;
   sh:value "/extension" ;
-  bridge:occurrences 2 ;
+  cascade:occurrenceCount 2 ;
   sh:resultSeverity sh:Info .
 
 [] a oa:Annotation ;
@@ -46,10 +47,10 @@
       oa:refinedBy [ a oa:FragmentSelector ; dcterms:conformsTo <https://www.rfc-editor.org/rfc/rfc6901> ; rdf:value "/extension/0/url" ]
     ]
   ] ;
-  oa:hasBody bridge:pathNotAccounted ;
+  oa:hasBody cascade:SourcePathNotAccounted ;
   oa:motivatedBy oa:classifying ;
   sh:value "/extension/url" ;
-  bridge:occurrences 2 ;
+  cascade:occurrenceCount 2 ;
   sh:resultSeverity sh:Info .
 
 [] a oa:Annotation ;
@@ -65,5 +66,5 @@
   oa:hasBody ex:a-status-outside-the-set-the-vocabulary-fixes ;
   oa:motivatedBy oa:classifying ;
   sh:value "Retired" ;
-  bridge:occurrences 2 ;
+  cascade:occurrenceCount 2 ;
   sh:resultSeverity sh:Info .

@@ -52,13 +52,11 @@ node's position. The version's content is every triple whose subject is the
 version or a node nested in it. It holds no blank node and names no other
 version.
 
-A Bridge names a version `ni:///sha-256;` and the unpadded base64url
-([RFC 6920](https://www.rfc-editor.org/rfc/rfc6920)) of the SHA-256 of its
-content's canonical N-Quads by RDFC-1.0, with `urn:cascade:this-version` in
-place of the version's IRI, a nested node's IRI included. It hashes the content
-as the mapping wrote it, before any store round trip, and writes the mapping's
-graph with the version's name in place of its IRI in the same way. A Bridge must
-reproduce the vectors in [`../fixtures/versioning/`](../fixtures/versioning/).
+A Bridge names a version by the Cascade vocabulary's `cascade:VersionNamingRule`
+([`sparql.md`](sparql.md#naming-a-record)), a nested node's IRI included, over
+the content as the mapping wrote it, before any store round trip, and writes the
+mapping's graph with the version's name in place of its IRI in the same way. A
+Bridge must reproduce the vectors in [`../fixtures/versioning/`](../fixtures/versioning/).
 
 A source record's graph holds at most one version of a record. Where a mapping
 writes more than one, as it does for C-CDA records that share a name, a Bridge
@@ -70,7 +68,7 @@ and reports each one dropped as a finding: `bridge:versionNotKept` as its body, 
 version's name as its `sh:value`, and `sh:Warning` as its `sh:resultSeverity`. It
 is addressed under the record's selector. A selector stands under the record's
 where it begins with the record's followed by `/`. Where the mapping wrote on the
-dropped version's arrival a `bridge:selector` standing under the record's, the
+dropped version's arrival an `oa:hasSelector` whose `rdf:value` stands under the record's, the
 finding is refined by the least of them by code point: an XPath by what follows
 the record's selector and `/`, a JSON Pointer by what follows the record's
 selector, its `/` included. Otherwise it carries no refinement.
@@ -89,7 +87,7 @@ version named, and:
 
 - **the document**: its SHA-256 as its name, `a prov:Entity`, and every
   supplied fact, with that name in place of `bridge:thisDocument` and
-  `bridge:serverBaseUrl` normalised;
+  `cascade:serverBaseUrl` normalised;
 - **the import**: a blank node, `a prov:Activity`, `prov:used` the document,
   every supplied fact with that node in place of `bridge:thisImport`, and a
   `prov:qualifiedAssociation` whose `prov:hadPlan` is a blank node `a
@@ -101,13 +99,15 @@ version named, and:
   wrote of a node it linked to that version by `bridge:arrivedAs`, and
   `bridge:arrivedAs` the version's name, `prov:wasDerivedFrom` the document,
   `prov:wasGeneratedBy` the import and, where the mapping wrote none,
-  `bridge:selector` the `rdf:value` of the source record's selector. A mapping
+  `oa:hasSelector` the source record's selector, as a finding's target carries
+  it ([`sparql.md`](sparql.md)). A mapping
   writes there the source's own version metadata: its version id as
   `pav:version`, a plain string, and when it was last updated as
   `pav:lastUpdateOn`, the source's text as written, an `xsd:date` where it states
   a date and an `xsd:dateTime` where it states a date-time. For a record it finds inside the source record, as a FHIR
-  contained resource is, it writes there `bridge:selector` as the `rdf:value`
-  of the selector that record would have as a source record of its own:
+  contained resource is, it writes there `oa:hasSelector`, a selector of the
+  kind the record's is, whose `rdf:value` is the one that record would have as a
+  source record of its own:
   `/entry/0/resource/contained/0` under `/entry/0`, and, in a C-CDA, an
   observation inside an act inside the second `entry` of the third section,
   `/ClinicalDocument/component[1]/structuredBody[1]/component[3]/section[1]/entry[2]/act[1]/entryRelationship[1]/observation[1]`,

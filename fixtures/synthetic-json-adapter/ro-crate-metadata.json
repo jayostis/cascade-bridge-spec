@@ -300,8 +300,8 @@
       "@type": "File",
       "name": "Mapping",
       "encodingFormat": "application/sparql-query",
-      "contentSize": "2291",
-      "sha256": "73368c7895794ae91888f5e22d9c1be74911ef2254df6ace78dedfa6b80c7543",
+      "contentSize": "2794",
+      "sha256": "d0ecfa8f532d6f235e9fd425f08ff7083361e1113aefd46822c36de32dd4e598",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       }
@@ -457,8 +457,8 @@
       "@type": "File",
       "name": "Expected graph for json-0001",
       "encodingFormat": "text/turtle",
-      "contentSize": "2409",
-      "sha256": "4a6e0387cbaf795efa3d19cdba3c590d9d51017c445a2caa60e0009f94f9f3cc",
+      "contentSize": "2768",
+      "sha256": "705438313942961e3c21071571433d6cba1e90579af98186c210469442e99bce",
       "isBasedOn": {
         "@id": "fixtures/in/json-0001.json"
       },
@@ -485,8 +485,8 @@
       "@type": "File",
       "name": "Expected graph for json-0002",
       "encodingFormat": "text/turtle",
-      "contentSize": "1893",
-      "sha256": "8dbea0452b68706dde219268a0b553ce302ef8fb0826dcd29da36d4b7fc1cef2",
+      "contentSize": "2153",
+      "sha256": "8bd5c8d02d208d223d1db1296a11c4e6500dc23c326c1e19b75769976f3b58e3",
       "isBasedOn": {
         "@id": "fixtures/in/json-0002.json"
       },
@@ -513,8 +513,8 @@
       "@type": "File",
       "name": "Expected graph for json-0003",
       "encodingFormat": "text/turtle",
-      "contentSize": "1856",
-      "sha256": "d331180acc1dcb137c9d874681b4c6f8c258a9a9e5307a876b7038d84cbdbc1f",
+      "contentSize": "2116",
+      "sha256": "3bd709d554fa7bbe82013f308042714c44185797da789f8f2e401b7c6d7fb742",
       "isBasedOn": {
         "@id": "fixtures/in/json-0003.json"
       },
@@ -541,8 +541,8 @@
       "@type": "File",
       "name": "Expected graph for json-0004",
       "encodingFormat": "text/turtle",
-      "contentSize": "1909",
-      "sha256": "f7269f1d886295eaf848bc8461f61782c7576d7523b7a0e42cfde5778c0d2e66",
+      "contentSize": "2169",
+      "sha256": "9224141351f7f672fc0ba4e9299d89703f1c63e635d7ed022f90fb41e49b59b7",
       "isBasedOn": {
         "@id": "fixtures/in/json-0004.json"
       },
@@ -555,8 +555,8 @@
       "@type": "File",
       "name": "Expected findings for json-0004",
       "encodingFormat": "text/turtle",
-      "contentSize": "2459",
-      "sha256": "8bbc1ac10c76c20f4a5bbb8cf8b1bd97be3b88929347ae5b34d1646ff43d9a0d",
+      "contentSize": "2556",
+      "sha256": "45f977483cf33da06a01425d2296855ac69ea2149dcbb438bcea9d75fdc0eea7",
       "isBasedOn": {
         "@id": "fixtures/in/json-0004.json"
       },
@@ -569,8 +569,8 @@
       "@type": "File",
       "name": "Expected graph for json-0005",
       "encodingFormat": "text/turtle",
-      "contentSize": "1356",
-      "sha256": "ab0907e55c9459816be87da0765a32af8aa8458a190c3e06def7b9ea9c451596",
+      "contentSize": "1368",
+      "sha256": "95a0464604911add6456b86affea0985e212a1b5ae258d48f526c03b7efdf4ac",
       "isBasedOn": {
         "@id": "fixtures/in/json-0001.json"
       },
@@ -583,8 +583,8 @@
       "@type": "File",
       "name": "Expected findings for json-0005",
       "encodingFormat": "text/turtle",
-      "contentSize": "3389",
-      "sha256": "6b4d028291776a8b6896c78fa4b11c9876dc231ba17960759a427d18272660c3",
+      "contentSize": "3510",
+      "sha256": "84aa6a39711f6bdc2b740880ecadc9c447641a9a7426bb01e40dd4a57e303895",
       "isBasedOn": {
         "@id": "fixtures/in/json-0001.json"
       },
@@ -597,8 +597,8 @@
       "@type": "File",
       "name": "Mapping of a record held inside another",
       "encodingFormat": "application/sparql-query",
-      "contentSize": "2337",
-      "sha256": "3b5ab642bec657e684c76a980cfe6966fdef8c6e04914d5646d4636444172b2e",
+      "contentSize": "3564",
+      "sha256": "8a5b138e1ffb8ed2aa322a16960b219027b3d13f990088d157bac64eb14cf06e",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       }
@@ -630,8 +630,8 @@
       "@type": "File",
       "name": "Facts supplied with every synthetic JSON input",
       "encodingFormat": "text/turtle",
-      "contentSize": "1002",
-      "sha256": "c22b0e6311f612ca0bceabe252423c7992a0265db2f7b755d592552bcfa3f813",
+      "contentSize": "1014",
+      "sha256": "53ce903b804cbc620402dfbdea02aa4b5b3cfa96da1a93dc5f77364afe68a645",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       }
@@ -663,8 +663,8 @@
       "@type": "File",
       "name": "Expected graph for json-0006",
       "encodingFormat": "text/turtle",
-      "contentSize": "3044",
-      "sha256": "825221f1466b14ada25e1f95b0ed297f4593c9f917f11ae29ba11b9dd82a070f",
+      "contentSize": "3502",
+      "sha256": "d62c7f8352058e8310d68eb075d62c0e55e1647b539a3fe043eb8a82a4318af9",
       "isBasedOn": {
         "@id": "fixtures/in/json-0006.json"
       },
@@ -691,8 +691,8 @@
       "@type": "File",
       "name": "Expected graph for json-0007",
       "encodingFormat": "text/turtle",
-      "contentSize": "2433",
-      "sha256": "e20e5850b005b3c485481ac93df3d3e10b0d76fa282cfdce8c1b7affcd26ee5d",
+      "contentSize": "2792",
+      "sha256": "25490b80e96aec1243a0cfddeccfd599e6e4f4f81a4304ee7dd93bb42ac9c00b",
       "isBasedOn": {
         "@id": "fixtures/in/json-0007.json"
       },
@@ -730,8 +730,8 @@
       "@type": "File",
       "name": "Expected graph for json-0008",
       "encodingFormat": "text/turtle",
-      "contentSize": "2373",
-      "sha256": "2c6c15cb7154c6f33337182806f24c8f841413e82167b3f6e56e948ca9d8ef7f",
+      "contentSize": "2732",
+      "sha256": "ec962e359fdb8fded5795550b80ed22a09d00e30f60dc0b1e5b38f57b4a02b0b",
       "isBasedOn": {
         "@id": "fixtures/in/json-0008.json"
       },

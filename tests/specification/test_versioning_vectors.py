@@ -2,9 +2,10 @@ from pathlib import Path
 
 import pytest
 from pyshacl import validate
-from rdflib import RDF, Graph, Namespace, URIRef
+from rdflib import RDF, BNode, Graph, Literal, Namespace, URIRef
+from rdflib.compare import isomorphic
 
-from recomputed import PLACEHOLDER, canonical_nquads, ni_name, parsed_ntriples, versions
+from versioning import PLACEHOLDER, canonical_nquads, ni_name, parsed_ntriples, versions
 
 ROOT = Path(__file__).resolve().parents[2]
 VERSIONING = ROOT / "fixtures" / "versioning"
@@ -14,6 +15,20 @@ MANIFEST = Graph().parse(VERSIONING / "manifest.ttl", format="turtle", publicID=
 MF = Namespace("http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#")
 BRIDGE = Namespace("https://ns.cascadeprotocol.org/bridge/v1-draft#")
 VECTORS = sorted(MANIFEST.subjects(RDF.type, BRIDGE.VersioningTest), key=str)
+
+
+def as_rdflib(triples):
+    def term(node):
+        if node[0] == "iri":
+            return URIRef(node[1])
+        if node[0] == "blank":
+            return BNode(node[1])
+        return Literal(node[1], datatype=URIRef(node[2]))
+
+    graph = Graph()
+    for triple in triples:
+        graph.add(tuple(map(term, triple)))
+    return graph
 
 
 def vector_id(test):
@@ -68,7 +83,8 @@ def test_the_canonical_content_is_already_in_canonical_form(test):
 @pytest.mark.parametrize("test", VECTORS, ids=vector_id)
 def test_the_output_is_the_mapped_graph_with_every_version_and_nested_node_named(test):
     _, graph = versions(mapped(test))
-    assert graph == parsed_ntriples(text_of(MANIFEST.value(result_of(test), BRIDGE.expectedGraph)))
+    expected = parsed_ntriples(text_of(MANIFEST.value(result_of(test), BRIDGE.expectedGraph)))
+    assert isomorphic(as_rdflib(graph), as_rdflib(expected))
 
 
 @pytest.mark.parametrize("test", VECTORS, ids=vector_id)
@@ -97,7 +113,12 @@ def test_each_record_of_a_source_record_gets_its_own_version():
 
 def test_a_version_holding_a_blank_node_is_beyond_the_rule():
     with pytest.raises(ValueError):
-        parsed_ntriples('_:b <http://example.org/p> "o" .\n')
+        versions(
+            parsed_ntriples(
+                "<urn:example:version> <http://www.w3.org/ns/prov#specializationOf> <urn:example:record> .\n"
+                "<urn:example:version> <http://example.org/p> _:b .\n"
+            )
+        )
 
 
 def test_a_version_name_that_is_not_an_ni_sha256_name_is_refused():

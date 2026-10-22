@@ -3,34 +3,37 @@
 @prefix prov:   <http://www.w3.org/ns/prov#> .
 @prefix pav:    <http://purl.org/pav/> .
 @prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
-@prefix rec:    <https://ns.cascadeprotocol.org/records/v1-draft#> .
 @prefix ex:     <https://example.org/synthetic-adapter/v1#> .
+@prefix cascade: <https://ns.cascadeprotocol.org/cascade#> .
+@prefix oa: <http://www.w3.org/ns/oa#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
 
-<urn:uuid:9ac45ebb-6035-85d5-b7b2-113739375ce2>
+<urn:uuid:e4f5429d-71c0-8032-9355-8f3751b5f7c4>
   a ex:Record ;
   ex:accession "EX000103" .
 
-<ni:///sha-256;3RQDWAoJLd4_TFtx1Q2vMsnY2RDi8ds9BdoV_ts8adM>
-  prov:specializationOf <urn:uuid:9ac45ebb-6035-85d5-b7b2-113739375ce2> ;
+<ni:///sha-256;KCGFdvNBBdUne0_hVoIzZIsHigaZsZgPsc1EY1KaD4E>
+  prov:specializationOf <urn:uuid:e4f5429d-71c0-8032-9355-8f3751b5f7c4> ;
   rdfs:label "third synthetic JSON record, arriving on its own" .
 
-[] bridge:arrivedAs <ni:///sha-256;3RQDWAoJLd4_TFtx1Q2vMsnY2RDi8ds9BdoV_ts8adM> ;
+[] bridge:arrivedAs <ni:///sha-256;KCGFdvNBBdUne0_hVoIzZIsHigaZsZgPsc1EY1KaD4E> ;
   pav:version "2" ;
-  bridge:selector "" ;
+  oa:hasSelector [ a oa:FragmentSelector ; dcterms:conformsTo <https://www.rfc-editor.org/rfc/rfc6901> ; rdf:value "" ] ;
   prov:wasDerivedFrom <ni:///sha-256;Y4b0Bl8lkx1UXSqW8gYxlRWY6LOaVc2ht7MKpxAN0zY> ;
   prov:wasGeneratedBy _:import .
 
 <ni:///sha-256;Y4b0Bl8lkx1UXSqW8gYxlRWY6LOaVc2ht7MKpxAN0zY>
   a prov:Entity ;
-  bridge:serverBaseUrl "https://records.example.org/api" ;
+  cascade:serverBaseUrl "https://records.example.org/api" ;
   pav:retrievedFrom <https://records.example.org/api/ExampleRecordSet> ;
   pav:retrievedOn "2026-08-30T22:14:00Z"^^xsd:dateTime ;
   prov:qualifiedAttribution
-    [ prov:agent [ rdfs:label "Example Records Registry" ] ; prov:hadRole rec:author ] ,
-    [ prov:agent [ rdfs:label "Example Fetcher" ] ; prov:hadRole rec:transmitter ] ;
-  bridge:authenticatedPatient "Patient/example-patient" ;
-  bridge:authenticatedAsProxy false ;
-  bridge:sourceFormatVersion "1" .
+    [ prov:agent [ rdfs:label "Example Records Registry" ] ; prov:hadRole cascade:AuthorRole ] ,
+    [ prov:agent [ rdfs:label "Example Fetcher" ] ; prov:hadRole cascade:TransmitterRole ] ;
+  cascade:authenticatedPatient "Patient/example-patient" ;
+  cascade:authenticatedAsProxy false ;
+  cascade:sourceFormatVersion "1" .
 
 _:import
   a prov:Activity ;

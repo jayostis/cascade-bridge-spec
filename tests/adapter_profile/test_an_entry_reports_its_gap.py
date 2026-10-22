@@ -3,7 +3,7 @@ from rdflib.namespace import RDF, SH, SKOS, XSD
 
 from _codes import KINDS_A_GAP_MAY_NAME, scheme_named_by
 from _selectors import selector_of
-from _terms import BRIDGE, OA
+from _terms import BRIDGE, CASCADE, OA
 from adapter_profile_world import accounting_of, below_the_record, cases, refinement_of, selected_by
 
 KINDS_AN_ENTRY_REPORTS = (BRIDGE.noPredicate, BRIDGE.sourceLacksRequired)
@@ -142,7 +142,7 @@ def test_a_finding_an_entry_reports_carries_the_number_of_nodes_of_the_record_st
     for named, graph, record, source_path, _, _, standing in every(each_path_reported(crate)):
         finding = the_one_naming(graph, record, source_path)
         counted = None if len(standing) == 1 else Literal(len(standing), datatype=XSD.integer)
-        assert graph.value(finding, BRIDGE.occurrences) == counted, f"{named}: {source_path}"
+        assert graph.value(finding, CASCADE.occurrenceCount) == counted, f"{named}: {source_path}"
         if named == THE_CASE:
             standing_in_the_case.setdefault(source_path, set()).add(len(standing))
     assert [source_path for source_path, _, _ in reported_by_an_entry(crate)].count(
@@ -212,15 +212,17 @@ def test_a_census_finding_carries_the_number_of_nodes_standing_at_its_path_on_th
     )
     nodes = standing_at(record, AN_UNACCOUNTED_PATH_STANDING_AT_MORE_THAN_ONE_NODE)
     assert len(nodes) > 1
-    finding = the_one_naming(graph, record, AN_UNACCOUNTED_PATH_STANDING_AT_MORE_THAN_ONE_NODE, BRIDGE.pathNotAccounted)
-    assert graph.value(finding, BRIDGE.occurrences) == Literal(len(nodes), datatype=XSD.integer)
+    finding = the_one_naming(
+        graph, record, AN_UNACCOUNTED_PATH_STANDING_AT_MORE_THAN_ONE_NODE, CASCADE.SourcePathNotAccounted
+    )
+    assert graph.value(finding, CASCADE.occurrenceCount) == Literal(len(nodes), datatype=XSD.integer)
     assert selected_by(graph, finding)[1] == refinement_of(record, nodes[0])
 
     _, census, records = the_case(crate, THE_CENSUS_CASE)
     alone = next(record for record in records if standing_at(record, AN_UNACCOUNTED_PATH_STANDING_AT_ONE_NODE))
     assert len(standing_at(alone, AN_UNACCOUNTED_PATH_STANDING_AT_ONE_NODE)) == 1
-    only = the_one_naming(census, alone, AN_UNACCOUNTED_PATH_STANDING_AT_ONE_NODE, BRIDGE.pathNotAccounted)
-    assert census.value(only, BRIDGE.occurrences) is None
+    only = the_one_naming(census, alone, AN_UNACCOUNTED_PATH_STANDING_AT_ONE_NODE, CASCADE.SourcePathNotAccounted)
+    assert census.value(only, CASCADE.occurrenceCount) is None
 
 
 def test_a_gap_an_entry_reports_and_a_findings_query_constructs_stands_as_two_findings(crate):

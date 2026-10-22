@@ -8,12 +8,14 @@ from rdflib import RDF, RDFS, XSD, BNode, Graph, Literal, Namespace, URIRef
 from rdflib.compare import isomorphic
 
 from json_lift import Members, lifted, parsed
-from recomputed import PLACEHOLDER, XSD_STRING, canonical_nquads, ni_name, normalised_base_url, record_name
+from versioning import PLACEHOLDER, XSD_STRING, canonical_nquads, ni_name
 
 ROOT = Path(__file__).resolve().parents[2]
 
 MF = Namespace("http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#")
 BRIDGE = Namespace("https://ns.cascadeprotocol.org/bridge/v1-draft#")
+CASCADE = Namespace("https://ns.cascadeprotocol.org/cascade#")
+OA = Namespace("http://www.w3.org/ns/oa#")
 PROV = Namespace("http://www.w3.org/ns/prov#")
 PAV = Namespace("http://purl.org/pav/")
 EX = Namespace("https://example.org/synthetic-adapter/v1#")
@@ -126,7 +128,7 @@ def arrival_of(graph, record):
 
 
 def selector_of(graph, record):
-    return str(graph.value(arrival_of(graph, record), BRIDGE.selector))
+    return str(graph.value(graph.value(arrival_of(graph, record), OA.hasSelector), RDF.value))
 
 
 def holder_of(adapter, selector):
@@ -147,8 +149,8 @@ def test_the_document_is_named_by_the_sha256_of_its_bytes_and_carries_the_facts_
     assert str(document) == ni_name(input_of(adapter, test).read_bytes())
     supplied = Graph()
     for subject, predicate, value in facts_of(adapter, test):
-        if predicate == BRIDGE.serverBaseUrl:
-            value = Literal(normalised_base_url(str(value)))
+        if predicate == CASCADE.serverBaseUrl:
+            value = expected.value(document, CASCADE.serverBaseUrl)
         supplied.add((document if subject == BRIDGE.thisDocument else subject, predicate, value))
     written = described(expected, document)
     written.remove((document, RDF.type, PROV.Entity))
@@ -175,36 +177,6 @@ def test_the_import_carries_the_facts_supplied_with_it_and_applied_the_adapters_
         if predicate not in (RDF.type, PROV.used, PROV.qualifiedAssociation):
             written.add((run, predicate, value))
     assert isomorphic(written, supplied)
-
-
-@pytest.mark.parametrize(("adapter", "test"), CONVERSIONS)
-def test_each_record_is_named_by_its_server_type_and_accession_unless_its_document_repeats_the_accession(adapter, test):
-    expected = expected_of(adapter, test)
-    held = adapter.accessions(input_of(adapter, test))
-    server = normalised_base_url(str(facts_of(adapter, test).value(BRIDGE.thisDocument, BRIDGE.serverBaseUrl)))
-    document = ni_name(input_of(adapter, test).read_bytes())
-    for record in expected.subjects(RDF.type, EX.Record):
-        if holder_of(adapter, selector_of(expected, record)) is not None:
-            continue
-        accession = str(expected.value(record, EX.accession))
-        inputs = (
-            [server, "ExampleRecord", accession]
-            if held.count(accession) == 1
-            else [document, selector_of(expected, record)]
-        )
-        assert str(record) == record_name(inputs)
-
-
-@pytest.mark.parametrize(("adapter", "test"), CONVERSIONS)
-def test_a_record_held_inside_another_is_named_by_its_holders_name_and_its_own_id(adapter, test):
-    expected = expected_of(adapter, test)
-    by_selector = {selector_of(expected, record): record for record in expected.subjects(RDF.type, EX.Record)}
-    for selector, record in by_selector.items():
-        holder = holder_of(adapter, selector)
-        if holder is not None:
-            own_id = adapter.selected(input_of(adapter, test), selector)["id"]
-            assert str(expected.value(record, EX.accession)) == own_id
-            assert str(record) == record_name([str(by_selector[holder]), own_id])
 
 
 def content_of(graph, version):

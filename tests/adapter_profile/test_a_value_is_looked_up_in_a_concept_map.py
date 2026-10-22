@@ -3,7 +3,7 @@ from rdflib.namespace import RDF, SH, SKOS, XSD
 
 from _codes import scheme_named_by
 from _selectors import selector_of
-from _terms import BRIDGE, OA
+from _terms import BRIDGE, CASCADE, OA
 from adapter_profile_world import accounting_of, below_the_record, cases, refinement_of, selected_by
 
 
@@ -123,7 +123,7 @@ def test_a_lookup_finding_counts_the_nodes_of_the_record_holding_its_value_where
     counted = []
     for named, graph, _, finding, value, holding in every_value_outside_the_map(crate):
         expected = None if len(holding) == 1 else Literal(len(holding), datatype=XSD.integer)
-        assert graph.value(finding, BRIDGE.occurrences) == expected, f"{named}: {value}"
+        assert graph.value(finding, CASCADE.occurrenceCount) == expected, f"{named}: {value}"
         counted.append(len(holding))
     assert 2 in counted, "no record of the vector holds one value outside the concept map twice"
 

@@ -217,7 +217,7 @@ def test_reports_a_finding_whose_body_is_no_gap_of_the_adapters_gap_scheme(packa
     assert (
         "https://example.org/synthetic-adapter/v1#a-gap-the-scheme-does-not-hold is not a gap of the adapter's "
         "bridge:gapScheme, the anchor of a validation rule in a W3C XML Schema Recommendation, "
-        "bridge:schemaRuleUnnamed, bridge:versionNotKept, or bridge:pathNotAccounted"
+        "bridge:schemaRuleUnnamed, bridge:versionNotKept, or cascade:SourcePathNotAccounted"
     ) in "\n".join(said_about(package.crate))
 
 
@@ -236,18 +236,18 @@ def test_reports_the_concept_an_address_selecting_other_than_one_node_carries(pa
     assert (
         "https://ns.cascadeprotocol.org/bridge/v1-draft#addressNotOneNode is not a gap of the adapter's "
         "bridge:gapScheme, the anchor of a validation rule in a W3C XML Schema Recommendation, "
-        "bridge:schemaRuleUnnamed, bridge:versionNotKept, or bridge:pathNotAccounted"
+        "bridge:schemaRuleUnnamed, bridge:versionNotKept, or cascade:SourcePathNotAccounted"
     ) in "\n".join(said_about(package.crate))
 
 
 def test_reports_the_concept_a_census_carries_only_where_the_adapter_names_no_source_accounting(package):
-    package.write(FINDINGS, a_findings_file(body="bridge:pathNotAccounted"))
+    package.write(FINDINGS, a_findings_file(body="cascade:SourcePathNotAccounted"))
     crate = package.crate
     assert not said_about(crate)
 
     crate.graph.remove((crate.root, BRIDGE.sourceAccounting, None))
     assert (
-        "https://ns.cascadeprotocol.org/bridge/v1-draft#pathNotAccounted is not a gap of the adapter's "
+        "https://ns.cascadeprotocol.org/cascade#SourcePathNotAccounted is not a gap of the adapter's "
         "bridge:gapScheme, the anchor of a validation rule in a W3C XML Schema Recommendation, "
         "bridge:schemaRuleUnnamed, or bridge:versionNotKept, the adapter naming no bridge:sourceAccounting"
     ) in "\n".join(said_about(crate))
@@ -261,7 +261,7 @@ def test_reports_a_finding_whose_body_is_the_anchor_of_no_w3c_xml_schema_rule_wi
     assert (
         "https://www.w3.org/TR/xmlschema-1/#cvc-nonesuch is not a gap of the adapter's bridge:gapScheme, "
         "the anchor of a validation rule in a W3C XML Schema Recommendation, bridge:schemaRuleUnnamed, "
-        "bridge:versionNotKept, or bridge:pathNotAccounted"
+        "bridge:versionNotKept, or cascade:SourcePathNotAccounted"
     ) in said
     assert [str(anchor) for anchor in W3C_XML_SCHEMA_RULE_ANCHORS if str(anchor) not in said] == []
 
@@ -271,7 +271,7 @@ def test_reports_a_finding_whose_body_names_a_rule_in_the_recommendation_that_do
     assert (
         "https://www.w3.org/TR/xmlschema-1/#cvc-pattern-valid is not a gap of the adapter's bridge:gapScheme, "
         "the anchor of a validation rule in a W3C XML Schema Recommendation, bridge:schemaRuleUnnamed, "
-        "bridge:versionNotKept, or bridge:pathNotAccounted"
+        "bridge:versionNotKept, or cascade:SourcePathNotAccounted"
     ) in "\n".join(said_about(package.crate))
 
 

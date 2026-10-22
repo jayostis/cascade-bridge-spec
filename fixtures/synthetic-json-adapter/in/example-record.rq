@@ -7,6 +7,7 @@ PREFIX fx:     <http://sparql.xyz/facade-x/ns/>
 PREFIX xyz:    <http://sparql.xyz/facade-x/data/>
 PREFIX bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#>
 PREFIX ex:     <https://example.org/synthetic-adapter/v1#>
+PREFIX cascade: <https://ns.cascadeprotocol.org/cascade#>
 
 CONSTRUCT {
   ?record a ex:Record ;
@@ -23,16 +24,21 @@ WHERE {
     xyz:version ?number .
   bridge:thisDocument bridge:sha256 ?document .
   bridge:thisRecord bridge:selector ?selector .
-  OPTIONAL { bridge:thisDocument bridge:serverBaseUrl ?server }
+  OPTIONAL { bridge:thisDocument cascade:serverBaseUrl ?server }
   {
     SELECT ?accession (COUNT(?holder) AS ?holders)
     WHERE { ?holder ex:holdsAccession ?accession }
     GROUP BY ?accession
   }
   BIND(IF(BOUND(?server) && ?holders = 1,
-          CONCAT(?server, "|ExampleRecord|", ?accession),
-          CONCAT(?document, "|", ?selector)) AS ?input)
-  BIND(SHA256(CONCAT("90c60849-c5ef-4ca6-bfb8-8662bd07d2b5|", ?input)) AS ?hash)
+          CONCAT("90c60849-c5ef-4ca6-bfb8-8662bd07d2b5|https://ns.cascadeprotocol.org/cascade#RecordFromServerNamingRule",
+                 "|", REPLACE(REPLACE(?server, "%", "%25"), "\\|", "%7C"),
+                 "|", "ExampleRecord",
+                 "|", REPLACE(REPLACE(?accession, "%", "%25"), "\\|", "%7C")),
+          CONCAT("90c60849-c5ef-4ca6-bfb8-8662bd07d2b5|https://ns.cascadeprotocol.org/cascade#RecordFromDocumentNamingRule",
+                 "|", REPLACE(REPLACE(?document, "%", "%25"), "\\|", "%7C"),
+                 "|", REPLACE(REPLACE(?selector, "%", "%25"), "\\|", "%7C"))) AS ?named)
+  BIND(SHA256(?named) AS ?hash)
   BIND(REPLACE(REPLACE(REPLACE(REPLACE(SUBSTR(?hash, 17, 1),
          "[048c]", "8"), "[159d]", "9"), "[26ae]", "a"), "[37bf]", "b") AS ?variant)
   BIND(CONCAT(SUBSTR(?hash, 1, 8), "-", SUBSTR(?hash, 9, 4), "-8", SUBSTR(?hash, 14, 3),

@@ -92,17 +92,17 @@ def test_accepts_a_finding_whose_body_is_an_iri_classifying_it_and_the_source_va
 
 
 def test_rejects_a_finding_carrying_two_occurrence_counts():
-    assert "bridge:occurrences" in said_about_findings(a_finding(occurrences="2, 3"))
+    assert "cascade:occurrenceCount" in said_about_findings(a_finding(occurrences="2, 3"))
     assert not said_about_findings(a_finding(occurrences="2"))
 
 
 def test_rejects_a_finding_whose_occurrence_count_is_no_integer():
-    assert "bridge:occurrences" in said_about_findings(a_finding(occurrences='"two"'))
+    assert "cascade:occurrenceCount" in said_about_findings(a_finding(occurrences='"two"'))
     assert not said_about_findings(a_finding(occurrences="297"))
 
 
 def test_rejects_a_finding_whose_occurrence_count_is_one_where_a_count_of_one_is_written_by_omitting_it():
-    assert "bridge:occurrences" in said_about_findings(a_finding(occurrences="1"))
+    assert "cascade:occurrenceCount" in said_about_findings(a_finding(occurrences="1"))
     assert not said_about_findings(a_finding())
 
 
