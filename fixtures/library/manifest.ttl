@@ -14,6 +14,7 @@
     <#test-names-every-entry-under-the-adapter-iri>
     <#a-document-that-does-not-parse-then-a-good-one>
     <#facts-that-do-not-parse>
+    <#facts-supplying-a-base-url-that-is-refused>
     <#an-envelope-the-adapter-does-not-declare>
     <#a-mapping-that-does-not-parse>
     <#a-vocabulary-file-that-does-not-parse>
@@ -185,6 +186,21 @@ _:load-the-synthetic-adapter a bridge:LoadCall ;
       bridge:suppliedFacts [
         bridge:iri <https://example.org/documents/not-turtle.ttl> ;
         bridge:file <not-turtle.txt>
+      ] ;
+      bridge:graphFormat "turtle" ;
+      bridge:failure bridge:factsFailure ]
+  ) .
+
+<#facts-supplying-a-base-url-that-is-refused> a bridge:LibraryTest ;
+  mf:name "facts-supplying-a-base-url-that-is-refused" ;
+  rdfs:comment "A base URL carrying userinfo is refused as the vocabulary's base-url-userinfo vector says: a failure of the facts, not a name." ;
+  mf:action (
+    _:load-the-synthetic-adapter
+    [ a bridge:ConvertCall ;
+      bridge:document _:example-0001 ;
+      bridge:suppliedFacts [
+        bridge:iri <https://example.org/documents/facts-with-userinfo-in-the-base-url.ttl> ;
+        bridge:file <facts-with-userinfo-in-the-base-url.ttl>
       ] ;
       bridge:graphFormat "turtle" ;
       bridge:failure bridge:factsFailure ]

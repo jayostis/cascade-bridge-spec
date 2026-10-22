@@ -1,4 +1,6 @@
+PREFIX rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs:   <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX oa:     <http://www.w3.org/ns/oa#>
 PREFIX prov:   <http://www.w3.org/ns/prov#>
 PREFIX fx:     <http://sparql.xyz/facade-x/ns/>
 PREFIX xyz:    <http://sparql.xyz/facade-x/data/>
@@ -13,7 +15,9 @@ CONSTRUCT {
   ?restated prov:specializationOf ?record ;
     rdfs:label "restated" .
   _:stated bridge:arrivedAs ?stated ;
-    bridge:selector ?statedAt .
+    oa:hasSelector ?statedSelector .
+  ?statedSelector a oa:XPathSelector ;
+    rdf:value ?statedAt .
   _:restated bridge:arrivedAs ?restated .
 }
 WHERE {
@@ -24,4 +28,5 @@ WHERE {
   BIND(IRI(CONCAT("urn:example:version:", ?accession, ":stated")) AS ?stated)
   BIND(IRI(CONCAT("urn:example:version:", ?accession, ":restated")) AS ?restated)
   BIND(IF(?accession = "EX000001", CONCAT(?selector, "/Label[1]"), ?noSelector) AS ?statedAt)
+  BIND(IF(BOUND(?statedAt), BNODE(), ?noSelector) AS ?statedSelector)
 }

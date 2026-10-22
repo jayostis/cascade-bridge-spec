@@ -2,7 +2,7 @@ from rdflib import Graph, URIRef
 from rdflib.namespace import RDF, SH, SKOS
 
 from _json_source import syntax_of
-from _terms import BRIDGE
+from _terms import BRIDGE, CASCADE
 
 KINDS_A_GAP_MAY_NAME = (
     BRIDGE.carriedWithLoss,
@@ -147,7 +147,7 @@ def accounts_for_its_source(crate):
 
 
 def no_gap_of_the_scheme(crate):
-    admitted = "bridge:schemaRuleUnnamed, bridge:versionNotKept, or bridge:pathNotAccounted"
+    admitted = "bridge:schemaRuleUnnamed, bridge:versionNotKept, or cascade:SourcePathNotAccounted"
     if not accounts_for_its_source(crate):
         admitted = "bridge:schemaRuleUnnamed, or bridge:versionNotKept, the adapter naming no bridge:sourceAccounting"
     if syntax_of(crate) == "json":
@@ -184,6 +184,6 @@ def gaps_of(crate):
 
 
 def bodies_a_finding_may_carry(crate):
-    census = {BRIDGE.pathNotAccounted} if accounts_for_its_source(crate) else set()
+    census = {CASCADE.SourcePathNotAccounted} if accounts_for_its_source(crate) else set()
     schema = schema_rule_anchors_of(crate) | {BRIDGE.schemaRuleUnnamed, BRIDGE.versionNotKept}
     return gaps_of(crate) | schema | BODIES_OF_AN_OUTPUT_VALIDATION_FINDING | census

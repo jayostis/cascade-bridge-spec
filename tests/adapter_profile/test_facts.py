@@ -24,23 +24,23 @@ def test_reports_facts_that_are_not_turtle(package):
 def test_reports_a_document_supplied_two_server_base_urls(package):
     package.edit(
         FACTS,
-        'bridge:serverBaseUrl "HTTPS://Records.Example.ORG/api/" ;',
-        'bridge:serverBaseUrl "HTTPS://Records.Example.ORG/api/", "https://elsewhere.example" ;',
+        'cascade:serverBaseUrl "HTTPS://Records.Example.ORG/api/" ;',
+        'cascade:serverBaseUrl "HTTPS://Records.Example.ORG/api/", "https://elsewhere.example" ;',
     )
-    assert "at most one bridge:serverBaseUrl" in said(package.crate)
+    assert "at most one cascade:serverBaseUrl" in said(package.crate)
 
 
 def test_reports_a_fact_a_bridge_computes_supplied_with_the_document(package):
     package.edit(
         FACTS,
-        "  bridge:sourceFormatVersion",
-        '  bridge:sha256 "ni:///sha-256;supplied" ;\n  bridge:sourceFormatVersion',
+        "  cascade:sourceFormatVersion",
+        '  bridge:sha256 "ni:///sha-256;supplied" ;\n  cascade:sourceFormatVersion',
     )
     assert "bridge:sha256" in said(package.crate)
 
 
 def test_reports_an_attribution_naming_its_role_by_a_literal(package):
-    package.edit(FACTS, "prov:hadRole rec:author", 'prov:hadRole "author"')
+    package.edit(FACTS, "prov:hadRole cascade:AuthorRole", 'prov:hadRole "author"')
     assert "prov:hadRole, by IRI" in said(package.crate)
 
 

@@ -9,6 +9,7 @@ GAP_SCHEME = "vocab/example-gaps.ttl"
 PREFIXES = """@prefix skos:   <http://www.w3.org/2004/02/skos/core#> .
 @prefix sh:     <http://www.w3.org/ns/shacl#> .
 @prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+@prefix cascade: <https://ns.cascadeprotocol.org/cascade#> .
 @prefix ex:     <https://example.org/synthetic-adapter/v1#> .
 
 ex:gaps a skos:ConceptScheme .
@@ -110,7 +111,7 @@ def test_reports_a_gap_that_names_no_scheme(package):
         None,
         "skos:broader bridge:noPredicate, bridge:carriedWithLoss",
         "skos:broader ex:a-kind-of-our-own",
-        "skos:broader bridge:pathNotAccounted",
+        "skos:broader cascade:SourcePathNotAccounted",
     ],
     ids=[
         "no kind",
@@ -128,9 +129,8 @@ def test_reports_a_gap_that_is_not_skos_broader_exactly_one_kind_a_gap_may_name(
 @pytest.mark.parametrize(
     "closed_by",
     [
-        '"clinical:onsetDate"',
-        "<https://ns.cascadeprotocol.org/clinical/v1#onsetDate>, "
-        "<https://ns.cascadeprotocol.org/clinical/v1#onsetNote>",
+        '"cascade:onsetDate"',
+        "<https://ns.cascadeprotocol.org/cascade#onsetDate>, <https://ns.cascadeprotocol.org/cascade#onsetNote>",
     ],
     ids=["a literal", "two terms"],
 )
@@ -141,7 +141,7 @@ def test_reports_a_closing_term_that_is_a_literal_or_one_of_two(package, closed_
 
 
 def test_reports_nothing_for_a_gap_carrying_a_label_its_scheme_one_kind_and_a_closing_term(package):
-    package.write(GAP_SCHEME, scheme_of_one_gap(closed_by="<https://ns.cascadeprotocol.org/clinical/v1#onsetDate>"))
+    package.write(GAP_SCHEME, scheme_of_one_gap(closed_by="<https://ns.cascadeprotocol.org/cascade#onsetDate>"))
     assert not list(gap_scheme.faulty(package.crate))
 
 

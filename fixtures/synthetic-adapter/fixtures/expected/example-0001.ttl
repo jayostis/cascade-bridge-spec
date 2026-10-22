@@ -3,48 +3,52 @@
 @prefix prov:   <http://www.w3.org/ns/prov#> .
 @prefix pav:    <http://purl.org/pav/> .
 @prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
-@prefix rec:    <https://ns.cascadeprotocol.org/records/v1-draft#> .
 @prefix ex:     <https://example.org/synthetic-adapter/v1#> .
+@prefix cascade: <https://ns.cascadeprotocol.org/cascade#> .
+@prefix oa: <http://www.w3.org/ns/oa#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 
-<urn:uuid:c9dcca27-37d8-8579-b2f3-d3f0b725f390>
+<urn:uuid:f4b0bd9a-e634-86b8-a79e-038085cba8f4>
   a ex:Record ;
   ex:accession "EX000001" .
 
-<ni:///sha-256;QAn40e9sC38F0oU6nvKxj5h-maZGjU77V87PrLADcIo>
-  prov:specializationOf <urn:uuid:c9dcca27-37d8-8579-b2f3-d3f0b725f390> ;
+<ni:///sha-256;IFOlLh7jsuZZcSNjlU5s4MuSVaMZO7VepOmax_FU8DQ>
+  prov:specializationOf <urn:uuid:f4b0bd9a-e634-86b8-a79e-038085cba8f4> ;
   rdfs:label "first synthetic record" .
 
-[] bridge:arrivedAs <ni:///sha-256;QAn40e9sC38F0oU6nvKxj5h-maZGjU77V87PrLADcIo> ;
+[] bridge:arrivedAs <ni:///sha-256;IFOlLh7jsuZZcSNjlU5s4MuSVaMZO7VepOmax_FU8DQ> ;
   pav:version "3" ;
-  bridge:selector "/ExampleRecordSet/ExampleRecord[1]" ;
+  oa:hasSelector [ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ] ;
+  oa:hasSource <ni:///sha-256;hRL983zLKvuXI8V2Mou0yzKs3VQzexrJ8MCHLHAX7c4> ;
   prov:wasDerivedFrom <ni:///sha-256;hRL983zLKvuXI8V2Mou0yzKs3VQzexrJ8MCHLHAX7c4> ;
   prov:wasGeneratedBy _:import .
 
-<urn:uuid:0d98eae3-f5d1-8d5a-bcdf-79f339fc74f1>
+<urn:uuid:8796f270-4dc0-8048-b772-f3f9cdb71942>
   a ex:Record ;
   ex:accession "EX000002" .
 
-<ni:///sha-256;zw7qsHFCCN82-3VS-DWUItYulK_zEdut5RTSTfypRP0>
-  prov:specializationOf <urn:uuid:0d98eae3-f5d1-8d5a-bcdf-79f339fc74f1> ;
+<ni:///sha-256;PZELHj79XTTD5WdiN1KoQuVwBz70Hzlgl31tZOGE-CE>
+  prov:specializationOf <urn:uuid:8796f270-4dc0-8048-b772-f3f9cdb71942> ;
   rdfs:label "second synthetic record" .
 
-[] bridge:arrivedAs <ni:///sha-256;zw7qsHFCCN82-3VS-DWUItYulK_zEdut5RTSTfypRP0> ;
+[] bridge:arrivedAs <ni:///sha-256;PZELHj79XTTD5WdiN1KoQuVwBz70Hzlgl31tZOGE-CE> ;
   pav:version "1" ;
-  bridge:selector "/ExampleRecordSet/ExampleRecord[2]" ;
+  oa:hasSelector [ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[2]" ] ;
+  oa:hasSource <ni:///sha-256;hRL983zLKvuXI8V2Mou0yzKs3VQzexrJ8MCHLHAX7c4> ;
   prov:wasDerivedFrom <ni:///sha-256;hRL983zLKvuXI8V2Mou0yzKs3VQzexrJ8MCHLHAX7c4> ;
   prov:wasGeneratedBy _:import .
 
 <ni:///sha-256;hRL983zLKvuXI8V2Mou0yzKs3VQzexrJ8MCHLHAX7c4>
   a prov:Entity ;
-  bridge:serverBaseUrl "https://records.example.org/api" ;
+  cascade:serverBaseUrl "https://records.example.org/api" ;
   pav:retrievedFrom <https://records.example.org/api/ExampleRecordSet> ;
   pav:retrievedOn "2026-08-30T22:14:00Z"^^xsd:dateTime ;
   prov:qualifiedAttribution
-    [ prov:agent [ rdfs:label "Example Records Registry" ] ; prov:hadRole rec:author ] ,
-    [ prov:agent [ rdfs:label "Example Fetcher" ] ; prov:hadRole rec:transmitter ] ;
-  bridge:authenticatedPatient "Patient/example-patient" ;
-  bridge:authenticatedAsProxy false ;
-  bridge:sourceFormatVersion "1" .
+    [ prov:agent [ rdfs:label "Example Records Registry" ] ; prov:hadRole cascade:AuthorRole ] ,
+    [ prov:agent [ rdfs:label "Example Fetcher" ] ; prov:hadRole cascade:TransmitterRole ] ;
+  cascade:authenticatedPatient "Patient/example-patient" ;
+  cascade:authenticatedAsProxy false ;
+  cascade:sourceFormatVersion "1" .
 
 _:import
   a prov:Activity ;

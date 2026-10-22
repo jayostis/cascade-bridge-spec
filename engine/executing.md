@@ -9,9 +9,10 @@ JSON-LD and the manifest as Turtle, each with the adapter IRI the caller gave
 [`../vocab/bridge.ttl`](../vocab/bridge.ttl). A Bridge also executes
 [`../fixtures/versioning/manifest.ttl`](../fixtures/versioning/manifest.ttl), and
 one offering `bridge:sparql-1.1`
-[`../fixtures/lift/manifest.ttl`](../fixtures/lift/manifest.ttl) and
-[`../fixtures/naming/manifest.ttl`](../fixtures/naming/manifest.ttl), each
-loaded on its own.
+[`../fixtures/lift/manifest.ttl`](../fixtures/lift/manifest.ttl) and the Cascade
+vocabulary repository's
+[`tests/vectors/naming/manifest.ttl`](https://github.com/jayostis/cascade-vocabulary/blob/main/tests/vectors/naming/manifest.ttl), each loaded on
+its own.
 
 **Report in EARL**: one `earl:Assertion` per entry, `earl:test` the entry's IRI,
 `earl:subject` the Bridge, `earl:mode earl:automatic`, and an `earl:TestResult`

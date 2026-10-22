@@ -27,7 +27,6 @@ CONCEPTS_OF_GAP_KINDS = {
     BRIDGE.sourceLacksRequired,
     BRIDGE.carriedWithLoss,
     BRIDGE.schemaRuleUnnamed,
-    BRIDGE.pathNotAccounted,
     BRIDGE.addressNotOneNode,
     BRIDGE.predicateNotDeclared,
     BRIDGE.idRepeated,
@@ -43,7 +42,3 @@ def test_the_vocabulary_declares_every_concept_of_gap_kinds_in_the_scheme_they_b
 
 def test_the_vocabulary_declares_the_predicate_by_which_a_gap_names_the_term_that_would_close_it():
     assert str(BRIDGE.closedBy) in declared_terms.declared()
-
-
-def test_the_vocabulary_declares_the_predicate_by_which_a_finding_says_how_many_nodes_stand_at_its_path():
-    assert str(BRIDGE.occurrences) in declared_terms.declared()
