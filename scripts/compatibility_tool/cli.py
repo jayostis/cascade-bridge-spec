@@ -131,7 +131,7 @@ def compatibility(directory, options, event, api, spec):
     if status is not Status.FAIL:
         set_up = {}
         if runs_runtimes:
-            runtimes.run(directory, record, options, set_up)
+            runtimes.run(directory, record, options, set_up, api)
         else:
             engines.run(directory, record, options, set_up)
             library.run(directory, record, options, set_up)

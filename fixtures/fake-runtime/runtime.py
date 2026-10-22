@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import os
 from pathlib import Path
 
 EARL = """@prefix earl: <http://www.w3.org/ns/earl#> .
@@ -34,6 +35,8 @@ def main():
             print(f"fake runtime: {folder}, handed in for {repository}, is no folder")
             return 2
         print(f"fake runtime: folder {repository} {folder}")
+    if os.environ.get("CASCADE_PULL_REQUESTS"):
+        print(f"fake runtime: pull requests {os.environ['CASCADE_PULL_REQUESTS']}")
     body = EARL + "".join(ASSERTION.format(test=test, outcome=outcome) for test, outcome in CANNED[args.canned].items())
     args.report.write_text(body, encoding="utf-8")
     return 0
