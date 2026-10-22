@@ -1,0 +1,4 @@
+@prefix cascade: <https://ns.cascadeprotocol.org/cascade#> .
+@prefix bridge:  <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:thisDocument cascade:serverBaseUrl "https://user@host/r4" .

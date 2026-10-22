@@ -97,7 +97,7 @@ version named, and:
   `pav:version`;
 - **each version's arrival**: one blank node carrying every triple the mapping
   wrote of a node it linked to that version by `bridge:arrivedAs`, and
-  `bridge:arrivedAs` the version's name, `prov:wasDerivedFrom` the document,
+  `bridge:arrivedAs` the version's name, `prov:wasDerivedFrom` and `oa:hasSource` the document,
   `prov:wasGeneratedBy` the import and, where the mapping wrote none,
   `oa:hasSelector` the source record's selector, as a finding's target carries
   it ([`sparql.md`](sparql.md)). A mapping

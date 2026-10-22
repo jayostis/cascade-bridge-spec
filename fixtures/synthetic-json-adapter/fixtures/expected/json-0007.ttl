@@ -20,6 +20,7 @@
 [] bridge:arrivedAs <ni:///sha-256;01OgH5GZWkttif0OxLGEKheUTVF8fjuIoW8pdn3Sr0U> ;
   pav:version "1" ;
   oa:hasSelector [ a oa:FragmentSelector ; dcterms:conformsTo <https://www.rfc-editor.org/rfc/rfc6901> ; rdf:value "/records/0" ] ;
+  oa:hasSource <ni:///sha-256;jo_WTAf-65KdN4gSHJMPv1s4-UY3ck_jdSVYxj771Fk> ;
   prov:wasDerivedFrom <ni:///sha-256;jo_WTAf-65KdN4gSHJMPv1s4-UY3ck_jdSVYxj771Fk> ;
   prov:wasGeneratedBy _:import .
 
@@ -34,6 +35,7 @@
 [] bridge:arrivedAs <ni:///sha-256;bb6dSQFN6FUwXVHWdGsN7YDpPu74617UtLGI2iXMUtE> ;
   pav:version "4" ;
   oa:hasSelector [ a oa:FragmentSelector ; dcterms:conformsTo <https://www.rfc-editor.org/rfc/rfc6901> ; rdf:value "/records/1" ] ;
+  oa:hasSource <ni:///sha-256;jo_WTAf-65KdN4gSHJMPv1s4-UY3ck_jdSVYxj771Fk> ;
   prov:wasDerivedFrom <ni:///sha-256;jo_WTAf-65KdN4gSHJMPv1s4-UY3ck_jdSVYxj771Fk> ;
   prov:wasGeneratedBy _:import .
 

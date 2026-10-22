@@ -278,6 +278,11 @@
 
 <#NamingTest> a sh:NodeShape ;
   sh:targetClass bridge:NamingTest ;
+  sh:or (
+    [ sh:path ( mf:result bridge:canonicalContent ) ; sh:maxCount 0 ]
+    [ sh:path ( mf:action bridge:input ) ; sh:minCount 1 ]
+  ) ;
+  sh:message "A naming test names a bridge:canonicalContent only beside a bridge:input." ;
   sh:property [
     sh:path bridge:namingRule ;
     sh:minCount 1 ;
@@ -314,11 +319,30 @@
     sh:nodeKind sh:IRI ;
     sh:message "The action of a naming test names at most one bridge:input, the content named, by IRI."
   ] ;
+  sh:property [
+    sh:path bridge:nameInputs ;
+    sh:not [ sh:in ( rdf:nil ) ] ;
+    sh:message "bridge:nameInputs lists at least one input."
+  ] ;
+  sh:property [
+    sh:path ( bridge:nameInputs [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ;
+    sh:or (
+      [ sh:datatype xsd:string ]
+      [ sh:in ( rdf:nil ) ]
+      [ sh:and ( [ sh:nodeKind sh:BlankNode ] [ sh:path ( [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ; sh:datatype xsd:string ] ) ]
+    ) ;
+    sh:message "Each member of bridge:nameInputs is a plain string, or a list of plain strings."
+  ] ;
+  sh:or (
+    [ sh:path qt:query ; sh:maxCount 0 ]
+    [ sh:path ( bridge:nameInputs [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ; sh:datatype xsd:string ]
+  ) ;
+  sh:not [ sh:and ( [ sh:path qt:query ; sh:minCount 1 ] [ sh:path bridge:input ; sh:minCount 1 ] ) ] ;
   sh:xone (
     [ sh:path bridge:nameInputs ; sh:minCount 1 ]
     [ sh:path bridge:input ; sh:minCount 1 ]
   ) ;
-  sh:message "The action of a naming test carries exactly one of a bridge:nameInputs list and a bridge:input." .
+  sh:message "The action of a naming test carries exactly one of a bridge:nameInputs list and a bridge:input, never a bridge:input beside a qt:query, and a nested list of inputs only without a qt:query." .
 
 <#NamingResult> a sh:NodeShape ;
   sh:closed true ;
@@ -327,7 +351,8 @@
     sh:path bridge:expectedName ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
-    sh:message "The result of a naming test carries exactly one bridge:expectedName."
+    sh:or ( [ sh:nodeKind sh:IRI ] [ sh:nodeKind sh:Literal ; sh:datatype xsd:string ] ) ;
+    sh:message "The result of a naming test carries exactly one bridge:expectedName, an IRI or a plain string."
   ] ;
   sh:property [
     sh:path bridge:canonicalContent ;

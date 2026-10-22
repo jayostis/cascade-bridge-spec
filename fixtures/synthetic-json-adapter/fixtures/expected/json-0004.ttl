@@ -20,6 +20,7 @@
 [] bridge:arrivedAs <ni:///sha-256;ZsYPB2p0iC63yvCeFW2s7Md2c69mnxiRpVK_Rq_8MAA> ;
   pav:version "1" ;
   oa:hasSelector [ a oa:FragmentSelector ; dcterms:conformsTo <https://www.rfc-editor.org/rfc/rfc6901> ; rdf:value "/records/0" ] ;
+  oa:hasSource <ni:///sha-256;ahuVsX4Hc8sCQCJV07MHA5wBxxnc9kxNnPuG9uJOQaE> ;
   prov:wasDerivedFrom <ni:///sha-256;ahuVsX4Hc8sCQCJV07MHA5wBxxnc9kxNnPuG9uJOQaE> ;
   prov:wasGeneratedBy _:import .
 

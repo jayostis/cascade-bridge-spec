@@ -1,0 +1,7 @@
+{
+  "kind": "archive",
+  "records ~/archive": [
+    {"accession": "EX000110", "version": 1, "label": "one of two records under a member whose name needs encoding in a fragment"},
+    {"accession": "EX000110", "version": 2, "label": "the other record under that member"}
+  ]
+}

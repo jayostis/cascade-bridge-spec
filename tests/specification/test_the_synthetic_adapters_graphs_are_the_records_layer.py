@@ -179,6 +179,41 @@ def test_the_import_carries_the_facts_supplied_with_it_and_applied_the_adapters_
     assert isomorphic(written, supplied)
 
 
+NAMING_VECTORS = ROOT.parent / "cascade-vocabulary" / "tests" / "vectors" / "naming"
+
+
+def named_by_the_vocabulary(rule, *inputs):
+    query = (NAMING_VECTORS / f"{rule}.rq").read_text(encoding="utf-8")
+    rows = list(Graph().query(query, initBindings={f"input{n}": Literal(text) for n, text in enumerate(inputs, 1)}))
+    assert len(rows) == 1
+    return str(rows[0]["name"])
+
+
+@pytest.mark.skipif(
+    not NAMING_VECTORS.is_dir(),
+    reason=f"no cascade-vocabulary checkout beside this repository (looked for {NAMING_VECTORS})",
+)
+@pytest.mark.parametrize(("adapter", "test"), CONVERSIONS)
+def test_each_record_is_named_by_the_rule_its_mapping_chooses_with_the_vocabularys_own_rule_text(adapter, test):
+    expected = expected_of(adapter, test)
+    document = the_one(expected, PROV.Entity)
+    held = adapter.accessions(input_of(adapter, test))
+    by_selector = {selector_of(expected, record): record for record in expected.subjects(RDF.type, EX.Record)}
+    for selector, record in by_selector.items():
+        accession = str(expected.value(record, EX.accession))
+        holder = holder_of(adapter, selector)
+        if holder is not None:
+            container = adapter.selected(input_of(adapter, test), holder)
+            scope = container.get("version") or container.get("lastUpdated") or ""
+            name = named_by_the_vocabulary("ContainedRecordNamingRule", str(by_selector[holder]), scope, accession)
+        elif held.count(accession) == 1:
+            server = str(expected.value(document, CASCADE.serverBaseUrl))
+            name = named_by_the_vocabulary("RecordFromServerNamingRule", server, "ExampleRecord", accession)
+        else:
+            name = named_by_the_vocabulary("RecordFromDocumentNamingRule", str(document), selector)
+        assert str(record) == name
+
+
 def content_of(graph, version):
     def in_version(node):
         return isinstance(node, URIRef) and (node == version or str(node).startswith(f"{version}#"))

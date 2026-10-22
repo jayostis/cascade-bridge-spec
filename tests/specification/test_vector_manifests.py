@@ -124,40 +124,46 @@ THE_VOCABULARYS_NAMING_VECTORS = """@prefix rdfs:    <http://www.w3.org/2000/01/
 @prefix cascade: <https://ns.cascadeprotocol.org/cascade#> .
 
 <> a mf:Manifest ;
+  rdfs:label "naming vectors" ;
   mf:entries ( <#record-from-server> <#claim> <#version> <#view-entry> <#base-url-case> <#base-url-userinfo> ) .
 
 <#record-from-server> a bridge:NamingTest ;
   mf:name "record-from-server" ;
+  rdfs:comment "A FHIR resource read from a server: the normalised base URL the client used, the resource type, the id." ;
   bridge:namingRule cascade:RecordFromServerNamingRule ;
-  mf:action [ qt:query <RecordFromServerNamingRule.rq> ; bridge:nameInputs ( "https://fhir.example.org/r4" "Patient" "1" ) ] ;
+  mf:action [ qt:query <RecordFromServerNamingRule.rq> ; bridge:nameInputs ( "https://fhir.example.org/api/FHIR/R4" "AllergyIntolerance" "eQ3xk2RtVb7Lm9Pw1aZy8A3" ) ] ;
   mf:result [ bridge:expectedName <urn:uuid:81ad3fab-98f1-890c-8abe-e93c84afd9e0> ] .
 
 <#claim> a bridge:NamingTest ;
   mf:name "claim" ;
+  rdfs:comment "A claim: the maker, the matcher rule, the justification, then the members and the versions used, each list written as its count and its items in code point order; listed here unsorted." ;
   bridge:namingRule cascade:ClaimNamingRule ;
-  mf:action [ bridge:nameInputs ( "maker" "rule" "justification" ( "m2" "m1" ) ( "u1" ) ) ] ;
+  mf:action [ bridge:nameInputs ( "https://ns.cascadeprotocol.org/cascade#CascadeMatcher" "https://ns.cascadeprotocol.org/cascade#SameCodeRule" "https://ns.cascadeprotocol.org/cascade#SameCode" ("urn:uuid:f83d6a9d-1d0e-84bd-826c-e3f00989c291" "urn:uuid:7435b3b8-2d93-8912-9d48-940c5870dc81") ("ni:///sha-256;eplyjFwBziuuDGwAXYG-OsnSc_l9nZRWlgn28AA-riY" "ni:///sha-256;Q2zb2hq5EC43OWgfnQ-uPPQDVO6_EFXtdyhjpb_8PnQ") ) ] ;
   mf:result [ bridge:expectedName <urn:uuid:35ee949a-9a6f-8cbb-81ef-378e145711f0> ] .
 
 <#version> a bridge:NamingTest ;
   mf:name "version" ;
+  rdfs:comment "A version: the SHA-256 of the RDFC-1.0 canonical N-Quads of its triples, its subject urn:cascade:this-version, prov:specializationOf its record among them." ;
   bridge:namingRule cascade:VersionNamingRule ;
   mf:action [ bridge:input <content/version.nt> ] ;
-  mf:result [ bridge:expectedName <ni:///sha-256;79qujwwA5pwIANwZGiRTK0GbMw0kE6P9xu3Rl0qg6ZE> ;
-              bridge:canonicalContent <content/version.nq> ] .
+  mf:result [ bridge:expectedName <ni:///sha-256;79qujwwA5pwIANwZGiRTK0GbMw0kE6P9xu3Rl0qg6ZE> ; bridge:canonicalContent <content/version.nq> ] .
 
 <#view-entry> a bridge:NamingTest ;
   mf:name "view-entry" ;
+  rdfs:comment "A view entry: the view's path in the pod, #, and the lower-case hex SHA-256 of its least member's IRI." ;
   bridge:namingRule cascade:ViewEntryNamingRule ;
-  mf:action [ qt:query <ViewEntryNamingRule.rq> ; bridge:nameInputs ( "clinical/allergies.ttl" "urn:uuid:1" ) ] ;
-  mf:result [ bridge:expectedName "clinical/allergies.ttl#f7e2d271" ] .
+  mf:action [ qt:query <ViewEntryNamingRule.rq> ; bridge:nameInputs ( "clinical/allergies.ttl" "urn:uuid:7435b3b8-2d93-8912-9d48-940c5870dc81" ) ] ;
+  mf:result [ bridge:expectedName "clinical/allergies.ttl#f7e2d271f881267884f33508186278e064bb6b3621c3b568949bacd3a96a3584" ] .
 
 <#base-url-case> a bridge:BaseUrlNormalisationTest ;
   mf:name "base-url-case" ;
-  mf:action [ cascade:serverBaseUrl "HTTPS://FHIR.Example.ORG/r4/" ] ;
-  mf:result [ cascade:serverBaseUrl "https://fhir.example.org/r4" ] .
+  rdfs:comment "The scheme and host in lower case; the path as written." ;
+  mf:action [ cascade:serverBaseUrl "HTTPS://FHIR.Example.ORG/api/FHIR/R4" ] ;
+  mf:result [ cascade:serverBaseUrl "https://fhir.example.org/api/FHIR/R4" ] .
 
 <#base-url-userinfo> a bridge:BaseUrlRefusalTest ;
   mf:name "base-url-userinfo" ;
+  rdfs:comment "A base URL carrying userinfo is refused: a credential is never a name input." ;
   mf:action [ cascade:serverBaseUrl "https://user@fhir.example.org/r4" ] .
 """
 
@@ -189,3 +195,71 @@ def test_a_base_url_refusal_test_carrying_a_result_is_refused():
     graph.add((entry_of(graph, "base-url-userinfo"), MF.result, result))
     graph.add((result, CASCADE.serverBaseUrl, Literal("https://fhir.example.org/r4")))
     assert "carries no mf:result" in said_about(graph)
+
+
+def the_naming_vector_with(name, mutate):
+    graph = the_vocabularys_naming_vectors()
+    mutate(graph, graph.value(entry_of(graph, name), MF.action), graph.value(entry_of(graph, name), MF.result))
+    return said_about(graph)
+
+
+def test_a_naming_test_naming_a_query_and_an_input_is_refused():
+    def mutate(graph, action, result):
+        graph.remove((action, BRIDGE.nameInputs, None))
+        graph.add((action, BRIDGE.input, URIRef("urn:x:content.nt")))
+
+    assert "never a bridge:input beside a qt:query" in the_naming_vector_with("record-from-server", mutate)
+
+
+def test_a_name_input_that_is_not_a_plain_string_is_refused():
+    def mutate(graph, action, result):
+        head = graph.value(action, BRIDGE.nameInputs)
+        graph.set((head, RDF.first, Literal(1)))
+
+    assert "is a plain string, or a list of plain strings" in the_naming_vector_with("record-from-server", mutate)
+
+
+def test_an_empty_list_of_name_inputs_is_refused():
+    def mutate(graph, action, result):
+        graph.set((action, BRIDGE.nameInputs, RDF.nil))
+
+    assert "lists at least one input" in the_naming_vector_with("view-entry", mutate)
+
+
+def test_a_nested_list_of_name_inputs_beside_a_query_is_refused():
+    def mutate(graph, action, result):
+        head = graph.value(action, BRIDGE.nameInputs)
+        nested = BNode()
+        graph.add((nested, RDF.first, Literal("x")))
+        graph.add((nested, RDF.rest, RDF.nil))
+        graph.set((head, RDF.first, nested))
+
+    assert "a nested list of inputs only without a qt:query" in the_naming_vector_with("record-from-server", mutate)
+
+
+@pytest.mark.parametrize("name", [BNode(), Literal(7)], ids=["blank-node", "integer"])
+def test_an_expected_name_that_is_neither_an_iri_nor_a_plain_string_is_refused(name):
+    def mutate(graph, action, result):
+        graph.set((result, BRIDGE.expectedName, name))
+
+    assert "an IRI or a plain string" in the_naming_vector_with("record-from-server", mutate)
+
+
+def test_canonical_content_beside_no_input_is_refused():
+    def mutate(graph, action, result):
+        graph.add((result, BRIDGE.canonicalContent, URIRef("urn:x:content.nq")))
+
+    assert "only beside a bridge:input" in the_naming_vector_with("record-from-server", mutate)
+
+
+VOCABULARY_MANIFEST = ROOT.parent / "cascade-vocabulary" / "tests" / "vectors" / "naming" / "manifest.ttl"
+
+
+@pytest.mark.skipif(
+    not VOCABULARY_MANIFEST.is_file(),
+    reason=f"no cascade-vocabulary checkout beside this repository (looked for {VOCABULARY_MANIFEST})",
+)
+def test_the_vocabularys_naming_manifest_conforms_to_the_bridge_shapes():
+    graph = Graph().parse(VOCABULARY_MANIFEST, format="turtle", publicID=VOCABULARY_MANIFEST.as_uri())
+    conforms, _, text = validate(graph, shacl_graph=Graph().parse(SHAPES, format="turtle"), advanced=True)
+    assert conforms, text

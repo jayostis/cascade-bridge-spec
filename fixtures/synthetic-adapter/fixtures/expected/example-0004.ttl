@@ -19,6 +19,7 @@
 [] bridge:arrivedAs <ni:///sha-256;4qyQZuI1Co4d40k9CO0vQVypVO9Ihyu1HVXXsNwxVKE> ;
   pav:version "1" ;
   oa:hasSelector [ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ] ;
+  oa:hasSource <ni:///sha-256;yzY0wZUNCnXcA64SooU5JXyXGR-pBN7bfJo9hjVaVWY> ;
   prov:wasDerivedFrom <ni:///sha-256;yzY0wZUNCnXcA64SooU5JXyXGR-pBN7bfJo9hjVaVWY> ;
   prov:wasGeneratedBy _:import .
 

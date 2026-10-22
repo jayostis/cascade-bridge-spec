@@ -371,8 +371,8 @@
       "@type": "File",
       "name": "Expected graph for example-0008",
       "encodingFormat": "text/turtle",
-      "contentSize": "2680",
-      "sha256": "dedb2e99edafa75b122173bdeb5c605b92a33db83624fa76755c322c713045f4",
+      "contentSize": "2834",
+      "sha256": "e8ced53a43556bcdbcef07c73cccbacad78b1bb059b37d3d32f1d1a610027079",
       "isBasedOn": {
         "@id": "fixtures/in/example-0008.xml"
       },
@@ -505,8 +505,8 @@
       "@type": "File",
       "name": "Expected graph for example-0003",
       "encodingFormat": "text/turtle",
-      "contentSize": "2080",
-      "sha256": "b5ba7dcef44ad8f7822890370eb621919e7b582be74808e02d428b62a97d8f19",
+      "contentSize": "2157",
+      "sha256": "70a13dcbdaa4ddd6468cf30c55a0bcf871bf5896ba304aedf22823b7b3d0ac4d",
       "isBasedOn": {
         "@id": "fixtures/in/example-0003.xml"
       },
@@ -533,8 +533,8 @@
       "@type": "File",
       "name": "Expected graph for example-0001",
       "encodingFormat": "text/turtle",
-      "contentSize": "2624",
-      "sha256": "137abc03f29bd4d911ea9032960b9e4eebda4b9d5e4514d3a455dcde59f8fab4",
+      "contentSize": "2778",
+      "sha256": "0f303b7cd5a812a7169741fc532bddf6ce8219ad8d02d527f4379178922f6630",
       "isBasedOn": {
         "@id": "fixtures/in/example-0001.xml"
       },
@@ -572,8 +572,8 @@
       "@type": "File",
       "name": "Expected graph for example-0004",
       "encodingFormat": "text/turtle",
-      "contentSize": "2079",
-      "sha256": "c09135b8e02a3c20a489e5f4a3b7bb64a52019ee5c74860a7b6d7e5089ac5b13",
+      "contentSize": "2156",
+      "sha256": "4d2359cd1b661c644de9d211ed0f0eef26b4880937fe0a719229f9a6ad4ce575",
       "isBasedOn": {
         "@id": "fixtures/in/example-0004.xml"
       },
@@ -611,8 +611,8 @@
       "@type": "File",
       "name": "Expected graph for example-0005",
       "encodingFormat": "text/turtle",
-      "contentSize": "2047",
-      "sha256": "8828e861d882f3db9d85529e75741549cd3b5e00f20b6bfa74b6deef7c8fda7c",
+      "contentSize": "2124",
+      "sha256": "71ec179433df5c37f907f51d189bd5793f1352f85c8826f0003171c646130cd9",
       "isBasedOn": {
         "@id": "fixtures/in/example-0005.xml"
       },
@@ -650,8 +650,8 @@
       "@type": "File",
       "name": "Expected graph for example-0006",
       "encodingFormat": "text/turtle",
-      "contentSize": "2156",
-      "sha256": "c157b508db9af7b86fdf6176677899f53c9cdbf00c895989c82fe54e59dd6298",
+      "contentSize": "2233",
+      "sha256": "97f7e246b6ce5093b1baad7a6fdfa0c67ac21714edf5c11bf6191834e3c357d7",
       "isBasedOn": {
         "@id": "fixtures/in/example-0006.xml"
       },

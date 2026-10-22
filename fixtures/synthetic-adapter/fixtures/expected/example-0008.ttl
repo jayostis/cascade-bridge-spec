@@ -19,6 +19,7 @@
 [] bridge:arrivedAs <ni:///sha-256;Y1-Uyhc_Go7wLlLyE5rR81v2wRTGPlfbQyhA6YedZxw> ;
   pav:version "1" ;
   oa:hasSelector [ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ] ;
+  oa:hasSource <ni:///sha-256;YoBNkrm6KN-7eBZZxmVzofOHY3Me93KbppjQVpnm8Xk> ;
   prov:wasDerivedFrom <ni:///sha-256;YoBNkrm6KN-7eBZZxmVzofOHY3Me93KbppjQVpnm8Xk> ;
   prov:wasGeneratedBy _:import .
 
@@ -33,6 +34,7 @@
 [] bridge:arrivedAs <ni:///sha-256;ZHGe8MWcYKDYTXjkIPiAGMve1jaxRPP_WgMNxZbBzjk> ;
   pav:version "1" ;
   oa:hasSelector [ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[2]" ] ;
+  oa:hasSource <ni:///sha-256;YoBNkrm6KN-7eBZZxmVzofOHY3Me93KbppjQVpnm8Xk> ;
   prov:wasDerivedFrom <ni:///sha-256;YoBNkrm6KN-7eBZZxmVzofOHY3Me93KbppjQVpnm8Xk> ;
   prov:wasGeneratedBy _:import .
 
