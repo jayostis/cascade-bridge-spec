@@ -3,7 +3,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlsplit
 from xml.etree import ElementTree
 
 EARL = """@prefix earl: <http://www.w3.org/ns/earl#> .
@@ -120,6 +120,7 @@ def convert(args, adapter):
 CRATE = "ro-crate-metadata.json"
 BRIDGE = "https://ns.cascadeprotocol.org/bridge/v1-draft#"
 SCHEMA = "http://schema.org/"
+CASCADE = "https://ns.cascadeprotocol.org/cascade#"
 RDF_TYPE = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
 OA_HAS_SOURCE = "http://www.w3.org/ns/oa#hasSource"
 FORMATS = {"turtle": "turtle", "ntriples": "nt"}
@@ -297,17 +298,20 @@ def committed(document, kind):
 
 
 def convert_document(given, loaded, mode):
+    import rdflib
+
     document = given["document"]
     read_document(loaded, document)
     facts = document.get("facts")
     if facts is not None:
-        parsed("factsFailure", Path(facts["path"]).read_bytes(), lambda data: turtle(data, facts["iri"]))
+        supplied = parsed("factsFailure", Path(facts["path"]).read_bytes(), lambda data: turtle(data, facts["iri"]))
+        for base in supplied.objects(None, rdflib.URIRef(CASCADE + "serverBaseUrl")):
+            if urlsplit(str(base)).username is not None:
+                raise Failure("factsFailure")
     written = {"graph": turtle(*committed(document, "expected"))}
     if loaded["vocabulary"]:
         findings = turtle(*committed(document, "findings"))
         if mode == "file-iri-in-findings":
-            import rdflib
-
             for target in list(findings.subjects(rdflib.URIRef(OA_HAS_SOURCE), None)):
                 findings.set((target, rdflib.URIRef(OA_HAS_SOURCE), rdflib.URIRef(Path(document["path"]).as_uri())))
         written["findings"] = findings
