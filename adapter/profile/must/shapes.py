@@ -4,20 +4,17 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from pyshacl import validate as shacl_validate
-from rdflib import Graph
 from rdflib.namespace import RDF, SH
 from rocrate_validator.models import ValidationContext
 from rocrate_validator.requirements.python import PyFunctionCheck, check, requirement
 
-from _findings import named, report_findings
-
-SHAPES = Path(__file__).resolve().parents[3] / "shapes" / "bridge.shapes.ttl"
+from _findings import SHAPES, named, report_findings, shapes_of
 
 
 def violations(crate):
     _, report, _ = shacl_validate(
         crate.graph,
-        shacl_graph=Graph().parse(SHAPES, format="turtle"),
+        shacl_graph=shapes_of(SHAPES),
         advanced=True,
         inplace=False,
     )

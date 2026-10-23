@@ -10,7 +10,7 @@ from rocrate_validator.requirements.python import PyFunctionCheck, check, requir
 
 from _codes import bodies_a_finding_may_carry, no_gap_of_the_scheme
 from _crate import file_name_of
-from _findings import SHAPES, report_findings, unmet
+from _findings import SHAPES, report_findings, shapes_of, unmet
 from _json_source import RFC_6901, NotJson, parsed, records_of, selected_by, syntax_of
 from _selectors import local_name_of
 from _terms import BRIDGE, MF, OA
@@ -226,7 +226,7 @@ def faulty(crate):
         yield "lxml is not installed (pip install lxml), so no finding's selector was evaluated"
         return
 
-    shapes = Graph().parse(SHAPES, format="turtle")
+    shapes = shapes_of(SHAPES)
     coded = bodies_a_finding_may_carry(crate)
     no_gap = no_gap_of_the_scheme(crate)
     record_name = str(crate.graph.value(crate.root, BRIDGE.elementNameOfEachRecord) or "")

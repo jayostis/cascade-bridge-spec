@@ -2,7 +2,7 @@ from functools import cache
 from pathlib import Path
 
 from pyshacl import validate as shacl_validate
-from rdflib import BNode
+from rdflib import BNode, Graph
 from rdflib.namespace import SH
 from rdflib.plugins.sparql import processor
 from rdflib.plugins.sparql.algebra import translateQuery
@@ -12,6 +12,12 @@ from _crate import from_context
 from _terms import BRIDGE
 
 SHAPES = Path(__file__).resolve().parents[2] / "shapes" / "bridge.shapes.ttl"
+
+
+@cache
+def shapes_of(path):
+    """A shapes file, parsed once a process and shared by every check that validates against it."""
+    return Graph().parse(path, format="turtle")
 
 
 @cache

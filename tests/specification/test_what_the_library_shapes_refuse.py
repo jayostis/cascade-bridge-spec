@@ -6,7 +6,7 @@ from rdflib import RDF, BNode, Graph, Literal, Namespace, URIRef
 
 ROOT = Path(__file__).resolve().parents[2]
 LIBRARY = ROOT / "fixtures" / "library" / "manifest.ttl"
-SHAPES = ROOT / "shapes" / "bridge.shapes.ttl"
+SHAPES = Graph().parse(ROOT / "shapes" / "bridge.shapes.ttl", format="turtle")
 
 MF = Namespace("http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#")
 BRIDGE = Namespace("https://ns.cascadeprotocol.org/bridge/v1-draft#")
@@ -17,7 +17,7 @@ def library():
 
 
 def said_about(graph):
-    conforms, _, text = validate(graph, shacl_graph=Graph().parse(SHAPES, format="turtle"), advanced=True)
+    conforms, _, text = validate(graph, shacl_graph=SHAPES, advanced=True)
     return conforms, text
 
 

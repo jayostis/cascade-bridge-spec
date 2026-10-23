@@ -11,7 +11,7 @@ from rocrate_validator.models import ValidationContext
 from rocrate_validator.requirements.python import PyFunctionCheck, check, requirement
 
 from _codes import scheme_named_by
-from _findings import SHAPES, report_findings, unmet
+from _findings import SHAPES, report_findings, shapes_of, unmet
 from _json_source import A_PATH, named_in_the_lift, syntax_of
 from _terms import BRIDGE
 
@@ -145,7 +145,7 @@ def faulty(crate):
         yield f"{path.name} does not parse as Turtle\n{error}"
         return
 
-    shapes = Graph().parse(SHAPES, format="turtle")
+    shapes = shapes_of(SHAPES)
     for message in unmet(accounting, shapes):
         yield f"{path.name}: {message}"
 
