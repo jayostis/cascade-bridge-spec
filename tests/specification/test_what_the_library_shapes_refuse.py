@@ -82,6 +82,10 @@ def a_document_given_no_iri(graph):
     graph.remove((graph.value(call, BRIDGE.document), BRIDGE.iri, None))
 
 
+def a_manifest_listing_no_entries(graph):
+    graph.remove((URIRef(LIBRARY.as_uri()), MF.entries, None))
+
+
 def a_result_on_the_case(graph):
     case = next(graph.subjects(MF.name, Literal("test-with-no-vocabulary")))
     graph.add((case, MF.result, BNode()))
@@ -106,6 +110,7 @@ REFUSED = {
     ),
     "a document given no IRI": (a_document_given_no_iri, "carries exactly one bridge:iri"),
     "a result on the case": (a_result_on_the_case, "has no mf:result"),
+    "a manifest listing no entries": (a_manifest_listing_no_entries, "exactly one mf:entries list"),
 }
 
 

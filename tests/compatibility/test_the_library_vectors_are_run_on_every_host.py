@@ -76,7 +76,7 @@ def test_an_engine_writing_no_library_results_fails_the_row_saying_it_wrote_none
     row = on_host(world, "native")
     assert row is not None, said
     assert row["holds"] is False, row
-    assert "wrote no" in (row["result"] or ""), row["result"]
+    assert row["result"] == "it wrote no results"
 
 
 def test_an_adapters_run_naming_the_engine_has_no_library_row(world):
