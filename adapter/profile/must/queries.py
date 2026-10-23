@@ -1,4 +1,5 @@
 import sys
+from functools import cache
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -52,6 +53,7 @@ def constructs(template):
     return graph, set(standing_for.values())
 
 
+@cache
 def shapes_less_the_selector_and_the_severity_a_bridge_supplies():
     """A finding whose query constructs no selector is about the record itself, and the selector one
     does construct is the refinement a Bridge moves under the record's. A finding whose query
