@@ -217,6 +217,18 @@ def test_reports_a_json_findings_query_constructing_an_xpath_selector(json_packa
     )
 
 
+def test_reports_a_json_findings_query_whose_pointer_does_not_conform_to_rfc_6901(json_package):
+    json_package.edit(
+        "in/example-findings.rq",
+        """a oa:FragmentSelector ;
+        dcterms:conformsTo <https://www.rfc-editor.org/rfc/rfc6901> ;""",
+        "a oa:FragmentSelector ;",
+    )
+    assert "whose dcterms:conformsTo is not <https://www.rfc-editor.org/rfc/rfc6901>" in "\n".join(
+        queries.malformed(json_package.crate)
+    )
+
+
 def test_reports_nothing_for_the_committed_json_queries(json_crate):
     assert not list(queries.malformed(json_crate))
 
