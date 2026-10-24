@@ -114,10 +114,11 @@ version named, and:
   each step written in its namespace and counted among its same-name siblings
   as [`sparql.md`](sparql.md) writes a selector.
 
-A mapping whose source record is the document element may also write, of the
-document's name, a `prov:qualifiedAttribution` shaped as a supplied one is: a
-C-CDA's custodian as its author. A Bridge writes it beside the supplied facts,
-and an attribution they hold in the same role replaces neither.
+A mapping may also write, of the document's name, a `prov:qualifiedAttribution`
+naming one `prov:agent` and one `prov:hadRole`: a C-CDA's or a FHIR document's
+custodian and author organizations, each a record the mapping names, in
+`cascade:CustodianRole` or `cascade:AuthorRole`. A Bridge writes it beside the
+supplied facts, and an attribution they hold in the same role replaces neither.
 
 [`../fixtures/synthetic-adapter/fixtures/expected/example-0001.ttl`](../fixtures/synthetic-adapter/fixtures/expected/example-0001.ttl)
 is a whole document's graph.
