@@ -6,6 +6,7 @@
 @prefix prov:   <http://www.w3.org/ns/prov#> .
 @prefix pav:    <http://purl.org/pav/> .
 @prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+@prefix cascade: <https://ns.cascadeprotocol.org/cascade#> .
 
 <> a owl:Ontology ;
   sh:declare [ sh:prefix "prov" ;   sh:namespace "http://www.w3.org/ns/prov#"^^xsd:anyURI ] ;
@@ -32,12 +33,12 @@
 <#Document> a sh:NodeShape ;
   sh:targetNode bridge:thisDocument ;
   sh:closed true ;
-  sh:message "The document is supplied bridge:serverBaseUrl, pav:retrievedFrom, pav:retrievedOn, prov:qualifiedAttribution, bridge:authenticatedPatient, bridge:authenticatedAsProxy and bridge:sourceFormatVersion, and nothing else: what a Bridge computes, bridge:sha256 among it, is never supplied." ;
+  sh:message "The document is supplied cascade:serverBaseUrl, pav:retrievedFrom, pav:retrievedOn, prov:qualifiedAttribution, cascade:authenticatedPatient, cascade:authenticatedAsProxy and cascade:sourceFormatVersion, and nothing else: what a Bridge computes, bridge:sha256 among it, is never supplied." ;
   sh:property [
-    sh:path bridge:serverBaseUrl ;
+    sh:path cascade:serverBaseUrl ;
     sh:maxCount 1 ;
     sh:datatype xsd:string ;
-    sh:message "The document names at most one bridge:serverBaseUrl, a plain string."
+    sh:message "The document names at most one cascade:serverBaseUrl, a plain string."
   ] ;
   sh:property [
     sh:path pav:retrievedFrom ;
@@ -57,22 +58,22 @@
     sh:message "Each prov:qualifiedAttribution of the document names one prov:agent, carrying one rdfs:label, and one prov:hadRole by IRI."
   ] ;
   sh:property [
-    sh:path bridge:authenticatedPatient ;
+    sh:path cascade:authenticatedPatient ;
     sh:maxCount 1 ;
     sh:datatype xsd:string ;
-    sh:message "The document names at most one bridge:authenticatedPatient, a plain string."
+    sh:message "The document names at most one cascade:authenticatedPatient, a plain string."
   ] ;
   sh:property [
-    sh:path bridge:authenticatedAsProxy ;
+    sh:path cascade:authenticatedAsProxy ;
     sh:maxCount 1 ;
     sh:datatype xsd:boolean ;
-    sh:message "The document carries at most one bridge:authenticatedAsProxy, an xsd:boolean."
+    sh:message "The document carries at most one cascade:authenticatedAsProxy, an xsd:boolean."
   ] ;
   sh:property [
-    sh:path bridge:sourceFormatVersion ;
+    sh:path cascade:sourceFormatVersion ;
     sh:maxCount 1 ;
     sh:datatype xsd:string ;
-    sh:message "The document carries at most one bridge:sourceFormatVersion, a plain string."
+    sh:message "The document carries at most one cascade:sourceFormatVersion, a plain string."
   ] .
 
 <#Attribution> a sh:NodeShape ;

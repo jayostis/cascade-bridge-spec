@@ -3,34 +3,37 @@
 @prefix prov:   <http://www.w3.org/ns/prov#> .
 @prefix pav:    <http://purl.org/pav/> .
 @prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
-@prefix rec:    <https://ns.cascadeprotocol.org/records/v1-draft#> .
 @prefix ex:     <https://example.org/synthetic-adapter/v1#> .
+@prefix cascade: <https://ns.cascadeprotocol.org/cascade#> .
+@prefix oa: <http://www.w3.org/ns/oa#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 
-<urn:uuid:61c152b0-9107-88da-84b3-1738ca0f3e79>
+<urn:uuid:f333e9e8-a18f-8c5b-af7e-b21ae9d8ba8d>
   a ex:Record ;
   ex:accession "EX000007" .
 
-<ni:///sha-256;wuj4s4S1MmBrrk2LHYa02fpAqPtzzijmwewn9DQ5Q1U>
-  prov:specializationOf <urn:uuid:61c152b0-9107-88da-84b3-1738ca0f3e79> ;
+<ni:///sha-256;ptZKvbVV6ssQlNKa6JDMHvKmfUd1yPXzcH5GaNl758Y>
+  prov:specializationOf <urn:uuid:f333e9e8-a18f-8c5b-af7e-b21ae9d8ba8d> ;
   rdfs:label "a record whose findings query writes a severity over its gap concept's, takes a second from the concept, and leaves a third to neither" .
 
-[] bridge:arrivedAs <ni:///sha-256;wuj4s4S1MmBrrk2LHYa02fpAqPtzzijmwewn9DQ5Q1U> ;
+[] bridge:arrivedAs <ni:///sha-256;ptZKvbVV6ssQlNKa6JDMHvKmfUd1yPXzcH5GaNl758Y> ;
   pav:version "1" ;
-  bridge:selector "/ExampleRecordSet/ExampleRecord[1]" ;
+  oa:hasSelector [ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ] ;
+  oa:hasSource <ni:///sha-256;lhOaSHA2XUP2uvRdwazZghXDBgkRzk1dcPfRKNvCms4> ;
   prov:wasDerivedFrom <ni:///sha-256;lhOaSHA2XUP2uvRdwazZghXDBgkRzk1dcPfRKNvCms4> ;
   prov:wasGeneratedBy _:import .
 
 <ni:///sha-256;lhOaSHA2XUP2uvRdwazZghXDBgkRzk1dcPfRKNvCms4>
   a prov:Entity ;
-  bridge:serverBaseUrl "https://records.example.org/api" ;
+  cascade:serverBaseUrl "https://records.example.org/api" ;
   pav:retrievedFrom <https://records.example.org/api/ExampleRecordSet> ;
   pav:retrievedOn "2026-08-30T22:14:00Z"^^xsd:dateTime ;
   prov:qualifiedAttribution
-    [ prov:agent [ rdfs:label "Example Records Registry" ] ; prov:hadRole rec:author ] ,
-    [ prov:agent [ rdfs:label "Example Fetcher" ] ; prov:hadRole rec:transmitter ] ;
-  bridge:authenticatedPatient "Patient/example-patient" ;
-  bridge:authenticatedAsProxy false ;
-  bridge:sourceFormatVersion "1" .
+    [ prov:agent [ rdfs:label "Example Records Registry" ] ; prov:hadRole cascade:AuthorRole ] ,
+    [ prov:agent [ rdfs:label "Example Fetcher" ] ; prov:hadRole cascade:TransmitterRole ] ;
+  cascade:authenticatedPatient "Patient/example-patient" ;
+  cascade:authenticatedAsProxy false ;
+  cascade:sourceFormatVersion "1" .
 
 _:import
   a prov:Activity ;

@@ -104,79 +104,14 @@ lift writes as that value.
 
 ## Naming a record
 
-A record's name is `urn:uuid:` and a version 8 UUID laid out as
-[RFC 9562 §5.8](https://www.rfc-editor.org/rfc/rfc9562#section-5.8) lays it
-out, in lower case: the first 128 bits of the SHA-256 of the UTF-8 text
-`90c60849-c5ef-4ca6-bfb8-8662bd07d2b5`, `|`, and the record's inputs joined by
-`|`, with the version bits set to `1000` and the variant bits to `10`.
-[`../fixtures/naming/name.rq`](../fixtures/naming/name.rq) computes it from the
-joined inputs, and a Bridge and an adapter must reproduce the vectors in
-[`../fixtures/naming/`](../fixtures/naming/).
-
-| the source gives | the inputs |
-|---|---|
-| a FHIR resource whose `id` is unique within its document | the server's base URL, the resource type, the `id` |
-| a FHIR Bundle entry with no `id` and a `urn:uuid` `fullUrl`, whether a server is known or not | the `fullUrl` |
-| a FHIR contained resource | the containing record's name, the contained resource's `id` |
-| a FHIR record whose id repeats within its document, a FHIR resource with an `id` and no known server, or any other record no row names | the document's SHA-256 and the `rdf:value` of the record's selector |
-| a C-CDA record | as [Naming a C-CDA record](#naming-a-c-cda-record) says |
-
-A server's base URL has its scheme and host lower-cased and every trailing `/`
-removed, and a Bridge normalises it so before a mapping reads it. A document's
-SHA-256 is written `ni:///sha-256;` and the digest of its bytes in unpadded
-base64url ([RFC 6920](https://www.rfc-editor.org/rfc/rfc6920)).
-
-A reference relative to a server, as FHIR's `Patient/123` is, in a document
-with no known server names no record: a mapping writes no link for it, and the
-adapter reports it as a finding.
-
-### Naming a C-CDA record
-
-A C-CDA document is one source record, its `ClinicalDocument`. A C-CDA record
-is the `patientRole` of its header's `recordTarget`, or the clinical statement
-an entry states, never an act wrapping it: an Allergy Concern Act's Allergy
-Observation is the record, and its identifier, key, members and selector are the
-observation's.
-
-- **Its class** is the FHIR R4 resource type a record of its kind is mapped
-  from: `AllergyIntolerance`, `Condition`, `Immunization`, `Procedure`,
-  `Observation` or `Patient`, and `MedicationRequest` for every medication, in
-  either mood.
-- **Its identifier** is read from the first of its `id` children, in document
-  order, with a non-empty `root` and no `nullFlavor`: the `root`, `:` and the
-  `extension`, or the `root` alone where the `extension` is absent or empty.
-- **Its key** is the set of `field=value` strings of its class's key fields, each
-  field a name its adapter declares once for the class, and each value as the
-  source states it, stripped of leading and trailing XML whitespace. A field the
-  record does not state is left out. A class's key fields include the status the
-  record states: its `statusCode`, and the value of a status observation inside
-  it.
-- **Its members** are the strings its element and each element under it hold:
-  for an attribute, the element's type IRI, `@`, the attribute's predicate IRI,
-  `=` and the value; for a text child, the element's type IRI, `=` and the text,
-  each value and text stripped of leading and trailing XML whitespace. Its
-  adapter declares once for each class the elements and attributes whose members
-  are excluded. Where that excludes every member, none is excluded.
-- **A set's fingerprint** is the sum, over the set's distinct strings, of the
-  integer the first twelve digits of each string's SHA-256 write in lower-case
-  hexadecimal, written in decimal; the empty set's is `0`. No order enters it, so
-  SPARQL 1.1's `SUM` computes it, a digit's value being the length of what
-  precedes it in `0123456789abcdef`:
-  [`../fixtures/naming/fingerprint.rq`](../fixtures/naming/fingerprint.rq).
-  Two different sets share a fingerprint with a chance near one in 2^48, and a
-  set of fewer than 32768 strings has one that fits a 64-bit integer.
-
-| a C-CDA record | the inputs |
-|---|---|
-| whose identifier no record of its class in its document carries with another key | the class, the identifier |
-| whose identifier a record of its class in its document carries with another key | the class, the identifier, its key's fingerprint |
-| with no identifier, and a key | the class, the empty string, its key's fingerprint |
-| with no identifier, no key, and a member | the class, the empty string, the empty string, its members' fingerprint |
-| with none of these | the class |
-
-Records of one class carrying one identifier with one key share a name, as
-records of one class with no identifier and one key do. The adapter reports as a
-finding each record named by its class alone.
+A record, a version and a document are named by the Cascade vocabulary's naming
+rules, and a Bridge and an adapter must reproduce the vocabulary repository's
+naming vectors, [`tests/vectors/naming/`](https://github.com/jayostis/cascade-vocabulary/tree/main/tests/vectors/naming), as
+[`executing.md`](executing.md) says. A Bridge normalises a supplied
+`cascade:serverBaseUrl` as those vectors do, and refuses facts supplying one they
+refuse as `bridge:factsFailure`. A document's SHA-256 is written `ni:///sha-256;`
+and the digest of its bytes in unpadded base64url
+([RFC 6920](https://www.rfc-editor.org/rfc/rfc6920)).
 
 ## Running an adapter
 
@@ -192,7 +127,7 @@ For each source record of a document, in document order, a Bridge:
 2. loads every `bridge:table` declared `text/turtle` into the same default
    graph. No other table format is specified;
 3. loads into the same default graph the facts supplied with the document,
-   with `bridge:serverBaseUrl` normalised, `bridge:thisDocument bridge:sha256`
+   with `cascade:serverBaseUrl` normalised, `bridge:thisDocument bridge:sha256`
    the document's SHA-256, and `bridge:thisRecord bridge:selector` the
    `rdf:value` of the record's selector;
 4. loads into the same default graph the document table: the RDF merge, over
@@ -277,14 +212,14 @@ no path. The nodes of a JSON record are in document order, an object before
 what it holds.
 
 A census finding is addressed at the path's first occurrence in the record and
-carries `bridge:pathNotAccounted` as its body, the path as its `sh:value`, and
+carries `cascade:SourcePathNotAccounted` as its body, the path as its `sh:value`, and
 `sh:Info` as its `sh:resultSeverity`. It is refined under the record's selector
 as any other finding is, onto the element at that occurrence or, for an
 attribute, onto the element the attribute stands on. An attribute of the record
 element is refined no further. In a JSON record, it is refined onto the node at
 that occurrence.
 
-A finding addressed at a path carries `bridge:occurrences`, how many nodes of the
+A finding addressed at a path carries `cascade:occurrenceCount`, how many nodes of the
 record stand at that path, an `xsd:integer` of 2 or more, omitted where it is 1.
 A lookup finding carries it in the same form, how many nodes of the record hold
 that value at that path.

@@ -14,6 +14,7 @@
     <#json-0006>
     <#json-0007>
     <#json-0008>
+    <#json-0009>
     <#json-0002-and-json-0006-name-one-record>
     <#json-0006-holds-two-records>
     <#json-0007-names-two-records>
@@ -121,6 +122,19 @@
   mf:result [
     bridge:expectedGraph <expected/json-0008.ttl> ;
     bridge:expectedFindings <findings/json-0008.ttl>
+  ] .
+
+<#json-0009> a bridge:IsomorphicConversionTest ;
+  mf:name "json-0009" ;
+  rdfs:comment "The records of an archive sit under a member named records ~/archive: a selector is the fragment identifier of RFC 6901 section 6, the JSON Pointer /records ~0~1archive/0 with its space written %20, and that text, not the pointer, is the rdf:value the arrival carries and the second input of the name a document's records are named by." ;
+  mf:action [
+    bridge:input <in/json-0009.json> ;
+    bridge:envelope <../ro-crate-metadata.json#envelope-archive> ;
+    bridge:facts <facts/example-registry.ttl>
+  ] ;
+  mf:result [
+    bridge:expectedGraph <expected/json-0009.ttl> ;
+    bridge:expectedFindings <findings/json-0009.ttl>
   ] .
 
 <#json-0002-and-json-0006-name-one-record> a bridge:IdentityRelationTest ;

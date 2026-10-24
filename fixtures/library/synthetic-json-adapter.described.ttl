@@ -8,7 +8,8 @@
   bridge:envelope
     <https://example.org/adapters/synthetic-json-adapter/ro-crate-metadata.json#envelope-set> ,
     <https://example.org/adapters/synthetic-json-adapter/ro-crate-metadata.json#envelope-record> ,
-    <https://example.org/adapters/synthetic-json-adapter/ro-crate-metadata.json#envelope-listing> ;
+    <https://example.org/adapters/synthetic-json-adapter/ro-crate-metadata.json#envelope-listing> ,
+    <https://example.org/adapters/synthetic-json-adapter/ro-crate-metadata.json#envelope-archive> ;
   bridge:cascadeVocabularyRepository <https://example.org/synthetic-adapter/vocabulary> ;
   bridge:vocabularyFile
     "ontologies/example/v1/example.ttl" ,
@@ -50,6 +51,7 @@
     "fixtures/in/json-0006.json" ,
     "fixtures/in/json-0007.json" ,
     "fixtures/in/json-0008.json" ,
+    "fixtures/in/json-0009.json" ,
     "fixtures/expected/json-0001.ttl" ,
     "fixtures/expected/json-0002.ttl" ,
     "fixtures/expected/json-0003.ttl" ,
@@ -58,6 +60,7 @@
     "fixtures/expected/json-0006.ttl" ,
     "fixtures/expected/json-0007.ttl" ,
     "fixtures/expected/json-0008.ttl" ,
+    "fixtures/expected/json-0009.ttl" ,
     "fixtures/findings/json-0001.ttl" ,
     "fixtures/findings/json-0002.ttl" ,
     "fixtures/findings/json-0003.ttl" ,
@@ -65,4 +68,5 @@
     "fixtures/findings/json-0005.ttl" ,
     "fixtures/findings/json-0006.ttl" ,
     "fixtures/findings/json-0007.ttl" ,
-    "fixtures/findings/json-0008.ttl" .
+    "fixtures/findings/json-0008.ttl" ,
+    "fixtures/findings/json-0009.ttl" .

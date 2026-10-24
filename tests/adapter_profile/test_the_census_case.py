@@ -3,7 +3,7 @@ import re
 from rdflib import Graph
 from rdflib.namespace import RDF, SH
 
-from _terms import BRIDGE, MF, OA
+from _terms import BRIDGE, CASCADE, MF, OA
 from adapter_profile_world import accounting_of, selected_by
 
 THE_NAMESPACE = "https://example.org/synthetic-adapter/ext/v1"
@@ -24,7 +24,7 @@ def census_findings(crate):
             continue
         graph = Graph().parse(beside, format="turtle")
         for finding in graph.subjects(RDF.type, OA.Annotation):
-            if graph.value(finding, OA.hasBody) == BRIDGE.pathNotAccounted:
+            if graph.value(finding, OA.hasBody) == CASCADE.SourcePathNotAccounted:
                 yield test, graph, finding
 
 

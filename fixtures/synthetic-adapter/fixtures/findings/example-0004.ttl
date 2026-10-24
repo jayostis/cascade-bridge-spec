@@ -2,6 +2,7 @@
 @prefix sh:     <http://www.w3.org/ns/shacl#> .
 @prefix oa:     <http://www.w3.org/ns/oa#> .
 @prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+@prefix cascade: <https://ns.cascadeprotocol.org/cascade#> .
 
 [] a oa:Annotation ;
   oa:hasTarget [
@@ -12,7 +13,7 @@
       oa:refinedBy [ a oa:XPathSelector ; rdf:value "Novelty[1]" ]
     ]
   ] ;
-  oa:hasBody bridge:pathNotAccounted ;
+  oa:hasBody cascade:SourcePathNotAccounted ;
   oa:motivatedBy oa:classifying ;
   sh:value "/ExampleRecord/Novelty" ;
   sh:resultSeverity sh:Info .
@@ -26,7 +27,7 @@
       oa:refinedBy [ a oa:XPathSelector ; rdf:value "Label[1]" ]
     ]
   ] ;
-  oa:hasBody bridge:pathNotAccounted ;
+  oa:hasBody cascade:SourcePathNotAccounted ;
   oa:motivatedBy oa:classifying ;
   sh:value "/ExampleRecord/Label/@lang" ;
   sh:resultSeverity sh:Info .
@@ -39,7 +40,7 @@
       rdf:value "/ExampleRecordSet/ExampleRecord[1]"
     ]
   ] ;
-  oa:hasBody bridge:pathNotAccounted ;
+  oa:hasBody cascade:SourcePathNotAccounted ;
   oa:motivatedBy oa:classifying ;
   sh:value "/ExampleRecord/@Curated" ;
   sh:resultSeverity sh:Info .
@@ -52,7 +53,7 @@
       rdf:value "/ExampleRecordSet/ExampleRecord[1]"
     ]
   ] ;
-  oa:hasBody bridge:pathNotAccounted ;
+  oa:hasBody cascade:SourcePathNotAccounted ;
   oa:motivatedBy oa:classifying ;
   sh:value "/ExampleRecord/@*[local-name()='origin' and namespace-uri()='https://example.org/synthetic-adapter/ext/v1']" ;
   sh:resultSeverity sh:Info .

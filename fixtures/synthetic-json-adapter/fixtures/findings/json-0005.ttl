@@ -4,6 +4,7 @@
 @prefix dcterms: <http://purl.org/dc/terms/> .
 @prefix bridge:  <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 @prefix ex:      <https://example.org/synthetic-adapter/v1#> .
+@prefix cascade: <https://ns.cascadeprotocol.org/cascade#> .
 
 [] a oa:Annotation ;
   oa:hasTarget [
@@ -28,10 +29,10 @@
       oa:refinedBy [ a oa:FragmentSelector ; dcterms:conformsTo <https://www.rfc-editor.org/rfc/rfc6901> ; rdf:value "/records/0" ]
     ]
   ] ;
-  oa:hasBody bridge:pathNotAccounted ;
+  oa:hasBody cascade:SourcePathNotAccounted ;
   oa:motivatedBy oa:classifying ;
   sh:value "/records" ;
-  bridge:occurrences 2 ;
+  cascade:occurrenceCount 2 ;
   sh:resultSeverity sh:Info .
 
 [] a oa:Annotation ;
@@ -44,10 +45,10 @@
       oa:refinedBy [ a oa:FragmentSelector ; dcterms:conformsTo <https://www.rfc-editor.org/rfc/rfc6901> ; rdf:value "/records/0/accession" ]
     ]
   ] ;
-  oa:hasBody bridge:pathNotAccounted ;
+  oa:hasBody cascade:SourcePathNotAccounted ;
   oa:motivatedBy oa:classifying ;
   sh:value "/records/accession" ;
-  bridge:occurrences 2 ;
+  cascade:occurrenceCount 2 ;
   sh:resultSeverity sh:Info .
 
 [] a oa:Annotation ;
@@ -60,10 +61,10 @@
       oa:refinedBy [ a oa:FragmentSelector ; dcterms:conformsTo <https://www.rfc-editor.org/rfc/rfc6901> ; rdf:value "/records/0/version" ]
     ]
   ] ;
-  oa:hasBody bridge:pathNotAccounted ;
+  oa:hasBody cascade:SourcePathNotAccounted ;
   oa:motivatedBy oa:classifying ;
   sh:value "/records/version" ;
-  bridge:occurrences 2 ;
+  cascade:occurrenceCount 2 ;
   sh:resultSeverity sh:Info .
 
 [] a oa:Annotation ;
@@ -76,10 +77,10 @@
       oa:refinedBy [ a oa:FragmentSelector ; dcterms:conformsTo <https://www.rfc-editor.org/rfc/rfc6901> ; rdf:value "/records/0/label" ]
     ]
   ] ;
-  oa:hasBody bridge:pathNotAccounted ;
+  oa:hasBody cascade:SourcePathNotAccounted ;
   oa:motivatedBy oa:classifying ;
   sh:value "/records/label" ;
-  bridge:occurrences 2 ;
+  cascade:occurrenceCount 2 ;
   sh:resultSeverity sh:Info .
 
 [] a oa:Annotation ;
@@ -92,8 +93,8 @@
       oa:refinedBy [ a oa:FragmentSelector ; dcterms:conformsTo <https://www.rfc-editor.org/rfc/rfc6901> ; rdf:value "/records/0/note" ]
     ]
   ] ;
-  oa:hasBody bridge:pathNotAccounted ;
+  oa:hasBody cascade:SourcePathNotAccounted ;
   oa:motivatedBy oa:classifying ;
   sh:value "/records/note" ;
-  bridge:occurrences 2 ;
+  cascade:occurrenceCount 2 ;
   sh:resultSeverity sh:Info .

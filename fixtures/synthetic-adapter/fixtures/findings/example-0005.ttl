@@ -3,6 +3,7 @@
 @prefix oa:     <http://www.w3.org/ns/oa#> .
 @prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 @prefix ex:     <https://example.org/synthetic-adapter/v1#> .
+@prefix cascade: <https://ns.cascadeprotocol.org/cascade#> .
 
 [] a oa:Annotation ;
   oa:hasTarget [
@@ -29,7 +30,7 @@
   oa:hasBody ex:no-term-for-emphasis-inside-a-label ;
   oa:motivatedBy oa:classifying ;
   sh:value "/ExampleRecord/Label/Emphasis" ;
-  bridge:occurrences 2 ;
+  cascade:occurrenceCount 2 ;
   sh:resultSeverity sh:Info .
 
 [] a oa:Annotation ;
@@ -69,10 +70,10 @@
       oa:refinedBy [ a oa:XPathSelector ; rdf:value "*[local-name()='Extension' and namespace-uri()='https://example.org/synthetic-adapter/ext/v1'][1]" ]
     ]
   ] ;
-  oa:hasBody bridge:pathNotAccounted ;
+  oa:hasBody cascade:SourcePathNotAccounted ;
   oa:motivatedBy oa:classifying ;
   sh:value "/ExampleRecord/*[local-name()='Extension' and namespace-uri()='https://example.org/synthetic-adapter/ext/v1']" ;
-  bridge:occurrences 2 ;
+  cascade:occurrenceCount 2 ;
   sh:resultSeverity sh:Info .
 
 [] a oa:Annotation ;
@@ -87,5 +88,5 @@
   oa:hasBody ex:a-status-outside-the-set-the-vocabulary-fixes ;
   oa:motivatedBy oa:classifying ;
   sh:value "Retired" ;
-  bridge:occurrences 2 ;
+  cascade:occurrenceCount 2 ;
   sh:resultSeverity sh:Info .

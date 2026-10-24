@@ -6,7 +6,7 @@ An engine (a Cascade Bridge) runs adapters.
 |---|---|
 | the lift your output must reproduce, input by input | [`../fixtures/lift/`](../fixtures/lift/): each `.xml` and the `.nt` it must lift to, listed in `manifest.ttl` |
 | the rules the lift follows | [`sparql.md`](sparql.md) |
-| the names your mappings mint, inputs to name, and the SPARQL computing one | [`../fixtures/naming/`](../fixtures/naming/): `manifest.ttl` and `name.rq` |
+| the names your mappings mint, inputs to name, and the SPARQL computing one | the Cascade vocabulary's [`tests/vectors/naming/`](https://github.com/jayostis/cascade-vocabulary/tree/main/tests/vectors/naming): `manifest.ttl` and a `.rq` per rule |
 | the versions you name, mapped graph to named graph through each version's canonical N-Quads | [`../fixtures/versioning/`](../fixtures/versioning/): each `.mapped.nt`, its `.nq` and its `.versioned.nt`, listed in `manifest.ttl` |
 | how each test type is judged | the test types' `rdfs:comment` in [`../vocab/bridge.ttl`](../vocab/bridge.ttl) |
 | an adapter to run | [`../fixtures/synthetic-adapter/`](../fixtures/synthetic-adapter/) |
@@ -18,6 +18,6 @@ An engine (a Cascade Bridge) runs adapters.
 | the commands you must offer, the conformance-only `library` among them | [`command.md`](command.md) |
 | the smallest thing that meets them | [`../fixtures/fake-engine/engine.py`](../fixtures/fake-engine/engine.py) |
 | loading and reporting a test manifest | [`executing.md`](executing.md) |
-| each fault of a report, over it and the adapter's test manifest; none means it holds | [`faults-of-a-report.rq`](faults-of-a-report.rq) |
+| each fault of a report of an adapter's tests, over it and that adapter's test manifest; none means it holds (the report of the vocabulary's naming manifest is not put through it: its entries without a `qt:query` are `earl:inapplicable` by design) | [`faults-of-a-report.rq`](faults-of-a-report.rq) |
 | the stages around a mapping | [`stages.md`](stages.md) |
 | which adapters you must pass with, and the workflow your CI runs | [`../compatibility.md`](../compatibility.md) |

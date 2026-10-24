@@ -24,6 +24,7 @@ PREFIXES_OF_FINDINGS = """@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-synt
 @prefix sh:     <http://www.w3.org/ns/shacl#> .
 @prefix oa:     <http://www.w3.org/ns/oa#> .
 @prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+@prefix cascade: <https://ns.cascadeprotocol.org/cascade#> .
 @prefix ex:     <https://example.org/synthetic-adapter/v1#> .
 """
 FINDINGS_BASE = "https://example.org/synthetic-adapter/fixtures/findings/example-0001.ttl"
@@ -74,7 +75,7 @@ def a_finding(
             ("oa:motivatedBy", motivation),
             ("sh:resultSeverity", severity),
             ("sh:value", value),
-            ("bridge:occurrences", occurrences),
+            ("cascade:occurrenceCount", occurrences),
             ("sh:resultPath", path),
             ("sh:focusNode", focus),
         )

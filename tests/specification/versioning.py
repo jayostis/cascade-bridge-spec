@@ -1,44 +1,17 @@
-"""A second implementation of record names and version names, sharing no code with any Bridge.
+"""A second implementation of how a Bridge versions a mapped graph, sharing no code with any Bridge.
 
-python tests/specification/recomputed.py name INPUT...
-python tests/specification/recomputed.py fingerprint MEMBER...
-python tests/specification/recomputed.py base-url URL
-python tests/specification/recomputed.py versions MAPPED.nt
+python tests/specification/versioning.py MAPPED.nt
 """
 
 import base64
 import hashlib
 import re
 import sys
-from urllib.parse import urlsplit, urlunsplit
 
-NAMESPACE = "90c60849-c5ef-4ca6-bfb8-8662bd07d2b5"
 PLACEHOLDER = "urn:cascade:this-version"
 SPECIALIZATION_OF = "http://www.w3.org/ns/prov#specializationOf"
 ARRIVED_AS = "https://ns.cascadeprotocol.org/bridge/v1-draft#arrivedAs"
 XSD_STRING = "http://www.w3.org/2001/XMLSchema#string"
-
-
-def record_name(inputs):
-    digest = bytearray(hashlib.sha256("|".join([NAMESPACE, *inputs]).encode("utf-8")).digest()[:16])
-    digest[6] = (digest[6] & 0x0F) | 0x80
-    digest[8] = (digest[8] & 0x3F) | 0x80
-    text = digest.hex()
-    return f"urn:uuid:{text[:8]}-{text[8:12]}-{text[12:16]}-{text[16:20]}-{text[20:]}"
-
-
-def fingerprint(members):
-    return str(sum(int(hashlib.sha256(member.encode("utf-8")).hexdigest()[:12], 16) for member in set(members)))
-
-
-def normalised_base_url(url):
-    parts = urlsplit(url)
-    userinfo, at, hostport = parts.netloc.rpartition("@")
-    host, colon, port = hostport.rpartition(":") if not hostport.endswith("]") else (hostport, "", "")
-    if not colon or not port.isdigit():
-        host, colon, port = hostport, "", ""
-    netloc = f"{userinfo}{at}{host.lower()}{colon}{port}"
-    return urlunsplit((parts.scheme.lower(), netloc, parts.path, parts.query, parts.fragment)).rstrip("/")
 
 
 def ni_name(octets):
@@ -46,12 +19,13 @@ def ni_name(octets):
     return "ni:///sha-256;" + base64.urlsafe_b64encode(digest).decode("ascii").rstrip("=")
 
 
-# N-Triples without blank nodes: an IRI is ("iri", text), a literal ("literal", lexical form, datatype IRI).
+# An IRI is ("iri", text), a blank node ("blank", label), a literal ("literal", lexical form, datatype IRI).
 
 _ESCAPES = {"t": "\t", "b": "\b", "n": "\n", "r": "\r", "f": "\f", '"': '"', "'": "'", "\\": "\\"}
 _IRI = r"<([^<>\"{}|^`\\\x00-\x20]*)>"
+_BLANK = r"_:([A-Za-z0-9_]+)"
 _LITERAL = r"\"((?:[^\"\\\n\r]|\\.)*)\"(?:\^\^" + _IRI + r"|(@[A-Za-z0-9-]+))?"
-_TRIPLE = re.compile(rf"^\s*{_IRI}\s*{_IRI}\s*(?:{_IRI}|{_LITERAL})\s*\.\s*$")
+_TRIPLE = re.compile(rf"^\s*(?:{_IRI}|{_BLANK})\s*{_IRI}\s*(?:{_IRI}|{_BLANK}|{_LITERAL})\s*\.\s*$")
 
 
 def _unescaped(text):
@@ -71,19 +45,24 @@ def parsed_ntriples(text):
             continue
         match = _TRIPLE.match(line)
         if not match:
-            raise ValueError(f"line {number} is not an N-Triples triple of IRIs and literals: {line!r}")
-        subject, predicate, iri, lexical, datatype, language = match.groups()
+            raise ValueError(f"line {number} is not an N-Triples triple: {line!r}")
+        subject, blank_subject, predicate, iri, blank, lexical, datatype, language = match.groups()
         if language:
             raise ValueError(f"line {number}: a language-tagged literal is beyond this implementation")
         if iri is not None:
             obj = ("iri", _unescaped(iri))
+        elif blank is not None:
+            obj = ("blank", blank)
         else:
             obj = ("literal", _unescaped(lexical), _unescaped(datatype) if datatype else XSD_STRING)
-        triples.add((("iri", _unescaped(subject)), ("iri", _unescaped(predicate)), obj))
+        head = ("iri", _unescaped(subject)) if subject is not None else ("blank", blank_subject)
+        triples.add((head, ("iri", _unescaped(predicate)), obj))
     return triples
 
 
 def _canonical_term(term):
+    if term[0] == "blank":
+        raise ValueError(f"a version holding a blank node is beyond the rule: _:{term[1]}")
     if term[0] == "iri":
         if re.search(r"[\x00-\x20<>\"{}|^`\\]", term[1]):
             raise ValueError(f"an IRI this implementation cannot write canonically: {term[1]!r}")
@@ -99,24 +78,32 @@ def canonical_nquads(triples):
     return "".join(sorted({" ".join(map(_canonical_term, triple)) + " .\n" for triple in triples}))
 
 
-def _renamed(term, version, name):
-    if term[0] == "iri" and (term[1] == version or term[1].startswith(version + "#")):
-        return ("iri", name + term[1][len(version) :])
-    return term
-
-
 def _in_version(term, version):
     return term[0] == "iri" and (term[1] == version or term[1].startswith(version + "#"))
 
 
+def _renamed(term, version, name):
+    if _in_version(term, version):
+        return ("iri", name + term[1][len(version) :])
+    return term
+
+
 def _dropped(triples, drafts):
-    """The graph without the drafted versions, their content, and what arrived as them."""
+    """The graph without the drafted versions, their content, what arrived as them, and every blank node only what
+    it drops reaches."""
     arrivals = {subject for subject, predicate, obj in triples if predicate[1] == ARRIVED_AS and obj[1] in drafts}
-    return {
+    kept = {
         triple
         for triple in triples
         if triple[0] not in arrivals and not any(_in_version(triple[0], draft) for draft in drafts)
     }
+    while True:
+        reached = {obj for _, _, obj in kept if obj[0] == "blank"}
+        orphaned = {triple for triple in kept if triple[0][0] == "blank" and triple[0] not in reached}
+        orphaned = {triple for triple in orphaned if any(o == triple[0] for _, _, o in triples)}
+        if not orphaned:
+            return kept
+        kept -= orphaned
 
 
 def versions(triples):
@@ -151,19 +138,10 @@ def versions(triples):
 
 
 if __name__ == "__main__":
-    command, *arguments = sys.argv[1:]
-    if command == "name":
-        print(record_name(arguments))
-    elif command == "fingerprint":
-        print(fingerprint(arguments))
-    elif command == "base-url":
-        print(normalised_base_url(arguments[0]))
-    elif command == "versions":
-        with open(arguments[0], encoding="utf-8") as mapped:
-            named, graph = versions(parsed_ntriples(mapped.read()))
-        for name, nquads in named.items():
-            print(name)
-            print(nquads)
-        print(canonical_nquads(graph), end="")
-    else:
+    if len(sys.argv) != 2:
         sys.exit(__doc__)
+    with open(sys.argv[1], encoding="utf-8") as mapped:
+        named, graph = versions(parsed_ntriples(mapped.read()))
+    for name, nquads in named.items():
+        print(name)
+        print(nquads)
