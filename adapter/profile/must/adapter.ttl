@@ -141,6 +141,11 @@
     sh:datatype xsd:string ;
     sh:message "The adapter carries at most one bridge:elementNameOfEachRecord, a string."
   ] ;
+  sh:property [
+    sh:path bridge:elementNameBreakingText ;
+    sh:datatype xsd:string ;
+    sh:message "Each bridge:elementNameBreakingText of the adapter is a string, the local name of an element that breaks text."
+  ] ;
   sh:sparql [
     sh:message "An adapter whose bridge:sourceMediaType is XML carries a bridge:elementNameOfEachRecord, the local name of its record element." ;
     sh:select """
