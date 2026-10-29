@@ -1,5 +1,7 @@
 """A reference JSON lift, written from engine/sparql.md alone, that every JSON lift vector must agree with."""
 
+import base64
+import binascii
 import json
 import re
 
@@ -8,6 +10,7 @@ from rdflib.namespace import RDF
 
 ROOT_TYPE = URIRef("http://sparql.xyz/facade-x/ns/root")
 DATA = "http://sparql.xyz/facade-x/data/"
+DECODED = URIRef("https://ns.cascadeprotocol.org/bridge/v1-draft#textDecodedFromBase64")
 
 UCSCHAR = (
     (0xA0, 0xD7FF),
@@ -125,6 +128,33 @@ def records_of(value, path):
     return [node for node in selected(value, path) if isinstance(node, Members)]
 
 
+def names_text(content_type):
+    main, *parameters = content_type.split(";")
+    kind, slash, _ = main.strip().partition("/")
+    if not slash or kind.lower() != "text":
+        return False
+    for parameter in parameters:
+        name, _, value = parameter.partition("=")
+        if name.strip().lower() == "charset" and value.strip().strip('"').lower() != "utf-8":
+            return False
+    return True
+
+
+def decoded(container):
+    members = dict(reversed(container))
+    content_type, data = members.get("contentType"), members.get("data")
+    if not (isinstance(content_type, str) and isinstance(data, str) and names_text(content_type)):
+        return None
+    written = re.sub(r"[ \t\r\n]", "", data)
+    try:
+        octets = base64.b64decode(written, validate=True)
+        if base64.b64encode(octets).decode("ascii") != written:
+            return None
+        return octets.decode("utf-8")
+    except (binascii.Error, UnicodeDecodeError):
+        return None
+
+
 def lift(value, records=()):
     """The lift of a document's value, each node of `records` lifted as the envelope skeleton lifts a record."""
     graph = Graph()
@@ -141,6 +171,9 @@ def lift(value, records=()):
             if member is None or (emptying and is_container(member)):
                 continue
             graph.add((subject, predicate, node_for(member) if is_container(member) else scalar(member)))
+        text = decoded(container) if isinstance(container, Members) and not records else None
+        if text is not None:
+            graph.add((subject, DECODED, Literal(text)))
         return subject
 
     graph.add((node_for(value), RDF.type, ROOT_TYPE))

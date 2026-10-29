@@ -31,6 +31,23 @@ lift to `application/json` and a media type with the `+json` suffix
   instructions, the document type declaration and the XML declaration. What is
   dropped takes no number. Whitespace is XML's `S` production, and no other
   character.
+- **An element's text content**, where it holds a character other than
+  whitespace, is a triple from its node whose predicate is
+  `https://dom.spec.whatwg.org/#dom-node-textcontent` and whose object is a
+  plain string literal: every text under the element, at any depth and
+  whitespace-only text included, joined in document order, as the DOM's
+  [`textContent`](https://dom.spec.whatwg.org/#dom-node-textcontent) and
+  XPath's string-value give it.
+- **An attachment in base64**, an element whose `representation` attribute is
+  `B64`, as HL7 V3's `ED` writes one, also carries
+  `bridge:textDecodedFromBase64`, a plain string literal of its octets decoded,
+  where: its `mediaType` attribute is absent (V3's `text/plain`) or names the
+  type `text`; it has no `compression` attribute; its `charset` attribute is
+  absent or `UTF-8`; and its text content with whitespace removed is base64 in
+  the canonical form of
+  [RFC 4648 section 4](https://www.rfc-editor.org/rfc/rfc4648#section-4),
+  padded, of octets that are UTF-8. A media type's type and a charset are
+  compared in any case.
 
 ### JSON
 
@@ -52,6 +69,11 @@ among them.
   `false` as the document writes them.
 - **`null`** is lifted as nothing, and takes its number among an array's items.
 - **An empty object or array** is a node with no triples from it.
+- **An attachment in base64**, an object whose `contentType` and `data` members
+  are strings, as FHIR's `Attachment` writes one, also carries
+  `bridge:textDecodedFromBase64` where its `contentType` names the type `text`
+  with no `charset` parameter other than `UTF-8`, and its `data` is base64 of
+  octets that are UTF-8, each read as an element's are.
 
 A name, an element's, an attribute's or a member's, is appended to its IRI as
 its own characters, each one outside
@@ -90,6 +112,9 @@ except that every record is lifted with its place among its parent's members or
 items and its members whose value is a string, a number, `true` or `false`, and
 without its members whose value is an object or an array. A record that is the
 document's value is lifted in the same way.
+
+An envelope skeleton holds no element's text content and no attachment's
+decoded text.
 
 ## Envelopes
 

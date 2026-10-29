@@ -328,6 +328,13 @@ bridge:documentSchema a owl:ObjectProperty ;
   rdfs:domain bridge:Envelope ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
+# Terms the lift writes (engine/sparql.md)
+
+bridge:textDecodedFromBase64 a owl:DatatypeProperty ;
+  rdfs:label "text decoded from base64"@en ;
+  rdfs:range xsd:string ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
 # Facts about a document, supplied with it or computed from it
 
 bridge:sha256 a owl:DatatypeProperty ;
