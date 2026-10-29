@@ -26,6 +26,7 @@
     <#a-version-not-kept-is-a-finding>
     <#an-element-s-text-content-is-read-in-document-order>
     <#a-base64-attachment-s-text-is-read-decoded>
+    <#an-element-s-text-with-element-breaks-is-read-a-line-for-each-cell-and-paragraph>
   ) .
 
 _:synthetic-adapter
@@ -377,4 +378,28 @@ _:load-the-synthetic-adapter-reading-each-label-s-text a bridge:LoadCall ;
       bridge:envelope <https://example.org/adapters/synthetic-adapter/ro-crate-metadata.json#envelope-set> ;
       bridge:graphFormat "turtle" ;
       bridge:expectedGraph <../lifted-text/expected/base64-attachment.ttl> ]
+  ) .
+
+_:load-the-synthetic-adapter-reading-each-label-s-text-with-element-breaks a bridge:LoadCall ;
+  bridge:adapterFiles [
+    bridge:iri <https://example.org/adapters/synthetic-adapter/> ;
+    bridge:directory <../synthetic-adapter/> ;
+    bridge:withholds "fixtures/" ;
+    bridge:substitute [ bridge:key "in/example-record.rq" ; bridge:file <../lifted-text/text-with-element-breaks-of-each-label.rq> ]
+  ] .
+
+<#an-element-s-text-with-element-breaks-is-read-a-line-for-each-cell-and-paragraph> a bridge:LibraryTest ;
+  mf:name "an-element-s-text-with-element-breaks-is-read-a-line-for-each-cell-and-paragraph" ;
+  rdfs:comment "With the adapter naming br, paragraph, td and tr, a mapping reading a label holding a table row and a paragraph reads each cell and each line of the paragraph as a line, m<sup>2</sup> as m2, on every host." ;
+  mf:action (
+    _:load-the-synthetic-adapter-reading-each-label-s-text-with-element-breaks
+    [ a bridge:ConvertCall ;
+      bridge:document [
+        bridge:iri <https://example.org/documents/lifted-text/in/text-with-element-breaks.xml> ;
+        bridge:file <../lifted-text/in/text-with-element-breaks.xml>
+      ] ;
+      bridge:suppliedFacts _:example-registry ;
+      bridge:envelope <https://example.org/adapters/synthetic-adapter/ro-crate-metadata.json#envelope-set> ;
+      bridge:graphFormat "turtle" ;
+      bridge:expectedGraph <../lifted-text/expected/text-with-element-breaks.ttl> ]
   ) .

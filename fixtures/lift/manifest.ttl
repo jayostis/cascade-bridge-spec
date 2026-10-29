@@ -14,6 +14,10 @@
     <#no-break-space>
     <#non-ascii>
     <#text-content>
+    <#entities>
+    <#text-with-element-breaks-table>
+    <#text-with-element-breaks-paragraphs>
+    <#text-with-element-breaks-inline>
     <#base64-attachment>
     <#base64-attachment-not-decoded>
     <#skeleton>
@@ -84,15 +88,42 @@
   mf:action [ bridge:sourceMediaType "application/xml" ; bridge:input <text-content.xml> ] ;
   mf:result [ bridge:expectedGraph <text-content.nt> ] .
 
+<#entities> a bridge:LiftTest ;
+  mf:name "entities" ;
+  rdfs:comment "A text child and an element's text content hold the characters the predefined entities name, not the entities." ;
+  mf:action [ bridge:sourceMediaType "application/xml" ; bridge:input <entities.xml> ] ;
+  mf:result [ bridge:expectedGraph <entities.nt> ] .
+
+<#text-with-element-breaks-table> a bridge:LiftTest ;
+  mf:name "text-with-element-breaks-table" ;
+  rdfs:comment "A C-CDA results table, as a kit writes one: with td, th and tr named, every cell of an element's text with element breaks is a line of its own, and the whitespace between the rows is no line." ;
+  mf:action [ bridge:sourceMediaType "application/xml" ; bridge:input <text-with-element-breaks-table.xml> ;
+    bridge:elementNameBreakingText "br", "paragraph", "td", "th", "tr" ] ;
+  mf:result [ bridge:expectedGraph <text-with-element-breaks-table.nt> ] .
+
+<#text-with-element-breaks-paragraphs> a bridge:LiftTest ;
+  mf:name "text-with-element-breaks-paragraphs" ;
+  rdfs:comment "With br and paragraph named, a line break and the end of one paragraph against the start of the next each begin a line, and a line's whitespace, a line feed of the source included, is one space." ;
+  mf:action [ bridge:sourceMediaType "application/xml" ; bridge:input <text-with-element-breaks-paragraphs.xml> ;
+    bridge:elementNameBreakingText "br", "paragraph", "td", "th", "tr" ] ;
+  mf:result [ bridge:expectedGraph <text-with-element-breaks-paragraphs.nt> ] .
+
+<#text-with-element-breaks-inline> a bridge:LiftTest ;
+  mf:name "text-with-element-breaks-inline" ;
+  rdfs:comment "An element not named, sup here, breaks nothing: m<sup>2</sup> is m2." ;
+  mf:action [ bridge:sourceMediaType "application/xml" ; bridge:input <text-with-element-breaks-inline.xml> ;
+    bridge:elementNameBreakingText "br", "paragraph", "td", "th", "tr" ] ;
+  mf:result [ bridge:expectedGraph <text-with-element-breaks-inline.nt> ] .
+
 <#base64-attachment> a bridge:LiftTest ;
   mf:name "base64-attachment" ;
-  rdfs:comment "An element written in base64 as HL7 V3's ED writes one, of a text media type or none, with no charset other than UTF-8 in any case, has its text content decoded, whitespace removed." ;
+  rdfs:comment "An element written in base64 as HL7 V3's ED writes one, of a text media type or none, with no charset other than UTF-8 in any case, has its own text decoded, whitespace removed: the thumbnail inside an ED is not its data." ;
   mf:action [ bridge:sourceMediaType "application/xml" ; bridge:input <base64-attachment.xml> ] ;
   mf:result [ bridge:expectedGraph <base64-attachment.nt> ] .
 
 <#base64-attachment-not-decoded> a bridge:LiftTest ;
   mf:name "base64-attachment-not-decoded" ;
-  rdfs:comment "Not decoded: a media type other than text, a compressed one, a charset other than UTF-8, octets that are not UTF-8, base64 not in canonical form or unpadded, a representation other than B64 exactly, and none." ;
+  rdfs:comment "Not decoded: a media type other than text, a compressed one, a charset other than UTF-8 as an attribute or as the media type's parameter, a charset attribute quoted, octets that are not UTF-8, base64 not in canonical form or unpadded, a representation other than B64 exactly, and none." ;
   mf:action [ bridge:sourceMediaType "application/xml" ; bridge:input <base64-attachment-not-decoded.xml> ] ;
   mf:result [ bridge:expectedGraph <base64-attachment-not-decoded.nt> ] .
 
