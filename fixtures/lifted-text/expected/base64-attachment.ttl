@@ -1,0 +1,45 @@
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix prov:   <http://www.w3.org/ns/prov#> .
+@prefix pav:    <http://purl.org/pav/> .
+@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+@prefix ex:     <https://example.org/synthetic-adapter/v1#> .
+@prefix cascade: <https://ns.cascadeprotocol.org/cascade#> .
+@prefix oa: <http://www.w3.org/ns/oa#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+
+<urn:example:record:EX000002>
+  a ex:Record ;
+  ex:accession "EX000002" .
+
+<ni:///sha-256;6h_RKBZSjjo2OkwOf9bERamboS0YbwaHYHvzxh0C1qQ>
+  prov:specializationOf <urn:example:record:EX000002> ;
+  rdfs:label "lisinopril 10 mg tablet" .
+
+[] bridge:arrivedAs <ni:///sha-256;6h_RKBZSjjo2OkwOf9bERamboS0YbwaHYHvzxh0C1qQ> ;
+  oa:hasSelector [ a oa:XPathSelector ; rdf:value "/ExampleRecordSet/ExampleRecord[1]" ] ;
+  oa:hasSource <ni:///sha-256;ETRwsBTbRQMPiUuR8_f7SO2PVQnyU3wLq7TKnGP6x4k> ;
+  prov:wasDerivedFrom <ni:///sha-256;ETRwsBTbRQMPiUuR8_f7SO2PVQnyU3wLq7TKnGP6x4k> ;
+  prov:wasGeneratedBy _:import .
+
+<ni:///sha-256;ETRwsBTbRQMPiUuR8_f7SO2PVQnyU3wLq7TKnGP6x4k>
+  a prov:Entity ;
+  cascade:serverBaseUrl "https://records.example.org/api" ;
+  pav:retrievedFrom <https://records.example.org/api/ExampleRecordSet> ;
+  pav:retrievedOn "2026-08-30T22:14:00Z"^^xsd:dateTime ;
+  prov:qualifiedAttribution
+    [ prov:agent [ rdfs:label "Example Records Registry" ] ; prov:hadRole cascade:AuthorRole ] ,
+    [ prov:agent [ rdfs:label "Example Fetcher" ] ; prov:hadRole cascade:TransmitterRole ] ;
+  cascade:authenticatedPatient "Patient/example-patient" ;
+  cascade:authenticatedAsProxy false ;
+  cascade:sourceFormatVersion "1" .
+
+_:import
+  a prov:Activity ;
+  prov:used <ni:///sha-256;ETRwsBTbRQMPiUuR8_f7SO2PVQnyU3wLq7TKnGP6x4k> ;
+  rdfs:label "synthetic example import" ;
+  prov:startedAtTime "2026-09-01T10:00:00Z"^^xsd:dateTime ;
+  prov:qualifiedAssociation [
+    prov:hadPlan [ a prov:Plan ; rdfs:label "synthetic-example" ; pav:version "0.1.0" ] ;
+    prov:agent [ ]
+  ] .

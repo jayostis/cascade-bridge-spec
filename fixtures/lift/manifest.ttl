@@ -13,6 +13,9 @@
     <#namespaces>
     <#no-break-space>
     <#non-ascii>
+    <#text-content>
+    <#base64-attachment>
+    <#base64-attachment-not-decoded>
     <#skeleton>
     <#skeleton-record-root>
     <#json-scalars>
@@ -22,6 +25,7 @@
     <#json-names>
     <#json-duplicates>
     <#json-root-array>
+    <#json-base64-attachment>
     <#skeleton-json>
     <#skeleton-json-record-root>
   ) .
@@ -74,9 +78,27 @@
   mf:action [ bridge:sourceMediaType "application/xml" ; bridge:input <non-ascii.xml> ] ;
   mf:result [ bridge:expectedGraph <non-ascii.nt> ] .
 
+<#text-content> a bridge:LiftTest ;
+  mf:name "text-content" ;
+  rdfs:comment "An element's text content is every text under it in document order, the text of elements inside it and whitespace between them included, so a cell written lisinopril <content>10 mg</content> tablet holds the one string. An element under which there is only whitespace, or nothing, carries none." ;
+  mf:action [ bridge:sourceMediaType "application/xml" ; bridge:input <text-content.xml> ] ;
+  mf:result [ bridge:expectedGraph <text-content.nt> ] .
+
+<#base64-attachment> a bridge:LiftTest ;
+  mf:name "base64-attachment" ;
+  rdfs:comment "An element written in base64 as HL7 V3's ED writes one, of a text media type or none, with no charset other than UTF-8 in any case, has its text content decoded, whitespace removed." ;
+  mf:action [ bridge:sourceMediaType "application/xml" ; bridge:input <base64-attachment.xml> ] ;
+  mf:result [ bridge:expectedGraph <base64-attachment.nt> ] .
+
+<#base64-attachment-not-decoded> a bridge:LiftTest ;
+  mf:name "base64-attachment-not-decoded" ;
+  rdfs:comment "Not decoded: a media type other than text, a compressed one, a charset other than UTF-8, octets that are not UTF-8, base64 not in canonical form or unpadded, a representation other than B64 exactly, and none." ;
+  mf:action [ bridge:sourceMediaType "application/xml" ; bridge:input <base64-attachment-not-decoded.xml> ] ;
+  mf:result [ bridge:expectedGraph <base64-attachment-not-decoded.nt> ] .
+
 <#skeleton> a bridge:SkeletonTest ;
   mf:name "skeleton" ;
-  rdfs:comment "A record keeps its type triples, its number among its parent's children and its attributes, and of its children only each element with no element child and no text child the lift keeps, numbered as the whole lift numbers it, with its type triples and its attributes: one holding only whitespace and a comment is kept. A child holding text or an element is left out. A sibling that is not a record is lifted whole." ;
+  rdfs:comment "A record keeps its type triples, its number among its parent's children and its attributes, and of its children only each element with no element child and no text child the lift keeps, numbered as the whole lift numbers it, with its type triples and its attributes: one holding only whitespace and a comment is kept. A child holding text or an element is left out. A sibling that is not a record is lifted whole, but for its text content, which no skeleton holds." ;
   mf:action [ bridge:sourceMediaType "application/xml" ; bridge:input <skeleton.xml> ; bridge:elementNameOfEachRecord "Unit" ] ;
   mf:result [ bridge:expectedGraph <skeleton.nt> ] .
 
@@ -128,9 +150,15 @@
   mf:action [ bridge:sourceMediaType "application/json" ; bridge:input <json-root-array.json> ] ;
   mf:result [ bridge:expectedGraph <json-root-array.nt> ] .
 
+<#json-base64-attachment> a bridge:LiftTest ;
+  mf:name "json-base64-attachment" ;
+  rdfs:comment "An attachment whose content type is text, with no charset other than UTF-8 in any case, has its data decoded, whitespace removed; one of another type or charset, one whose octets are not UTF-8 and one with no content type are not." ;
+  mf:action [ bridge:sourceMediaType "application/json" ; bridge:input <json-base64-attachment.json> ] ;
+  mf:result [ bridge:expectedGraph <json-base64-attachment.nt> ] .
+
 <#skeleton-json> a bridge:SkeletonTest ;
   mf:name "skeleton-json" ;
-  rdfs:comment "A record keeps its place among its parent's items and its members whose value is a string, a number, true or false, and loses those whose value is an object or an array, empty or not. An item the path selects that is not an object is no record and is lifted as it is; what is not a record is lifted whole." ;
+  rdfs:comment "A record keeps its place among its parent's items and its members whose value is a string, a number, true or false, and loses those whose value is an object or an array, empty or not. An item the path selects that is not an object is no record and is lifted as it is; what is not a record is lifted whole, but for an attachment's decoded text, which no skeleton holds." ;
   mf:action [ bridge:sourceMediaType "application/json" ; bridge:input <skeleton-json.json> ; bridge:jsonPathOfEachRecord "$.entry[*]" ] ;
   mf:result [ bridge:expectedGraph <skeleton-json.nt> ] .
 

@@ -24,6 +24,8 @@
     <#convert-with-no-vocabulary>
     <#test-with-no-vocabulary>
     <#a-version-not-kept-is-a-finding>
+    <#an-element-s-text-content-is-read-in-document-order>
+    <#a-base64-attachment-s-text-is-read-decoded>
   ) .
 
 _:synthetic-adapter
@@ -335,4 +337,44 @@ _:load-the-synthetic-adapter a bridge:LoadCall ;
       bridge:graphFormat "turtle" ;
       bridge:expectedGraph <../version-not-kept/expected/example-0001.ttl> ;
       bridge:expectedFindings <../version-not-kept/findings/example-0001.ttl> ]
+  ) .
+
+_:load-the-synthetic-adapter-reading-each-label-s-text a bridge:LoadCall ;
+  bridge:adapterFiles [
+    bridge:iri <https://example.org/adapters/synthetic-adapter/> ;
+    bridge:directory <../synthetic-adapter/> ;
+    bridge:withholds "fixtures/" ;
+    bridge:substitute [ bridge:key "in/example-record.rq" ; bridge:file <../lifted-text/text-of-each-label.rq> ]
+  ] .
+
+<#an-element-s-text-content-is-read-in-document-order> a bridge:LibraryTest ;
+  mf:name "an-element-s-text-content-is-read-in-document-order" ;
+  rdfs:comment "A mapping reading a label written lisinopril <content>10 mg</content> tablet reads the one string, on every host." ;
+  mf:action (
+    _:load-the-synthetic-adapter-reading-each-label-s-text
+    [ a bridge:ConvertCall ;
+      bridge:document [
+        bridge:iri <https://example.org/documents/lifted-text/in/text-content.xml> ;
+        bridge:file <../lifted-text/in/text-content.xml>
+      ] ;
+      bridge:suppliedFacts _:example-registry ;
+      bridge:envelope <https://example.org/adapters/synthetic-adapter/ro-crate-metadata.json#envelope-set> ;
+      bridge:graphFormat "turtle" ;
+      bridge:expectedGraph <../lifted-text/expected/text-content.ttl> ]
+  ) .
+
+<#a-base64-attachment-s-text-is-read-decoded> a bridge:LibraryTest ;
+  mf:name "a-base64-attachment-s-text-is-read-decoded" ;
+  rdfs:comment "A mapping reading a label written in base64 as HL7 V3's ED writes one reads its decoded text, on every host." ;
+  mf:action (
+    _:load-the-synthetic-adapter-reading-each-label-s-text
+    [ a bridge:ConvertCall ;
+      bridge:document [
+        bridge:iri <https://example.org/documents/lifted-text/in/base64-attachment.xml> ;
+        bridge:file <../lifted-text/in/base64-attachment.xml>
+      ] ;
+      bridge:suppliedFacts _:example-registry ;
+      bridge:envelope <https://example.org/adapters/synthetic-adapter/ro-crate-metadata.json#envelope-set> ;
+      bridge:graphFormat "turtle" ;
+      bridge:expectedGraph <../lifted-text/expected/base64-attachment.ttl> ]
   ) .
