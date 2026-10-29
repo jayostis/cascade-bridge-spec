@@ -103,7 +103,7 @@
 
 <#text-with-element-breaks-paragraphs> a bridge:LiftTest ;
   mf:name "text-with-element-breaks-paragraphs" ;
-  rdfs:comment "With br and paragraph named, a line break and the end of one paragraph against the start of the next each begin a line, and a line's whitespace, a line feed of the source included, is one space." ;
+  rdfs:comment "With br and paragraph named, a line break and the end of one paragraph against the start of the next each begin a line, and a line's whitespace, a line feed of the source included, is one space. A no-break space (U+00A0) is not whitespace and stays. An element is matched by its local name: one in the default namespace urn:hl7-org:v3 and one with a prefix are named alike by br and paragraph." ;
   mf:action [ bridge:sourceMediaType "application/xml" ; bridge:input <text-with-element-breaks-paragraphs.xml> ;
     bridge:elementNameBreakingText "br", "paragraph", "td", "th", "tr" ] ;
   mf:result [ bridge:expectedGraph <text-with-element-breaks-paragraphs.nt> ] .
@@ -123,7 +123,7 @@
 
 <#base64-attachment-not-decoded> a bridge:LiftTest ;
   mf:name "base64-attachment-not-decoded" ;
-  rdfs:comment "Not decoded: a media type other than text, a compressed one, a charset other than UTF-8 as an attribute or as the media type's parameter, a charset attribute quoted, octets that are not UTF-8, base64 not in canonical form or unpadded, a representation other than B64 exactly, and none." ;
+  rdfs:comment "Not decoded: a media type other than text, a compressed one, a charset other than UTF-8 as an attribute or as the media type's parameter, a charset attribute quoted, octets that are not UTF-8, base64 not in canonical form or unpadded, a representation other than B64 exactly, none, and an element whose own text is empty or only whitespace, as when its data is in a child such as thumbnail or reference." ;
   mf:action [ bridge:sourceMediaType "application/xml" ; bridge:input <base64-attachment-not-decoded.xml> ] ;
   mf:result [ bridge:expectedGraph <base64-attachment-not-decoded.nt> ] .
 
@@ -183,7 +183,7 @@
 
 <#json-base64-attachment> a bridge:LiftTest ;
   mf:name "json-base64-attachment" ;
-  rdfs:comment "An attachment whose content type is text, with no charset other than UTF-8 in any case, has its data decoded, whitespace removed; one of another type or charset, one whose octets are not UTF-8 and one with no content type are not." ;
+  rdfs:comment "An attachment whose content type is text, with no charset other than UTF-8 in any case, has its data decoded, whitespace removed; one of another type or charset, one whose octets are not UTF-8, one with no content type and one with no data, or only whitespace, are not." ;
   mf:action [ bridge:sourceMediaType "application/json" ; bridge:input <json-base64-attachment.json> ] ;
   mf:result [ bridge:expectedGraph <json-base64-attachment.nt> ] .
 
