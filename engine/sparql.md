@@ -70,7 +70,10 @@ lift to `application/json` and a media type with the `+json` suffix
   [RFC 4648 section 4](https://www.rfc-editor.org/rfc/rfc4648#section-4):
   padded with `=` to a multiple of four characters, with no character outside
   its alphabet and no bit set in the unused bits of its last character. Base64
-  in any other form, unpadded, URL-safe or with bits set there, is not decoded.
+  in any other form, unpadded, URL-safe or with bits set there, is not decoded. Nothing is
+  decoded where no character is left once whitespace is removed: an attachment with
+  no data, or whose data is in a child such as `thumbnail` or `reference`, has no
+  `bridge:textDecodedFromBase64`, not an empty one.
 - **A media type's** type and the name and value of its `charset` parameter are
   compared in any case; whitespace around its type and around a parameter's
   name and value is ignored, and a parameter's value may be quoted. A

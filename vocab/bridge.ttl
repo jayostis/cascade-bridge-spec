@@ -93,7 +93,6 @@ bridge:elementNameOfEachRecord a owl:DatatypeProperty ;
 bridge:elementNameBreakingText a owl:DatatypeProperty ;
   rdfs:label "element name breaking text"@en ;
   rdfs:comment "The local name of an XML element whose start and end tags break the text around it into lines in bridge:textWithElementBreaks."@en ;
-  rdfs:domain bridge:Adapter ;
   rdfs:range xsd:string ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 

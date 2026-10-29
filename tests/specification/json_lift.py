@@ -146,6 +146,8 @@ def decoded(container):
     if not (isinstance(content_type, str) and isinstance(data, str) and names_text(content_type)):
         return None
     written = re.sub(r"[ \t\r\n]", "", data)
+    if not written:
+        return None
     try:
         octets = base64.b64decode(written, validate=True)
         if base64.b64encode(octets).decode("ascii") != written:
