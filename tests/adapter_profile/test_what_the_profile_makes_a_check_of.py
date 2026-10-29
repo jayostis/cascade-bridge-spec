@@ -14,7 +14,7 @@ DISCOVERED = (
 )
 
 CHECKS = {
-    "profile/must/adapter.ttl": 34,
+    "profile/must/adapter.ttl": 35,
     "profile/must/bench_inputs.py": 1,
     "profile/must/declared_terms.py": 1,
     "profile/must/digests.py": 1,

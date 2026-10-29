@@ -36,6 +36,11 @@ def test_reports_a_crate_that_names_no_element_name_of_each_record(crate):
     assert "bridge:elementNameOfEachRecord" in shape_file_messages(crate, "adapter.ttl")
 
 
+def test_reports_an_element_name_breaking_text_that_is_not_a_string(crate):
+    crate.graph.add((crate.root, BRIDGE.elementNameBreakingText, URIRef("https://example.org/td")))
+    assert "bridge:elementNameBreakingText" in shape_file_messages(crate, "adapter.ttl")
+
+
 def test_reports_a_crate_that_names_no_cascade_vocabulary_repository(crate):
     crate.graph.remove((crate.root, BRIDGE.cascadeVocabularyRepository, None))
     assert "bridge:cascadeVocabularyRepository" in shape_file_messages(crate, "adapter.ttl")

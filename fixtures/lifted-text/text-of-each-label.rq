@@ -1,0 +1,26 @@
+PREFIX rdfs:   <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX prov:   <http://www.w3.org/ns/prov#>
+PREFIX dom:    <https://dom.spec.whatwg.org/#>
+PREFIX fx:     <http://sparql.xyz/facade-x/ns/>
+PREFIX xyz:    <http://sparql.xyz/facade-x/data/>
+PREFIX bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#>
+PREFIX ex:     <https://example.org/synthetic-adapter/v1#>
+
+CONSTRUCT {
+  ?record a ex:Record ;
+    ex:accession ?accession .
+  ?version prov:specializationOf ?record ;
+    rdfs:label ?text .
+  [] bridge:arrivedAs ?version .
+}
+WHERE {
+  ?exampleRecord a fx:root, xyz:ExampleRecord ;
+    xyz:Accession ?accession ;
+    ?slot ?label .
+  ?label a xyz:Label .
+  OPTIONAL { ?label dom:dom-node-textcontent ?content }
+  OPTIONAL { ?label bridge:textDecodedFromBase64 ?decoded }
+  BIND(COALESCE(?decoded, ?content) AS ?text)
+  BIND(IRI(CONCAT("urn:example:record:", ?accession)) AS ?record)
+  BIND(IRI(CONCAT("urn:example:version:", ?accession)) AS ?version)
+}

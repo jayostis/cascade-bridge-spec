@@ -12,6 +12,7 @@
       "bridge:sourceSchema": "bridge:sourceSchema",
       "bridge:envelope": "bridge:envelope",
       "bridge:elementNameOfEachRecord": "bridge:elementNameOfEachRecord",
+      "bridge:elementNameBreakingText": "bridge:elementNameBreakingText",
       "bridge:mapping": "bridge:mapping",
       "bridge:findingsQuery": "bridge:findingsQuery",
       "bridge:documentTableQuery": "bridge:documentTableQuery",
@@ -81,6 +82,7 @@
         }
       ],
       "bridge:elementNameOfEachRecord": "ExampleRecord",
+      "bridge:elementNameBreakingText": ["br", "paragraph", "td", "tr"],
       "bridge:mapping": [
         {
           "@id": "in/example-record.rq"

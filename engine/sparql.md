@@ -31,6 +31,53 @@ lift to `application/json` and a media type with the `+json` suffix
   instructions, the document type declaration and the XML declaration. What is
   dropped takes no number. Whitespace is XML's `S` production, and no other
   character.
+- **An element's text content**, where it holds a character other than
+  whitespace, is a triple from its node whose predicate is
+  `https://dom.spec.whatwg.org/#dom-node-textcontent` and whose object is a
+  plain string literal: every text under the element, at any depth and
+  whitespace-only text included, joined in document order, as the DOM's
+  [`textContent`](https://dom.spec.whatwg.org/#dom-node-textcontent) and
+  XPath's string-value give it.
+- **An element's text with element breaks**, where the adapter names one or
+  more `bridge:elementNameBreakingText` and the element's text content holds a
+  character other than whitespace, is a triple from its node whose predicate is
+  `bridge:textWithElementBreaks` and whose object is a plain string literal,
+  built from the element's text content. A *break* stands at the start tag and
+  at the end tag of every element under it whose local name, in any namespace
+  or none, is one the adapter names, an empty element's one tag standing for
+  both. The breaks cut the text content into runs: the text from the start or
+  a break up to the next break or the end. Each run is normalised as XPath's
+  [`normalize-space`](https://www.w3.org/TR/xpath-functions-31/#func-normalize-space)
+  does, whitespace at either end removed and every other sequence of whitespace
+  replaced by one space. The value is the runs that are not empty, in document
+  order, joined by one line feed (U+000A): no line feed stands at either end,
+  and two never stand together. With `td` and `tr` named,
+  `<tr><td>A</td> <td>B</td></tr>` holds `"A\nB"`; with `sup` not named,
+  `m<sup>2</sup>` holds `"m2"`. An element's text content and its text with
+  element breaks are both written, the one for reading a single element's text
+  exactly, the other for reading a passage of many.
+- **An attachment in base64**, an element whose `representation` attribute is
+  `B64`, as HL7 V3's `ED` writes one, also carries
+  `bridge:textDecodedFromBase64`, a plain string literal of its octets decoded,
+  where: its `mediaType` attribute is absent (V3's `text/plain`) or names the
+  type `text` with no `charset` parameter other than `UTF-8`; it has no
+  `compression` attribute; its `charset` attribute is absent or `UTF-8`; and its
+  own text children, joined in document order with every whitespace character
+  removed, are base64 of octets that are UTF-8. The text of an element inside
+  it, such as V3's `thumbnail`, is not its data.
+- **Base64** is decoded only where, once whitespace is removed, it is in the
+  canonical form of
+  [RFC 4648 section 4](https://www.rfc-editor.org/rfc/rfc4648#section-4):
+  padded with `=` to a multiple of four characters, with no character outside
+  its alphabet and no bit set in the unused bits of its last character. Base64
+  in any other form, unpadded, URL-safe or with bits set there, is not decoded. Nothing is
+  decoded where no character is left once whitespace is removed: an attachment with
+  no data, or whose data is in a child such as `thumbnail` or `reference`, has no
+  `bridge:textDecodedFromBase64`, not an empty one.
+- **A media type's** type and the name and value of its `charset` parameter are
+  compared in any case; whitespace around its type and around a parameter's
+  name and value is ignored, and a parameter's value may be quoted. A
+  `charset` attribute is `UTF-8` in any case and nothing else.
 
 ### JSON
 
@@ -52,6 +99,12 @@ among them.
   `false` as the document writes them.
 - **`null`** is lifted as nothing, and takes its number among an array's items.
 - **An empty object or array** is a node with no triples from it.
+- **An attachment in base64**, an object whose `contentType` and `data` members
+  are strings, as FHIR's `Attachment` writes one, also carries
+  `bridge:textDecodedFromBase64` where its `contentType` names the type `text`
+  with no `charset` parameter other than `UTF-8`, and its `data`, with every
+  whitespace character removed, is canonical padded base64, as above, of octets
+  that are UTF-8. Whitespace is removed and nothing else is forgiven.
 
 A name, an element's, an attribute's or a member's, is appended to its IRI as
 its own characters, each one outside
@@ -66,6 +119,11 @@ with the record as the lift root: nothing outside the record is lifted.
 A record of an XML document is an element whose local name is the adapter's
 `bridge:elementNameOfEachRecord`, in any namespace or none; a record inside
 another is not specified.
+
+The names of the elements that break an element's text are the adapter's
+`bridge:elementNameBreakingText`, each a local name, the same under every
+envelope the adapter declares. An adapter that names none gets no text with
+element breaks; the JSON lift reads none.
 
 A record of a JSON document is an object the `bridge:jsonPathOfEachRecord` of
 the envelope it is read in selects, in document order; a value it selects that is
@@ -90,6 +148,9 @@ except that every record is lifted with its place among its parent's members or
 items and its members whose value is a string, a number, `true` or `false`, and
 without its members whose value is an object or an array. A record that is the
 document's value is lifted in the same way.
+
+An envelope skeleton holds no element's text content, no text with element
+breaks and no attachment's decoded text.
 
 ## Envelopes
 

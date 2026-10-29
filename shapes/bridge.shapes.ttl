@@ -949,6 +949,11 @@
     sh:maxCount 1 ;
     sh:nodeKind sh:IRI ;
     sh:message "The action of a lift test names exactly one bridge:input, the document lifted, by IRI."
+  ] ;
+  sh:property [
+    sh:path bridge:elementNameBreakingText ;
+    sh:datatype xsd:string ;
+    sh:message "Each bridge:elementNameBreakingText of a lift test's action is a string, the local name of an element that breaks text, as an adapter names one."
   ] .
 
 <#SkeletonAction> a sh:NodeShape ;

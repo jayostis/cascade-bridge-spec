@@ -13,6 +13,13 @@
     <#namespaces>
     <#no-break-space>
     <#non-ascii>
+    <#text-content>
+    <#entities>
+    <#text-with-element-breaks-table>
+    <#text-with-element-breaks-paragraphs>
+    <#text-with-element-breaks-inline>
+    <#base64-attachment>
+    <#base64-attachment-not-decoded>
     <#skeleton>
     <#skeleton-record-root>
     <#json-scalars>
@@ -22,6 +29,7 @@
     <#json-names>
     <#json-duplicates>
     <#json-root-array>
+    <#json-base64-attachment>
     <#skeleton-json>
     <#skeleton-json-record-root>
   ) .
@@ -74,9 +82,54 @@
   mf:action [ bridge:sourceMediaType "application/xml" ; bridge:input <non-ascii.xml> ] ;
   mf:result [ bridge:expectedGraph <non-ascii.nt> ] .
 
+<#text-content> a bridge:LiftTest ;
+  mf:name "text-content" ;
+  rdfs:comment "An element's text content is every text under it in document order, the text of elements inside it and whitespace between them included, so a cell written lisinopril <content>10 mg</content> tablet holds the one string. An element under which there is only whitespace, or nothing, carries none." ;
+  mf:action [ bridge:sourceMediaType "application/xml" ; bridge:input <text-content.xml> ] ;
+  mf:result [ bridge:expectedGraph <text-content.nt> ] .
+
+<#entities> a bridge:LiftTest ;
+  mf:name "entities" ;
+  rdfs:comment "A text child and an element's text content hold the characters the predefined entities name, not the entities." ;
+  mf:action [ bridge:sourceMediaType "application/xml" ; bridge:input <entities.xml> ] ;
+  mf:result [ bridge:expectedGraph <entities.nt> ] .
+
+<#text-with-element-breaks-table> a bridge:LiftTest ;
+  mf:name "text-with-element-breaks-table" ;
+  rdfs:comment "A C-CDA results table, as a kit writes one: with td, th and tr named, every cell of an element's text with element breaks is a line of its own, and the whitespace between the rows is no line." ;
+  mf:action [ bridge:sourceMediaType "application/xml" ; bridge:input <text-with-element-breaks-table.xml> ;
+    bridge:elementNameBreakingText "br", "paragraph", "td", "th", "tr" ] ;
+  mf:result [ bridge:expectedGraph <text-with-element-breaks-table.nt> ] .
+
+<#text-with-element-breaks-paragraphs> a bridge:LiftTest ;
+  mf:name "text-with-element-breaks-paragraphs" ;
+  rdfs:comment "With br and paragraph named, a line break and the end of one paragraph against the start of the next each begin a line, and a line's whitespace, a line feed of the source included, is one space. A no-break space (U+00A0) is not whitespace and stays. An element is matched by its local name: one in the default namespace urn:hl7-org:v3 and one with a prefix are named alike by br and paragraph." ;
+  mf:action [ bridge:sourceMediaType "application/xml" ; bridge:input <text-with-element-breaks-paragraphs.xml> ;
+    bridge:elementNameBreakingText "br", "paragraph", "td", "th", "tr" ] ;
+  mf:result [ bridge:expectedGraph <text-with-element-breaks-paragraphs.nt> ] .
+
+<#text-with-element-breaks-inline> a bridge:LiftTest ;
+  mf:name "text-with-element-breaks-inline" ;
+  rdfs:comment "An element not named, sup here, breaks nothing: m<sup>2</sup> is m2." ;
+  mf:action [ bridge:sourceMediaType "application/xml" ; bridge:input <text-with-element-breaks-inline.xml> ;
+    bridge:elementNameBreakingText "br", "paragraph", "td", "th", "tr" ] ;
+  mf:result [ bridge:expectedGraph <text-with-element-breaks-inline.nt> ] .
+
+<#base64-attachment> a bridge:LiftTest ;
+  mf:name "base64-attachment" ;
+  rdfs:comment "An element written in base64 as HL7 V3's ED writes one, of a text media type or none, with no charset other than UTF-8 in any case, has its own text decoded, whitespace removed: the thumbnail inside an ED is not its data." ;
+  mf:action [ bridge:sourceMediaType "application/xml" ; bridge:input <base64-attachment.xml> ] ;
+  mf:result [ bridge:expectedGraph <base64-attachment.nt> ] .
+
+<#base64-attachment-not-decoded> a bridge:LiftTest ;
+  mf:name "base64-attachment-not-decoded" ;
+  rdfs:comment "Not decoded: a media type other than text, a compressed one, a charset other than UTF-8 as an attribute or as the media type's parameter, a charset attribute quoted, octets that are not UTF-8, base64 not in canonical form or unpadded, a representation other than B64 exactly, none, and an element whose own text is empty or only whitespace, as when its data is in a child such as thumbnail or reference." ;
+  mf:action [ bridge:sourceMediaType "application/xml" ; bridge:input <base64-attachment-not-decoded.xml> ] ;
+  mf:result [ bridge:expectedGraph <base64-attachment-not-decoded.nt> ] .
+
 <#skeleton> a bridge:SkeletonTest ;
   mf:name "skeleton" ;
-  rdfs:comment "A record keeps its type triples, its number among its parent's children and its attributes, and of its children only each element with no element child and no text child the lift keeps, numbered as the whole lift numbers it, with its type triples and its attributes: one holding only whitespace and a comment is kept. A child holding text or an element is left out. A sibling that is not a record is lifted whole." ;
+  rdfs:comment "A record keeps its type triples, its number among its parent's children and its attributes, and of its children only each element with no element child and no text child the lift keeps, numbered as the whole lift numbers it, with its type triples and its attributes: one holding only whitespace and a comment is kept. A child holding text or an element is left out. A sibling that is not a record is lifted whole, but for its text content, which no skeleton holds." ;
   mf:action [ bridge:sourceMediaType "application/xml" ; bridge:input <skeleton.xml> ; bridge:elementNameOfEachRecord "Unit" ] ;
   mf:result [ bridge:expectedGraph <skeleton.nt> ] .
 
@@ -128,9 +181,15 @@
   mf:action [ bridge:sourceMediaType "application/json" ; bridge:input <json-root-array.json> ] ;
   mf:result [ bridge:expectedGraph <json-root-array.nt> ] .
 
+<#json-base64-attachment> a bridge:LiftTest ;
+  mf:name "json-base64-attachment" ;
+  rdfs:comment "An attachment whose content type is text, with no charset other than UTF-8 in any case, has its data decoded, whitespace removed; one of another type or charset, one whose octets are not UTF-8, one with no content type and one with no data, or only whitespace, are not." ;
+  mf:action [ bridge:sourceMediaType "application/json" ; bridge:input <json-base64-attachment.json> ] ;
+  mf:result [ bridge:expectedGraph <json-base64-attachment.nt> ] .
+
 <#skeleton-json> a bridge:SkeletonTest ;
   mf:name "skeleton-json" ;
-  rdfs:comment "A record keeps its place among its parent's items and its members whose value is a string, a number, true or false, and loses those whose value is an object or an array, empty or not. An item the path selects that is not an object is no record and is lifted as it is; what is not a record is lifted whole." ;
+  rdfs:comment "A record keeps its place among its parent's items and its members whose value is a string, a number, true or false, and loses those whose value is an object or an array, empty or not. An item the path selects that is not an object is no record and is lifted as it is; what is not a record is lifted whole, but for an attachment's decoded text, which no skeleton holds." ;
   mf:action [ bridge:sourceMediaType "application/json" ; bridge:input <skeleton-json.json> ; bridge:jsonPathOfEachRecord "$.entry[*]" ] ;
   mf:result [ bridge:expectedGraph <skeleton-json.nt> ] .
 

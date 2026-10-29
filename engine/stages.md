@@ -6,7 +6,7 @@ adapter contributes data to them through these terms.
 
 | stage | Enterprise Integration Pattern | the adapter contributes |
 |---|---|---|
-| read and chunk | **Splitter** | `bridge:elementNameOfEachRecord`, `bridge:jsonPathOfEachRecord` |
+| read and chunk | **Splitter** | `bridge:elementNameOfEachRecord`, `bridge:jsonPathOfEachRecord`, `bridge:elementNameBreakingText` |
 | transform | **Message Translator** | `bridge:mapping`, `bridge:table` |
 | Cascade RDF as target | **Canonical Data Model** | `bridge:vocabulary`, `bridge:cascadeVocabularyRepository`, `bridge:vocabularyFile` |
 | link records | **Aggregator** | `bridge:documentTableQuery`: a link within one source record is a name the mapping mints, and to any other record, in the document or not, that record's computed name |
