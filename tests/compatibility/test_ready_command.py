@@ -234,3 +234,14 @@ def test_ready_to_merge_finds_no_cycle_through_a_merged_pull_request(world):
     said = world.tool(engine, 1, check="ready-to-merge", **world.ci(event=event, gate=GATE))
 
     assert "adapter/pull/7 has not merged" in said
+
+
+def test_ready_to_merge_passes_a_cycle_in_the_repository_under_test_once_the_others_checks_have(world):
+    head = world.pull_request("engine", 2, body=depends_on("engine", 1))
+    world.pull_requests.check_run("engine", head, "compatibility")
+    world.pull_requests.check_run("engine", head, GATE, status="in_progress")
+    engine, event = world.engine_under_test(body=depends_on("engine", 2))
+
+    said = world.tool(engine, check="ready-to-merge", **world.ci(event=event, gate=GATE))
+
+    assert "engine/pull/2 names this pull request back, and its checks have succeeded" in said
