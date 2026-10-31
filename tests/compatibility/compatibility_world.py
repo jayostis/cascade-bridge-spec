@@ -218,7 +218,9 @@ class PullRequests:
         return pull
 
     def get(self, repository, number):
-        return self.by_repository.get(repository, {}).get(number)
+        """As GitHub serves it, whatever the case of the repository's name."""
+        same = (pulls for name, pulls in self.by_repository.items() if name.lower() == repository.lower())
+        return next(same, {}).get(number)
 
     def check_run(self, repository, commit, name, status="completed", conclusion="success"):
         run = {

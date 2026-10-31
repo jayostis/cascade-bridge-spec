@@ -35,6 +35,17 @@ def test_a_pull_request_naming_one_in_its_own_repository_is_tested_with_it_merge
     assert "not used" not in world.table()
 
 
+def test_a_repository_named_in_another_case_is_the_same_repository(world):
+    """GitHub reads owner and repository names whatever their case, so a line naming one so is the same line."""
+    world.pull_request("engine", 2, body=depends_on("ENGINE", 1, owner="JAYOSTIS"), fill=writing("TWO"))
+    engine, event = engine_checked_out_as_ci_does(world, depends_on("Engine", 2, owner="JayOstis"))
+
+    world.tool(engine, **world.ci(event=event))
+
+    assert (engine / "TWO").is_file()
+    assert world.record()["repositories"]["engine"]["how"] == "pull request #1 merged into main, and #2 merged into it"
+
+
 def test_a_cycle_of_three_in_the_repository_under_test_merges_the_other_two_in_the_order_of_their_numbers(world):
     """Reached through #3's own line, and merged in by number whichever line named it first."""
     two = world.pull_request("engine", 2, body=depends_on("engine", 1), fill=writing("TWO"))
