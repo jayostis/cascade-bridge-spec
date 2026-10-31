@@ -79,6 +79,15 @@ def fetch(url, ref, path):
     return git("rev-parse", "FETCH_HEAD", cwd=path).stdout.strip()
 
 
+def deepen(url, path):
+    """The checkout's whole history where it holds one commit, as actions/checkout leaves it: a merge needs a base."""
+    if git("rev-parse", "--is-shallow-repository", cwd=path).stdout.strip() != "true":
+        return
+    run = git("fetch", "--quiet", "--unshallow", url, cwd=path)
+    if run.returncode != 0:
+        raise unreachable(url, run)
+
+
 def blob(path, commit, relative):
     """The bytes one file stands as at a commit, or None where the commit or the file is not there."""
     run = subprocess.run(

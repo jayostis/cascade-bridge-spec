@@ -108,6 +108,14 @@ The vocabulary repository an adapter's `bridge:cascadeVocabularyRepository`
 names, and each repository a runtime's `cascade-runtime.json` names, is picked
 as a counterpart is.
 
+The repository under test is the checkout of the pull request under test, with
+the head of each pull request of that repository reached the same way, open or
+merged since, merged into it in the order of their numbers, as Zuul tests a
+change with those ahead of it: a cycle within one repository is tested as the
+set that will land. One closed without merging, one targeting another branch,
+or one that does not merge cleanly into what is merged before it, fails the
+check.
+
 A local run uses every sibling checkout as it is on disk, uncommitted edits
 included, the vocabulary repository among them, in the folder named as that
 repository, and no option changes that.
@@ -147,10 +155,6 @@ GitHub Actions cannot reproduce these, so a person or an agent does it by hand:
 - **A cycle's members give their merge gate the same check name**, as
   [the workflow an adapter and an engine both run](#the-workflow-an-adapter-and-an-engine-both-run)
   does (`ready-to-merge`): each gate discounts that check on the others.
-- **A pull request named in the repository under test is merged into nothing**,
-  which its row says: the run checks that repository out as the pull request
-  under test, and the merge gate still holds this one until that one merges.
-  Land it first, or fold its changes into this pull request.
 - **A Bridge pull request is built by the Bridge, not by the run, and read at
   its head alone.** The run lists one named on a `Depends-On:` line as not used,
   because it checks the Bridge out nowhere; the runtime reads the `build-<head>`
@@ -222,8 +226,11 @@ more than the entry point's path, its arguments, the results directory and the
 `table.md` it writes there: those names reach a caller only once they have
 merged, and everything else the run does comes from the version it picked.
 A job that needs only the counterparts a `Depends-On:` line picks passes
-`checkout-only: 'true'`; a job that reads the EARL report a run wrote reads the
-action's `report` output, never a path it assumes.
+`checkout-only: 'true'`. Either way the action merges the pull requests named in
+the repository under test into its checkout, so a step that reads the checkout,
+an install from its lockfile among them, comes after it. A job that reads the
+EARL report a run wrote reads the action's `report` output, never a path it
+assumes.
 
 ## The workflow an adapter and an engine both run
 

@@ -21,12 +21,13 @@ def engine_checked_out_as_ci_does(world, body):
 def test_a_pull_request_naming_one_in_its_own_repository_is_tested_with_it_merged_in(world):
     """The pull request named in the repository under test is merged into the checkout under test, as Zuul does."""
     head = world.pull_request("engine", 2, body=depends_on("engine", 1), fill=writing("TWO"))
+    world.commit_on_main("engine", "MOVED")  # the base the two meet at is below the one commit checked out
     engine, event = engine_checked_out_as_ci_does(world, depends_on("engine", 2))
 
     world.tool(engine, **world.ci(event=event))
 
     assert (engine / "TWO").is_file()
-    assert git("rev-parse", "HEAD^2", cwd=engine) == head
+    git("merge-base", "--is-ancestor", head, "HEAD", cwd=engine)
     row = world.record()["repositories"]["engine"]
     assert row["role"] == "under test"
     assert row["how"] == "pull request #1 merged into main, and #2 merged into it"
@@ -42,7 +43,7 @@ def test_a_cycle_of_three_in_the_repository_under_test_merges_the_other_two_in_t
 
     world.tool(engine, **world.ci(event=event))
 
-    assert git("rev-parse", "HEAD^1^2", "HEAD^2", cwd=engine).split() == [two, three]
+    assert git("rev-parse", "HEAD^1", "HEAD^2", cwd=engine).split() == [two, three]
     assert world.record()["repositories"]["engine"]["how"] == (
         "pull request #1 merged into main, and #2 and #3 merged into it"
     )
@@ -72,6 +73,16 @@ def test_two_named_pull_requests_in_the_repository_under_test_that_conflict_fail
         "jayostis/engine/pull/3 does not merge cleanly into pull request #1 merged into main, and #2 merged into it"
         in said
     )
+
+
+def test_a_named_pull_request_in_the_repository_under_test_landing_on_another_branch_fails_the_check(world):
+    world.branch("engine", "stable/x")
+    world.pull_request("engine", 2, base="stable/x", fill=writing("TWO"))
+    engine, event = engine_checked_out_as_ci_does(world, depends_on("engine", 2))
+
+    said = world.tool(engine, 1, **world.ci(event=event))
+
+    assert "jayostis/engine/pull/2 targets stable/x, and the pull request under test main" in said
 
 
 def test_a_named_pull_request_in_the_repository_under_test_closed_without_merging_fails_the_check(world):

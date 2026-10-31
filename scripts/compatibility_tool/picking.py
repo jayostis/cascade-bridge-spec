@@ -8,7 +8,6 @@ from compatibility_tool.console import Stop
 from compatibility_tool.github import Named, named_in, repository_path
 
 NOTHING_CHECKED_OUT = "in a repository this run checks nothing out from"
-ALREADY_CHECKED_OUT = "in the repository under test, which this run does not merge it into"
 
 
 @dataclass
@@ -46,9 +45,13 @@ class Choice:
 
 
 def unused_where(named, event, merged_into):
+    return None if named.path == event.repository or named.path in merged_into else NOTHING_CHECKED_OUT
+
+
+def closed(named, event):
     if named.path == event.repository:
-        return ALREADY_CHECKED_OUT
-    return None if named.path in merged_into else NOTHING_CHECKED_OUT
+        return f"{named.label} is closed without merging: cut the Depends-On: line naming it"
+    return f"{named.label} is closed without merging, so nothing names a version of {named.path}"
 
 
 def follow(api, event, counterparts, specification):
@@ -77,7 +80,7 @@ def follow(api, event, counterparts, specification):
                     reached[named] = Reached(named, {}, unused)
                     continue
                 if unused is None and not found.get("merged") and found.get("state") != "open":
-                    raise Stop(f"{named.label} is closed without merging, so nothing names a version of {named.path}")
+                    raise Stop(closed(named, event))
                 reached[named] = Reached(named, found, unused)
             entry = reached[named]
             if entry.open:
@@ -87,6 +90,17 @@ def follow(api, event, counterparts, specification):
 
 def merging(reached, path):
     return [entry for entry in reached if entry.unused is None and entry.open and entry.named.path == path]
+
+
+def numbered(entries):
+    numbers = [f"#{entry.named.number}" for entry in entries]
+    return numbers[0] if len(numbers) == 1 else " and ".join((", ".join(numbers[:-1]), numbers[-1]))
+
+
+def partners(reached, event):
+    """The pull requests named in the repository under test, merged or open, in the order of their numbers."""
+    found = [entry for entry in reached if entry.named.path == event.repository and entry.pull]
+    return sorted(found, key=lambda entry: entry.named.number)
 
 
 def choose(url, path, reached, event):
@@ -99,9 +113,8 @@ def choose(url, path, reached, event):
                 + ", ".join(f"{entry.named.label} targets {entry.base}" for entry in named)
             )
         base = bases.pop()
-        numbers = [f"#{entry.named.number}" for entry in named]
-        said = numbers[0] if len(numbers) == 1 else " and ".join((", ".join(numbers[:-1]), numbers[-1]))
-        return Choice(base, f"pull request{'s' if len(numbers) > 1 else ''} {said} merged into {base}", named)
+        plural = "s" if len(named) > 1 else ""
+        return Choice(base, f"pull request{plural} {numbered(named)} merged into {base}", named)
     running_on = event.branch
     if running_on and git.remote_branch(url, running_on):
         matching = "the branch matching the pull request's target" if event.number else "the branch this run is on"

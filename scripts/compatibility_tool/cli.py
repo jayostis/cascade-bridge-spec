@@ -61,7 +61,7 @@ def parse(usage, argv):
     return parser.parse_args(argv)
 
 
-def under_test(directory, options, event):
+def under_test(directory, options, event, partners):
     if options.mode == "local":
         return placing.locally(directory, "", Role.UNDER_TEST)
     return placing.on_disk(
@@ -69,7 +69,8 @@ def under_test(directory, options, event):
         github.url_on_this_server(event.repository),
         directory,
         Role.UNDER_TEST,
-        placing.under_test_is(event),
+        placing.under_test_is(event, partners),
+        bool(partners),
     )
 
 
@@ -98,13 +99,13 @@ def counterparts_placed(directory, listed, options, event, api):
     return [*counterpart_rows, *(vocabulary for _, vocabulary in placed), *placing.not_used(reached)], placed
 
 
-def compatibility(directory, options, event, api, spec):
+def compatibility(directory, options, event, api, spec, partners):
     document = read_file(directory)
     refused = problems(directory, document)
     for problem in refused:
         report(False, problem)
 
-    used = [under_test(directory, options, event), spec]
+    used = [under_test(directory, options, event, partners), spec]
     if refused:
         Record(directory, options.mode, used).save(options.results)
         return Status.FAIL
@@ -168,7 +169,13 @@ def main(usage, argv=None):
     try:
         event = github.event(api) if options.mode == "ci" else github.Event("", None, "")
         reached = picking.follow(api, event, [], options.spec_repository) if options.mode == "ci" else []
-        spec = bootstrap.picked(directory, options, event, reached)
+        # Before the hop, so the version picked reads the tree that will land; merging again there changes nothing.
+        partners = (
+            placing.partners_merged(directory, event, reached)
+            if options.mode == "ci" and args.check == CHECKS[0]
+            else []
+        )
+        spec = bootstrap.picked(directory, options, event, reached, partners)
         hopped = bootstrap.hop(spec, directory, options)
         if hopped is not None:
             return hopped
@@ -178,7 +185,7 @@ def main(usage, argv=None):
         status = (
             ready.check(directory, options, event, api)
             if args.check == "ready-to-merge"
-            else compatibility(directory, options, event, api, spec)
+            else compatibility(directory, options, event, api, spec, partners)
         )
     except Stop as stop:
         report(False, str(stop))

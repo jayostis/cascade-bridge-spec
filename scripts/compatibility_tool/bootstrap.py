@@ -15,7 +15,7 @@ SPEC_ROOT = Path(__file__).resolve().parents[2]
 ENTRY_POINT = ("scripts", "compatibility.py")
 
 
-def picked(directory, options, event, reached):
+def picked(directory, options, event, reached, partners=()):
     if options.spec_picked:
         return Row.from_json(SPECIFICATION, json.loads(options.spec_picked.read_text(encoding="utf-8")))
     if options.mode == "local":
@@ -35,7 +35,7 @@ def picked(directory, options, event, reached):
             options.spec_repository,
             placing.toplevel(directory, SPEC_ROOT),
             Role.SPECIFICATION,
-            placing.under_test_is(event),
+            placing.under_test_is(event, partners),
         )
     into = directory.parent / SPECIFICATION
     return placing.in_ci(options.spec_repository, reached, event, into, Role.SPECIFICATION)

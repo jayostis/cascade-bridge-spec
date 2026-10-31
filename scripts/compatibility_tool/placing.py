@@ -15,10 +15,38 @@ def toplevel(directory, fallback):
     return git.toplevel(directory) or fallback
 
 
-def under_test_is(event):
-    if event.number:
-        return f"pull request #{event.number} merged into {event.branch}"
-    return f"{event.branch}, the branch this run is on"
+def under_test_is(event, merged=()):
+    if not event.number:
+        return f"{event.branch}, the branch this run is on"
+    tested = f"pull request #{event.number} merged into {event.branch}"
+    return f"{tested}, and {picking.numbered(merged)} merged into it" if merged else tested
+
+
+def partners_merged(directory, event, reached):
+    """Each pull request named in the repository under test, merged into its checkout so the set is tested as it
+    will land; in the order of their numbers, so each member of a cycle merges the others alike."""
+    entries = picking.partners(reached, event)
+    if not entries:
+        return []
+    elsewhere = [entry for entry in entries if entry.base != event.branch]
+    if elsewhere:
+        raise Stop(
+            "; ".join(
+                f"{entry.named.label} targets {entry.base}, and the pull request under test {event.branch}"
+                for entry in elsewhere
+            )
+            + ": they land on different branches, so the run cannot test them as one"
+        )
+    url = url_on_this_server(event.repository)
+    git.deepen(url, directory)
+    for at, entry in enumerate(entries):
+        head = git.fetch(url, f"refs/pull/{entry.named.number}/head", directory)
+        if git.merge(directory, head, entry.named.label):
+            raise Stop(
+                f"{entry.named.label} does not merge cleanly into {under_test_is(event, entries[:at])}: "
+                "bring one up to date with the other, or fold them into one pull request"
+            )
+    return entries
 
 
 def working_tree_is(path, role):
@@ -27,7 +55,7 @@ def working_tree_is(path, role):
     return f"{where}, on {branch}"
 
 
-def on_disk(name, url, path, role, how=None):
+def on_disk(name, url, path, role, how=None, merged=False):
     return Row(
         name=name,
         repository=url,
@@ -36,6 +64,7 @@ def on_disk(name, url, path, role, how=None):
         role=role,
         uncommitted_edits=git.has_uncommitted_edits(path),
         path=path,
+        from_named_pull_requests=merged,
     )
 
 
