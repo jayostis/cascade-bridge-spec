@@ -8,7 +8,7 @@ from compatibility_tool.console import Stop
 from compatibility_tool.github import Named, named_in, repository_path
 
 NOTHING_CHECKED_OUT = "in a repository this run checks nothing out from"
-ALREADY_CHECKED_OUT = "in the repository under test, which this run does not merge it into"
+THROUGH_ANOTHER = "reached only through another repository's pull request: name it on a Depends-On: line here to test the two together"
 
 
 @dataclass
@@ -46,9 +46,38 @@ class Choice:
 
 
 def unused_where(named, event, merged_into):
-    if named.path == event.repository:
-        return ALREADY_CHECKED_OUT
-    return None if named.path in merged_into else NOTHING_CHECKED_OUT
+    if named.is_in(event.repository):
+        return THROUGH_ANOTHER  # until chained finds it on a line here
+    return None if any(named.is_in(path) for path in merged_into) else NOTHING_CHECKED_OUT
+
+
+def chained(api, event, reached):
+    """Each pull request here named by the one under test, or by one so named, is merged into its checkout; one
+    reached only through another repository's is not, so a pull request there does not bundle two here."""
+    walking = [(event.under_test, api.pull_request(event.under_test))]
+    seen = {event.under_test}
+    while walking:
+        holder, pull = walking.pop(0)
+        for named in named_in(pull.get("body")):
+            if named in seen or not named.is_in(event.repository):
+                continue
+            seen.add(named)
+            entry = reached[named]
+            entry.pull = api.pull_request(named)
+            if not entry.open and not entry.pull.get("merged"):
+                raise Stop(
+                    f"{named.label} is closed without merging: cut the Depends-On: line naming it in {holder.label}"
+                )
+            if entry.open and not entry.from_this_repository:
+                fork = ((entry.pull.get("head") or {}).get("repo") or {}).get("full_name") or "a fork"
+                raise Stop(
+                    f"{named.label} is from {fork}: a fork's pull request is not merged into the checkout under "
+                    f"test, whose jobs may hold a write token; fold its changes into a pull request from "
+                    f"{event.repository}"
+                )
+            entry.unused = None
+            if entry.open:
+                walking.append((named, entry.pull))
 
 
 def follow(api, event, counterparts, specification):
@@ -82,11 +111,24 @@ def follow(api, event, counterparts, specification):
             entry = reached[named]
             if entry.open:
                 walking.append((entry.pull, [*path, named]))
+    chained(api, event, reached)
     return list(reached.values())
 
 
 def merging(reached, path):
-    return [entry for entry in reached if entry.unused is None and entry.open and entry.named.path == path]
+    return [entry for entry in reached if entry.unused is None and entry.open and entry.named.is_in(path)]
+
+
+def numbered(entries):
+    numbers = [f"#{entry.named.number}" for entry in entries]
+    return numbers[0] if len(numbers) == 1 else " and ".join((", ".join(numbers[:-1]), numbers[-1]))
+
+
+def partners(reached, event):
+    """The pull requests chained to the one under test in its repository, merged or open, in the order of their
+    numbers."""
+    found = [entry for entry in reached if entry.named.is_in(event.repository) and entry.unused is None]
+    return sorted(found, key=lambda entry: entry.named.number)
 
 
 def choose(url, path, reached, event):
@@ -99,9 +141,8 @@ def choose(url, path, reached, event):
                 + ", ".join(f"{entry.named.label} targets {entry.base}" for entry in named)
             )
         base = bases.pop()
-        numbers = [f"#{entry.named.number}" for entry in named]
-        said = numbers[0] if len(numbers) == 1 else " and ".join((", ".join(numbers[:-1]), numbers[-1]))
-        return Choice(base, f"pull request{'s' if len(numbers) > 1 else ''} {said} merged into {base}", named)
+        plural = "s" if len(named) > 1 else ""
+        return Choice(base, f"pull request{plural} {numbered(named)} merged into {base}", named)
     running_on = event.branch
     if running_on and git.remote_branch(url, running_on):
         matching = "the branch matching the pull request's target" if event.number else "the branch this run is on"

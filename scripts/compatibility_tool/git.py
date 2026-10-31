@@ -79,6 +79,35 @@ def fetch(url, ref, path):
     return git("rev-parse", "FETCH_HEAD", cwd=path).stdout.strip()
 
 
+def fetch_commit(url, commit, path):
+    """The commit, fetched by its id; None where the server no longer serves it."""
+    run = git("fetch", "--quiet", url, commit, cwd=path)
+    fetched = git("rev-parse", "FETCH_HEAD", cwd=path).stdout.strip() if run.returncode == 0 else None
+    return fetched if fetched == commit else None
+
+
+def is_ancestor(path, commit, of="HEAD"):
+    return git("merge-base", "--is-ancestor", commit, of, cwd=path).returncode == 0
+
+
+def before_this_runs_merges(path):
+    """HEAD as it was checked out, under the merges a run made on it, the hopped run's or the one before it."""
+    for line in git("log", "--first-parent", "--format=%H %ce", "HEAD", cwd=path).stdout.splitlines():
+        commit, _, committer = line.partition(" ")
+        if committer != IDENTITY["GIT_COMMITTER_EMAIL"]:
+            return commit
+    return "HEAD"
+
+
+def deepen(url, path):
+    """The checkout's whole history where it holds one commit, as actions/checkout leaves it: a merge needs a base."""
+    if git("rev-parse", "--is-shallow-repository", cwd=path).stdout.strip() != "true":
+        return
+    run = git("fetch", "--quiet", "--unshallow", url, cwd=path)
+    if run.returncode != 0:
+        raise unreachable(url, run)
+
+
 def blob(path, commit, relative):
     """The bytes one file stands as at a commit, or None where the commit or the file is not there."""
     run = subprocess.run(
@@ -90,8 +119,8 @@ def blob(path, commit, relative):
     return run.stdout if run.returncode == 0 else None
 
 
-def merge(path, commit, name):
-    run = git("merge", "--no-edit", "--quiet", commit, cwd=path)
+def merge(path, commit, name, *options):
+    run = git("merge", "--no-edit", "--quiet", *options, commit, cwd=path)
     if run.returncode != 0:
         git("merge", "--abort", cwd=path)
         return f"{name} conflicts with what is already merged into {path.name}"

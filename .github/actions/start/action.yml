@@ -23,8 +23,9 @@ inputs:
   checkout-only:
     description: >-
       'true': with check compatibility, check the counterparts out beside the
-      repository, a Depends-On: line's pull request among them, and stop before
-      anything is run or posted. The run writes no report, so report is empty.
+      repository, a Depends-On: line's pull request among them, merge those it
+      names in the repository itself into it, and stop before anything is run
+      or posted. The run writes no report, so report is empty.
     required: false
     default: 'false'
   python-version:

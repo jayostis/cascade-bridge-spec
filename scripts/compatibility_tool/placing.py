@@ -15,10 +15,49 @@ def toplevel(directory, fallback):
     return git.toplevel(directory) or fallback
 
 
-def under_test_is(event):
-    if event.number:
-        return f"pull request #{event.number} merged into {event.branch}"
-    return f"{event.branch}, the branch this run is on"
+def under_test_is(event, merged=()):
+    if not event.number:
+        return f"{event.branch}, the branch this run is on"
+    tested = f"pull request #{event.number} merged into {event.branch}"
+    return f"{tested}, and {picking.numbered(merged)} merged into it" if merged else tested
+
+
+def partners_merged(directory, event, reached):
+    """Each pull request named in the repository under test, merged into its checkout so the set is tested as it
+    will land; in the order of their numbers, so each member of a cycle merges the others alike."""
+    entries = picking.partners(reached, event)
+    if not entries:
+        return []
+    elsewhere = [entry for entry in entries if entry.base != event.branch]
+    if elsewhere:
+        raise Stop(
+            "; ".join(
+                f"{entry.named.label} targets {entry.base}, and the pull request under test {event.branch}"
+                for entry in elsewhere
+            )
+            + ": they land on different branches, so the run cannot test them as one"
+        )
+    url = url_on_this_server(event.repository)
+    git.deepen(url, directory)
+    checked_out = git.before_this_runs_merges(directory)
+    merged = []
+    for entry in entries:
+        if not git.fetch_commit(url, entry.head, directory):
+            raise Stop(
+                f"{entry.named.label}'s head {entry.head}, as the run read it, could not be fetched from {url}: "
+                "it may have been pushed over since; rerun"
+            )
+        if git.is_ancestor(directory, entry.head, checked_out):
+            continue
+        merged.append(entry)
+        if git.is_ancestor(directory, entry.head):
+            continue
+        if git.merge(directory, entry.head, entry.named.label, "--no-ff"):
+            raise Stop(
+                f"{entry.named.label} does not merge cleanly into {under_test_is(event, merged[:-1])}: "
+                "bring one up to date with the other, or fold them into one pull request"
+            )
+    return merged
 
 
 def working_tree_is(path, role):
@@ -27,7 +66,7 @@ def working_tree_is(path, role):
     return f"{where}, on {branch}"
 
 
-def on_disk(name, url, path, role, how=None):
+def on_disk(name, url, path, role, how=None, merged=False):
     return Row(
         name=name,
         repository=url,
@@ -36,6 +75,7 @@ def on_disk(name, url, path, role, how=None):
         role=role,
         uncommitted_edits=git.has_uncommitted_edits(path),
         path=path,
+        from_named_pull_requests=merged,
     )
 
 

@@ -15,7 +15,7 @@ SPEC_ROOT = Path(__file__).resolve().parents[2]
 ENTRY_POINT = ("scripts", "compatibility.py")
 
 
-def picked(directory, options, event, reached):
+def picked(directory, options, event, reached, partners=()):
     if options.spec_picked:
         return Row.from_json(SPECIFICATION, json.loads(options.spec_picked.read_text(encoding="utf-8")))
     if options.mode == "local":
@@ -28,14 +28,14 @@ def picked(directory, options, event, reached):
         )
     if not options.spec_repository:
         raise Stop(f"the check was not told which repository is {SPECIFICATION}; start passes --spec-repository")
-    if github.repository_path(options.spec_repository) == event.repository:
+    if github.same_repository(github.repository_path(options.spec_repository), event.repository):
         # The repository under test is this one, so its checkout is the version.
         return placing.on_disk(
             SPECIFICATION,
             options.spec_repository,
             placing.toplevel(directory, SPEC_ROOT),
             Role.SPECIFICATION,
-            placing.under_test_is(event),
+            placing.under_test_is(event, partners),
         )
     into = directory.parent / SPECIFICATION
     return placing.in_ci(options.spec_repository, reached, event, into, Role.SPECIFICATION)

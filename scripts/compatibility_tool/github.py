@@ -22,6 +22,11 @@ def repository_path(url):
     return f"{owner}/{repository.removesuffix('.git')}"
 
 
+def same_repository(path, other):
+    """GitHub reads an owner's and a repository's name whatever their case."""
+    return path.lower() == other.lower()
+
+
 def repository_name(url):
     return repository_path(url).split("/")[-1]
 
@@ -41,6 +46,15 @@ class Named:
     @property
     def label(self):
         return f"{self.path}/pull/{self.number}"
+
+    def is_in(self, path):
+        return same_repository(self.path, path)
+
+    def __eq__(self, other):
+        return isinstance(other, Named) and self.is_in(other.path) and self.number == other.number
+
+    def __hash__(self):
+        return hash((self.path.lower(), self.number))
 
 
 def named_in(description):
