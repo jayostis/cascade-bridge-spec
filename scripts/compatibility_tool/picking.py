@@ -45,11 +45,11 @@ class Choice:
 
 
 def unused_where(named, event, merged_into):
-    return None if named.path == event.repository or named.path in merged_into else NOTHING_CHECKED_OUT
+    return None if any(named.is_in(path) for path in (event.repository, *merged_into)) else NOTHING_CHECKED_OUT
 
 
 def closed(named, event):
-    if named.path == event.repository:
+    if named.is_in(event.repository):
         return f"{named.label} is closed without merging: cut the Depends-On: line naming it"
     return f"{named.label} is closed without merging, so nothing names a version of {named.path}"
 
@@ -89,7 +89,7 @@ def follow(api, event, counterparts, specification):
 
 
 def merging(reached, path):
-    return [entry for entry in reached if entry.unused is None and entry.open and entry.named.path == path]
+    return [entry for entry in reached if entry.unused is None and entry.open and entry.named.is_in(path)]
 
 
 def numbered(entries):
@@ -99,7 +99,7 @@ def numbered(entries):
 
 def partners(reached, event):
     """The pull requests named in the repository under test, merged or open, in the order of their numbers."""
-    found = [entry for entry in reached if entry.named.path == event.repository and entry.pull]
+    found = [entry for entry in reached if entry.named.is_in(event.repository) and entry.pull]
     return sorted(found, key=lambda entry: entry.named.number)
 
 

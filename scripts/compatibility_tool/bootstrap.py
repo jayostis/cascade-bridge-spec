@@ -28,7 +28,7 @@ def picked(directory, options, event, reached, partners=()):
         )
     if not options.spec_repository:
         raise Stop(f"the check was not told which repository is {SPECIFICATION}; start passes --spec-repository")
-    if github.repository_path(options.spec_repository) == event.repository:
+    if github.same_repository(github.repository_path(options.spec_repository), event.repository):
         # The repository under test is this one, so its checkout is the version.
         return placing.on_disk(
             SPECIFICATION,
