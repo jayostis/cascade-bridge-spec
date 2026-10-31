@@ -8,6 +8,7 @@ from compatibility_tool.console import Stop
 from compatibility_tool.github import Named, named_in, repository_path
 
 NOTHING_CHECKED_OUT = "in a repository this run checks nothing out from"
+THROUGH_ANOTHER = "reached only through another repository's pull request: name it on a Depends-On: line here to test the two together"
 
 
 @dataclass
@@ -45,13 +46,38 @@ class Choice:
 
 
 def unused_where(named, event, merged_into):
-    return None if any(named.is_in(path) for path in (event.repository, *merged_into)) else NOTHING_CHECKED_OUT
-
-
-def closed(named, event):
     if named.is_in(event.repository):
-        return f"{named.label} is closed without merging: cut the Depends-On: line naming it"
-    return f"{named.label} is closed without merging, so nothing names a version of {named.path}"
+        return THROUGH_ANOTHER  # until chained finds it on a line here
+    return None if any(named.is_in(path) for path in merged_into) else NOTHING_CHECKED_OUT
+
+
+def chained(api, event, reached):
+    """Each pull request here named by the one under test, or by one so named, is merged into its checkout; one
+    reached only through another repository's is not, so a pull request there does not bundle two here."""
+    walking = [(event.under_test, api.pull_request(event.under_test))]
+    seen = {event.under_test}
+    while walking:
+        holder, pull = walking.pop(0)
+        for named in named_in(pull.get("body")):
+            if named in seen or not named.is_in(event.repository):
+                continue
+            seen.add(named)
+            entry = reached[named]
+            entry.pull = api.pull_request(named)
+            if not entry.open and not entry.pull.get("merged"):
+                raise Stop(
+                    f"{named.label} is closed without merging: cut the Depends-On: line naming it in {holder.label}"
+                )
+            if entry.open and not entry.from_this_repository:
+                fork = ((entry.pull.get("head") or {}).get("repo") or {}).get("full_name") or "a fork"
+                raise Stop(
+                    f"{named.label} is from {fork}: a fork's pull request is not merged into the checkout under "
+                    f"test, whose jobs may hold a write token; fold its changes into a pull request from "
+                    f"{event.repository}"
+                )
+            entry.unused = None
+            if entry.open:
+                walking.append((named, entry.pull))
 
 
 def follow(api, event, counterparts, specification):
@@ -80,11 +106,12 @@ def follow(api, event, counterparts, specification):
                     reached[named] = Reached(named, {}, unused)
                     continue
                 if unused is None and not found.get("merged") and found.get("state") != "open":
-                    raise Stop(closed(named, event))
+                    raise Stop(f"{named.label} is closed without merging, so nothing names a version of {named.path}")
                 reached[named] = Reached(named, found, unused)
             entry = reached[named]
             if entry.open:
                 walking.append((entry.pull, [*path, named]))
+    chained(api, event, reached)
     return list(reached.values())
 
 
@@ -98,8 +125,9 @@ def numbered(entries):
 
 
 def partners(reached, event):
-    """The pull requests named in the repository under test, merged or open, in the order of their numbers."""
-    found = [entry for entry in reached if entry.named.is_in(event.repository) and entry.pull]
+    """The pull requests chained to the one under test in its repository, merged or open, in the order of their
+    numbers."""
+    found = [entry for entry in reached if entry.named.is_in(event.repository) and entry.unused is None]
     return sorted(found, key=lambda entry: entry.named.number)
 
 

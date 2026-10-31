@@ -39,14 +39,25 @@ def partners_merged(directory, event, reached):
         )
     url = url_on_this_server(event.repository)
     git.deepen(url, directory)
-    for at, entry in enumerate(entries):
-        head = git.fetch(url, f"refs/pull/{entry.named.number}/head", directory)
-        if git.merge(directory, head, entry.named.label):
+    checked_out = git.before_this_runs_merges(directory)
+    merged = []
+    for entry in entries:
+        if not git.fetch_commit(url, entry.head, directory):
             raise Stop(
-                f"{entry.named.label} does not merge cleanly into {under_test_is(event, entries[:at])}: "
+                f"{entry.named.label}'s head {entry.head}, as the run read it, could not be fetched from {url}: "
+                "it may have been pushed over since; rerun"
+            )
+        if git.is_ancestor(directory, entry.head, checked_out):
+            continue
+        merged.append(entry)
+        if git.is_ancestor(directory, entry.head):
+            continue
+        if git.merge(directory, entry.head, entry.named.label, "--no-ff"):
+            raise Stop(
+                f"{entry.named.label} does not merge cleanly into {under_test_is(event, merged[:-1])}: "
                 "bring one up to date with the other, or fold them into one pull request"
             )
-    return entries
+    return merged
 
 
 def working_tree_is(path, role):

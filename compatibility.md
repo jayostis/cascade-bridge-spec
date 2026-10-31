@@ -109,12 +109,18 @@ names, and each repository a runtime's `cascade-runtime.json` names, is picked
 as a counterpart is.
 
 The repository under test is the checkout of the pull request under test, with
-the head of each pull request of that repository reached the same way, open or
-merged since, merged into it in the order of their numbers, as Zuul tests a
-change with those ahead of it: a cycle within one repository is tested as the
-set that will land. One closed without merging, one targeting another branch,
-or one that does not merge cleanly into what is merged before it, fails the
-check.
+the head of each pull request of that repository it names on a `Depends-On:`
+line, and each one those name there in turn, merged into it in the order of
+their numbers, at the head the run read: open, or merged since the run's event.
+So a cycle within one repository is tested as the set that will land, as Zuul
+tests a change with those ahead of it. A pull request of that repository reached
+only through another repository's is not merged in and is listed as not used,
+so a vocabulary pull request two runtime pull requests both follow does not
+bundle them: to test pull requests of one repository together, name each other
+directly. One closed without merging, one from a fork (the checkout runs with
+the job's token), one targeting another branch, or one that does not merge
+cleanly into what is merged before it, fails the check; for a closed one, the
+check names the pull request whose line to cut.
 
 A local run uses every sibling checkout as it is on disk, uncommitted edits
 included, the vocabulary repository among them, in the folder named as that

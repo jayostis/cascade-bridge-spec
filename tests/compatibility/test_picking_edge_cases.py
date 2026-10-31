@@ -54,7 +54,7 @@ def test_a_cycle_of_three_in_the_repository_under_test_merges_the_other_two_in_t
 
     world.tool(engine, **world.ci(event=event))
 
-    assert git("rev-parse", "HEAD^1", "HEAD^2", cwd=engine).split() == [two, three]
+    assert git("rev-parse", "HEAD^1^2", "HEAD^2", cwd=engine).split() == [two, three]
     assert world.record()["repositories"]["engine"]["how"] == (
         "pull request #1 merged into main, and #2 and #3 merged into it"
     )
@@ -115,7 +115,8 @@ def test_a_pull_request_here_reached_only_through_another_repository_is_not_merg
     world.tool(engine, **world.ci(event=event))
 
     assert not (engine / "TWO").exists()
-    assert world.record()["repositories"]["engine"]["how"] == "pull request #1 merged into main"
+    [under_test] = [row for row in world.record()["repositories"].values() if row["role"] == "under test"]
+    assert under_test["how"] == "pull request #1 merged into main"
     assert "jayostis/engine/pull/2, reached only through another repository's pull request" in world.table()
 
 
@@ -246,3 +247,14 @@ def test_a_named_specification_pull_request_is_used_rather_than_listed_as_not_us
     assert specification["role"] == "specification"
     assert specification["how"] == "pull request #3 merged into main"
     assert "not used" not in world.table()
+
+
+def test_the_version_picked_says_what_was_merged_in_before_it_was_handed_the_run(world):
+    """The run merges before it hops, and the version it hops to runs again on that checkout, finding its merges."""
+    world.pull_request("engine", 2, fill=writing("TWO"))
+    engine, event = engine_checked_out_as_ci_does(world, depends_on("engine", 2))
+    world.tool(engine, **world.ci(event=event))
+
+    world.tool(engine, **world.ci(event=event))
+
+    assert world.record()["repositories"]["engine"]["how"] == "pull request #1 merged into main, and #2 merged into it"
