@@ -60,17 +60,63 @@ def test_a_cycle_of_three_in_the_repository_under_test_merges_the_other_two_in_t
     )
 
 
-@pytest.mark.parametrize(
-    "state", [{"state": "closed", "merged": True}, {"fork": True}], ids=["merged since the run's event", "from a fork"]
-)
-def test_a_named_pull_request_in_the_repository_under_test_is_merged_in_from_its_head(world, state):
+def test_a_named_pull_request_in_the_repository_under_test_merged_since_the_runs_event_is_merged_in(world):
     """A rerun keeps the commit its event checked out, which a pull request that merged since does not hold."""
-    world.pull_request("engine", 2, fill=writing("TWO"), **state)
+    world.pull_request("engine", 2, fill=writing("TWO"), state="closed", merged=True)
     engine, event = engine_checked_out_as_ci_does(world, depends_on("engine", 2))
 
     world.tool(engine, **world.ci(event=event))
 
     assert (engine / "TWO").is_file()
+
+
+def test_a_named_pull_request_already_in_the_checkout_is_not_said_to_be_merged_in(world):
+    world.pull_request("engine", 2, fill=writing("TWO"), state="closed", merged=True)
+    git("merge", "-q", "--no-ff", "--no-edit", "pull/2", cwd=world.origin("engine"))
+    engine, event = engine_checked_out_as_ci_does(world, depends_on("engine", 2))
+
+    world.tool(engine, **world.ci(event=event))
+
+    assert world.record()["repositories"]["engine"]["how"] == "pull request #1 merged into main"
+    assert "rerun it once" not in world.table()
+
+
+def test_a_named_pull_request_in_the_repository_under_test_is_merged_in_at_the_head_the_run_read(world):
+    """A push after the run read the pull request is not tested unannounced."""
+    world.pull_request("engine", 2, fill=writing("TWO"))
+    later = world.branch("engine", "later", fill=writing("LATER"))
+    git("update-ref", "refs/pull/2/head", later, cwd=world.origin("engine"))
+    engine, event = engine_checked_out_as_ci_does(world, depends_on("engine", 2))
+
+    world.tool(engine, **world.ci(event=event))
+
+    assert (engine / "TWO").is_file()
+    assert not (engine / "LATER").exists()
+
+
+def test_a_named_open_pull_request_from_a_fork_is_not_merged_into_the_checkout_under_test(world):
+    """The checkout under test runs with the job's token, which a fork's code is not handed."""
+    world.pull_request("engine", 2, fill=writing("TWO"), fork=True)
+    engine, event = engine_checked_out_as_ci_does(world, depends_on("engine", 2))
+
+    said = world.tool(engine, 1, **world.ci(event=event))
+
+    assert "jayostis/engine/pull/2 is from a-fork-owner/engine" in said
+    assert not (engine / "TWO").exists()
+
+
+@pytest.mark.parametrize("state", ["open", "closed"])
+def test_a_pull_request_here_reached_only_through_another_repository_is_not_merged_in(world, state):
+    """Two pull requests here that follow one vocabulary pull request are not bundled by it: each names the other."""
+    world.pull_request("engine", 2, fill=writing("TWO"), state=state)
+    world.pull_request("adapter", 7, body=depends_on("engine", 1) + depends_on("engine", 2))
+    engine, event = engine_checked_out_as_ci_does(world, depends_on("adapter", 7))
+
+    world.tool(engine, **world.ci(event=event))
+
+    assert not (engine / "TWO").exists()
+    assert world.record()["repositories"]["engine"]["how"] == "pull request #1 merged into main"
+    assert "jayostis/engine/pull/2, reached only through another repository's pull request" in world.table()
 
 
 def test_two_named_pull_requests_in_the_repository_under_test_that_conflict_fail_the_check_naming_them(world):
@@ -96,14 +142,17 @@ def test_a_named_pull_request_in_the_repository_under_test_landing_on_another_br
     assert "jayostis/engine/pull/2 targets stable/x, and the pull request under test main" in said
 
 
-def test_a_named_pull_request_in_the_repository_under_test_closed_without_merging_fails_the_check(world):
+def test_a_named_pull_request_in_the_repository_under_test_closed_without_merging_fails_naming_the_line(world):
     world.pull_request("engine", 2, state="closed", fill=writing("TWO"))
-    engine, event = engine_checked_out_as_ci_does(world, depends_on("engine", 2))
+    world.pull_request("engine", 3, body=depends_on("engine", 2), fill=writing("THREE"))
+    engine, event = engine_checked_out_as_ci_does(world, depends_on("engine", 3))
 
     said = world.tool(engine, 1, **world.ci(event=event))
 
-    assert "jayostis/engine/pull/2 is closed without merging: cut the Depends-On: line naming it" in said
-    assert not (engine / "TWO").exists()
+    assert (
+        "jayostis/engine/pull/2 is closed without merging: cut the Depends-On: line naming it in jayostis/engine/pull/3"
+        in said
+    )
 
 
 def test_a_cycle_between_two_named_pull_requests_picks_both(world):
