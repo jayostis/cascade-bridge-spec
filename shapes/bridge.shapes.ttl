@@ -766,6 +766,46 @@
     sh:message "An entry naming a bridge:lookupIn names the bridge:lookupNamesGap a value outside that map opens: a lookup is a concept map and the gap a value the map lacks opens, and neither half stands without the other."
   ] .
 
+<#EntryReachingNoGraph> a sh:NodeShape ;
+  sh:target [
+    a sh:SPARQLTarget ;
+    sh:prefixes <> ;
+    sh:select """
+      SELECT ?this WHERE {
+        ?this a bridge:PathEntry ; bridge:verdict ?verdict .
+        FILTER (?verdict NOT IN (bridge:carried, bridge:carriedInPart))
+      }
+    """
+  ] ;
+  sh:property [
+    sh:path bridge:carriedAs ;
+    sh:maxCount 0 ;
+    sh:message "An entry whose verdict is not bridge:carried or bridge:carriedInPart names no bridge:carriedAs: its path's value reaches no graph."
+  ] .
+
+<#CarriedAs> a sh:NodeShape ;
+  sh:targetObjectsOf bridge:carriedAs ;
+  sh:property [
+    sh:path bridge:asProperty ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "A bridge:carriedAs names exactly one bridge:asProperty, the Cascade property the path's value becomes, by IRI."
+  ] ;
+  sh:property [
+    sh:path bridge:inRecordClass ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:message "A bridge:carriedAs names exactly one bridge:inRecordClass, the Cascade class of the record the value is written on, by IRI."
+  ] ;
+  sh:property [
+    sh:path bridge:inSourceRecordType ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "A bridge:carriedAs names at most one bridge:inSourceRecordType, a string: the source's own name for the kind of record the path is read in, a FHIR resource type or a C-CDA templateId's root."
+  ] .
+
 <#CarriedEntry> a sh:NodeShape ;
   sh:target [
     a sh:SPARQLTarget ;
