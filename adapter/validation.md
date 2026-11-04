@@ -12,6 +12,10 @@ rocrate-validator validate <adapter> \
   --profile-identifier cascade-bridge-adapter --no-paging --verbose
 ```
 
+Once a `bridge:carriedAs` in the adapter's source accounting names a term, the Cascade vocabulary repository its
+`bridge:cascadeVocabularyRepository` names must be checked out beside the adapter, in a folder named as the
+repository is. Without it the run reports one "not checked out" issue and checks no term.
+
 Nothing an adapter names is fetched. A media type the profile does not allow is
 a pull request here, not one invented in an adapter.
 

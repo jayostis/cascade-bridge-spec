@@ -32,6 +32,26 @@ ex:Unrelated a owl:Class .
 rdfs:label a owl:AnnotationProperty .
 """
 
+A_VOCABULARY_WITH_RECORD_CLASSES = """@prefix ex:   <https://example.org/synthetic-adapter/v1#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh:   <http://www.w3.org/ns/shacl#> .
+
+ex:Finding a owl:Class .
+ex:Problem a owl:Class .
+ex:Result a owl:Class .
+ex:Quantity a owl:Class .
+
+ex:ProblemShape a sh:NodeShape ; sh:targetClass ex:Problem .
+ex:ResultShape a sh:NodeShape ; sh:targetClass ex:Result .
+ex:FindingShape a sh:NodeShape ; sh:targetClass ex:Finding .
+
+ex:about a owl:ObjectProperty ; rdfs:domain ex:Finding ; rdfs:range ex:Problem .
+ex:problemName a owl:DatatypeProperty ; rdfs:domain ex:Problem .
+ex:measured a owl:ObjectProperty ; rdfs:domain ex:Result ; rdfs:range ex:Quantity .
+ex:unit a owl:DatatypeProperty ; rdfs:domain ex:Quantity .
+"""
+
 THE_ACCESSION = "/ExampleRecord/@Accession"
 THE_VERSION = "/ExampleRecord/@Version"
 THE_LABEL = "/ExampleRecord/Label"
@@ -181,3 +201,19 @@ def test_reports_a_vocabulary_file_missing_from_the_checkout(beside):
     (beside.path.parent / "vocabulary" / THE_VOCABULARY_FILE).unlink()
     accounted(beside, carried(THE_ACCESSION, ("ex:accession", "ex:Record")))
     assert f"{THE_VOCABULARY_FILE} is no file of vocabulary" in said_about(beside)
+
+
+@pytest.mark.parametrize(
+    ("term", "within", "reported"),
+    [
+        ("ex:problemName", "ex:Finding", True),
+        ("ex:problemName", "ex:Problem", False),
+        ("ex:unit", "ex:Result", False),
+    ],
+)
+def test_reaches_through_a_property_to_a_class_no_shape_targets_and_stops_at_one_a_shape_targets(
+    package, term, within, reported
+):
+    a_vocabulary_beside(package, A_VOCABULARY_WITH_RECORD_CLASSES)
+    accounted(package, carried(THE_ACCESSION, (term, within)))
+    assert bool(said_about(package)) is reported
