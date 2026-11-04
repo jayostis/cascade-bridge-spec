@@ -42,6 +42,7 @@ def entry(
     typed=True,
     lookup_in=None,
     lookup_names_gap=None,
+    carried_as=None,
 ):
     written = ["a bridge:PathEntry"] if typed else []
     written += [
@@ -54,6 +55,7 @@ def entry(
             ("bridge:because", because),
             ("bridge:lookupIn", lookup_in),
             ("bridge:lookupNamesGap", lookup_names_gap),
+            ("bridge:carriedAs", carried_as),
         )
         if value is not None
     ]
@@ -80,6 +82,28 @@ def minimal(verdict, **changed):
 
 def looks_up(verdict=CONSUMED, **changed):
     return minimal(verdict, **{"lookup_in": A_CONCEPT_MAP, "lookup_names_gap": A_GAP_OF_A_VALUE_NOT_MAPPED, **changed})
+
+
+AS_THE_ACCESSION = "bridge:asProperty ex:accession"
+ON_A_RECORD = "bridge:inRecordClass ex:Record"
+IN_AN_EXAMPLE_RECORD = 'bridge:inSourceRecordType "ExampleRecord"'
+
+
+def carried_as(*stated, verdict=CARRIED):
+    return minimal(verdict, carried_as=f"[ {' ; '.join(stated)} ]")
+
+
+ONE_PROPERTY = (
+    "A bridge:carriedAs names exactly one bridge:asProperty, the Cascade property the path's value becomes, by IRI."
+)
+ONE_RECORD_CLASS = (
+    "A bridge:carriedAs names exactly one bridge:inRecordClass, the Cascade class of the record the value is "
+    "written on, by IRI."
+)
+ONE_SOURCE_RECORD_TYPE = (
+    "A bridge:carriedAs names at most one bridge:inSourceRecordType, a string: the source's own name for the "
+    "kind of record the path is read in, a FHIR resource type or a C-CDA templateId's root."
+)
 
 
 REJECTED = {
@@ -212,6 +236,25 @@ REJECTED = {
         "bridge:lookupNamesGap",
         looks_up(lookup_names_gap='"a-status-outside-the-set-the-vocabulary-fixes"'),
     ),
+    "a carried as naming no property": (ONE_PROPERTY, carried_as(ON_A_RECORD)),
+    "a carried as naming its property as a string": (
+        ONE_PROPERTY,
+        carried_as('bridge:asProperty "ex:accession"', ON_A_RECORD),
+    ),
+    "a carried as naming no record class": (ONE_RECORD_CLASS, carried_as(AS_THE_ACCESSION)),
+    "a carried as naming two record classes": (
+        ONE_RECORD_CLASS,
+        carried_as(AS_THE_ACCESSION, "bridge:inRecordClass ex:Record, ex:Note"),
+    ),
+    "a carried as naming its source record type by iri": (
+        ONE_SOURCE_RECORD_TYPE,
+        carried_as(AS_THE_ACCESSION, ON_A_RECORD, "bridge:inSourceRecordType ex:ExampleRecord"),
+    ),
+    "an entry whose path reaches no graph naming what it is carried as": (
+        "An entry whose verdict is not bridge:carried or bridge:carriedInPart names no bridge:carriedAs: "
+        "its path's value reaches no graph.",
+        carried_as(AS_THE_ACCESSION, ON_A_RECORD, verdict=NO_HOME),
+    ),
 }
 
 
@@ -223,6 +266,14 @@ def test_rejects(message, turtle):
 @pytest.mark.parametrize("verdict", A_MINIMAL_ENTRY_OF_EACH_VERDICT)
 def test_accepts_a_minimal_entry_of_each_verdict(verdict):
     assert not said_about(minimal(verdict))
+
+
+@pytest.mark.parametrize("verdict", [CARRIED, CARRIED_IN_PART])
+def test_accepts_an_entry_whose_path_reaches_the_graph_naming_what_it_is_carried_as_with_and_without_a_source_record_type(
+    verdict,
+):
+    assert not said_about(carried_as(AS_THE_ACCESSION, ON_A_RECORD, IN_AN_EXAMPLE_RECORD, verdict=verdict))
+    assert not said_about(carried_as(AS_THE_ACCESSION, ON_A_RECORD, verdict=verdict))
 
 
 @pytest.mark.parametrize("verdict", A_MINIMAL_ENTRY_OF_EACH_VERDICT)
