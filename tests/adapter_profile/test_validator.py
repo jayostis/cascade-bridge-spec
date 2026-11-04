@@ -3,7 +3,7 @@ import re
 
 import pytest
 from rocrate_validator import services
-from rocrate_validator.models import ValidationSettings
+from rocrate_validator.models import Severity, ValidationSettings
 
 from adapter_profile_world import FIXTURE, JSON_FIXTURE, ROOT
 
@@ -64,6 +64,19 @@ def test_every_file_the_profile_makes_a_check_of_is_run(the_committed_fixture):
     assert len(declared) > 1
     assert declared <= files_of(the_committed_fixture.executed_checks)
     assert not the_committed_fixture.skipped_checks
+
+
+@VALIDATED_ONCE
+def test_the_committed_synthetic_adapter_passes_with_a_recommended_issue_for_each_carried_entry_naming_no_term(
+    the_committed_fixture,
+):
+    warned = [
+        issue
+        for issue in the_committed_fixture.get_issues(Severity.RECOMMENDED)
+        if "names at least one bridge:carriedAs" in issue.message
+    ]
+    assert len(warned) == 3
+    assert {issue.severity for issue in warned} == {Severity.RECOMMENDED}
 
 
 @VALIDATED_ONCE

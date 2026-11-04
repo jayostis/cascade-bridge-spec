@@ -1,11 +1,10 @@
 import shutil
 
 import pytest
-from rocrate_validator import services
-from rocrate_validator.models import Severity, ValidationSettings
+from rdflib import Graph
 
 import carried_as
-from adapter_profile_world import CARRIED, CARRIED_IN_PART, FIXTURE, NO_HOME, PREFIXES_OF_AN_ACCOUNTING, ROOT
+from adapter_profile_world import CARRIED, CARRIED_IN_PART, NO_HOME, PREFIXES_OF_AN_ACCOUNTING, ROOT
 
 ACCOUNTING = "vocab/example-accounting.ttl"
 THE_VOCABULARY_FILE = "ontologies/example/v1/example.ttl"
@@ -53,7 +52,11 @@ def carried(path, *nodes, verdict=CARRIED):
 
 
 def accounted(package, *entries):
-    return package.write(ACCOUNTING, PREFIXES_OF_AN_ACCOUNTING + "\n" + "\n".join(entries))
+    text = (
+        PREFIXES_OF_AN_ACCOUNTING + "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n\n" + "\n".join(entries)
+    )
+    Graph().parse(data=text, format="turtle")
+    return package.write(ACCOUNTING, text)
 
 
 def a_vocabulary_beside(package, text=A_VOCABULARY):
@@ -178,26 +181,3 @@ def test_reports_a_vocabulary_file_missing_from_the_checkout(beside):
     (beside.path.parent / "vocabulary" / THE_VOCABULARY_FILE).unlink()
     accounted(beside, carried(THE_ACCESSION, ("ex:accession", "ex:Record")))
     assert f"{THE_VOCABULARY_FILE} is no file of vocabulary" in said_about(beside)
-
-
-def test_the_check_is_recommended_so_a_lint_at_required_passes_and_one_at_recommended_warns():
-    def validated(severity):
-        return services.validate(
-            ValidationSettings(
-                rocrate_uri=str(FIXTURE),
-                extra_profiles_path=ROOT / "adapter",
-                profile_identifier="cascade-bridge-adapter",
-                requirement_severity=severity,
-                requirement_severity_only=True,
-            )
-        )
-
-    warned = [
-        issue
-        for issue in validated(Severity.RECOMMENDED.name).get_issues()
-        if "names at least one bridge:carriedAs" in issue.message
-    ]
-    assert warned and all(issue.severity == Severity.RECOMMENDED for issue in warned)
-    assert not [
-        issue for issue in validated(Severity.REQUIRED.name).get_issues() if "bridge:carriedAs" in issue.message
-    ]
