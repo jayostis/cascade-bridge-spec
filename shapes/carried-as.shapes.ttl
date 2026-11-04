@@ -1,0 +1,24 @@
+@prefix sh:     <http://www.w3.org/ns/shacl#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix owl:    <http://www.w3.org/2002/07/owl#> .
+@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+<> a owl:Ontology ;
+  sh:declare [ sh:prefix "bridge" ; sh:namespace "https://ns.cascadeprotocol.org/bridge/v1-draft#"^^xsd:anyURI ] .
+
+<#EntryReachingTheGraph> a sh:NodeShape ;
+  sh:target [
+    a sh:SPARQLTarget ;
+    sh:prefixes <> ;
+    sh:select """
+      SELECT ?this WHERE {
+        ?this a bridge:PathEntry ; bridge:verdict ?verdict .
+        FILTER (?verdict IN (bridge:carried, bridge:carriedInPart))
+      }
+    """
+  ] ;
+  sh:property [
+    sh:path bridge:carriedAs ;
+    sh:minCount 1 ;
+    sh:message "An entry whose verdict is bridge:carried or bridge:carriedInPart names at least one bridge:carriedAs: the Cascade property its path's value becomes, and the class of the record it is written on."
+  ] .

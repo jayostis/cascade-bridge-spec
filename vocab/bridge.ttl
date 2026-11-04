@@ -213,6 +213,38 @@ bridge:because a owl:DatatypeProperty ;
   rdfs:range xsd:string ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
+bridge:carriedAs a owl:ObjectProperty ;
+  rdfs:label "carried as"@en ;
+  rdfs:comment "A Cascade property the value at the entry's path becomes, on one class of record; a path that becomes several, by its record or by its code system, names one for each."@en ;
+  rdfs:domain bridge:PathEntry ;
+  rdfs:range bridge:CarriedAs ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:CarriedAs a owl:Class ;
+  rdfs:label "Carried as"@en ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:asProperty a owl:ObjectProperty ;
+  rdfs:label "as property"@en ;
+  rdfs:comment "The property the value is written as: of the record, or of the node of it the value lands on."@en ;
+  rdfs:domain bridge:CarriedAs ;
+  rdfs:range rdf:Property ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:inRecordClass a owl:ObjectProperty ;
+  rdfs:label "in record class"@en ;
+  rdfs:comment "The class of the record the value is written on, also where bridge:asProperty is a property of a node the record reaches."@en ;
+  rdfs:domain bridge:CarriedAs ;
+  rdfs:range owl:Class ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:inSourceRecordType a owl:DatatypeProperty ;
+  rdfs:label "in source record type"@en ;
+  rdfs:comment "The source's own name for the kind of record the path is read in: a FHIR resource type, or the root of a C-CDA templateId."@en ;
+  rdfs:domain bridge:CarriedAs ;
+  rdfs:range xsd:string ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
 bridge:verdicts a skos:ConceptScheme ;
   skos:prefLabel "What an adapter does with a path"@en ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
