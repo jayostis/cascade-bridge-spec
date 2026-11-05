@@ -1,13 +1,17 @@
 @prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 @prefix ex:     <https://example.org/synthetic-adapter/v1#> .
+@prefix pav:    <http://purl.org/pav/> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
 
 [] a bridge:PathEntry ;
   bridge:sourcePath "/ExampleRecord/@Accession" ;
-  bridge:verdict bridge:carried .
+  bridge:verdict bridge:carried ;
+  bridge:carriedAs [ bridge:asProperty ex:accession ; bridge:inRecordClass ex:Record ] .
 
 [] a bridge:PathEntry ;
   bridge:sourcePath "/ExampleRecord/@Version" ;
-  bridge:verdict bridge:carried .
+  bridge:verdict bridge:carried ;
+  bridge:carriedAs [ bridge:asProperty pav:version ; bridge:inRecordClass ex:Record ] .
 
 [] a bridge:PathEntry ;
   bridge:sourcePath "/ExampleRecord/@SchemaVersion" ;
@@ -22,7 +26,8 @@
 [] a bridge:PathEntry ;
   bridge:sourcePath "/ExampleRecord/Label" ;
   bridge:verdict bridge:carriedInPart ;
-  bridge:namesGap ex:only-the-first-run-of-a-labels-text-is-carried .
+  bridge:namesGap ex:only-the-first-run-of-a-labels-text-is-carried ;
+  bridge:carriedAs [ bridge:asProperty rdfs:label ; bridge:inRecordClass ex:Record ] .
 
 [] a bridge:PathEntry ;
   bridge:sourcePath "/ExampleRecord/Label/Emphasis" ;

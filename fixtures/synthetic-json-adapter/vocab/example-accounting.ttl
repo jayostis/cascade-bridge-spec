@@ -1,5 +1,7 @@
 @prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 @prefix ex:     <https://example.org/synthetic-adapter/v1#> .
+@prefix pav:    <http://purl.org/pav/> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
 
 [] a bridge:PathEntry ;
   bridge:sourcePath "/kind" ;
@@ -8,15 +10,18 @@
 
 [] a bridge:PathEntry ;
   bridge:sourcePath "/accession" ;
-  bridge:verdict bridge:carried .
+  bridge:verdict bridge:carried ;
+  bridge:carriedAs [ bridge:asProperty ex:accession ; bridge:inRecordClass ex:Record ] .
 
 [] a bridge:PathEntry ;
   bridge:sourcePath "/version" ;
-  bridge:verdict bridge:carried .
+  bridge:verdict bridge:carried ;
+  bridge:carriedAs [ bridge:asProperty pav:version ; bridge:inRecordClass ex:Record ] .
 
 [] a bridge:PathEntry ;
   bridge:sourcePath "/label" ;
-  bridge:verdict bridge:carried .
+  bridge:verdict bridge:carried ;
+  bridge:carriedAs [ bridge:asProperty rdfs:label ; bridge:inRecordClass ex:Record ] .
 
 [] a bridge:PathEntry ;
   bridge:sourcePath "/note" ;
@@ -31,16 +36,19 @@
 
 [] a bridge:PathEntry ;
   bridge:sourcePath "/contained" ;
-  bridge:verdict bridge:carried .
+  bridge:verdict bridge:consumed .
 
 [] a bridge:PathEntry ;
   bridge:sourcePath "/contained/id" ;
-  bridge:verdict bridge:carried .
+  bridge:verdict bridge:carried ;
+  bridge:carriedAs [ bridge:asProperty ex:accession ; bridge:inRecordClass ex:Record ] .
 
 [] a bridge:PathEntry ;
   bridge:sourcePath "/contained/label" ;
-  bridge:verdict bridge:carried .
+  bridge:verdict bridge:carried ;
+  bridge:carriedAs [ bridge:asProperty rdfs:label ; bridge:inRecordClass ex:Record ] .
 
 [] a bridge:PathEntry ;
   bridge:sourcePath "/lastUpdated" ;
-  bridge:verdict bridge:carried .
+  bridge:verdict bridge:carried ;
+  bridge:carriedAs [ bridge:asProperty pav:lastUpdateOn ; bridge:inRecordClass ex:Record ] .

@@ -58,7 +58,7 @@
         }
       ],
       "bridge:cascadeVocabularyRepository": {
-        "@id": "https://example.org/synthetic-adapter/vocabulary"
+        "@id": "https://example.org/synthetic-adapter/synthetic-vocabularies"
       },
       "bridge:vocabulary": [
         {
@@ -229,7 +229,7 @@
           "@id": "https://example.org/synthetic-adapter/releases/example-release-2026-01.xml.gz"
         },
         {
-          "@id": "https://example.org/synthetic-adapter/vocabulary"
+          "@id": "https://example.org/synthetic-adapter/synthetic-vocabularies"
         }
       ]
     },
@@ -259,7 +259,7 @@
       "name": "sparql-1.1"
     },
     {
-      "@id": "https://example.org/synthetic-adapter/vocabulary",
+      "@id": "https://example.org/synthetic-adapter/synthetic-vocabularies",
       "@type": ["SoftwareSourceCode", "File"],
       "name": "synthetic vocabulary repository"
     },
@@ -436,8 +436,8 @@
       "@type": "File",
       "name": "Source accounting",
       "encodingFormat": "text/turtle",
-      "contentSize": "1690",
-      "sha256": "92746aba540842655a19a76950e34df501afe6ad711a302daad78685c531c758",
+      "contentSize": "2053",
+      "sha256": "2b5d254cb5b25e04ae085995cdf9383fa49434844a43bb87567688fd41bfcbf5",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       }

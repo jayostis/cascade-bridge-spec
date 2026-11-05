@@ -14,6 +14,7 @@ SYNTHETIC_ADAPTER = FIXTURE
 
 CRATE = "ro-crate-metadata.json"
 MANIFEST = "fixtures/manifest.ttl"
+ACCOUNTING = "vocab/example-accounting.ttl"
 VALIDATED_ONCE = pytest.mark.xdist_group("the committed synthetic adapter, validated once")
 
 
@@ -66,17 +67,17 @@ def test_every_file_the_profile_makes_a_check_of_is_run(the_committed_fixture):
     assert not the_committed_fixture.skipped_checks
 
 
-@VALIDATED_ONCE
-def test_the_committed_synthetic_adapter_passes_with_a_recommended_issue_for_each_carried_entry_naming_no_term(
-    the_committed_fixture,
-):
-    warned = [
-        issue
-        for issue in the_committed_fixture.get_issues(Severity.RECOMMENDED)
-        if "names at least one bridge:carriedAs" in issue.message
-    ]
-    assert len(warned) == 3
-    assert {issue.severity for issue in warned} == {Severity.RECOMMENDED}
+def test_a_carried_entry_naming_no_term_fails_the_profile(tracked_package):
+    tracked_package.edit(
+        ACCOUNTING, " ;\n  bridge:carriedAs [ bridge:asProperty ex:accession ; bridge:inRecordClass ex:Record ] .", " ."
+    )
+    restate_digest(tracked_package, ACCOUNTING)
+
+    result = validated(tracked_package.path)
+
+    failed = [issue for issue in result.get_issues() if "names at least one bridge:carriedAs" in issue.message]
+    assert not result.passed()
+    assert {issue.severity for issue in failed} == {Severity.REQUIRED}
 
 
 @VALIDATED_ONCE

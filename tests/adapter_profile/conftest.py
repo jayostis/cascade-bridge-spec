@@ -7,7 +7,7 @@ import pytest
 from rdflib import Graph, URIRef
 
 import _crate
-from adapter_profile_world import FIXTURE, JSON_FIXTURE
+from adapter_profile_world import FIXTURE, JSON_FIXTURE, VOCABULARIES
 
 READ_BY_LOAD = ("ro-crate-metadata.json", "fixtures/manifest.ttl")
 
@@ -37,6 +37,7 @@ def moved(crate, adapter):
 class Package:
     def __init__(self, path, tracked=False, fixture=FIXTURE):
         shutil.copytree(fixture, path)
+        shutil.copytree(VOCABULARIES, path.parent / VOCABULARIES.name)
         self.path = path
         self.fixture = fixture
         self.tracked = tracked

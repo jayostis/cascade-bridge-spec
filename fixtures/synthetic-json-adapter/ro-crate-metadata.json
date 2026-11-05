@@ -60,7 +60,7 @@
         }
       ],
       "bridge:cascadeVocabularyRepository": {
-        "@id": "https://example.org/synthetic-adapter/vocabulary"
+        "@id": "https://example.org/synthetic-adapter/synthetic-vocabularies"
       },
       "bridge:vocabulary": [
         {
@@ -247,7 +247,7 @@
           "@id": "fixtures/findings/json-0009.ttl"
         },
         {
-          "@id": "https://example.org/synthetic-adapter/vocabulary"
+          "@id": "https://example.org/synthetic-adapter/synthetic-vocabularies"
         }
       ]
     },
@@ -302,7 +302,7 @@
       "name": "sparql-1.1"
     },
     {
-      "@id": "https://example.org/synthetic-adapter/vocabulary",
+      "@id": "https://example.org/synthetic-adapter/synthetic-vocabularies",
       "@type": [
         "SoftwareSourceCode",
         "File"
@@ -397,8 +397,8 @@
       "@type": "File",
       "name": "Source accounting",
       "encodingFormat": "text/turtle",
-      "contentSize": "1324",
-      "sha256": "afee023d20fa6b0248115ebabc7f27758055d02933e89e0c85dd662a20d84184",
+      "contentSize": "1957",
+      "sha256": "8675e04bb95bc1bb28b8f2a54289b34332246451e19eafc620fdf65f626a3ee3",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       }
