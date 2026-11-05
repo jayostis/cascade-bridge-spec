@@ -179,8 +179,9 @@ and the digest of its bytes in unpadded base64url
 A Bridge refuses to prepare an adapter one of whose queries holds a `SERVICE`
 pattern anywhere or a `FROM` or `FROM NAMED` clause, and fetches nothing.
 
-A `GROUP_CONCAT` joins its values in the order of the `ORDER BY` of the subquery
-its group reads, rows that tie on every key being joined in either order.
+A Bridge joins the values of a `GROUP_CONCAT` whose group reads a subquery with
+an `ORDER BY` in that order; rows that tie on every `ORDER BY` expression may be
+joined in any order.
 
 A Bridge runs every source record of a document whatever the adapter's
 `bridge:detectQuery` answers, and reports the answer.
