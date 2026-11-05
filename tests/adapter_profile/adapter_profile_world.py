@@ -14,6 +14,7 @@ from _terms import BRIDGE, MF, OA
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURE = ROOT / "fixtures" / "synthetic-adapter"
 JSON_FIXTURE = ROOT / "fixtures" / "synthetic-json-adapter"
+VOCABULARIES = ROOT / "fixtures" / "synthetic-vocabularies"
 MUST = ROOT / "adapter" / "profile" / "must"
 
 PREFIXES_OF_AN_ACCOUNTING = """@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .

@@ -8,7 +8,7 @@
   bridge:envelope
     <https://example.org/adapters/synthetic-adapter/ro-crate-metadata.json#envelope-set> ,
     <https://example.org/adapters/synthetic-adapter/ro-crate-metadata.json#envelope-record> ;
-  bridge:cascadeVocabularyRepository <https://example.org/synthetic-adapter/vocabulary> ;
+  bridge:cascadeVocabularyRepository <https://example.org/synthetic-adapter/synthetic-vocabularies> ;
   bridge:vocabularyFile
     "ontologies/example/v1/example.ttl" ,
     "ontologies/example/v1/example.shapes.ttl" ;
