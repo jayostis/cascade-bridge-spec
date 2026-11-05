@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 from rdflib import BNode, Graph, URIRef
 from rdflib.collection import Collection
 from rdflib.namespace import OWL, RDF, RDFS, SH
-from rocrate_validator.models import Severity, ValidationContext
+from rocrate_validator.models import ValidationContext
 from rocrate_validator.requirements.python import PyFunctionCheck, check, requirement
 
 from _findings import report_findings, shapes_of, unmet
@@ -76,7 +76,11 @@ class Vocabulary:
         self.graph = graph
         self.properties = {term for kind in PROPERTY_TYPES for term in graph.subjects(RDF.type, kind)}
         self.classes = {term for kind in CLASS_TYPES for term in graph.subjects(RDF.type, kind)}
-        self.records = set(graph.objects(None, SH.targetClass))
+        self.filed_apart = {
+            kind
+            for targeted in graph.objects(None, SH.targetClass)
+            for kind in graph.transitive_objects(targeted, RDFS.subClassOf)
+        }
         self.links, self.reach = {}, {}
         for term in self.properties:
             ranges = [found for found in graph.objects(term, RDFS.range) if found in self.classes]
@@ -93,14 +97,15 @@ class Vocabulary:
 
     def reached(self, within):
         """The class, each class it is a subclass of, and each class a property of one of those reaches, transitively,
-        stopping at a record class: a shape targets it, and a pair through it names it directly."""
+        stopping at a class a shape targets or one such a class is a subclass of: a record, an act or an agent, filed
+        apart from the record a pair names, never within it."""
         if within not in self.reach:
             reached, waiting = set(), [within]
             while waiting:
                 for found in self.graph.transitive_objects(waiting.pop(), RDFS.subClassOf):
                     if found not in reached:
                         reached.add(found)
-                        waiting.extend(self.links.get(found, set()) - self.records)
+                        waiting.extend(self.links.get(found, set()) - self.filed_apart)
             self.reach[within] = reached
         return self.reach[within]
 
@@ -145,9 +150,6 @@ def faulty(crate):
 class CarriedAs(PyFunctionCheck):
     """Every entry whose path reaches the graph names the property it becomes on a record class the vocabulary allows."""
 
-    @check(
-        name="every carried entry names a property the vocabulary declares, on a class its domain covers",
-        severity=Severity.RECOMMENDED,
-    )
+    @check(name="every carried entry names a property the vocabulary declares, on a class its domain covers")
     def run_check(self, context: ValidationContext) -> bool:
         return report_findings(self, context, faulty)
