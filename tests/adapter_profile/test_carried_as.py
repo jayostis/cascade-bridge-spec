@@ -59,6 +59,10 @@ prov:wasGeneratedBy a owl:ObjectProperty ; rdfs:domain prov:Entity ; rdfs:range 
 prov:used a owl:ObjectProperty ; rdfs:domain prov:Activity ; rdfs:range prov:Entity .
 prov:qualifiedAttribution a owl:ObjectProperty ; rdfs:domain prov:Entity ; rdfs:range prov:Attribution .
 prov:agent a owl:ObjectProperty ; rdfs:domain prov:Attribution .
+prov:Association a owl:Class .
+ex:Plan a owl:Class ; rdfs:subClassOf prov:Entity .
+prov:qualifiedAssociation a owl:ObjectProperty ; rdfs:domain prov:Activity ; rdfs:range prov:Association .
+prov:hadPlan a owl:ObjectProperty ; rdfs:domain prov:Association ; rdfs:range ex:Plan .
 """
 
 THE_ACCESSION = "/ExampleRecord/@Accession"
@@ -219,6 +223,9 @@ def test_reports_a_vocabulary_file_missing_from_the_checkout(beside):
         ("ex:unit", "ex:Result", False),
         ("prov:used", "ex:Problem", True),
         ("prov:agent", "ex:Problem", False),
+        ("prov:wasGeneratedBy", "ex:Problem", False),
+        ("prov:hadPlan", "ex:Run", False),
+        ("prov:wasGeneratedBy", "ex:Run", True),
     ],
 )
 def test_reaches_through_a_property_to_a_class_and_stops_at_one_a_shape_targets_or_one_such_a_class_is_a_subclass_of(

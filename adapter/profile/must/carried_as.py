@@ -98,11 +98,18 @@ class Vocabulary:
     def reached(self, within):
         """The class, each class it is a subclass of, and each class a property of one of those reaches, transitively,
         stopping at a class a shape targets or one such a class is a subclass of: a record, an act or an agent, filed
-        apart from the record a pair names, never within it."""
+        apart from the record a pair names, never within it. A class reached through a property is read without
+        those superclasses too: a plan is not an entity of the record that points at it."""
         if within not in self.reach:
-            reached, waiting = set(), [within]
+            reached, waiting, walked = set(), [within], set()
             while waiting:
-                for found in self.graph.transitive_objects(waiting.pop(), RDFS.subClassOf):
+                start = waiting.pop()
+                if start in walked:
+                    continue
+                walked.add(start)
+                for found in self.graph.transitive_objects(start, RDFS.subClassOf):
+                    if start != within and found in self.filed_apart:
+                        continue
                     if found not in reached:
                         reached.add(found)
                         waiting.extend(self.links.get(found, set()) - self.filed_apart)
