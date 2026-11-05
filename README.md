@@ -12,14 +12,14 @@ Normative: [`vocab/`](vocab/), [`shapes/`](shapes/),
 [`engine/library.md`](engine/library.md), [`engine/command.md`](engine/command.md)
 and [`compatibility.md`](compatibility.md).
 
-## Docs
-
-- [The Cascade hub](https://jayostis.github.io/cascade-runtime-js/): where to go for each thing, and every repository.
-- [Adapters](https://jayostis.github.io/cascade-runtime-js/adapters/): each adapter's crosswalk, built from the source accounting this spec defines.
-
 | you are building | start at |
 |---|---|
 | an adapter | [`adapter/`](adapter/) |
 | an engine | [`engine/`](engine/) |
+
+## Docs
+
+- [The Cascade hub](https://jayostis.github.io/cascade-runtime-js/): where to go for each thing, and every repository.
+- [Adapters](https://jayostis.github.io/cascade-runtime-js/adapters/): each adapter's crosswalk, built from the source accounting this spec defines.
 
 Apache-2.0.
