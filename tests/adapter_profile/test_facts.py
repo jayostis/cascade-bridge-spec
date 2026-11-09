@@ -39,9 +39,41 @@ def test_reports_a_fact_a_bridge_computes_supplied_with_the_document(package):
     assert "bridge:sha256" in said(package.crate)
 
 
-def test_reports_an_attribution_naming_its_role_by_a_literal(package):
+def test_reports_an_association_naming_its_role_by_a_literal(package):
     package.edit(FACTS, "prov:hadRole cascade:AuthorRole", 'prov:hadRole "author"')
     assert "prov:hadRole, by IRI" in said(package.crate)
+
+
+def test_reports_a_role_stated_on_an_attribution_of_the_document(package):
+    package.write(
+        FACTS,
+        """@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix prov:   <http://www.w3.org/ns/prov#> .
+@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+@prefix cascade: <https://ns.cascadeprotocol.org/cascade#> .
+
+bridge:thisDocument prov:qualifiedAttribution
+  [ prov:agent [ rdfs:label "Example Records Registry" ] ; prov:hadRole cascade:AuthorRole ] .
+""",
+    )
+    assert "never on a prov:qualifiedAttribution" in said(package.crate)
+
+
+def test_reports_a_document_generated_by_two_acts(package):
+    package.edit(FACTS, "prov:wasGeneratedBy _:writing ;", "prov:wasGeneratedBy _:writing, _:rewriting ;")
+    assert "at most one prov:wasGeneratedBy" in said(package.crate)
+
+
+def test_reports_a_generating_act_carrying_more_than_its_associations(package):
+    package.edit(
+        FACTS, "_:writing prov:qualifiedAssociation", '_:writing rdfs:label "a writing" ;\n  prov:qualifiedAssociation'
+    )
+    assert "prov:qualifiedAssociation, and nothing else" in said(package.crate)
+
+
+def test_reports_an_agent_the_document_is_attributed_to_that_carries_no_label(package):
+    package.edit(FACTS, "prov:wasAttributedTo _:registry ;", "prov:wasAttributedTo _:registry, _:nameless ;")
+    assert "exactly one rdfs:label" in said(package.crate)
 
 
 def test_reports_an_import_time_that_is_no_datetime(package):
