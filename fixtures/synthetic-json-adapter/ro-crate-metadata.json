@@ -477,8 +477,8 @@
       "@type": "File",
       "name": "Expected graph for json-0001",
       "encodingFormat": "text/turtle",
-      "contentSize": "2922",
-      "sha256": "eaa2aa9e46716a1ed15ca67ac7621852c0024e1e21e146b202ccb5de70fcadf3",
+      "contentSize": "3037",
+      "sha256": "07749a5c71f677959f74a1dbc0839e155317bcbcc39710e82f8bcac3b3b81c06",
       "isBasedOn": {
         "@id": "fixtures/in/json-0001.json"
       },
@@ -505,8 +505,8 @@
       "@type": "File",
       "name": "Expected graph for json-0002",
       "encodingFormat": "text/turtle",
-      "contentSize": "2230",
-      "sha256": "cc3bc72294e057fae31138e473204bf82f175c0632bb8d33ac561f34dff11390",
+      "contentSize": "2345",
+      "sha256": "9f2b152dccf23e190ddd5ede3b26f90f29c56d02a4f197a8282d78e9e53c5e40",
       "isBasedOn": {
         "@id": "fixtures/in/json-0002.json"
       },
@@ -533,8 +533,8 @@
       "@type": "File",
       "name": "Expected graph for json-0003",
       "encodingFormat": "text/turtle",
-      "contentSize": "2193",
-      "sha256": "b4c4bc617f32e4dd7c9419a9d9e5df4731bc0e1409add6da777fe42b17359e13",
+      "contentSize": "2308",
+      "sha256": "25381eac077062cea9de0994a8077c317b5aca86f1e24c9c3d6bce8d2b35d4ba",
       "isBasedOn": {
         "@id": "fixtures/in/json-0003.json"
       },
@@ -561,8 +561,8 @@
       "@type": "File",
       "name": "Expected graph for json-0004",
       "encodingFormat": "text/turtle",
-      "contentSize": "2246",
-      "sha256": "c3fb7f2389fada256b0d0417d0fc793b506dc82996b99ab6f01805060dd5b8f3",
+      "contentSize": "2361",
+      "sha256": "dc97938fae875f63a93cc8f2486fbf26ff55fcbfc86138a7232cf407f201beb3",
       "isBasedOn": {
         "@id": "fixtures/in/json-0004.json"
       },
@@ -589,8 +589,8 @@
       "@type": "File",
       "name": "Expected graph for json-0005",
       "encodingFormat": "text/turtle",
-      "contentSize": "1368",
-      "sha256": "95a0464604911add6456b86affea0985e212a1b5ae258d48f526c03b7efdf4ac",
+      "contentSize": "1483",
+      "sha256": "50a91d0f0378df66e6154d2272125cc7dcb2cb46732ed2bd7922879748a98adb",
       "isBasedOn": {
         "@id": "fixtures/in/json-0001.json"
       },
@@ -650,8 +650,8 @@
       "@type": "File",
       "name": "Facts supplied with every synthetic JSON input",
       "encodingFormat": "text/turtle",
-      "contentSize": "1014",
-      "sha256": "53ce903b804cbc620402dfbdea02aa4b5b3cfa96da1a93dc5f77364afe68a645",
+      "contentSize": "1129",
+      "sha256": "269dc8892557ed1e360ec52071fb20854b722fd44aa4d9356a59381024157523",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       }
@@ -683,8 +683,8 @@
       "@type": "File",
       "name": "Expected graph for json-0006",
       "encodingFormat": "text/turtle",
-      "contentSize": "3733",
-      "sha256": "9b435255ef4c705420e00f210a6acf6ef06480bab5f317eff64a45d52e2640fe",
+      "contentSize": "3848",
+      "sha256": "78c721ded903cd280ffbd548ee463bd26982f47b0834674fa37647df3e9cab20",
       "isBasedOn": {
         "@id": "fixtures/in/json-0006.json"
       },
@@ -711,8 +711,8 @@
       "@type": "File",
       "name": "Expected graph for json-0007",
       "encodingFormat": "text/turtle",
-      "contentSize": "2946",
-      "sha256": "0f0b835aec6b4f11317fe3687773b68ade0792a5a8b3131ecb549dfd9757b6a1",
+      "contentSize": "3061",
+      "sha256": "85e59f273f906a743b4b54a0e4db7ac699a38bf8f66f6676f7ebdb0578aaafee",
       "isBasedOn": {
         "@id": "fixtures/in/json-0007.json"
       },
@@ -750,8 +750,8 @@
       "@type": "File",
       "name": "Expected graph for json-0008",
       "encodingFormat": "text/turtle",
-      "contentSize": "2886",
-      "sha256": "d42597a35178fac50d17075cbf79582f4e6b72d6e6badb7e89e110be0d91b4ba",
+      "contentSize": "3001",
+      "sha256": "80cac63f41bbaa8afbde86ea2e028323e3a644371f55d2a4fe499c1c152aff27",
       "isBasedOn": {
         "@id": "fixtures/in/json-0008.json"
       },
@@ -789,8 +789,8 @@
       "@type": "File",
       "name": "Expected graph for json-0009",
       "encodingFormat": "text/turtle",
-      "contentSize": "3002",
-      "sha256": "174337f3b906a863c7fe59cb323d388d9d3ae860a97d98f6f21c55053d5135d4",
+      "contentSize": "3117",
+      "sha256": "b7e72053287a329d9c31341c89855c4136dc999172216814433760b1eeae07ad",
       "isBasedOn": {
         "@id": "fixtures/in/json-0009.json"
       },

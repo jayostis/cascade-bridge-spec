@@ -43,12 +43,19 @@
   cascade:serverBaseUrl "https://records.example.org/api" ;
   pav:retrievedFrom <https://records.example.org/api/ExampleRecordSet> ;
   pav:retrievedOn "2026-08-30T22:14:00Z"^^xsd:dateTime ;
-  prov:qualifiedAttribution
-    [ prov:agent [ rdfs:label "Example Records Registry" ] ; prov:hadRole cascade:AuthorRole ] ,
-    [ prov:agent [ rdfs:label "Example Fetcher" ] ; prov:hadRole cascade:TransmitterRole ] ;
+  prov:wasGeneratedBy _:writing ;
+  prov:wasAttributedTo _:registry ;
   cascade:authenticatedPatient "Patient/example-patient" ;
   cascade:authenticatedAsProxy false ;
   cascade:sourceFormatVersion "1" .
+
+_:writing prov:qualifiedAssociation
+  [ prov:agent _:registry ; prov:hadRole cascade:AuthorRole ] ,
+  [ prov:agent _:fetcher ; prov:hadRole cascade:TransmitterRole ] .
+
+_:registry rdfs:label "Example Records Registry" .
+
+_:fetcher rdfs:label "Example Fetcher" .
 
 _:import
   a prov:Activity ;
