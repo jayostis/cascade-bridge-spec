@@ -10,6 +10,7 @@
 
 <> a owl:Ontology ;
   sh:declare [ sh:prefix "prov" ;   sh:namespace "http://www.w3.org/ns/prov#"^^xsd:anyURI ] ;
+  sh:declare [ sh:prefix "cascade" ; sh:namespace "https://ns.cascadeprotocol.org/cascade#"^^xsd:anyURI ] ;
   sh:declare [ sh:prefix "bridge" ; sh:namespace "https://ns.cascadeprotocol.org/bridge/v1-draft#"^^xsd:anyURI ] .
 
 <#Subject> a sh:NodeShape ;
@@ -20,12 +21,18 @@
   ] ;
   sh:sparql [
     sh:prefixes <> ;
-    sh:message "Facts are stated of bridge:thisDocument, bridge:thisImport and the attributions and agents the document names, and of nothing else: {$this} is none of them." ;
+    sh:message "Facts are stated of bridge:thisDocument, bridge:thisImport, the document's generating act, its associations, the agents they name and the agents the document is attributed to, and of nothing else: {$this} is none of them." ;
     sh:select """
       SELECT $this WHERE {
         FILTER ($this NOT IN (bridge:thisDocument, bridge:thisImport))
-        FILTER NOT EXISTS { bridge:thisDocument prov:qualifiedAttribution $this }
-        FILTER NOT EXISTS { bridge:thisDocument prov:qualifiedAttribution/prov:agent $this }
+        FILTER NOT EXISTS {
+          bridge:thisDocument (
+            prov:wasAttributedTo
+            | prov:wasGeneratedBy
+            | prov:wasGeneratedBy/prov:qualifiedAssociation
+            | prov:wasGeneratedBy/prov:qualifiedAssociation/prov:agent
+          ) $this
+        }
       }
     """
   ] .
@@ -33,7 +40,7 @@
 <#Document> a sh:NodeShape ;
   sh:targetNode bridge:thisDocument ;
   sh:closed true ;
-  sh:message "The document is supplied cascade:serverBaseUrl, pav:retrievedFrom, pav:retrievedOn, prov:qualifiedAttribution, cascade:authenticatedPatient, cascade:authenticatedAsProxy and cascade:sourceFormatVersion, and nothing else: what a Bridge computes, bridge:sha256 among it, is never supplied." ;
+  sh:message "The document is supplied cascade:serverBaseUrl, pav:retrievedFrom, pav:retrievedOn, prov:wasGeneratedBy, prov:wasAttributedTo, cascade:authenticatedPatient, cascade:authenticatedAsProxy, cascade:sourceFormatVersion, cascade:answeredAsOf, cascade:answersForRecordClass and cascade:refusedForRecordClass, and nothing else: what a Bridge computes, bridge:sha256 among it, is never supplied, and a role is stated on an association of the generating act, never on a prov:qualifiedAttribution." ;
   sh:property [
     sh:path cascade:serverBaseUrl ;
     sh:maxCount 1 ;
@@ -52,10 +59,43 @@
     sh:datatype xsd:dateTime ;
     sh:message "The document carries at most one pav:retrievedOn, an xsd:dateTime."
   ] ;
+  sh:sparql [
+    sh:prefixes <> ;
+    sh:message "The document is attributed to an agent that is no author or custodian of its generating act: {$value} is none." ;
+    sh:select """
+      SELECT $this ?value WHERE {
+        $this prov:wasAttributedTo ?value .
+        FILTER NOT EXISTS {
+          $this prov:wasGeneratedBy/prov:qualifiedAssociation ?association .
+          ?association prov:agent ?value ; prov:hadRole ?role .
+          FILTER (?role IN (cascade:AuthorRole, cascade:CustodianRole))
+        }
+      }
+    """
+  ] ;
+  sh:sparql [
+    sh:prefixes <> ;
+    sh:message "The author or custodian {$value} is not attributed: the document's prov:wasAttributedTo names each." ;
+    sh:select """
+      SELECT $this ?value WHERE {
+        $this prov:wasGeneratedBy/prov:qualifiedAssociation ?association .
+        ?association prov:agent ?value ; prov:hadRole ?role .
+        FILTER (?role IN (cascade:AuthorRole, cascade:CustodianRole))
+        FILTER NOT EXISTS { $this prov:wasAttributedTo ?value }
+      }
+    """
+  ] ;
   sh:property [
-    sh:path prov:qualifiedAttribution ;
-    sh:node <#Attribution> ;
-    sh:message "Each prov:qualifiedAttribution of the document names one prov:agent, carrying one rdfs:label, and one prov:hadRole by IRI."
+    sh:path prov:wasGeneratedBy ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:BlankNode ;
+    sh:node <#Act> ;
+    sh:message "The document names at most one prov:wasGeneratedBy, a blank node, and the act is stated as a generating act is."
+  ] ;
+  sh:property [
+    sh:path prov:wasAttributedTo ;
+    sh:node <#Agent> ;
+    sh:message "Each prov:wasAttributedTo of the document names an agent carrying exactly one rdfs:label and nothing else."
   ] ;
   sh:property [
     sh:path cascade:authenticatedPatient ;
@@ -70,28 +110,54 @@
     sh:message "The document carries at most one cascade:authenticatedAsProxy, an xsd:boolean."
   ] ;
   sh:property [
+    sh:path cascade:answeredAsOf ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:dateTime ;
+    sh:message "The document carries at most one cascade:answeredAsOf, an xsd:dateTime."
+  ] ;
+  sh:property [
+    sh:path cascade:answersForRecordClass ;
+    sh:nodeKind sh:IRI ;
+    sh:message "Each cascade:answersForRecordClass of the document names a class of record, by IRI."
+  ] ;
+  sh:property [
+    sh:path cascade:refusedForRecordClass ;
+    sh:nodeKind sh:IRI ;
+    sh:message "Each cascade:refusedForRecordClass of the document names a class of record, by IRI."
+  ] ;
+  sh:property [
     sh:path cascade:sourceFormatVersion ;
     sh:maxCount 1 ;
     sh:datatype xsd:string ;
     sh:message "The document carries at most one cascade:sourceFormatVersion, a plain string."
   ] .
 
-<#Attribution> a sh:NodeShape ;
+<#Act> a sh:NodeShape ;
   sh:closed true ;
-  sh:message "An attribution carries prov:agent and prov:hadRole, and nothing else." ;
+  sh:message "A generating act carries prov:qualifiedAssociation, and nothing else." ;
+  sh:property [
+    sh:path prov:qualifiedAssociation ;
+    sh:minCount 1 ;
+    sh:node <#Association> ;
+    sh:message "The generating act carries at least one prov:qualifiedAssociation, and each names one prov:agent, carrying one rdfs:label, and one prov:hadRole by IRI."
+  ] .
+
+<#Association> a sh:NodeShape ;
+  sh:closed true ;
+  sh:message "An association carries prov:agent and prov:hadRole, and nothing else." ;
   sh:property [
     sh:path prov:agent ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:node <#Agent> ;
-    sh:message "An attribution names exactly one prov:agent, carrying exactly one rdfs:label and nothing else."
+    sh:message "An association names exactly one prov:agent, carrying exactly one rdfs:label and nothing else."
   ] ;
   sh:property [
     sh:path prov:hadRole ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:nodeKind sh:IRI ;
-    sh:message "An attribution names exactly one prov:hadRole, by IRI."
+    sh:message "An association names exactly one prov:hadRole, by IRI."
   ] .
 
 <#Agent> a sh:NodeShape ;

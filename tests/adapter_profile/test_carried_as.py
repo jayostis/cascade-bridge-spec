@@ -44,7 +44,7 @@ ex:Quantity a owl:Class .
 ex:Run a owl:Class ; rdfs:subClassOf prov:Activity .
 prov:Entity a owl:Class .
 prov:Activity a owl:Class .
-prov:Attribution a owl:Class .
+prov:AgentInfluence a owl:Class .
 
 ex:ProblemShape a sh:NodeShape ; sh:targetClass ex:Problem .
 ex:ResultShape a sh:NodeShape ; sh:targetClass ex:Result .
@@ -57,9 +57,8 @@ ex:measured a owl:ObjectProperty ; rdfs:domain ex:Result ; rdfs:range ex:Quantit
 ex:unit a owl:DatatypeProperty ; rdfs:domain ex:Quantity .
 prov:wasGeneratedBy a owl:ObjectProperty ; rdfs:domain prov:Entity ; rdfs:range prov:Activity .
 prov:used a owl:ObjectProperty ; rdfs:domain prov:Activity ; rdfs:range prov:Entity .
-prov:qualifiedAttribution a owl:ObjectProperty ; rdfs:domain prov:Entity ; rdfs:range prov:Attribution .
-prov:agent a owl:ObjectProperty ; rdfs:domain prov:Attribution .
-prov:Association a owl:Class .
+prov:agent a owl:ObjectProperty ; rdfs:domain prov:AgentInfluence .
+prov:Association a owl:Class ; rdfs:subClassOf prov:AgentInfluence .
 ex:Plan a owl:Class ; rdfs:subClassOf prov:Entity .
 prov:qualifiedAssociation a owl:ObjectProperty ; rdfs:domain prov:Activity ; rdfs:range prov:Association .
 prov:hadPlan a owl:ObjectProperty ; rdfs:domain prov:Association ; rdfs:range ex:Plan .
@@ -222,7 +221,8 @@ def test_reports_a_vocabulary_file_missing_from_the_checkout(beside):
         ("ex:problemName", "ex:Problem", False),
         ("ex:unit", "ex:Result", False),
         ("prov:used", "ex:Problem", True),
-        ("prov:agent", "ex:Problem", False),
+        ("prov:agent", "ex:Problem", True),
+        ("prov:agent", "ex:Run", False),
         ("prov:wasGeneratedBy", "ex:Problem", False),
         ("prov:hadPlan", "ex:Run", False),
         ("prov:wasGeneratedBy", "ex:Run", True),
