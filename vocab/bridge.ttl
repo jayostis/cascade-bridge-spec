@@ -430,7 +430,7 @@ prov:startedAtTime a owl:DatatypeProperty ;
 prov:qualifiedAssociation a owl:ObjectProperty ;
   rdfs:isDefinedBy <http://www.w3.org/ns/prov-o#> .
 
-prov:qualifiedAttribution a owl:ObjectProperty ;
+prov:wasAttributedTo a owl:ObjectProperty ;
   rdfs:isDefinedBy <http://www.w3.org/ns/prov-o#> .
 
 prov:agent a owl:ObjectProperty ;
