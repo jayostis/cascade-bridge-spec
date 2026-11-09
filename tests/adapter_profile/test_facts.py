@@ -91,3 +91,32 @@ def test_reports_a_fact_stated_of_a_subject_that_is_neither_the_document_the_imp
         FACTS, "bridge:thisImport\n", '<https://example.org/elsewhere> rdfs:label "a stray" .\n\nbridge:thisImport\n'
     )
     assert "https://example.org/elsewhere is none of them" in said(package.crate)
+
+
+def test_reports_a_document_attributed_to_an_agent_that_is_only_a_transmitter(package):
+    package.edit(FACTS, "prov:wasAttributedTo _:registry ;", "prov:wasAttributedTo _:registry, _:fetcher ;")
+    assert "is no author or custodian" in said(package.crate)
+
+
+def test_reports_an_author_the_document_is_not_attributed_to(package):
+    package.edit(FACTS, "  prov:wasAttributedTo _:registry ;\n", "")
+    assert "is not attributed" in said(package.crate)
+
+
+def test_reports_a_document_attributed_to_an_agent_no_association_names(package):
+    package.edit(
+        FACTS, "prov:wasAttributedTo _:registry ;", 'prov:wasAttributedTo _:registry, [ rdfs:label "Stray" ] ;'
+    )
+    assert "is no author or custodian" in said(package.crate)
+
+
+def test_reports_a_generating_act_with_no_association(package):
+    package.write(
+        FACTS,
+        """@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+@prefix prov:   <http://www.w3.org/ns/prov#> .
+
+bridge:thisDocument prov:wasGeneratedBy [] .
+""",
+    )
+    assert "at least one prov:qualifiedAssociation" in said(package.crate)

@@ -10,6 +10,7 @@
 
 <> a owl:Ontology ;
   sh:declare [ sh:prefix "prov" ;   sh:namespace "http://www.w3.org/ns/prov#"^^xsd:anyURI ] ;
+  sh:declare [ sh:prefix "cascade" ; sh:namespace "https://ns.cascadeprotocol.org/cascade#"^^xsd:anyURI ] ;
   sh:declare [ sh:prefix "bridge" ; sh:namespace "https://ns.cascadeprotocol.org/bridge/v1-draft#"^^xsd:anyURI ] .
 
 <#Subject> a sh:NodeShape ;
@@ -58,6 +59,32 @@
     sh:datatype xsd:dateTime ;
     sh:message "The document carries at most one pav:retrievedOn, an xsd:dateTime."
   ] ;
+  sh:sparql [
+    sh:prefixes <> ;
+    sh:message "The document is attributed to an agent that is no author or custodian of its generating act: {$value} is none." ;
+    sh:select """
+      SELECT $this ?value WHERE {
+        $this prov:wasAttributedTo ?value .
+        FILTER NOT EXISTS {
+          $this prov:wasGeneratedBy/prov:qualifiedAssociation ?association .
+          ?association prov:agent ?value ; prov:hadRole ?role .
+          FILTER (?role IN (cascade:AuthorRole, cascade:CustodianRole))
+        }
+      }
+    """
+  ] ;
+  sh:sparql [
+    sh:prefixes <> ;
+    sh:message "The author or custodian {$value} is not attributed: the document's prov:wasAttributedTo names each." ;
+    sh:select """
+      SELECT $this ?value WHERE {
+        $this prov:wasGeneratedBy/prov:qualifiedAssociation ?association .
+        ?association prov:agent ?value ; prov:hadRole ?role .
+        FILTER (?role IN (cascade:AuthorRole, cascade:CustodianRole))
+        FILTER NOT EXISTS { $this prov:wasAttributedTo ?value }
+      }
+    """
+  ] ;
   sh:property [
     sh:path prov:wasGeneratedBy ;
     sh:maxCount 1 ;
@@ -94,8 +121,9 @@
   sh:message "A generating act carries prov:qualifiedAssociation, and nothing else." ;
   sh:property [
     sh:path prov:qualifiedAssociation ;
+    sh:minCount 1 ;
     sh:node <#Association> ;
-    sh:message "Each prov:qualifiedAssociation of the generating act names one prov:agent, carrying one rdfs:label, and one prov:hadRole by IRI."
+    sh:message "The generating act carries at least one prov:qualifiedAssociation, and each names one prov:agent, carrying one rdfs:label, and one prov:hadRole by IRI."
   ] .
 
 <#Association> a sh:NodeShape ;

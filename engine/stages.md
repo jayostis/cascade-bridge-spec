@@ -114,8 +114,8 @@ version named, and:
   each step written in its namespace and counted among its same-name siblings
   as [`sparql.md`](sparql.md) writes a selector.
 
-A mapping may also write, of the document's name, `prov:wasGeneratedBy` an act
-whose `prov:qualifiedAssociation` names one `prov:agent` and one `prov:hadRole`,
+A mapping may also write, of the document's name, `prov:wasGeneratedBy` an act,
+a blank node with no `rdf:type`, whose `prov:qualifiedAssociation` names one `prov:agent` and one `prov:hadRole`,
 and `prov:wasAttributedTo` for an author or custodian: a C-CDA's or a FHIR document's
 custodian and author organizations, each a record the mapping names, in
 `cascade:CustodianRole` or `cascade:AuthorRole`. A Bridge writes these beside the

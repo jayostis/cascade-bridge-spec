@@ -180,6 +180,8 @@ def without_release(graph):
     for triple in graph:
         copied.add(triple)
     for association in list(copied.objects(None, rdflib.URIRef(PROV + "qualifiedAssociation"))):
+        if (association, rdflib.URIRef(PROV + "hadPlan"), None) not in copied:
+            continue
         for agent in list(copied.objects(association, rdflib.URIRef(PROV + "agent"))):
             copied.remove((agent, None, None))
     return copied
