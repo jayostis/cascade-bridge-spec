@@ -120,3 +120,49 @@ bridge:thisDocument prov:wasGeneratedBy [] .
 """,
     )
     assert "at least one prov:qualifiedAssociation" in said(package.crate)
+
+
+SCOPED = """@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix pav:    <http://purl.org/pav/> .
+@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+@prefix cascade: <https://ns.cascadeprotocol.org/cascade#> .
+
+bridge:thisDocument
+  cascade:serverBaseUrl "https://fhir.example.org/r4" ;
+  pav:retrievedOn "2026-09-01T10:00:00Z"^^xsd:dateTime ;
+  %s .
+"""
+
+
+def test_reports_nothing_for_the_scope_a_pull_states_of_its_document(package):
+    package.write(
+        FACTS,
+        SCOPED
+        % """cascade:answeredAsOf "2026-08-31T00:00:00Z"^^xsd:dateTime ;
+  cascade:answersForRecordClass cascade:Condition, cascade:Observation ;
+  cascade:refusedForRecordClass cascade:Procedure""",
+    )
+    assert not said(package.crate)
+
+
+def test_reports_a_document_that_answered_as_of_two_instants(package):
+    package.write(
+        FACTS,
+        SCOPED % 'cascade:answeredAsOf "2026-08-31T00:00:00Z"^^xsd:dateTime, "2026-08-30T00:00:00Z"^^xsd:dateTime',
+    )
+    assert "at most one cascade:answeredAsOf" in said(package.crate)
+
+
+def test_reports_a_document_that_answered_as_of_a_string(package):
+    package.write(FACTS, SCOPED % 'cascade:answeredAsOf "yesterday"')
+    assert "cascade:answeredAsOf, an xsd:dateTime" in said(package.crate)
+
+
+def test_reports_a_record_class_named_by_a_literal(package):
+    package.write(FACTS, SCOPED % 'cascade:answersForRecordClass "Condition"')
+    assert "Each cascade:answersForRecordClass of the document names a class of record, by IRI" in said(package.crate)
+
+
+def test_reports_a_refused_record_class_named_by_a_literal(package):
+    package.write(FACTS, SCOPED % 'cascade:refusedForRecordClass "Procedure"')
+    assert "Each cascade:refusedForRecordClass of the document names a class of record, by IRI" in said(package.crate)

@@ -40,7 +40,7 @@
 <#Document> a sh:NodeShape ;
   sh:targetNode bridge:thisDocument ;
   sh:closed true ;
-  sh:message "The document is supplied cascade:serverBaseUrl, pav:retrievedFrom, pav:retrievedOn, prov:wasGeneratedBy, prov:wasAttributedTo, cascade:authenticatedPatient, cascade:authenticatedAsProxy and cascade:sourceFormatVersion, and nothing else: what a Bridge computes, bridge:sha256 among it, is never supplied, and a role is stated on an association of the generating act, never on a prov:qualifiedAttribution." ;
+  sh:message "The document is supplied cascade:serverBaseUrl, pav:retrievedFrom, pav:retrievedOn, prov:wasGeneratedBy, prov:wasAttributedTo, cascade:authenticatedPatient, cascade:authenticatedAsProxy, cascade:sourceFormatVersion, cascade:answeredAsOf, cascade:answersForRecordClass and cascade:refusedForRecordClass, and nothing else: what a Bridge computes, bridge:sha256 among it, is never supplied, and a role is stated on an association of the generating act, never on a prov:qualifiedAttribution." ;
   sh:property [
     sh:path cascade:serverBaseUrl ;
     sh:maxCount 1 ;
@@ -108,6 +108,22 @@
     sh:maxCount 1 ;
     sh:datatype xsd:boolean ;
     sh:message "The document carries at most one cascade:authenticatedAsProxy, an xsd:boolean."
+  ] ;
+  sh:property [
+    sh:path cascade:answeredAsOf ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:dateTime ;
+    sh:message "The document carries at most one cascade:answeredAsOf, an xsd:dateTime."
+  ] ;
+  sh:property [
+    sh:path cascade:answersForRecordClass ;
+    sh:nodeKind sh:IRI ;
+    sh:message "Each cascade:answersForRecordClass of the document names a class of record, by IRI."
+  ] ;
+  sh:property [
+    sh:path cascade:refusedForRecordClass ;
+    sh:nodeKind sh:IRI ;
+    sh:message "Each cascade:refusedForRecordClass of the document names a class of record, by IRI."
   ] ;
   sh:property [
     sh:path cascade:sourceFormatVersion ;
