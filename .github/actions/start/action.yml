@@ -111,6 +111,17 @@ runs:
         echo "${repository} ${branch} is $(git -C "${bootstrap}" rev-parse HEAD), at ${bootstrap}"
         echo "entry-point=${bootstrap}/scripts/compatibility.py" >> "$GITHUB_OUTPUT"
 
+    # An upload refuses a name another leg has taken: matrix legs share
+    # github.job, and one job may start both checks.
+    - name: name the results for this leg
+      id: artifact
+      if: always()
+      shell: bash
+      env:
+        JOB: ${{ github.job }}
+        CHECK: ${{ inputs.check }}
+      run: echo "name=${CHECK}-${JOB}-${RANDOM}${RANDOM}" >> "$GITHUB_OUTPUT"
+
     - name: run the check
       shell: bash
       env:
@@ -172,17 +183,6 @@ runs:
         fi
         "${GH}" api "${API}/repos/${REPOSITORY}/issues/${NUMBER}/comments" --silent -F "body=@${TABLE}" \
           || echo "::warning::no comment was posted on ${REPOSITORY}#${NUMBER}"
-
-    # An upload refuses a name another leg has taken: matrix legs share
-    # github.job, and one job may start both checks.
-    - name: name the results for this leg
-      id: artifact
-      if: always()
-      shell: bash
-      env:
-        JOB: ${{ github.job }}
-        CHECK: ${{ inputs.check }}
-      run: echo "name=${CHECK}-${JOB}-${RANDOM}${RANDOM}" >> "$GITHUB_OUTPUT"
 
     - name: keep the record and the EARL reports
       if: always()
