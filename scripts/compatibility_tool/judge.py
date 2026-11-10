@@ -195,12 +195,16 @@ def table(record):
     return "\n".join(lines) + "\n"
 
 
+def append_to_summary(text):
+    summary = os.environ.get("GITHUB_STEP_SUMMARY")
+    if summary:
+        with Path(summary).open("a", encoding="utf-8") as handle:
+            handle.write(text + "\n")
+
+
 def write_table(record, options):
     if options.mode != "ci":
         return
     written = table(record)
     (options.results / "table.md").write_text(written, encoding="utf-8")
-    summary = os.environ.get("GITHUB_STEP_SUMMARY")
-    if summary:
-        with Path(summary).open("a", encoding="utf-8") as handle:
-            handle.write(written + "\n")
+    append_to_summary(written)
