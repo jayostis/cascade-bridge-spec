@@ -213,12 +213,12 @@ class TestPullRequestsNamedInTheRepositoryUnderTest:
             assert "jayostis/engine/pull/2 is from a-fork-owner/engine" in said
             assert not (engine / "TWO").exists()
 
-    class TestGivenAPullRequestHereReachedOnlyThroughAnotherRepository:
+    class TestGivenAPullRequestOfTheEngineReachedOnlyThroughAnotherRepository:
         @pytest.mark.parametrize("state", ["open", "closed"], ids=["while open", "once closed"])
         def test_is_not_merged_in(self, world, state):
             """is not merged in
 
-            Two pull requests here that follow one vocabulary pull request are not bundled by it: each names the other.
+            Two pull requests of this engine that follow one vocabulary pull request are not bundled by it: each names the other.
             """
             world.pull_request("engine", 2, fill=writing("TWO"), state=state)
             world.pull_request("adapter", 7, body=depends_on("engine", 1) + depends_on("engine", 2))
@@ -311,7 +311,7 @@ class TestPullRequestsARunCannotRead:
             assert "adapter/pull/404 could not be read" in said
 
     class TestGivenASpentRateLimit:
-        def test_says_so_rather_than_reading_like_a_wrong_pull_request_number(self, world):
+        def test_says_the_pull_request_could_not_be_read_naming_the_rate_limit(self, world):
             world.pull_requests.refuse("adapter", 7, 403, {"x-ratelimit-remaining": "0"})
             engine, event = world.engine_under_test(body=depends_on("adapter", 7))
 
@@ -323,7 +323,7 @@ class TestPullRequestsARunCannotRead:
     class TestGivenAnErrorOfGitHubsOwn:
         """given an error of GitHub's own"""
 
-        def test_says_so_rather_than_reading_like_a_wrong_pull_request_number(self, world):
+        def test_says_the_pull_request_could_not_be_read_naming_a_server_error(self, world):
             world.pull_requests.refuse("adapter", 7, 502)
             engine, event = world.engine_under_test(body=depends_on("adapter", 7))
 

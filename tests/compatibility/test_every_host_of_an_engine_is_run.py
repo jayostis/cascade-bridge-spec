@@ -273,21 +273,23 @@ class TestRunningAnEnginesHostFromItsRelease:
             assert said.count("  release ") == 2
             assert [entry["holds"] for entry in entries(world)] == [True, True]
 
-    class TestGivenAReleaseThatDoesNotServe:
+    class TestGivenAReleaseWhoseDigestTheNotesDoNotGive:
+        def test_builds_the_host_by_its_setup(self, world, monkeypatch, tmp_path):
+            adapter = released_engine(world, monkeypatch, tmp_path, vouched=False)
+
+            said = world.tool(adapter, 1, **world.ci(repository="adapter"))
+
+            assert f"  setup {sys.executable} -c raise SystemExit(1)" in said
+
+    class TestGivenAReleaseThatExistsButNotForThePullRequestsHead:
         @pytest.mark.parametrize(
-            "vouched,merging",
-            [(False, None), (True, code), (True, a_setup)],
-            ids=[
-                "a digest the notes do not give",
-                "a pull request changing code",
-                "a pull request changing only a setup in compatibility.json",
-            ],
+            "merging",
+            [code, a_setup],
+            ids=["a pull request changing code", "a pull request changing only a setup in compatibility.json"],
         )
-        def test_builds_the_host_by_its_setup(self, world, monkeypatch, tmp_path, vouched, merging):
-            adapter = released_engine(world, monkeypatch, tmp_path, vouched=vouched)
-            variables = (
-                named_engine_pull_request(world, adapter, merging) if merging else world.ci(repository="adapter")
-            )
+        def test_builds_the_host_by_its_setup(self, world, monkeypatch, tmp_path, merging):
+            adapter = released_engine(world, monkeypatch, tmp_path)
+            variables = named_engine_pull_request(world, adapter, merging)
 
             said = world.tool(adapter, 1, **variables)
 
@@ -297,10 +299,10 @@ class TestRunningAnEnginesHostFromItsRelease:
         @pytest.mark.parametrize(
             "node_path", [".", "", "dist/.."], ids=["a dot", "an empty path", "a path that returns to its folder"]
         )
-        def test_builds_the_host_by_its_setup_leaving_the_engine_in_place(
+        def test_builds_the_host_by_its_setup_saying_the_path_is_no_path_in_the_release(
             self, world, monkeypatch, tmp_path, node_path
         ):
-            """builds the host by its setup, leaving the engine in place"""
+            """builds the host by its setup, saying the path is no path in the release, and holds one host"""
             adapter = released_engine(world, monkeypatch, tmp_path, node_path=node_path)
 
             said = world.tool(adapter, 1, **world.ci(repository="adapter"))
@@ -372,25 +374,30 @@ class TestRunningAnEnginesHostFromItsRelease:
             assert f"of build-{head_of(world, 2)}" in said
 
     class TestGivenAPullRequestBehindItsBase:
-        @pytest.mark.parametrize(
-            "arrangement,told,status",
-            [(behind, True, 1), (contained, False, 0), (two_on_one_engine, False, 1)],
-            ids=[
-                "a pull request behind its base",
-                "a pull request already in its base",
-                "two pull requests on one engine",
-            ],
-        )
-        def test_is_the_only_one_told_to_catch_up_with_it(
-            self, world, monkeypatch, tmp_path, arrangement, told, status
-        ):
+        def test_is_the_only_one_told_to_catch_up_with_it(self, world, monkeypatch, tmp_path):
             adapter = released_engine(world, monkeypatch, tmp_path)
-            variables = arrangement(world, adapter)
 
-            said = world.tool(adapter, status, **variables)
+            said = world.tool(adapter, 1, **behind(world, adapter))
 
-            assert ("engine/pull/2 is behind main" in said) is told
-            assert ("(git merge origin/main, then push)" in said) is told
+            assert "engine/pull/2 is behind main" in said
+            assert "(git merge origin/main, then push)" in said
+            assert f"  setup {sys.executable} -c raise SystemExit(1)" in said
+
+    class TestGivenAPullRequestAlreadyInItsBaseOrOneOfTwoOnAnEngine:
+        """given a pull request already in its base, or one of two pull requests on an engine"""
+
+        @pytest.mark.parametrize(
+            "arrangement,status",
+            [(contained, 0), (two_on_one_engine, 1)],
+            ids=["a pull request already in its base", "two pull requests on one engine"],
+        )
+        def test_is_told_nothing_of_catching_up(self, world, monkeypatch, tmp_path, arrangement, status):
+            adapter = released_engine(world, monkeypatch, tmp_path)
+
+            said = world.tool(adapter, status, **arrangement(world, adapter))
+
+            assert "engine/pull/2 is behind main" not in said
+            assert "(git merge origin/main, then push)" not in said
             assert (f"  setup {sys.executable} -c raise SystemExit(1)" in said) is (status == 1)
 
     class TestGivenAReleaseBeingPublished:
@@ -463,8 +470,8 @@ class TestRunningAnEnginesHostFromItsRelease:
             assert f"  setup {sys.executable} -c raise SystemExit(1)" in said
 
     class TestGivenAReleaseThatNeverAppears:
-        def test_is_given_six_minutes_each_request_short_of_them_then_built(self, world, monkeypatch, tmp_path):
-            """is given six minutes, each request short of them, then built"""
+        def test_is_given_six_minutes_each_request_to_github_cut_short_then_built(self, world, monkeypatch, tmp_path):
+            """is given six minutes, each request to GitHub cut short at its time limit, then built"""
             adapter = released_engine(world, monkeypatch, tmp_path)
             _, _, commit = withheld_release(world)
             run = world.pull_requests.run("engine", commit)

@@ -145,8 +145,8 @@ class TestPickingTheVersionOfEachRepositoryARunUses:
             assert world.record()["repositories"]["adapter"]["how"] == "pull request #7 merged into main"
 
     class TestGivenAPushRun:
-        def test_uses_the_branch_it_runs_on_reading_no_description(self, world):
-            """uses the branch it runs on, reading no description"""
+        def test_uses_the_branch_it_runs_on_and_records_how_it_picked_it(self, world):
+            """uses the branch it runs on and records how it picked it"""
             engine = world.engine([world.url("adapter")])
 
             world.tool(engine, **world.ci())

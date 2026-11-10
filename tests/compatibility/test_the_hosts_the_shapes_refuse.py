@@ -20,13 +20,15 @@ class TestWhatARepositorysCompatibilityJsonMaySay:
     class TestGivenAnEnginesHosts:
         """given an engine's hosts"""
 
-        def test_violates_the_shapes_with_a_setup_and_command_outside_a_host_naming_the_host(self, tmp_path):
-            """violates the shapes with a setup and command outside a host, naming the host"""
+        def test_violates_the_shapes_with_a_setup_and_command_outside_a_host_saying_they_belong_to_a_host(
+            self, tmp_path
+        ):
+            """violates the shapes with a setup and command outside a host, saying they belong to a host"""
             host = a_host()
             found = violations(tmp_path, setup=host["setup"], command=host["command"])
-            assert any("host" in message for message in found), found
+            assert any("belong to a host" in message for message in found), found
 
-        def test_violates_the_shapes_with_two_hosts_of_one_name_naming_the_name(self, tmp_path):
-            """violates the shapes with two hosts of one name, naming the name"""
+        def test_violates_the_shapes_with_two_hosts_of_one_name_naming_that_name(self, tmp_path):
+            """violates the shapes with two hosts of one name, naming that name"""
             found = violations(tmp_path, host=[a_host("native"), a_host("native", canned="failed")])
-            assert any("host" in message and "name" in message for message in found), found
+            assert any("native" in message and "name" in message for message in found), found

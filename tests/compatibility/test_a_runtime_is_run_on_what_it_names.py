@@ -122,8 +122,10 @@ class TestRunningARuntimeOnTheRepositoriesItNames:
             assert read[f"{OWNER}/runtime/pull/1"]["body"] == body
 
     class TestGivenAVocabularyUnderTest:
-        def test_is_handed_in_for_the_vocabulary_of_each_runtime_it_names_each_picked_by_a_depends_on_line(self, world):
-            """is handed in for the vocabulary of each runtime it names, each picked by a `Depends-On:` line"""
+        def test_is_handed_the_vocabulary_the_adapter_at_its_commit_and_the_runtime_its_depends_on_line_picks(
+            self, world
+        ):
+            """is handed the vocabulary, the adapter at its commit and the runtime its `Depends-On:` line picks"""
             world.runtime_origin()
             world.pull_request("runtime", 2)
             world.pull_request(VOCABULARY, 1, body=depends_on("runtime", 2, owner=OWNER))

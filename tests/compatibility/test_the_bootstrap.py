@@ -34,7 +34,7 @@ class TestRunningTheChecksFromTheVersionARunPicked:
         def test_runs_the_merge_gate_too(self, world):
             """runs the merge gate too
 
-            A pull request here that changes the gate is tried the same way as one that changes a check.
+            A pull request to this repository that changes the gate is tried the same way as one that changes a check.
             """
             world.pull_request("cascade-bridge-spec", 3)
             engine, event = world.engine_under_test(body=depends_on("cascade-bridge-spec", 3))

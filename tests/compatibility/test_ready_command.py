@@ -32,8 +32,8 @@ class TestTheMergeGate:
     but its own gate.
     """
 
-    class TestGivenCheckReadyToMerge:
-        """given `--check ready-to-merge`"""
+    class TestGivenTheReadyToMergeCheckIsAskedFor:
+        """given the ready-to-merge check is asked for"""
 
         def test_fails_while_a_named_pull_request_is_open_naming_it(self, world):
             """fails while a named pull request is open, naming it"""
@@ -191,7 +191,7 @@ class TestTheMergeGate:
 
             assert "CASCADE_CHECK_RUN_ID" in said
 
-        @pytest.mark.parametrize("conclusion", ["skipped", "neutral"])
+        @pytest.mark.parametrize("conclusion", ["skipped", "neutral"], ids=["a skipped check", "a neutral check"])
         def test_passes_a_cycle_member_whose_check_concluded_as_github_passes_it(self, world, conclusion):
             """passes a cycle member whose check concluded as GitHub passes it"""
             engine, event = adapter_naming_the_engine_back(

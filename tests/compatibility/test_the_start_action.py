@@ -43,8 +43,8 @@ class TestTheReportARunNamesForItsCaller:
     A job that reads the EARL report a run wrote reads the start action's `report` output, never a path it assumes.
     """
 
-    class TestReport:
-        """`report`"""
+    class TestWhenTheStartActionNamesTheReportItWrote:
+        """when the start action names the report it wrote"""
 
         @pytest.mark.parametrize(
             ("written", "named"),

@@ -212,6 +212,48 @@ ACTING = {
 }
 
 
+def acted_as_listed(case, calls, exit_code, said, capsys):
+    api, event, workflows = case
+
+    assert rerun_when_edited(event, workflows, "o/r", api, sleep=lambda seconds: None) == exit_code
+
+    assert api.calls == calls
+    assert said in capsys.readouterr().out
+
+
+def rows(*names):
+    return {name: ACTING[name] for name in names}
+
+
+NO_RUN = rows("no run yet", "a run of another pull request on the same head")
+LATEST_RUN = rows(
+    "a completed run",
+    "a run queued",
+    "a run in progress",
+    "a run pending behind a concurrency group",
+    "a run waiting",
+    "a run requested",
+    "a run awaiting approval",
+    "a retarget",
+)
+NOT_OBEYED = rows(
+    "a cancel answered 409 by a run that had finished",
+    "a re-run another edit made first",
+    "a re-run refused at the limit",
+    "a re-run refused for no reason found",
+    "a run that ignores cancel and force-cancel",
+    "a run that stops only on force-cancel",
+)
+HEAD_MOVES = rows(
+    "a head that moved before",
+    "a head that moved during",
+    "a head that moved after the re-run, whose newer run is still going",
+    "a head that moved while the stale run was stopping",
+)
+CANNOT_RERUN = rows("a read the API refused", "a fork, whose token cannot re-run", "a file name that is no workflow")
+assert len({*NO_RUN, *LATEST_RUN, *NOT_OBEYED, *HEAD_MOVES, *CANNOT_RERUN}) == len(ACTING)
+
+
 class TestReRunningACheckWhenADescriptionIsEdited:
     """Re-running a check when a description is edited · .github/actions/rerun-when-edited
 
@@ -224,23 +266,52 @@ class TestReRunningACheckWhenADescriptionIsEdited:
         def test_reruns_only_when_it_changed_what_a_run_reads(self, event, expected):
             assert decide(event) == expected
 
+    class TestGivenNoRunOfTheWorkflowForThePullRequestOnItsHead:
+        """given no run of the workflow for the pull request on its head"""
+
+        @pytest.mark.parametrize(("case", "calls", "exit_code", "said"), NO_RUN.values(), ids=NO_RUN)
+        def test_calls_nothing_and_says_there_is_no_run(self, case, calls, exit_code, said, capsys):
+            """calls nothing, exits 0 and says there is no run"""
+            acted_as_listed(case, calls, exit_code, said, capsys)
+
     class TestGivenTheLatestRunOfAWorkflowOnThePullRequestsHead:
         """given the latest run of a workflow on the pull request's head"""
 
-        @pytest.mark.parametrize(("case", "calls", "exit_code", "said"), ACTING.values(), ids=ACTING)
-        def test_makes_the_calls_its_row_lists_exiting_and_saying_as_the_row_lists(
+        @pytest.mark.parametrize(("case", "calls", "exit_code", "said"), LATEST_RUN.values(), ids=LATEST_RUN)
+        def test_cancels_a_run_that_has_not_finished_and_re_runs_it_unless_it_awaits_approval(
             self, case, calls, exit_code, said, capsys
         ):
-            """makes the calls listed for its case, exiting and saying what is listed for it"""
-            api, event, workflows = case
+            """cancels a run that has not finished, re-runs it unless it awaits approval, and says what it did"""
+            acted_as_listed(case, calls, exit_code, said, capsys)
 
-            assert rerun_when_edited(event, workflows, "o/r", api, sleep=lambda seconds: None) == exit_code
+    class TestGivenARunThatIsNotStoppedOrRestartedWhenAsked:
+        """given a run that is not stopped or restarted when asked"""
 
-            assert api.calls == calls
-            assert said in capsys.readouterr().out
+        @pytest.mark.parametrize(("case", "calls", "exit_code", "said"), NOT_OBEYED.values(), ids=NOT_OBEYED)
+        def test_makes_the_calls_listed_for_the_refusal_and_exits_as_listed(self, case, calls, exit_code, said, capsys):
+            """makes the calls listed for the refusal, exits as listed for it and says what to do"""
+            acted_as_listed(case, calls, exit_code, said, capsys)
+
+    class TestGivenTheHeadMovesWhileTheActionWorks:
+        """given the pull request's head moves while the action works"""
+
+        @pytest.mark.parametrize(("case", "calls", "exit_code", "said"), HEAD_MOVES.values(), ids=HEAD_MOVES)
+        def test_makes_the_calls_listed_for_when_it_moved_and_says_what_it_left(
+            self, case, calls, exit_code, said, capsys
+        ):
+            """makes the calls listed for when the head moved, exits 0 and says what it left alone"""
+            acted_as_listed(case, calls, exit_code, said, capsys)
+
+    class TestGivenARequestTheActionCannotAnswerWithARerun:
+        """given a read the API refuses, a pull request from a fork, or a file name that is no workflow"""
+
+        @pytest.mark.parametrize(("case", "calls", "exit_code", "said"), CANNOT_RERUN.values(), ids=CANNOT_RERUN)
+        def test_re_runs_nothing_and_says_what_to_do_instead(self, case, calls, exit_code, said, capsys):
+            """re-runs nothing, exits as listed for the case and says what to do instead"""
+            acted_as_listed(case, calls, exit_code, said, capsys)
 
     class TestGivenADescriptionOfBlankLines:
-        def test_is_read_in_linear_time(self):
+        def test_is_read_in_under_a_second_at_65536_blank_lines(self):
             newlines = "\n" * 65536
             spaces = " " * 65536
             started = time.perf_counter()

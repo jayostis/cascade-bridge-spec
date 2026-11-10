@@ -87,11 +87,11 @@ EVERY_PARSED_REPORT = [
     ),
     pytest.param(
         ("failed", "passed", "passed", "passed", "passed", "passed", "passed", "passed", "passed", "passed"),
-        id="failed",
+        id="a test reported failed",
     ),
     pytest.param(
         ("inapplicable", "passed", "passed", "passed", "passed", "passed", "passed", "passed", "passed", "passed"),
-        id="inapplicable",
+        id="a test reported inapplicable",
     ),
     pytest.param(
         ("passed", "passed", "passed", "passed", "passed", "passed", "passed", "passed", "passed", "sortOf"),
@@ -142,7 +142,9 @@ class TestJudgingAnEARLReport:
             assert verdict.describe() == "1 cantTell, 8 passed, 1 untested, covering all 10 of the manifest's tests"
 
     class TestGivenAReportWithAFailingOutcome:
-        @pytest.mark.parametrize("outcome", ["failed", "inapplicable"])
+        @pytest.mark.parametrize(
+            "outcome", ["failed", "inapplicable"], ids=["reported failed", "reported inapplicable"]
+        )
         def test_does_not_hold(self, tmp_path, outcome):
             report = earl(
                 tmp_path,
@@ -269,8 +271,8 @@ class TestJudgingAnEARLReport:
             assert not verdict.holds
             assert verdict.faults == ["input-only example-0002 is reported passed, not cantTell"]
 
-    class TestGivenEngineFaultsOfAReportRqRunAlone:
-        """given `engine/faults-of-a-report.rq` run alone"""
+    class TestGivenOnlyTheFaultsQueryAskedOfAReport:
+        """given only the query `engine/faults-of-a-report.rq`, asked of a report"""
 
         @pytest.mark.parametrize("outcomes", EVERY_PARSED_REPORT)
         def test_gives_the_faults_the_judge_prints(self, tmp_path, outcomes):
@@ -345,7 +347,9 @@ class TestJudgingAnEARLReport:
     class TestGivenAnInputOnlyEntryReportedFailing:
         """given an input-only entry reported failing"""
 
-        @pytest.mark.parametrize("outcome", ["failed", "inapplicable"])
+        @pytest.mark.parametrize(
+            "outcome", ["failed", "inapplicable"], ids=["reported failed", "reported inapplicable"]
+        )
         def test_is_one_fault(self, tmp_path, outcome):
             report = earl(tmp_path, dict.fromkeys(EVERY_TEST, "passed") | {"example-0002": outcome})
             verdict = judge_report(report, SYNTHETIC_ADAPTER)
@@ -394,7 +398,7 @@ class TestJudgingAnEARLReport:
             ]
 
     class TestGivenAReportOnAManifestOfHundredsOfEntries:
-        def test_is_judged_in_seconds(self, tmp_path):
+        def test_is_judged_in_under_30_seconds(self, tmp_path):
             manifest = manifest_of(tmp_path, HUNDREDS_OF_ENTRIES)
             report = report_from_elsewhere(tmp_path, dict.fromkeys(HUNDREDS_OF_ENTRIES[:-1], "passed"))
             started = time.perf_counter()
@@ -405,7 +409,7 @@ class TestJudgingAnEARLReport:
     class TestGivenAReportOnHundredsOfInputOnlyEntries:
         """given a report on hundreds of input-only entries"""
 
-        def test_is_judged_in_seconds(self, tmp_path):
+        def test_is_judged_in_under_30_seconds(self, tmp_path):
             manifest = manifest_of(tmp_path, HUNDREDS_OF_ENTRIES, input_only=HUNDREDS_OF_ENTRIES)
             outcomes = dict.fromkeys(HUNDREDS_OF_ENTRIES[:-1], "cantTell") | {HUNDREDS_OF_ENTRIES[-1]: "passed"}
             report = report_from_elsewhere(tmp_path, outcomes)

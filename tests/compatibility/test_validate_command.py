@@ -107,7 +107,9 @@ class TestWhatARepositorysCompatibilityJsonMaySay:
         @pytest.mark.parametrize(
             "document, named, says",
             [
-                pytest.param({"mustPassWith": [ADAPTER]}, ADAPTER, "names no mustPassWith", id="mustPassWith"),
+                pytest.param(
+                    {"mustPassWith": [ADAPTER]}, ADAPTER, "names no mustPassWith", id="an adapter named, no runtime"
+                ),
                 pytest.param(
                     {"mustPassWith": None},
                     "https://github.com/jayostis/cascade-bridge-spec",
@@ -135,7 +137,9 @@ class TestWhatARepositorysCompatibilityJsonMaySay:
                 named_repositories(tmp_path)
 
     class TestGivenAVocabularyNamingNoRuntime:
-        @pytest.mark.parametrize("must_pass_with", [None, []], ids=["no mustPassWith", "an empty one"])
+        @pytest.mark.parametrize(
+            "must_pass_with", [None, []], ids=["no list of what it must pass with", "an empty list of it"]
+        )
         def test_is_refused_so_an_adapter_typed_wrongly_is_not_passed(self, tmp_path, must_pass_with):
             """is refused, so an adapter typed wrongly is not passed"""
             (tmp_path / CRATE).write_text('{"@graph": [{"@id": "./", "@type": "Dataset"}]}', encoding="utf-8")

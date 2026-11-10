@@ -32,7 +32,7 @@ class TestTheRunRecordHandedToTheVersionARunPicked:
 
     class TestGivenARunRecord:
         def test_reads_back_as_it_was_saved(self, tmp_path):
-            """is the same when read again as when saved"""
+            """reads back as it was saved"""
             record = Record(tmp_path / "engine", "local", used(tmp_path))
             record.save(tmp_path)
             assert Record.load(tmp_path) == record
@@ -48,10 +48,7 @@ class TestTheRunRecordHandedToTheVersionARunPicked:
 
     class TestGivenARunRecordWrittenByAnOlderTooling:
         def test_reads_back(self, tmp_path):
-            """is read again by the version picked
-
-            The version a caller fetched writes the run record; the version picked reads it.
-            """
+            """reads back, a missing `fromNamedPullRequests` read as false"""
             written = used(tmp_path)[0].to_json()
             del written["fromNamedPullRequests"]
             assert Row.from_json("engine", written).from_named_pull_requests is False
