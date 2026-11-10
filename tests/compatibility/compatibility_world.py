@@ -190,6 +190,27 @@ def engine_document(must_pass_with, canned="passed", host=(), **overrides):
     return {key: value for key, value in document.items() if value is not None}
 
 
+def earl_report(manifest, outcomes):
+    """An EARL report asserting each test of the manifest at this address: its name, and the outcome as EARL writes it."""
+    assertions = "".join(
+        f"[] a earl:Assertion ; earl:test <{manifest}#{test}> ; "
+        f"earl:result [ a earl:TestResult ; earl:outcome {outcome} ] .\n"
+        for test, outcome in outcomes.items()
+    )
+    return "@prefix earl: <http://www.w3.org/ns/earl#> .\n" + assertions
+
+
+def writing(directory, report):
+    """A host's command that writes this report wherever its `--earl` says."""
+    script = directory / "write_report.py"
+    script.write_text(
+        "import pathlib, sys\n"
+        f"pathlib.Path(sys.argv[sys.argv.index('--earl') + 1]).write_text({report!r}, encoding='utf-8')\n",
+        encoding="utf-8",
+    )
+    return [sys.executable, str(script)]
+
+
 class PullRequests:
     """The fields the tooling reads from GitHub, served from memory over HTTP."""
 
@@ -457,6 +478,8 @@ class World:
             "CASCADE_GITHUB_TOKEN",
             "CASCADE_CHECK_RUN_ID",
             "CASCADE_CHECKOUT_ONLY",
+            "CASCADE_REPORT_ARTIFACT",
+            "GITHUB_RUN_ID",
         ):
             environment.pop(name, None)
         environment.update({key: str(value) for key, value in extra.items()})

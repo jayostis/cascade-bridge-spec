@@ -47,3 +47,15 @@ def world(tmp_path, published):
         yield World(tmp_path, origins, commits, pull_requests, api.url)
     finally:
         api.stop()
+
+
+@pytest.fixture(scope="class")
+def shared_world(tmp_path_factory, published):
+    """One world for the cases of a class that read what a single run wrote."""
+    origins, commits = published
+    pull_requests = PullRequests()
+    api = Api(pull_requests)
+    try:
+        yield World(tmp_path_factory.mktemp("shared"), origins, commits, pull_requests, api.url)
+    finally:
+        api.stop()

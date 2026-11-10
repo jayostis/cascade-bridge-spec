@@ -141,6 +141,25 @@ class TestJudgingAnEARLReport:
             assert verdict.tally == {"passed": 8, "cantTell": 1, "untested": 1}
             assert verdict.describe() == "1 cantTell, 8 passed, 1 untested, covering all 10 of the manifest's tests"
 
+    class TestGivenAReportAssertingOneTestTwice:
+        def test_counts_the_test_once(self, tmp_path):
+            report = earl(
+                tmp_path,
+                dict.fromkeys(EVERY_TEST, "passed")
+                | {"example-0002": "cantTell", "example-release-2026-01": "untested"},
+            )
+            with report.open("a", encoding="utf-8") as written:
+                written.write(
+                    f"[] a earl:Assertion ; earl:test <{MANIFEST}#example-0001> ; "
+                    "earl:result [ a earl:TestResult ; earl:outcome earl:passed ] .\n"
+                )
+
+            verdict = judge_report(report, SYNTHETIC_ADAPTER)
+
+            assert verdict.holds
+            assert verdict.tally == {"passed": 8, "cantTell": 1, "untested": 1}
+            assert verdict.describe() == "1 cantTell, 8 passed, 1 untested, covering all 10 of the manifest's tests"
+
     class TestGivenAReportWithAFailingOutcome:
         @pytest.mark.parametrize(
             "outcome", ["failed", "inapplicable"], ids=["reported failed", "reported inapplicable"]
