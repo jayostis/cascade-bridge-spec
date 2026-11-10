@@ -151,8 +151,8 @@ def unknown_entry_member(document):
 REFUSED = {
     "a kind removed": kind_removed,
     "a kind of time": kind_time,
-    "a clock without samples": a_clock_without("samples"),
-    "a clock without a range": a_clock_without("range"),
+    "a `clock` without samples": a_clock_without("samples"),
+    "a `clock` without a range": a_clock_without("range"),
     "a unit of ms": unit_ms,
     "a one-segment name": renamed("convert"),
     "a four-segment name": renamed("entries-x10/convert/first/again"),
@@ -166,7 +166,7 @@ REFUSED = {
     "a native host with a node version": native_with_a_node_version,
     "a node host without a node version": node_without_a_node_version,
     "an unknown top-level member": unknown_top_level_member,
-    "a timeout written as a clock": timeout_as_a_clock,
+    "a timeout written as a `clock`": timeout_as_a_clock,
     "a refusal in seconds": refusal_in_seconds,
     "a timeout as a plain measure": timeout_as_a_plain_measure,
     "a refusal of a kind the library does not define": refusal_of_an_unlisted_kind,
@@ -231,8 +231,8 @@ class TestResultsABenchmarkHarnessWrites:
         """
 
         @pytest.mark.parametrize("case", REFUSED)
-        def test_is_refused_at_the_member_changed_by_the_keyword_that_forbids_it(self, case):
-            """refuses it at the member changed, by the keyword that forbids it"""
+        def test_is_refused_at_the_member_changed_by_the_keyword_whose_rule_it_breaks(self, case):
+            """refuses it at the member changed, by the keyword whose rule it breaks"""
             document = copy.deepcopy(EXAMPLE)
             path, keyword, *member = REFUSED[case](document)
             member = member[0] if member else None

@@ -81,21 +81,83 @@ jobs:
           python3 -m pip install --group dev
 
       - name: Run pytest
-        run: python3 -m pytest ${{ matrix.tests }}
+        run: python3 -m pytest ${{ matrix.tests }} --junitxml=junit.xml
+
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: junit-${{ strategy.job-index }}
+          path: junit.xml
+          if-no-files-found: error
+
+  # The slices' reports as one, which the tests page on the hub reads, and the check that they read as a specification.
+  report:
+    name: the tests read as a specification
+    needs: slice
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: junit-*
+          path: slices
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: One report from the slices
+        run: |
+          mkdir report
+          cp tests/spec.json report/
+          python3 - <<'PYTHON'
+          import glob
+          import xml.etree.ElementTree as ElementTree
+
+          merged = ElementTree.Element("testsuites", name="pytest tests")
+          for report in sorted(glob.glob("slices/*/junit.xml")):
+              merged.extend(list(ElementTree.parse(report).getroot().iter("testsuite")))
+          ElementTree.ElementTree(merged).write("report/junit.xml", encoding="utf-8", xml_declaration=True)
+          PYTHON
+
+      - uses: actions/checkout@v7
+        with:
+          repository: jayostis/cascade-runtime-js
+          path: .runtime-js
+          sparse-checkout: |
+            scripts
+            packages/site/src
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
+      - name: the tests read as a specification
+        run: node .runtime-js/scripts/spec-shape.mjs report/junit.xml tests/spec.json
+
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: unit-tests
+          path: report/
+          if-no-files-found: error
 
   pytest:
     name: "ruff and pytest: the specification's files, the adapter profile and the compatibility tool"
-    needs: [ruff, slice]
+    needs: [ruff, slice, report]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
-      - name: Ruff and every slice of pytest succeeded
+      - name: Ruff, every slice of pytest and the shape of the tests succeeded
         env:
           RUFF: ${{ needs.ruff.result }}
           SLICES: ${{ needs.slice.result }}
+          REPORT: ${{ needs.report.result }}
         run: |
-          echo "ruff: $RUFF; pytest slices: $SLICES"
-          test "$RUFF" = success && test "$SLICES" = success
+          echo "ruff: $RUFF; pytest slices: $SLICES; shape: $REPORT"
+          test "$RUFF" = success && test "$SLICES" = success && test "$REPORT" = success
 
   actions:
     name: Published GitHub Actions, run on a synthetic adapter (not pytest)

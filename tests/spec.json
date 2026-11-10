@@ -31,6 +31,7 @@
   "build": [
     "Files of the specification that parse · **/*.ttl, **/*.nt, shapes/, bench/result.schema.json",
     "Checks of the check on a manifest's files · tests/specification/test_vector_manifests.py",
+    "Checks of the copy of the vocabulary's naming vectors · tests/specification/test_vector_manifests.py",
     "Checks of the reference versioning · tests/specification/versioning.py",
     "Checks of the check on a version's name · tests/specification/test_the_synthetic_adapters_graphs_are_the_records_layer.py",
     "Checks of the fake engine's own output · fixtures/fake-engine/engine.py",
@@ -69,6 +70,13 @@
       "definition": "a version's statements written one to a line and sorted, with the placeholder standing for the version itself; the SHA-256 of these bytes is the version's name."
     },
     {
+      "term": "clock",
+      "aliases": [
+        "clocks"
+      ],
+      "definition": "in a benchmark result, a measurement of time: the kind of result that carries its samples and their range."
+    },
+    {
       "term": "conversion",
       "aliases": [
         "conversions"
@@ -96,6 +104,13 @@
         "engines"
       ],
       "definition": "here, a Bridge as a compatibility run meets it: a repository that builds the program which runs adapters."
+    },
+    {
+      "term": "entity",
+      "aliases": [
+        "entities"
+      ],
+      "definition": "in XML, a name written between `&` and `;` that stands for some text, such as `&amp;` for an ampersand."
     },
     {
       "term": "envelope",
@@ -217,6 +232,10 @@
       "definition": "a SPARQL CONSTRUCT an adapter names that writes records in the Cascade vocabulary from a lifted source record."
     },
     {
+      "term": "N-Triples",
+      "definition": "a W3C text format for writing statements, one to a line, with no abbreviations."
+    },
+    {
       "term": "namespace",
       "aliases": [
         "namespaces"
@@ -286,6 +305,18 @@
       "term": "SPARQL",
       "definition": "the W3C query language for data written as statements, as Turtle writes them.",
       "vocabulary": "https://www.w3.org/TR/sparql11-query/"
+    },
+    {
+      "term": "stand-in",
+      "aliases": [
+        "stand in",
+        "stand-ins"
+      ],
+      "definition": "a made-up value written where a real one was removed, such as `Bench Hospital` for a hospital's name."
+    },
+    {
+      "term": "Synthea",
+      "definition": "a program that invents people and writes health records for them, from which the benchmark inputs are made."
     },
     {
       "term": "synthetic adapter",

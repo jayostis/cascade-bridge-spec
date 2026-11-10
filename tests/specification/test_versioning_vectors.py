@@ -72,7 +72,7 @@ class TestNamingTheVersionsOfAMappedGraph:
     class TestGivenAVersioningVector:
         @pytest.mark.parametrize("test", VECTORS, ids=vector_id)
         def test_states_the_canonical_content_of_each_version(self, test):
-            """states as each version's canonical content its triples in the mapped graph, the placeholder in place of its IRI"""
+            """states as each version's canonical content its statements in the mapped graph, the placeholder in place of its IRI"""
             named, _ = versions(mapped(test))
             assert sorted(named.values()) == sorted(expected_versions(test).values())
 
@@ -83,10 +83,10 @@ class TestNamingTheVersionsOfAMappedGraph:
                 assert ni_name(nquads.encode("utf-8")) == name
 
         @pytest.mark.parametrize("test", VECTORS, ids=vector_id)
-        def test_keeps_each_canonical_content_in_canonical_form_as_written(self, test):
-            """keeps each canonical content in canonical form, as written
+        def test_keeps_each_canonical_content_sorted_one_statement_to_a_line(self, test):
+            """keeps each canonical content sorted, one statement to a line
 
-            Sorted, one statement a line, each literal as the mapping wrote it.
+            Each literal is written as the mapping wrote it.
             """
             for nquads in expected_versions(test).values():
                 assert canonical_nquads(parsed_ntriples(nquads)) == nquads

@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 from pyshacl import validate
 from rdflib import RDF, BNode, Graph, Literal, Namespace, URIRef
+from rdflib.compare import isomorphic
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURES = ROOT / "fixtures"
@@ -262,6 +263,15 @@ NAMING_TESTS_BROKEN = [
 VOCABULARY_MANIFEST = ROOT.parent / "cascade-vocabulary" / "tests" / "vectors" / "naming" / "manifest.ttl"
 
 
+def described(graph, node, into=None):
+    into = Graph() if into is None else into
+    for predicate, value in graph.predicate_objects(node):
+        into.add((node, predicate, value))
+        if isinstance(value, BNode):
+            described(graph, value, into)
+    return into
+
+
 class TestManifestsThatListTheVectors:
     """Manifests that list the vectors · fixtures/*/manifest.ttl, shapes/bridge.shapes.ttl
 
@@ -344,3 +354,20 @@ class TestChecksOfTheCheckOnAManifestsFiles:
             lift = shutil.copytree(FIXTURES / "lift", tmp_path / "lift")
             (lift / "cdata.xml").unlink()
             assert any("cdata.xml is named, not a file in lift" in problem for problem in unaccounted(lift))
+
+
+class TestChecksOfTheCopyOfTheVocabularysNamingVectors:
+    """Checks of the copy of the vocabulary's naming vectors · tests/specification/test_vector_manifests.py"""
+
+    class TestGivenTheCascadeVocabularyCheckoutBesideThisRepository:
+        """given the cascade-vocabulary checkout beside this repository"""
+
+        @pytest.mark.skipif(
+            not VOCABULARY_MANIFEST.is_file(),
+            reason=f"no cascade-vocabulary checkout beside this repository (looked for {VOCABULARY_MANIFEST})",
+        )
+        def test_holds_each_naming_vector_as_the_vocabularys_manifest_writes_it(self):
+            copy = the_vocabularys_naming_vectors()
+            vocabulary = Graph().parse(VOCABULARY_MANIFEST, format="turtle", publicID="https://example.org/naming/")
+            for entry in copy.subjects(MF.name, None):
+                assert isomorphic(described(copy, entry), described(vocabulary, entry)), entry

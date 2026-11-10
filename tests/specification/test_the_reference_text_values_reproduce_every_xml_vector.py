@@ -60,7 +60,7 @@ class TestTextValuesTheXmlLiftWritesOnAnElement:
     """Text values the XML lift writes on an element · engine/sparql.md, fixtures/lift/
 
     Beside its children, the XML lift writes two readings of an element's text: its text content, every character under
-    it joined, and its text with element breaks, a line for each run of text between the elements an adapter names as
+    it in order, and its text with element breaks, a line for each run of text between the elements an adapter names as
     breaking text. Reference text values, written from `engine/sparql.md` alone, show that the text and the vectors
     agree.
     """
