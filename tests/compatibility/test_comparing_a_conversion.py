@@ -25,13 +25,21 @@ _:release rdfs:label "{release}" .
     )
 
 
-def test_a_release_named_differently_still_compares_equal():
-    one, other = converted("release 1", "Registry"), converted("release 2", "Registry")
+class TestLibraryCasesRunOnEveryHostOfAnEngine:
+    """Library cases run on every host of an engine · fixtures/library/, compatibility_tool/library.py
 
-    assert library.isomorphic(library.without_release(one), library.without_release(other))
+    The library cases are calls every engine's library must answer alike, whatever language it is in. An engine under
+    test runs them on each host through its `library` command.
+    """
 
+    class TestGivenTwoConversionsOfOneCase:
+        def test_compares_equal_where_only_the_bridges_release_is_named_differently(self):
+            """compares equal where only the Bridge's release is named differently"""
+            one, other = converted("release 1", "Registry"), converted("release 2", "Registry")
 
-def test_an_author_named_differently_does_not_compare_equal():
-    one, other = converted("release 1", "Registry"), converted("release 1", "Elsewhere")
+            assert library.isomorphic(library.without_release(one), library.without_release(other))
 
-    assert not library.isomorphic(library.without_release(one), library.without_release(other))
+        def test_compares_unequal_where_an_author_is_named_differently(self):
+            one, other = converted("release 1", "Registry"), converted("release 1", "Elsewhere")
+
+            assert not library.isomorphic(library.without_release(one), library.without_release(other))

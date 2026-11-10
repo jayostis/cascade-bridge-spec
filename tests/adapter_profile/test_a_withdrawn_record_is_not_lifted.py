@@ -42,31 +42,41 @@ def mapped(crate, *statuses):
     return dataset(crate, *statuses).query(crate.file_at(named[0]).read_text(encoding="utf-8")).graph
 
 
-def test_a_record_holding_a_status_the_concept_map_maps_to_something_other_than_withdrawn_is_lifted(crate):
-    assert len(mapped(crate, "current"))
+class TestRecordsAMappingLeavesOutAsWithdrawn:
+    """Records a mapping leaves out as withdrawn · fixtures/synthetic-adapter/
 
+    The synthetic adapter's mapping shows the pattern for dropping a record by a looked-up value: it lifts no record
+    whose status the concept map maps to withdrawn.
+    """
 
-def test_a_record_holding_a_status_the_concept_map_lacks_is_lifted(crate):
-    assert len(mapped(crate, "Retired"))
+    class TestGivenARecordHoldingAStatusTheConceptMapMapsToSomethingOtherThanWithdrawn:
+        def test_is_lifted(self, crate):
+            assert len(mapped(crate, "current"))
 
+    class TestGivenARecordHoldingAStatusTheConceptMapLacks:
+        def test_is_lifted(self, crate):
+            assert len(mapped(crate, "Retired"))
 
-def test_a_record_holding_no_status_at_all_is_lifted(crate):
-    assert len(mapped(crate))
+    class TestGivenARecordHoldingNoStatusAtAll:
+        def test_is_lifted(self, crate):
+            assert len(mapped(crate))
 
+    class TestGivenARecordWhoseOnlyStatusIsWithdrawn:
+        def test_is_not_lifted(self, crate):
+            assert not len(mapped(crate, "withdrawn"))
 
-def test_a_record_whose_only_status_is_withdrawn_is_not_lifted(crate):
-    assert not len(mapped(crate, "withdrawn"))
+    class TestGivenARecordHoldingWithdrawnBesideAnotherStatus:
+        def test_is_not_lifted(self, crate):
+            assert not len(mapped(crate, "withdrawn", "current"))
+            assert not len(mapped(crate, "current", "withdrawn"))
+            assert not len(mapped(crate, "Retired", "withdrawn"))
 
+    class TestGivenARecordWhoseWithdrawnIsSpelledOutsideItsKey:
+        def test_is_not_lifted(self, crate):
+            assert not len(mapped(crate, " Withdrawn "))
 
-def test_a_record_holding_withdrawn_beside_another_status_is_not_lifted(crate):
-    assert not len(mapped(crate, "withdrawn", "current"))
-    assert not len(mapped(crate, "current", "withdrawn"))
-    assert not len(mapped(crate, "Retired", "withdrawn"))
+    class TestGivenARecordPaddedWithACharacterThatOnlyUnicodeCallsWhitespace:
+        """given a record padded with a character that only Unicode calls whitespace"""
 
-
-def test_a_record_whose_withdrawn_is_spelled_outside_its_key_is_not_lifted(crate):
-    assert not len(mapped(crate, " Withdrawn "))
-
-
-def test_a_record_padded_with_a_character_that_is_whitespace_nowhere_xml_calls_whitespace_is_lifted(crate):
-    assert len(mapped(crate, " withdrawn"))
+        def test_is_lifted(self, crate):
+            assert len(mapped(crate, " withdrawn"))

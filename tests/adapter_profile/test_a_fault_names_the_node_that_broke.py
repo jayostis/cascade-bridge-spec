@@ -61,23 +61,6 @@ def faults_over(turtle):
     return unmet_over(PREFIXES + turtle, SHAPES)
 
 
-def test_a_shape_broken_at_two_nodes_gives_two_faults_each_naming_its_node():
-    faults = faults_over(TWO_ENTRIES_CARRYING_NO_SOURCE_PATH)
-
-    assert len(faults) == 2, faults
-    assert all(ONE_SOURCE_PATH in fault for fault in faults), faults
-    named = [[node for node in (THE_LABEL_ENTRY, THE_NOTE_ENTRY) if node in fault] for fault in faults]
-    assert sorted(named) == [[THE_LABEL_ENTRY], [THE_NOTE_ENTRY]], faults
-
-
-def test_a_fault_over_a_c_cda_accounting_names_the_source_path_of_the_entry_that_broke_it():
-    faults = faults_over(C_CDA_ACCOUNTING_WITH_ONE_NO_HOME_ENTRY_NAMING_NO_GAP)
-
-    assert len(faults) == 1, faults
-    assert A_NO_HOME_ENTRY_NAMES_ONE_GAP in faults[0]
-    assert THE_ENTRY_THAT_BREAKS_IT in faults[0]
-
-
 THE_FIRST_RECORD = "/ExampleRecordSet/ExampleRecord[1]"
 THE_SECOND_RECORD = "/ExampleRecordSet/ExampleRecord[2]"
 
@@ -106,10 +89,40 @@ TWO_ALIKE_FINDINGS_WHOSE_TARGETS_NAME_NO_SOURCE = f"""
 A_TARGET_NAMES_ONE_SOURCE = "A finding's target names exactly one oa:hasSource by IRI"
 
 
-def test_a_fault_found_through_a_nested_shape_names_the_nested_node_that_broke_it():
-    faults = faults_over(TWO_ALIKE_FINDINGS_WHOSE_TARGETS_NAME_NO_SOURCE)
+class TestFaultsThatNameTheNodeThatBroke:
+    """Faults that name the node that broke · adapter/profile/_findings.py
 
-    assert len(faults) == 2, faults
-    assert all(A_TARGET_NAMES_ONE_SOURCE in fault for fault in faults), faults
-    named = [[record for record in (THE_FIRST_RECORD, THE_SECOND_RECORD) if record in fault] for fault in faults]
-    assert sorted(named) == [[THE_FIRST_RECORD], [THE_SECOND_RECORD]], faults
+    A fault is one line of a failing run: the sentence of the shape that was broken and the node that broke it. Two
+    nodes breaking one shape are two faults, each telling its own node.
+    """
+
+    class TestGivenAShapeBrokenAtTwoNodes:
+        def test_gives_two_faults_each_naming_its_node(self):
+            """gives two faults, each naming its node"""
+            faults = faults_over(TWO_ENTRIES_CARRYING_NO_SOURCE_PATH)
+
+            assert len(faults) == 2, faults
+            assert all(ONE_SOURCE_PATH in fault for fault in faults), faults
+            named = [[node for node in (THE_LABEL_ENTRY, THE_NOTE_ENTRY) if node in fault] for fault in faults]
+            assert sorted(named) == [[THE_LABEL_ENTRY], [THE_NOTE_ENTRY]], faults
+
+    class TestGivenAFaultOverACCDAAccounting:
+        """given a fault over a C-CDA accounting"""
+
+        def test_names_the_source_path_of_the_entry_that_broke_it(self):
+            faults = faults_over(C_CDA_ACCOUNTING_WITH_ONE_NO_HOME_ENTRY_NAMING_NO_GAP)
+
+            assert len(faults) == 1, faults
+            assert A_NO_HOME_ENTRY_NAMES_ONE_GAP in faults[0]
+            assert THE_ENTRY_THAT_BREAKS_IT in faults[0]
+
+    class TestGivenAFaultFoundThroughANestedShape:
+        def test_names_the_nested_node_that_broke_it(self):
+            faults = faults_over(TWO_ALIKE_FINDINGS_WHOSE_TARGETS_NAME_NO_SOURCE)
+
+            assert len(faults) == 2, faults
+            assert all(A_TARGET_NAMES_ONE_SOURCE in fault for fault in faults), faults
+            named = [
+                [record for record in (THE_FIRST_RECORD, THE_SECOND_RECORD) if record in fault] for fault in faults
+            ]
+            assert sorted(named) == [[THE_FIRST_RECORD], [THE_SECOND_RECORD]], faults

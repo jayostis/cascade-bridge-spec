@@ -258,26 +258,36 @@ REJECTED = {
 }
 
 
-@pytest.mark.parametrize(("message", "turtle"), REJECTED.values(), ids=list(REJECTED))
-def test_rejects(message, turtle):
-    assert message in said_about(turtle)
+class TestTheFormOfAnAccountingEntry:
+    """The form of an accounting entry · shapes/bridge.shapes.ttl
 
+    Each verdict of an entry allows and requires different things beside it: a gap, the path carrying the same fact, a
+    reason, a lookup. These are the shapes that say so.
+    """
 
-@pytest.mark.parametrize("verdict", A_MINIMAL_ENTRY_OF_EACH_VERDICT)
-def test_accepts_a_minimal_entry_of_each_verdict(verdict):
-    assert not said_about(minimal(verdict))
+    class TestGivenAnEntryThatBreaksOneConstraint:
+        @pytest.mark.parametrize(("message", "turtle"), REJECTED.values(), ids=list(REJECTED))
+        def test_says_which_constraint_it_breaks(self, message, turtle):
+            assert message in said_about(turtle)
 
+    class TestGivenAMinimalEntry:
+        @pytest.mark.parametrize("verdict", A_MINIMAL_ENTRY_OF_EACH_VERDICT)
+        def test_conforms_under_each_of_the_six_verdicts(self, verdict):
+            assert not said_about(minimal(verdict))
 
-@pytest.mark.parametrize("verdict", [CARRIED, CARRIED_IN_PART])
-def test_accepts_an_entry_whose_path_reaches_the_graph_naming_what_it_is_carried_as_with_and_without_a_source_record_type(
-    verdict,
-):
-    assert not said_about(carried_as(AS_THE_ACCESSION, ON_A_RECORD, IN_AN_EXAMPLE_RECORD, verdict=verdict))
-    assert not said_about(carried_as(AS_THE_ACCESSION, ON_A_RECORD, verdict=verdict))
+    class TestGivenACarriedEntryNamingWhatItIsCarriedAs:
+        @pytest.mark.parametrize("verdict", [CARRIED, CARRIED_IN_PART])
+        def test_conforms_with_and_without_a_source_record_type(
+            self,
+            verdict,
+        ):
+            assert not said_about(carried_as(AS_THE_ACCESSION, ON_A_RECORD, IN_AN_EXAMPLE_RECORD, verdict=verdict))
+            assert not said_about(carried_as(AS_THE_ACCESSION, ON_A_RECORD, verdict=verdict))
 
-
-@pytest.mark.parametrize("verdict", A_MINIMAL_ENTRY_OF_EACH_VERDICT)
-def test_rejects_half_a_lookup_on_an_entry_of_every_verdict_and_accepts_both_halves_there(verdict):
-    assert "bridge:lookupIn" in said_about(looks_up(verdict, lookup_in=None))
-    assert "bridge:lookupNamesGap" in said_about(looks_up(verdict, lookup_names_gap=None))
-    assert not said_about(looks_up(verdict))
+    class TestGivenHalfALookup:
+        @pytest.mark.parametrize("verdict", A_MINIMAL_ENTRY_OF_EACH_VERDICT)
+        def test_breaks_a_constraint_under_every_verdict_for_either_half_alone_and_conforms_with_both(self, verdict):
+            """breaks a constraint under every verdict for either half alone, and conforms with both"""
+            assert "bridge:lookupIn" in said_about(looks_up(verdict, lookup_in=None))
+            assert "bridge:lookupNamesGap" in said_about(looks_up(verdict, lookup_names_gap=None))
+            assert not said_about(looks_up(verdict))

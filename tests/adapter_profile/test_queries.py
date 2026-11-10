@@ -92,100 +92,6 @@ TWO_FINDINGS_EACH_WITH_A_TARGET_OF_ITS_OWN = findings_query("""  [] a oa:Annotat
     sh:resultSeverity sh:Info .""")
 
 
-def test_reports_nothing_for_queries_in_the_form_their_property_declares(crate):
-    assert not list(queries.malformed(crate))
-
-
-def test_reports_a_mapping_that_is_not_sparql(package):
-    package.edit("in/example-record.rq", "CONSTRUCT", "CONSTRUKT")
-    assert "does not parse as SPARQL 1.1" in "\n".join(queries.malformed(package.crate))
-
-
-def test_reports_a_detect_query_that_is_not_an_ask(package):
-    package.edit("in/example-detect.rq", "ASK {", "SELECT * WHERE {")
-    assert "where bridge:detectQuery requires ASK" in "\n".join(queries.malformed(package.crate))
-
-
-def test_reports_a_document_table_query_that_is_not_a_construct(package):
-    package.write("in/example-table.rq", "SELECT ?accession WHERE { ?record ?slot ?accession }\n")
-    assert "where bridge:documentTableQuery requires CONSTRUCT" in "\n".join(queries.malformed(package.crate))
-
-
-def test_reports_a_findings_query_that_is_an_ask(package):
-    package.write(FINDINGS_QUERY, "ASK { ?record ?slot ?note }\n")
-    assert "where bridge:findingsQuery requires CONSTRUCT" in "\n".join(queries.malformed(package.crate))
-
-
-def test_reports_a_findings_query_that_is_a_select(package):
-    package.write(FINDINGS_QUERY, "SELECT ?note WHERE { ?record ?slot ?note }\n")
-    assert "is a SELECT query, where bridge:findingsQuery requires CONSTRUCT" in "\n".join(
-        queries.malformed(package.crate)
-    )
-
-
-def test_reports_a_findings_query_constructing_no_this_record(package):
-    package.edit(FINDINGS_QUERY, "oa:hasSource bridge:thisRecord", "oa:hasSource bridge:thisrecord")
-    assert "constructs a finding that targets no [ oa:hasSource bridge:thisRecord ]" in "\n".join(
-        queries.malformed(package.crate)
-    )
-
-
-def test_reports_a_findings_query_naming_this_record_outside_its_targets_source(package):
-    package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_NAMING_THIS_RECORD_OUTSIDE_ITS_TARGETS_SOURCE)
-    assert "constructs a finding that targets no [ oa:hasSource bridge:thisRecord ]" in "\n".join(
-        queries.malformed(package.crate)
-    )
-
-
-def test_reports_a_findings_query_sourcing_this_record_outside_every_target(package):
-    package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_SOURCING_THIS_RECORD_OUTSIDE_EVERY_TARGET)
-    assert "constructs a finding that targets no [ oa:hasSource bridge:thisRecord ]" in "\n".join(
-        queries.malformed(package.crate)
-    )
-
-
-def test_reports_a_findings_query_constructing_no_annotation(package):
-    package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_CONSTRUCTING_NO_ANNOTATION)
-    assert "constructs no oa:Annotation" in "\n".join(queries.malformed(package.crate))
-
-
-def test_reports_a_findings_query_targeting_a_name_rather_than_a_blank_node(package):
-    package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_TARGETING_THE_RECORD_BY_NAME)
-    assert (
-        "targets <https://ns.cascadeprotocol.org/bridge/v1-draft#thisRecord>, where a finding's oa:hasTarget "
-        "is a blank node written for that one finding: one name is one node for every finding the query produces"
-    ) in "\n".join(queries.malformed(package.crate))
-
-
-def test_reports_a_findings_query_giving_two_findings_one_labelled_blank_node_as_their_target(package):
-    package.write(FINDINGS_QUERY, TWO_FINDINGS_SHARING_ONE_TARGET)
-    assert (
-        "targets _:t from more than one finding, where a finding's oa:hasTarget is a blank node written "
-        "for that one finding"
-    ) in "\n".join(queries.malformed(package.crate))
-
-
-def test_reports_a_findings_query_targeting_a_variable_as_a_node_the_lift_already_holds(package):
-    package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_TARGETING_A_VARIABLE)
-    messages = "\n".join(queries.malformed(package.crate))
-    assert (
-        "targets ?note, where a finding's oa:hasTarget is a blank node written for that one finding: "
-        "a variable is bound to a node the lift already holds"
-    ) in messages
-    assert "one name is one node" not in messages
-
-
-def test_reports_nothing_for_two_findings_each_targeting_a_blank_node_of_its_own(package):
-    package.write(FINDINGS_QUERY, TWO_FINDINGS_EACH_WITH_A_TARGET_OF_ITS_OWN)
-    assert not list(queries.malformed(package.crate))
-
-
-def test_reports_nothing_when_the_adapter_names_no_query(crate):
-    for term in (BRIDGE.mapping, BRIDGE.findingsQuery, BRIDGE.detectQuery):
-        crate.graph.remove((crate.root, term, None))
-    assert not list(queries.malformed(crate))
-
-
 A_FINDINGS_QUERY_CONSTRUCTING_A_FINDING_WITH_NO_BODY = findings_query("""  [] a oa:Annotation ;
     oa:hasTarget [
       oa:hasSource bridge:thisRecord ;
@@ -249,61 +155,11 @@ A_FINDINGS_QUERY_WHOSE_BODY_SEVERITY_AND_XPATH_ARE_BOUND = findings_query("""  [
   ?selector a oa:XPathSelector ; rdf:value ?xpath .""")
 
 
-def test_reports_a_findings_query_constructing_a_finding_with_no_body(package):
-    package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_CONSTRUCTING_A_FINDING_WITH_NO_BODY)
-    assert (
-        "A finding carries exactly one oa:hasBody, an IRI: the code the finding is an instance of, never a sentence."
-    ) in "\n".join(queries.malformed(package.crate))
-
-
-def test_reports_nothing_for_a_findings_query_constructing_a_finding_with_no_severity(package):
-    package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_CONSTRUCTING_A_FINDING_WITH_NO_SEVERITY)
-    assert not list(queries.malformed(package.crate))
-
-
-def test_reports_a_findings_query_constructing_two_severities(package):
-    package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_CONSTRUCTING_TWO_SEVERITIES)
-    assert "A finding carries exactly one sh:resultSeverity, one of sh:Info, sh:Warning, sh:Violation." in "\n".join(
-        queries.malformed(package.crate)
-    )
-
-
-def test_reports_a_findings_query_constructing_a_severity_outside_the_scale(package):
-    package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_CONSTRUCTING_A_SEVERITY_OUTSIDE_THE_SCALE)
-    assert "A finding carries exactly one sh:resultSeverity, one of sh:Info, sh:Warning, sh:Violation." in "\n".join(
-        queries.malformed(package.crate)
-    )
-
-
-def test_reports_a_findings_query_giving_one_target_two_selectors(package):
-    package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_GIVING_ONE_TARGET_TWO_SELECTORS)
-    assert "A finding's target carries exactly one oa:hasSelector, the record's selector." in "\n".join(
-        queries.malformed(package.crate)
-    )
-
-
-def test_reports_a_findings_query_binding_the_annotation_to_a_variable(package):
-    package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_BINDING_THE_ANNOTATION_TO_A_VARIABLE)
-    said = list(queries.malformed(package.crate))
-    assert len(said) == 1
-    assert "?note as an oa:Annotation, where a finding is a blank node written for that one finding" in said[0]
-
-
-def test_holds_a_findings_query_to_nothing_a_variable_binds(package):
-    package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_WHOSE_BODY_SEVERITY_AND_XPATH_ARE_BOUND)
-    assert not list(queries.malformed(package.crate))
-
-
 A_FINDINGS_QUERY_WHOSE_FINDING_IS_ABOUT_THE_RECORD_ITSELF = findings_query("""  [] a oa:Annotation ;
     oa:hasTarget [ oa:hasSource bridge:thisRecord ] ;
     oa:hasBody ex:no-term-for-a-free-text-note ;
     oa:motivatedBy oa:classifying ;
     sh:resultSeverity sh:Warning .""")
-
-
-def test_reports_nothing_for_a_findings_query_constructing_no_selector(package):
-    package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_WHOSE_FINDING_IS_ABOUT_THE_RECORD_ITSELF)
-    assert not list(queries.malformed(package.crate))
 
 
 A_FINDINGS_QUERY_CONSTRUCTING_A_SELECTOR_THAT_IS_ITSELF_REFINED = findings_query("""  [] a oa:Annotation ;
@@ -318,18 +174,6 @@ A_FINDINGS_QUERY_CONSTRUCTING_A_SELECTOR_THAT_IS_ITSELF_REFINED = findings_query
     oa:hasBody ex:no-term-for-a-free-text-note ;
     oa:motivatedBy oa:classifying ;
     sh:resultSeverity sh:Warning .""")
-
-
-def test_reports_a_findings_query_constructing_a_selector_that_is_itself_refined(package):
-    package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_CONSTRUCTING_A_SELECTOR_THAT_IS_ITSELF_REFINED)
-    said = list(queries.malformed(package.crate))
-    assert [
-        fault
-        for fault in said
-        if fault.startswith("example-findings.rq: ")
-        and "https://example.org/synthetic-adapter/v1#no-term-for-a-free-text-note" in fault
-        and fault.endswith(": A selector refining a record's selector is refined no further.")
-    ], said
 
 
 A_FINDINGS_QUERY_CONSTRUCTING_A_GAP_OF_THE_ADAPTERS_SCHEME = findings_query("""  [] a oa:Annotation ;
@@ -360,87 +204,237 @@ A_FINDINGS_QUERY_WHOSE_BODY_IS_BOUND_TO_A_VARIABLE = findings_query("""  [] a oa
     sh:resultSeverity sh:Info .""")
 
 
-def test_reports_a_findings_query_constructing_a_constant_body_outside_the_adapters_gap_scheme(package):
-    package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_CONSTRUCTING_A_CONSTANT_BODY_OUTSIDE_THE_SCHEME)
-    assert (
-        "example-findings.rq constructs https://example.org/synthetic-adapter/v1#a-gap-the-scheme-does-not-hold "
-        "as a finding's body, where a body a findings query constructs as a constant is a gap of the adapter's "
-        "bridge:gapScheme"
-    ) in "\n".join(queries.malformed(package.crate))
-
-
-def test_reports_nothing_for_a_findings_query_constructing_a_gap_of_the_adapters_scheme(package):
-    package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_CONSTRUCTING_A_GAP_OF_THE_ADAPTERS_SCHEME)
-    assert not list(queries.malformed(package.crate))
-
-
-def test_holds_a_findings_query_to_nothing_where_the_body_it_constructs_is_bound_to_a_variable(package):
-    package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_WHOSE_BODY_IS_BOUND_TO_A_VARIABLE)
-    assert not list(queries.malformed(package.crate))
-
-
 ENDPOINT = "<https://example.org/sparql>"
 
 
-@pytest.mark.parametrize(
-    "query, old, new",
-    [
-        pytest.param(
-            "in/example-record.rq",
-            "  OPTIONAL { bridge:thisDocument",
-            f"  SERVICE {ENDPOINT} {{ ?exampleRecord ?p ?o }}\n  OPTIONAL {{ bridge:thisDocument",
-            id="at-the-top-of-a-mapping",
-        ),
-        pytest.param(
-            FINDINGS_QUERY,
-            "  ?note a xyz:Note .\n",
-            f"  ?note a xyz:Note .\n  {{ SELECT ?note WHERE {{ SERVICE {ENDPOINT} {{ ?note ?p ?o }} }} }}\n",
-            id="in-a-subquery-of-a-findings-query",
-        ),
-        pytest.param(
-            "in/example-detect.rq",
-            "ASK {",
-            f"ASK {{\n  FILTER EXISTS {{ SERVICE SILENT {ENDPOINT} {{ ?s ?p ?o }} }}",
-            id="in-filter-exists-of-a-detect-query",
-        ),
-        pytest.param(
-            "in/example-record.rq",
-            "    FILTER (?statusKey",
-            f"    SERVICE {ENDPOINT} {{ ?statusConcept ?p ?o }}\n    FILTER (?statusKey",
-            id="in-filter-not-exists-of-a-mapping",
-        ),
-    ],
-)
-def test_reports_a_query_holding_a_service_pattern(package, query, old, new):
-    package.edit(query, old, new)
-    assert f"{query.removeprefix('in/')} holds a SERVICE pattern" in "\n".join(queries.malformed(package.crate))
+class TestQueriesAnAdapterNames:
+    """Queries an adapter names · adapter/profile/must/queries.py
 
+    An adapter's logic is SPARQL: mappings and document tables that construct, a detect query that asks, and findings
+    queries that construct findings about `bridge:thisRecord`. Each is held to the form its property declares and to
+    what a Bridge can run, without running it.
+    """
 
-@pytest.mark.parametrize(
-    "query, old, new",
-    [
-        pytest.param(
-            "in/example-record.rq",
-            "\nWHERE {",
-            "\nFROM <https://example.org/graph>\nWHERE {",
-            id="from-on-a-mapping",
-        ),
-        pytest.param(
-            FINDINGS_QUERY,
-            "WHERE {",
-            "FROM NAMED <https://example.org/graph>\nWHERE {",
-            id="from-named-on-a-findings-query",
-        ),
-        pytest.param(
-            "in/example-detect.rq",
-            "ASK {",
-            "ASK FROM <https://example.org/graph> {",
-            id="from-on-a-detect-query",
-        ),
-    ],
-)
-def test_reports_a_query_holding_a_dataset_clause(package, query, old, new):
-    package.edit(query, old, new)
-    assert f"{query.removeprefix('in/')} holds a FROM or FROM NAMED clause" in "\n".join(
-        queries.malformed(package.crate)
-    )
+    class TestGivenAQueryAnAdapterNames:
+        def test_reports_nothing_for_queries_in_the_form_their_property_declares(self, crate):
+            assert not list(queries.malformed(crate))
+
+        def test_reports_a_mapping_that_is_not_sparql(self, package):
+            """reports a mapping that is not SPARQL"""
+            package.edit("in/example-record.rq", "CONSTRUCT", "CONSTRUKT")
+            assert "does not parse as SPARQL 1.1" in "\n".join(queries.malformed(package.crate))
+
+        def test_reports_a_detect_query_that_is_not_an_ask(self, package):
+            """reports a detect query that is not an ASK"""
+            package.edit("in/example-detect.rq", "ASK {", "SELECT * WHERE {")
+            assert "where bridge:detectQuery requires ASK" in "\n".join(queries.malformed(package.crate))
+
+        def test_reports_a_document_table_query_that_is_not_a_construct(self, package):
+            """reports a document table query that is not a CONSTRUCT"""
+            package.write("in/example-table.rq", "SELECT ?accession WHERE { ?record ?slot ?accession }\n")
+            assert "where bridge:documentTableQuery requires CONSTRUCT" in "\n".join(queries.malformed(package.crate))
+
+        def test_reports_nothing_when_the_adapter_names_no_query(self, crate):
+            for term in (BRIDGE.mapping, BRIDGE.findingsQuery, BRIDGE.detectQuery):
+                crate.graph.remove((crate.root, term, None))
+            assert not list(queries.malformed(crate))
+
+        @pytest.mark.parametrize(
+            "query, old, new",
+            [
+                pytest.param(
+                    "in/example-record.rq",
+                    "  OPTIONAL { bridge:thisDocument",
+                    f"  SERVICE {ENDPOINT} {{ ?exampleRecord ?p ?o }}\n  OPTIONAL {{ bridge:thisDocument",
+                    id="at the top of a mapping",
+                ),
+                pytest.param(
+                    FINDINGS_QUERY,
+                    "  ?note a xyz:Note .\n",
+                    f"  ?note a xyz:Note .\n  {{ SELECT ?note WHERE {{ SERVICE {ENDPOINT} {{ ?note ?p ?o }} }} }}\n",
+                    id="in a subquery of a findings query",
+                ),
+                pytest.param(
+                    "in/example-detect.rq",
+                    "ASK {",
+                    f"ASK {{\n  FILTER EXISTS {{ SERVICE SILENT {ENDPOINT} {{ ?s ?p ?o }} }}",
+                    id="in filter exists of a detect query",
+                ),
+                pytest.param(
+                    "in/example-record.rq",
+                    "    FILTER (?statusKey",
+                    f"    SERVICE {ENDPOINT} {{ ?statusConcept ?p ?o }}\n    FILTER (?statusKey",
+                    id="in filter not exists of a mapping",
+                ),
+            ],
+        )
+        def test_reports_a_query_holding_a_service_pattern(self, package, query, old, new):
+            package.edit(query, old, new)
+            assert f"{query.removeprefix('in/')} holds a SERVICE pattern" in "\n".join(queries.malformed(package.crate))
+
+        @pytest.mark.parametrize(
+            "query, old, new",
+            [
+                pytest.param(
+                    "in/example-record.rq",
+                    "\nWHERE {",
+                    "\nFROM <https://example.org/graph>\nWHERE {",
+                    id="from on a mapping",
+                ),
+                pytest.param(
+                    FINDINGS_QUERY,
+                    "WHERE {",
+                    "FROM NAMED <https://example.org/graph>\nWHERE {",
+                    id="from named on a findings query",
+                ),
+                pytest.param(
+                    "in/example-detect.rq",
+                    "ASK {",
+                    "ASK FROM <https://example.org/graph> {",
+                    id="from on a detect query",
+                ),
+            ],
+        )
+        def test_reports_a_query_holding_a_dataset_clause(self, package, query, old, new):
+            package.edit(query, old, new)
+            assert f"{query.removeprefix('in/')} holds a FROM or FROM NAMED clause" in "\n".join(
+                queries.malformed(package.crate)
+            )
+
+    class TestGivenAFindingsQuery:
+        def test_reports_a_findings_query_that_is_an_ask(self, package):
+            """reports a findings query that is an ASK"""
+            package.write(FINDINGS_QUERY, "ASK { ?record ?slot ?note }\n")
+            assert "where bridge:findingsQuery requires CONSTRUCT" in "\n".join(queries.malformed(package.crate))
+
+        def test_reports_a_findings_query_that_is_a_select(self, package):
+            """reports a findings query that is a SELECT"""
+            package.write(FINDINGS_QUERY, "SELECT ?note WHERE { ?record ?slot ?note }\n")
+            assert "is a SELECT query, where bridge:findingsQuery requires CONSTRUCT" in "\n".join(
+                queries.malformed(package.crate)
+            )
+
+        def test_reports_a_findings_query_constructing_no_bridge_thisrecord(self, package):
+            """reports a findings query constructing no `bridge:thisRecord`"""
+            package.edit(FINDINGS_QUERY, "oa:hasSource bridge:thisRecord", "oa:hasSource bridge:thisrecord")
+            assert "constructs a finding that targets no [ oa:hasSource bridge:thisRecord ]" in "\n".join(
+                queries.malformed(package.crate)
+            )
+
+        def test_reports_a_findings_query_naming_bridge_thisrecord_outside_its_targets_source(self, package):
+            """reports a findings query naming `bridge:thisRecord` outside its target's source"""
+            package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_NAMING_THIS_RECORD_OUTSIDE_ITS_TARGETS_SOURCE)
+            assert "constructs a finding that targets no [ oa:hasSource bridge:thisRecord ]" in "\n".join(
+                queries.malformed(package.crate)
+            )
+
+        def test_reports_a_findings_query_sourcing_bridge_thisrecord_outside_every_target(self, package):
+            """reports a findings query sourcing `bridge:thisRecord` outside every target"""
+            package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_SOURCING_THIS_RECORD_OUTSIDE_EVERY_TARGET)
+            assert "constructs a finding that targets no [ oa:hasSource bridge:thisRecord ]" in "\n".join(
+                queries.malformed(package.crate)
+            )
+
+        def test_reports_a_findings_query_constructing_no_annotation(self, package):
+            package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_CONSTRUCTING_NO_ANNOTATION)
+            assert "constructs no oa:Annotation" in "\n".join(queries.malformed(package.crate))
+
+        def test_reports_a_findings_query_targeting_a_name_rather_than_a_blank_node(self, package):
+            package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_TARGETING_THE_RECORD_BY_NAME)
+            assert (
+                "targets <https://ns.cascadeprotocol.org/bridge/v1-draft#thisRecord>, where a finding's oa:hasTarget "
+                "is a blank node written for that one finding: one name is one node for every finding the query produces"
+            ) in "\n".join(queries.malformed(package.crate))
+
+        def test_reports_a_findings_query_giving_two_findings_one_labelled_blank_node_as_their_target(self, package):
+            package.write(FINDINGS_QUERY, TWO_FINDINGS_SHARING_ONE_TARGET)
+            assert (
+                "targets _:t from more than one finding, where a finding's oa:hasTarget is a blank node written "
+                "for that one finding"
+            ) in "\n".join(queries.malformed(package.crate))
+
+        def test_reports_a_findings_query_targeting_a_variable_as_a_node_the_lift_already_holds(self, package):
+            package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_TARGETING_A_VARIABLE)
+            messages = "\n".join(queries.malformed(package.crate))
+            assert (
+                "targets ?note, where a finding's oa:hasTarget is a blank node written for that one finding: "
+                "a variable is bound to a node the lift already holds"
+            ) in messages
+            assert "one name is one node" not in messages
+
+        def test_reports_nothing_for_two_findings_each_targeting_a_blank_node_of_its_own(self, package):
+            package.write(FINDINGS_QUERY, TWO_FINDINGS_EACH_WITH_A_TARGET_OF_ITS_OWN)
+            assert not list(queries.malformed(package.crate))
+
+        def test_reports_a_findings_query_constructing_a_finding_with_no_body(self, package):
+            package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_CONSTRUCTING_A_FINDING_WITH_NO_BODY)
+            assert (
+                "A finding carries exactly one oa:hasBody, an IRI: the code the finding is an instance of, never a sentence."
+            ) in "\n".join(queries.malformed(package.crate))
+
+        def test_reports_nothing_for_a_findings_query_constructing_a_finding_with_no_severity(self, package):
+            package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_CONSTRUCTING_A_FINDING_WITH_NO_SEVERITY)
+            assert not list(queries.malformed(package.crate))
+
+        def test_reports_a_findings_query_constructing_two_severities(self, package):
+            package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_CONSTRUCTING_TWO_SEVERITIES)
+            assert (
+                "A finding carries exactly one sh:resultSeverity, one of sh:Info, sh:Warning, sh:Violation."
+                in "\n".join(queries.malformed(package.crate))
+            )
+
+        def test_reports_a_findings_query_constructing_a_severity_outside_the_scale(self, package):
+            package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_CONSTRUCTING_A_SEVERITY_OUTSIDE_THE_SCALE)
+            assert (
+                "A finding carries exactly one sh:resultSeverity, one of sh:Info, sh:Warning, sh:Violation."
+                in "\n".join(queries.malformed(package.crate))
+            )
+
+        def test_reports_a_findings_query_giving_one_target_two_selectors(self, package):
+            package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_GIVING_ONE_TARGET_TWO_SELECTORS)
+            assert "A finding's target carries exactly one oa:hasSelector, the record's selector." in "\n".join(
+                queries.malformed(package.crate)
+            )
+
+        def test_reports_a_findings_query_binding_the_annotation_to_a_variable(self, package):
+            package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_BINDING_THE_ANNOTATION_TO_A_VARIABLE)
+            said = list(queries.malformed(package.crate))
+            assert len(said) == 1
+            assert "?note as an oa:Annotation, where a finding is a blank node written for that one finding" in said[0]
+
+        def test_holds_a_findings_query_to_nothing_a_variable_binds(self, package):
+            package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_WHOSE_BODY_SEVERITY_AND_XPATH_ARE_BOUND)
+            assert not list(queries.malformed(package.crate))
+
+        def test_reports_nothing_for_a_findings_query_constructing_no_selector(self, package):
+            package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_WHOSE_FINDING_IS_ABOUT_THE_RECORD_ITSELF)
+            assert not list(queries.malformed(package.crate))
+
+        def test_reports_a_findings_query_constructing_a_selector_that_is_itself_refined(self, package):
+            package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_CONSTRUCTING_A_SELECTOR_THAT_IS_ITSELF_REFINED)
+            said = list(queries.malformed(package.crate))
+            assert [
+                fault
+                for fault in said
+                if fault.startswith("example-findings.rq: ")
+                and "https://example.org/synthetic-adapter/v1#no-term-for-a-free-text-note" in fault
+                and fault.endswith(": A selector refining a record's selector is refined no further.")
+            ], said
+
+        def test_reports_a_findings_query_constructing_a_constant_body_outside_the_adapters_gap_scheme(self, package):
+            """reports a findings query constructing a constant body outside the adapter's gap scheme"""
+            package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_CONSTRUCTING_A_CONSTANT_BODY_OUTSIDE_THE_SCHEME)
+            assert (
+                "example-findings.rq constructs https://example.org/synthetic-adapter/v1#a-gap-the-scheme-does-not-hold "
+                "as a finding's body, where a body a findings query constructs as a constant is a gap of the adapter's "
+                "bridge:gapScheme"
+            ) in "\n".join(queries.malformed(package.crate))
+
+        def test_reports_nothing_for_a_findings_query_constructing_a_gap_of_the_adapters_scheme(self, package):
+            """reports nothing for a findings query constructing a gap of the adapter's scheme"""
+            package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_CONSTRUCTING_A_GAP_OF_THE_ADAPTERS_SCHEME)
+            assert not list(queries.malformed(package.crate))
+
+        def test_holds_a_findings_query_to_nothing_where_the_body_it_constructs_is_bound_to_a_variable(self, package):
+            package.write(FINDINGS_QUERY, A_FINDINGS_QUERY_WHOSE_BODY_IS_BOUND_TO_A_VARIABLE)
+            assert not list(queries.malformed(package.crate))

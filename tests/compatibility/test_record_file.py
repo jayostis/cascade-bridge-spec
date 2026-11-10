@@ -23,24 +23,32 @@ def used(tmp_path):
     ]
 
 
-def test_a_record_reads_back_as_it_was_saved(tmp_path):
-    record = Record(tmp_path / "engine", "local", used(tmp_path))
-    record.save(tmp_path)
-    assert Record.load(tmp_path) == record
+class TestTheRunRecordHandedToTheVersionARunPicked:
+    """The run record handed to the version a run picked · compatibility_tool/record.py
 
+    The version a caller fetched picks and places the repositories; the version picked runs the checks. The run record
+    is what the first leaves for the second: each repository used, its commit and how it was picked.
+    """
 
-def test_a_records_counterparts_are_the_repositories_run_and_judged(tmp_path):
-    record = Record(tmp_path / "engine", "local", used(tmp_path))
-    assert [entry.name for entry in record.counterparts] == ["adapter"]
+    class TestGivenARunRecord:
+        def test_reads_back_as_it_was_saved(self, tmp_path):
+            """reads back as it was saved"""
+            record = Record(tmp_path / "engine", "local", used(tmp_path))
+            record.save(tmp_path)
+            assert Record.load(tmp_path) == record
 
+        def test_lists_as_its_counterparts_the_repositories_run_and_judged(self, tmp_path):
+            record = Record(tmp_path / "engine", "local", used(tmp_path))
+            assert [entry.name for entry in record.counterparts] == ["adapter"]
 
-def test_a_missing_record_says_the_run_wrote_none(tmp_path):
-    with pytest.raises(Stop, match="no record"):
-        Record.load(Path(tmp_path) / "elsewhere")
+    class TestGivenAResultsDirectoryWithNoRunRecord:
+        def test_says_the_run_wrote_none(self, tmp_path):
+            with pytest.raises(Stop, match="no record"):
+                Record.load(Path(tmp_path) / "elsewhere")
 
-
-def test_a_record_written_by_an_older_tooling_reads_back(tmp_path):
-    """The version a caller fetched writes the handover; the version picked reads it."""
-    written = used(tmp_path)[0].to_json()
-    del written["fromNamedPullRequests"]
-    assert Row.from_json("engine", written).from_named_pull_requests is False
+    class TestGivenARunRecordWrittenByAnOlderTooling:
+        def test_reads_back(self, tmp_path):
+            """reads back, a missing `fromNamedPullRequests` read as false"""
+            written = used(tmp_path)[0].to_json()
+            del written["fromNamedPullRequests"]
+            assert Row.from_json("engine", written).from_named_pull_requests is False

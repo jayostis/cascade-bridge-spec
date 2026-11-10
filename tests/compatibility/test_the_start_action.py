@@ -37,16 +37,25 @@ def output_of_the_step(tmp_path, written):
     return outputs.read_text(encoding="utf-8").strip(), earl
 
 
-@pytest.mark.parametrize(
-    ("written", "named"),
-    [
-        ([], None),
-        (["conformance-on-host-1.ttl"], "conformance-on-host-1.ttl"),
-        (["conformance-on-host-1.ttl", "conformance-on-host-2.ttl"], None),
-    ],
-    ids=["none", "one", "several"],
-)
-def test_report_names_the_report_only_when_the_run_wrote_exactly_one(tmp_path, written, named):
-    output, earl = output_of_the_step(tmp_path, written)
+class TestTheReportARunNamesForItsCaller:
+    """The report a run names for its caller · .github/actions/start
 
-    assert output == (f"path={(earl / named).as_posix()}" if named else "")
+    A job that reads the EARL report a run wrote reads the start action's `report` output, never a path it assumes.
+    """
+
+    class TestWhenTheStartActionNamesTheReportItWrote:
+        """when the start action names the report it wrote"""
+
+        @pytest.mark.parametrize(
+            ("written", "named"),
+            [
+                ([], None),
+                (["conformance-on-host-1.ttl"], "conformance-on-host-1.ttl"),
+                (["conformance-on-host-1.ttl", "conformance-on-host-2.ttl"], None),
+            ],
+            ids=["no report", "one report", "several reports"],
+        )
+        def test_names_the_report_only_when_the_run_wrote_exactly_one(self, tmp_path, written, named):
+            output, earl = output_of_the_step(tmp_path, written)
+
+            assert output == (f"path={(earl / named).as_posix()}" if named else "")

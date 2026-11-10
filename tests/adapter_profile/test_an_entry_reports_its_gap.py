@@ -117,123 +117,149 @@ def every(reported):
     return found
 
 
-def test_the_kinds_that_report_and_the_kinds_that_report_nothing_are_every_gap_kind_between_them():
-    assert set(KINDS_AN_ENTRY_REPORTS).isdisjoint(KINDS_AN_ENTRY_REPORTS_NOTHING_OF)
-    assert set(KINDS_AN_ENTRY_REPORTS) | set(KINDS_AN_ENTRY_REPORTS_NOTHING_OF) == set(KINDS_A_GAP_MAY_NAME)
+class TestFindingsABridgeReportsForAnAccountingEntry:
+    """Findings a Bridge reports for an accounting entry · fixtures/synthetic-adapter/vocab/example-accounting.ttl, fixtures/synthetic-adapter/fixtures/findings/
+
+    An entry whose verdict names a gap makes a Bridge report that gap wherever its path stands in a record. These hold
+    the synthetic adapter's expected findings to that rule.
+    """
+
+    class TestGivenTheKindsOfGapTheSpecificationNames:
+        def test_splits_them_into_those_an_entry_reports_and_those_it_reports_nothing_of_with_none_left_over(self):
+            """splits them into those an entry reports and those it reports nothing of, with none left over"""
+            assert set(KINDS_AN_ENTRY_REPORTS).isdisjoint(KINDS_AN_ENTRY_REPORTS_NOTHING_OF)
+            assert set(KINDS_AN_ENTRY_REPORTS) | set(KINDS_AN_ENTRY_REPORTS_NOTHING_OF) == set(KINDS_A_GAP_MAY_NAME)
+
+    class TestGivenAnEntryWhoseVerdictNamesAReportingGap:
+        def test_is_expected_once_per_distinct_path_per_record(self, crate):
+            for named, graph, record, source_path, gap, _, _ in every(each_path_reported(crate)):
+                finding = the_one_naming(graph, record, source_path)
+                assert graph.value(finding, OA.hasBody) == gap, f"{named}: {source_path}"
+                assert graph.value(finding, OA.motivatedBy) == OA.classifying, f"{named}: {source_path}"
+
+    class TestGivenAFindingAnEntryReports:
+        def test_is_addressed_at_the_first_occurrence_of_its_path_in_the_record(self, crate):
+            for named, graph, record, source_path, _, _, standing in every(each_path_reported(crate)):
+                finding = the_one_naming(graph, record, source_path)
+                assert selected_by(graph, finding) == (selector_of(record), refinement_of(record, standing[0])), (
+                    f"{named}: {source_path}"
+                )
+
+        def test_carries_the_number_of_nodes_of_the_record_standing_at_its_path(self, crate):
+            standing_in_the_case = {}
+            for named, graph, record, source_path, _, _, standing in every(each_path_reported(crate)):
+                finding = the_one_naming(graph, record, source_path)
+                counted = None if len(standing) == 1 else Literal(len(standing), datatype=XSD.integer)
+                assert graph.value(finding, CASCADE.occurrenceCount) == counted, f"{named}: {source_path}"
+                if named == THE_CASE:
+                    standing_in_the_case.setdefault(source_path, set()).add(len(standing))
+            assert [source_path for source_path, _, _ in reported_by_an_entry(crate)].count(
+                A_PATH_STANDING_AT_MORE_THAN_ONE_NODE
+            ) == 1
+            assert max(standing_in_the_case.get(A_PATH_STANDING_AT_MORE_THAN_ONE_NODE, {0})) > 1, (
+                f"no record of {THE_CASE} stands at more than one {A_PATH_STANDING_AT_MORE_THAN_ONE_NODE}"
+            )
+            assert max(standing_in_the_case.get(A_PATH_STANDING_AT_ONE_NODE, {0})) == 1, (
+                f"no record of {THE_CASE} stands at {A_PATH_STANDING_AT_ONE_NODE} once and none more than once"
+            )
+
+        def test_takes_the_severity_its_gap_declares_and_sh_info_where_it_declares_none(self, crate):
+            """takes the severity its gap declares and `sh:Info` where it declares none"""
+            taken_in_the_case = set()
+            for named, graph, record, source_path, _, severity, _ in every(each_path_reported(crate)):
+                finding = the_one_naming(graph, record, source_path)
+                assert graph.value(finding, SH.resultSeverity) == severity, f"{named}: {source_path}"
+                if named == THE_CASE:
+                    taken_in_the_case.add((source_path, severity))
+            assert (A_PATH_IN_A_NAMESPACE, SH.Warning) in taken_in_the_case, (
+                f"no record of {THE_CASE} stands at {A_PATH_IN_A_NAMESPACE}, whose gap declares sh:Warning"
+            )
+
+    class TestGivenAnEntryWhoseVerdictNamesNoGap:
+        def test_reports_nothing_for_a_path_whose_entry_names_no_gap(self, crate):
+            silent = [path for path, gap, _ in entries_of(crate) if gap is None]
+            assert A_PATH_WHOSE_ENTRY_NAMES_NO_GAP in silent
+            _, graph, records = the_case(crate, THE_CASE)
+            assert [record for record in records if standing_at(record, A_PATH_WHOSE_ENTRY_NAMES_NO_GAP)], (
+                f"no record of {THE_CASE} stands at {A_PATH_WHOSE_ENTRY_NAMES_NO_GAP}, "
+                "so nothing there shows that an entry naming no gap reports nothing"
+            )
+            for named, graph, records in cases(crate):
+                for record in records:
+                    for source_path in silent:
+                        assert not naming(graph, record, source_path), f"{named}: {source_path}"
+
+    class TestGivenAnEntryNamingAGapOfAKindThatReportsNothing:
+        def test_is_expected_at_no_record(self, crate):
+            silent = naming_a_gap_no_entry_reports(crate)
+            the_path = A_PATH_WHOSE_ENTRY_NAMES_A_GAP_OF_A_KIND_THAT_REPORTS_NOTHING
+            assert the_path in [path for path, _ in silent]
+            standing = [record for _, _, records in cases(crate) for record in records if standing_at(record, the_path)]
+            assert standing, f"no record of the synthetic adapter's inputs stands at {the_path}"
+            for named, graph, records in cases(crate):
+                for record in records:
+                    for source_path, gap in silent:
+                        assert not naming(graph, record, source_path, gap), f"{named}: {source_path}"
+
+    class TestGivenAPathInANamespace:
+        def test_is_reported_at_the_step_a_selector_writes_for_it(self, crate):
+            reported = dict((path, gap) for path, gap, _ in reported_by_an_entry(crate))
+            assert A_PATH_IN_A_NAMESPACE in reported
+            _, graph, records = the_case(crate, THE_CASE)
+            record = next(record for record in records if standing_at(record, A_PATH_IN_A_NAMESPACE))
+            finding = the_one_naming(graph, record, A_PATH_IN_A_NAMESPACE, reported[A_PATH_IN_A_NAMESPACE])
+            assert selected_by(graph, finding)[1] == (
+                f"*[local-name()='Provenance' and namespace-uri()='{THE_NAMESPACE}'][1]"
+            )
+
+    class TestGivenAGapThatAnEntryReportsAndAFindingsQueryConstructs:
+        def test_stands_as_two_findings(self, crate):
+            reported = dict((path, gap) for path, gap, _ in reported_by_an_entry(crate))
+            assert A_PATH_STANDING_AT_ONE_NODE in reported
+            _, graph, records = the_case(crate, THE_CASE)
+            record = next(record for record in records if standing_at(record, A_PATH_STANDING_AT_ONE_NODE))
+            both = [
+                finding
+                for finding in findings_about(graph, record)
+                if graph.value(finding, OA.hasBody) == reported[A_PATH_STANDING_AT_ONE_NODE]
+            ]
+            assert len(both) == 2, (
+                "a gap both an entry and a findings query report stands twice, nothing deduplicating them"
+            )
+            assert sorted(str(graph.value(finding, SH.value) or "") for finding in both) == [
+                "",
+                A_PATH_STANDING_AT_ONE_NODE,
+            ]
 
 
-def test_an_entry_whose_verdict_names_a_reporting_gap_is_expected_once_per_distinct_path_per_record(crate):
-    for named, graph, record, source_path, gap, _, _ in every(each_path_reported(crate)):
-        finding = the_one_naming(graph, record, source_path)
-        assert graph.value(finding, OA.hasBody) == gap, f"{named}: {source_path}"
-        assert graph.value(finding, OA.motivatedBy) == OA.classifying, f"{named}: {source_path}"
+class TestFindingsABridgeReportsForAPathNoEntryAccountsFor:
+    """Findings a Bridge reports for a path no entry accounts for · fixtures/synthetic-adapter/fixtures/findings/example-0004.ttl
 
+    The census is what a Bridge reports of a path the accounting carries no entry for: one finding per path per record,
+    for the adapter's author to act on.
+    """
 
-def test_a_finding_an_entry_reports_is_addressed_at_the_first_occurrence_of_its_path_in_the_record(crate):
-    for named, graph, record, source_path, _, _, standing in every(each_path_reported(crate)):
-        finding = the_one_naming(graph, record, source_path)
-        assert selected_by(graph, finding) == (selector_of(record), refinement_of(record, standing[0])), (
-            f"{named}: {source_path}"
-        )
+    class TestGivenACensusFinding:
+        def test_carries_the_number_of_nodes_standing_at_its_path_on_the_same_rule(self, crate):
+            """carries the number of nodes standing at its path, on the same rule"""
+            accounted = [path for path, _, _ in entries_of(crate)]
+            assert AN_UNACCOUNTED_PATH_STANDING_AT_MORE_THAN_ONE_NODE not in accounted
+            _, graph, records = the_case(crate, THE_CASE)
+            record = next(
+                record for record in records if standing_at(record, AN_UNACCOUNTED_PATH_STANDING_AT_MORE_THAN_ONE_NODE)
+            )
+            nodes = standing_at(record, AN_UNACCOUNTED_PATH_STANDING_AT_MORE_THAN_ONE_NODE)
+            assert len(nodes) > 1
+            finding = the_one_naming(
+                graph, record, AN_UNACCOUNTED_PATH_STANDING_AT_MORE_THAN_ONE_NODE, CASCADE.SourcePathNotAccounted
+            )
+            assert graph.value(finding, CASCADE.occurrenceCount) == Literal(len(nodes), datatype=XSD.integer)
+            assert selected_by(graph, finding)[1] == refinement_of(record, nodes[0])
 
-
-def test_a_finding_an_entry_reports_carries_the_number_of_nodes_of_the_record_standing_at_its_path(crate):
-    standing_in_the_case = {}
-    for named, graph, record, source_path, _, _, standing in every(each_path_reported(crate)):
-        finding = the_one_naming(graph, record, source_path)
-        counted = None if len(standing) == 1 else Literal(len(standing), datatype=XSD.integer)
-        assert graph.value(finding, CASCADE.occurrenceCount) == counted, f"{named}: {source_path}"
-        if named == THE_CASE:
-            standing_in_the_case.setdefault(source_path, set()).add(len(standing))
-    assert [source_path for source_path, _, _ in reported_by_an_entry(crate)].count(
-        A_PATH_STANDING_AT_MORE_THAN_ONE_NODE
-    ) == 1
-    assert max(standing_in_the_case.get(A_PATH_STANDING_AT_MORE_THAN_ONE_NODE, {0})) > 1, (
-        f"no record of {THE_CASE} stands at more than one {A_PATH_STANDING_AT_MORE_THAN_ONE_NODE}"
-    )
-    assert max(standing_in_the_case.get(A_PATH_STANDING_AT_ONE_NODE, {0})) == 1, (
-        f"no record of {THE_CASE} stands at {A_PATH_STANDING_AT_ONE_NODE} once and none more than once"
-    )
-
-
-def test_a_finding_an_entry_reports_takes_the_severity_its_gap_declares_and_sh_info_where_it_declares_none(crate):
-    taken_in_the_case = set()
-    for named, graph, record, source_path, _, severity, _ in every(each_path_reported(crate)):
-        finding = the_one_naming(graph, record, source_path)
-        assert graph.value(finding, SH.resultSeverity) == severity, f"{named}: {source_path}"
-        if named == THE_CASE:
-            taken_in_the_case.add((source_path, severity))
-    assert (A_PATH_IN_A_NAMESPACE, SH.Warning) in taken_in_the_case, (
-        f"no record of {THE_CASE} stands at {A_PATH_IN_A_NAMESPACE}, whose gap declares sh:Warning"
-    )
-
-
-def test_an_entry_whose_verdict_names_no_gap_reports_nothing(crate):
-    silent = [path for path, gap, _ in entries_of(crate) if gap is None]
-    assert A_PATH_WHOSE_ENTRY_NAMES_NO_GAP in silent
-    _, graph, records = the_case(crate, THE_CASE)
-    assert [record for record in records if standing_at(record, A_PATH_WHOSE_ENTRY_NAMES_NO_GAP)], (
-        f"no record of {THE_CASE} stands at {A_PATH_WHOSE_ENTRY_NAMES_NO_GAP}, "
-        "so nothing there shows that an entry naming no gap reports nothing"
-    )
-    for named, graph, records in cases(crate):
-        for record in records:
-            for source_path in silent:
-                assert not naming(graph, record, source_path), f"{named}: {source_path}"
-
-
-def test_an_entry_naming_a_gap_of_a_kind_that_reports_nothing_is_expected_at_no_record(crate):
-    silent = naming_a_gap_no_entry_reports(crate)
-    the_path = A_PATH_WHOSE_ENTRY_NAMES_A_GAP_OF_A_KIND_THAT_REPORTS_NOTHING
-    assert the_path in [path for path, _ in silent]
-    standing = [record for _, _, records in cases(crate) for record in records if standing_at(record, the_path)]
-    assert standing, f"no record of the synthetic adapter's inputs stands at {the_path}"
-    for named, graph, records in cases(crate):
-        for record in records:
-            for source_path, gap in silent:
-                assert not naming(graph, record, source_path, gap), f"{named}: {source_path}"
-
-
-def test_a_path_in_a_namespace_is_reported_at_the_step_a_selector_writes_for_it(crate):
-    reported = dict((path, gap) for path, gap, _ in reported_by_an_entry(crate))
-    assert A_PATH_IN_A_NAMESPACE in reported
-    _, graph, records = the_case(crate, THE_CASE)
-    record = next(record for record in records if standing_at(record, A_PATH_IN_A_NAMESPACE))
-    finding = the_one_naming(graph, record, A_PATH_IN_A_NAMESPACE, reported[A_PATH_IN_A_NAMESPACE])
-    assert selected_by(graph, finding)[1] == (f"*[local-name()='Provenance' and namespace-uri()='{THE_NAMESPACE}'][1]")
-
-
-def test_a_census_finding_carries_the_number_of_nodes_standing_at_its_path_on_the_same_rule(crate):
-    accounted = [path for path, _, _ in entries_of(crate)]
-    assert AN_UNACCOUNTED_PATH_STANDING_AT_MORE_THAN_ONE_NODE not in accounted
-    _, graph, records = the_case(crate, THE_CASE)
-    record = next(
-        record for record in records if standing_at(record, AN_UNACCOUNTED_PATH_STANDING_AT_MORE_THAN_ONE_NODE)
-    )
-    nodes = standing_at(record, AN_UNACCOUNTED_PATH_STANDING_AT_MORE_THAN_ONE_NODE)
-    assert len(nodes) > 1
-    finding = the_one_naming(
-        graph, record, AN_UNACCOUNTED_PATH_STANDING_AT_MORE_THAN_ONE_NODE, CASCADE.SourcePathNotAccounted
-    )
-    assert graph.value(finding, CASCADE.occurrenceCount) == Literal(len(nodes), datatype=XSD.integer)
-    assert selected_by(graph, finding)[1] == refinement_of(record, nodes[0])
-
-    _, census, records = the_case(crate, THE_CENSUS_CASE)
-    alone = next(record for record in records if standing_at(record, AN_UNACCOUNTED_PATH_STANDING_AT_ONE_NODE))
-    assert len(standing_at(alone, AN_UNACCOUNTED_PATH_STANDING_AT_ONE_NODE)) == 1
-    only = the_one_naming(census, alone, AN_UNACCOUNTED_PATH_STANDING_AT_ONE_NODE, CASCADE.SourcePathNotAccounted)
-    assert census.value(only, CASCADE.occurrenceCount) is None
-
-
-def test_a_gap_an_entry_reports_and_a_findings_query_constructs_stands_as_two_findings(crate):
-    reported = dict((path, gap) for path, gap, _ in reported_by_an_entry(crate))
-    assert A_PATH_STANDING_AT_ONE_NODE in reported
-    _, graph, records = the_case(crate, THE_CASE)
-    record = next(record for record in records if standing_at(record, A_PATH_STANDING_AT_ONE_NODE))
-    both = [
-        finding
-        for finding in findings_about(graph, record)
-        if graph.value(finding, OA.hasBody) == reported[A_PATH_STANDING_AT_ONE_NODE]
-    ]
-    assert len(both) == 2, "a gap both an entry and a findings query report stands twice, nothing deduplicating them"
-    assert sorted(str(graph.value(finding, SH.value) or "") for finding in both) == ["", A_PATH_STANDING_AT_ONE_NODE]
+            _, census, records = the_case(crate, THE_CENSUS_CASE)
+            alone = next(record for record in records if standing_at(record, AN_UNACCOUNTED_PATH_STANDING_AT_ONE_NODE))
+            assert len(standing_at(alone, AN_UNACCOUNTED_PATH_STANDING_AT_ONE_NODE)) == 1
+            only = the_one_naming(
+                census, alone, AN_UNACCOUNTED_PATH_STANDING_AT_ONE_NODE, CASCADE.SourcePathNotAccounted
+            )
+            assert census.value(only, CASCADE.occurrenceCount) is None

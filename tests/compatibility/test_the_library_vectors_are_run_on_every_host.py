@@ -46,48 +46,68 @@ def one_host(library):
     return [a_host("native", command=a_host("native")["command"] + ["--library", library])]
 
 
-def test_the_document_kind_where_the_adapter_kind_is_expected_on_the_second_host_fails_that_hosts_row_and_the_gate(
-    world,
-):
-    engine, event = world.engine_under_test(host=native_and_node(library_on_node="document-kind-for-adapter"))
+class TestLibraryCasesRunOnEveryHostOfAnEngine:
+    """Library cases run on every host of an engine · fixtures/library/, compatibility_tool/library.py
 
-    said = world.tool(engine, 1, **world.ci(event=event), library_cases=True)
+    The library cases are calls every engine's library must answer alike, whatever language it is in. An engine under
+    test runs them on each host through its `library` command.
+    """
 
-    native, node = on_host(world, "native"), on_host(world, "node")
-    assert native is not None and node is not None, said
-    assert native["holds"] is True, native
-    assert node["holds"] is False, node
-    assert names_a_case(node["result"], failing_only=True), node["result"]
-    assert "compatibility: FAIL" in said
+    class TestGivenADocumentFailureWhereAnAdapterFailureIsExpectedOnTheSecondHost:
+        """given a document failure where an adapter failure is expected, on the second host"""
 
+        def test_fails_that_hosts_row_and_the_gate(
+            self,
+            world,
+        ):
+            """fails that host's row and the gate"""
+            engine, event = world.engine_under_test(host=native_and_node(library_on_node="document-kind-for-adapter"))
 
-def test_a_file_iri_in_a_findings_graph_fails_the_row_naming_the_case(world):
-    said = world.tool(world.engine_beside_adapter(host=one_host("file-iri-in-findings")), 1, library_cases=True)
+            said = world.tool(engine, 1, **world.ci(event=event), library_cases=True)
 
-    row = on_host(world, "native")
-    assert row is not None, said
-    assert row["holds"] is False, row
-    assert names_a_case(row["result"]), row["result"]
+            native, node = on_host(world, "native"), on_host(world, "node")
+            assert native is not None and node is not None, said
+            assert native["holds"] is True, native
+            assert node["holds"] is False, node
+            assert names_a_case(node["result"], failing_only=True), node["result"]
+            assert "compatibility: FAIL" in said
 
+    class TestGivenAFileIRIInAFindingsGraph:
+        """given a `file:` IRI in a findings graph"""
 
-def test_an_engine_writing_no_library_results_fails_the_row_saying_it_wrote_none(world):
-    said = world.tool(world.engine_beside_adapter(host=one_host("none")), 1, library_cases=True)
+        def test_fails_the_row_naming_the_case(self, world):
+            """fails the row, naming the case"""
+            said = world.tool(world.engine_beside_adapter(host=one_host("file-iri-in-findings")), 1, library_cases=True)
 
-    row = on_host(world, "native")
-    assert row is not None, said
-    assert row["holds"] is False, row
-    assert row["result"] == "it wrote no results"
+            row = on_host(world, "native")
+            assert row is not None, said
+            assert row["holds"] is False, row
+            assert names_a_case(row["result"]), row["result"]
 
+    class TestGivenAnEngineWritingNoLibraryResults:
+        def test_fails_the_row_saying_it_wrote_none(self, world):
+            """fails the row, saying it wrote none"""
+            said = world.tool(world.engine_beside_adapter(host=one_host("none")), 1, library_cases=True)
 
-def test_an_adapters_run_naming_the_engine_has_no_library_row(world):
-    world.tool(world.adapter_beside_engine(engine_document([], host=native_and_node())), library_cases=True)
+            row = on_host(world, "native")
+            assert row is not None, said
+            assert row["holds"] is False, row
+            assert row["result"] == "it wrote no results"
 
-    assert library_rows(world) == []
+    class TestGivenAnAdaptersRunNamingTheEngine:
+        """given an adapter's run naming the engine"""
 
+        def test_has_no_library_row(self, world):
+            world.tool(world.adapter_beside_engine(engine_document([], host=native_and_node())), library_cases=True)
 
-def test_an_engine_with_no_must_pass_with_whose_library_cases_hold_holds_rather_than_has_nothing_to_check(world):
-    said = world.tool(world.engine([], host=one_host("holds")), library_cases=True)
+            assert library_rows(world) == []
 
-    assert "nothing to check" not in said
-    assert "compatibility: ok" in said
-    assert [row["holds"] for row in library_rows(world)] == [True]
+    class TestGivenAnEngineWithNoMustPassWithWhoseLibraryCasesHold:
+        """given an engine with no `mustPassWith` whose library cases hold"""
+
+        def test_holds_where_it_would_otherwise_have_nothing_to_check(self, world):
+            said = world.tool(world.engine([], host=one_host("holds")), library_cases=True)
+
+            assert "nothing to check" not in said
+            assert "compatibility: ok" in said
+            assert [row["holds"] for row in library_rows(world)] == [True]

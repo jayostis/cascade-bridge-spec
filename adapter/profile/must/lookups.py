@@ -11,13 +11,9 @@ from rocrate_validator.requirements.python import PyFunctionCheck, check, requir
 from _codes import scheme_named_by
 from _crate import file_name_of
 from _findings import report_findings, unmet
-from _terms import BRIDGE
+from _terms import BRIDGE, shortened
 
 SHAPES = Path(__file__).resolve().parents[3] / "shapes" / "concept-map.shapes.ttl"
-
-
-def shortened(term):
-    return str(term).replace(str(BRIDGE), "bridge:")
 
 
 def accounting_of(crate):

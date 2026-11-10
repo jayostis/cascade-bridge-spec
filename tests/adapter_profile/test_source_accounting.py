@@ -69,200 +69,210 @@ def said_about(package):
     return "\n".join(source_accounting.faulty(package.crate))
 
 
-def test_reports_an_entry_carrying_no_verdict_by_the_shape_it_breaks(package):
-    accounted(package, entry(THE_MAPPING_MENTIONS).replace(" ;\n  bridge:verdict bridge:carried", ""))
-    assert "An entry carries exactly one bridge:verdict" in said_about(package)
+class TestAccountingForEveryPathOfASource:
+    """Accounting for every path of a source · adapter/profile/must/source_accounting.py
 
+    A source accounting says, path by path, what becomes of each element and attribute of a source record: one of six
+    verdicts, from carried to ignored. The check holds each entry's path, verdict and gap to one another and to what the
+    mappings mention.
+    """
 
-def test_reports_nothing_for_an_adapter_naming_no_accounting(crate):
-    crate.graph.remove((crate.root, BRIDGE.sourceAccounting, None))
-    assert not list(source_accounting.faulty(crate))
+    class TestGivenTheAccountingAnAdapterNames:
+        def test_reports_an_entry_carrying_no_verdict_by_the_shape_it_breaks(self, package):
+            accounted(package, entry(THE_MAPPING_MENTIONS).replace(" ;\n  bridge:verdict bridge:carried", ""))
+            assert "An entry carries exactly one bridge:verdict" in said_about(package)
 
+        def test_reports_nothing_for_an_adapter_naming_no_accounting(self, crate):
+            crate.graph.remove((crate.root, BRIDGE.sourceAccounting, None))
+            assert not list(source_accounting.faulty(crate))
 
-def test_reports_an_adapter_that_names_more_than_one_accounting(crate):
-    crate.graph.remove((crate.root, BRIDGE.sourceAccounting, None))
-    for named in (
-        "https://example.org/synthetic-adapter/vocab/example-accounting.ttl",
-        "https://example.org/synthetic-adapter/vocab/the-rest-of-it.ttl",
-    ):
-        crate.graph.add((crate.root, BRIDGE.sourceAccounting, URIRef(named)))
-    said = "\n".join(source_accounting.faulty(crate))
-    assert "more than one" in said
-    assert "bridge:sourceAccounting" in said
+        def test_reports_an_adapter_that_names_more_than_one_accounting(self, crate):
+            crate.graph.remove((crate.root, BRIDGE.sourceAccounting, None))
+            for named in (
+                "https://example.org/synthetic-adapter/vocab/example-accounting.ttl",
+                "https://example.org/synthetic-adapter/vocab/the-rest-of-it.ttl",
+            ):
+                crate.graph.add((crate.root, BRIDGE.sourceAccounting, URIRef(named)))
+            said = "\n".join(source_accounting.faulty(crate))
+            assert "more than one" in said
+            assert "bridge:sourceAccounting" in said
 
+        def test_reports_an_accounting_that_is_not_a_file_in_the_package(self, crate):
+            crate.graph.remove((crate.root, BRIDGE.sourceAccounting, None))
+            crate.graph.add((crate.root, BRIDGE.sourceAccounting, URIRef("https://example.org/an-accounting.ttl")))
+            assert "which is not a file in this package" in "\n".join(source_accounting.faulty(crate))
 
-def test_reports_an_accounting_that_is_not_a_file_in_the_package(crate):
-    crate.graph.remove((crate.root, BRIDGE.sourceAccounting, None))
-    crate.graph.add((crate.root, BRIDGE.sourceAccounting, URIRef("https://example.org/an-accounting.ttl")))
-    assert "which is not a file in this package" in "\n".join(source_accounting.faulty(crate))
+        def test_reports_nothing_for_the_accounting_the_synthetic_adapter_commits(self, crate):
+            assert not list(source_accounting.faulty(crate))
 
+    class TestGivenASourcePath:
+        def test_reports_a_source_path_that_starts_at_the_document_rather_than_at_the_record(self, package):
+            accounted(package, entry("/ExampleRecordSet/ExampleRecord/Label"))
+            assert (
+                "/ExampleRecordSet/ExampleRecord/Label starts at ExampleRecordSet, where a bridge:sourcePath "
+                "starts at ExampleRecord, the adapter's bridge:elementNameOfEachRecord"
+            ) in said_about(package)
 
-def test_reports_a_source_path_that_starts_at_the_document_rather_than_at_the_record(package):
-    accounted(package, entry("/ExampleRecordSet/ExampleRecord/Label"))
-    assert (
-        "/ExampleRecordSet/ExampleRecord/Label starts at ExampleRecordSet, where a bridge:sourcePath "
-        "starts at ExampleRecord, the adapter's bridge:elementNameOfEachRecord"
-    ) in said_about(package)
+        def test_reports_a_source_path_that_is_the_record_element_alone(self, package):
+            accounted(package, entry("/ExampleRecord"))
+            assert (
+                "/ExampleRecord is the record element alone, where a bridge:sourcePath names a node below it"
+            ) in said_about(package)
 
+        def test_reports_a_source_path_whose_step_carries_a_position(self, package):
+            accounted(package, entry("/ExampleRecord/Note[1]", verdict=NO_HOME, names_gap=A_GAP_WITH_NO_PREDICATE))
+            assert "/ExampleRecord/Note[1] " + A_PATH_IS_STEPS in said_about(package)
 
-def test_reports_a_source_path_that_is_the_record_element_alone(package):
-    accounted(package, entry("/ExampleRecord"))
-    assert (
-        "/ExampleRecord is the record element alone, where a bridge:sourcePath names a node below it"
-    ) in said_about(package)
+        def test_reports_a_source_path_whose_step_is_padded_with_whitespace(self, package):
+            accounted(package, entry("/ExampleRecord/ Note ", verdict=NO_HOME, names_gap=A_GAP_WITH_NO_PREDICATE))
+            assert "/ExampleRecord/ Note  " + A_PATH_IS_STEPS in said_about(package)
 
+        def test_reports_a_source_path_that_names_a_node_in_a_namespace_by_a_prefix(self, package):
+            accounted(package, entry("/ExampleRecord/@xsi:schemaLocation", verdict=CONSUMED))
+            assert "/ExampleRecord/@xsi:schemaLocation " + A_PATH_IS_STEPS in said_about(package)
 
-def test_reports_a_source_path_whose_step_carries_a_position(package):
-    accounted(package, entry("/ExampleRecord/Note[1]", verdict=NO_HOME, names_gap=A_GAP_WITH_NO_PREDICATE))
-    assert "/ExampleRecord/Note[1] " + A_PATH_IS_STEPS in said_about(package)
+        def test_reports_a_source_path_writing_an_attribute_before_its_last_step(self, package):
+            accounted(
+                package, entry("/ExampleRecord/@Label/Emphasis", verdict=NO_HOME, names_gap=A_GAP_WITH_NO_PREDICATE)
+            )
+            assert (
+                "/ExampleRecord/@Label/Emphasis writes @ before a step that is not its last, "
+                "where an attribute is the node a path ends at"
+            ) in said_about(package)
 
+        def test_reports_nothing_for_a_source_path_naming_an_element_in_a_namespace(self, package):
+            accounted(
+                package,
+                entry(A_NAMESPACED_ELEMENT_NO_QUERY_MENTIONS, verdict=NO_HOME, names_gap=A_GAP_WITH_NO_PREDICATE),
+            )
+            assert not said_about(package)
 
-def test_reports_a_source_path_whose_step_is_padded_with_whitespace(package):
-    accounted(package, entry("/ExampleRecord/ Note ", verdict=NO_HOME, names_gap=A_GAP_WITH_NO_PREDICATE))
-    assert "/ExampleRecord/ Note  " + A_PATH_IS_STEPS in said_about(package)
+        def test_reports_nothing_for_a_source_path_naming_an_attribute_in_a_namespace(self, package):
+            accounted(package, entry(A_NAMESPACED_ATTRIBUTE_OF_THE_RECORD, verdict=CONSUMED))
+            assert not said_about(package)
 
+        def test_reports_a_carried_entry_for_an_element_in_a_namespace_by_the_local_name_the_mapping_would_write(
+            self, package
+        ):
+            accounted(package, entry(A_NAMESPACED_ELEMENT_NO_QUERY_MENTIONS))
+            said = said_about(package)
+            assert "no bridge:mapping of this adapter mentions Extension" in said
 
-def test_reports_a_source_path_that_names_a_node_in_a_namespace_by_a_prefix(package):
-    accounted(package, entry("/ExampleRecord/@xsi:schemaLocation", verdict=CONSUMED))
-    assert "/ExampleRecord/@xsi:schemaLocation " + A_PATH_IS_STEPS in said_about(package)
+            accounted(package, entry(A_NAMESPACED_ELEMENT_THE_MAPPING_MENTIONS))
+            assert not said_about(package)
 
+    class TestGivenTwoEntriesOfOneAccounting:
+        def test_reports_two_entries_sharing_a_source_path(self, package):
+            accounted(package, entry(THE_MAPPING_MENTIONS), entry(THE_MAPPING_MENTIONS, verdict=CONSUMED))
+            said = said_about(package)
+            assert "bridge:sourcePath" in said
+            assert THE_MAPPING_MENTIONS in said
 
-def test_reports_a_source_path_writing_an_attribute_before_its_last_step(package):
-    accounted(package, entry("/ExampleRecord/@Label/Emphasis", verdict=NO_HOME, names_gap=A_GAP_WITH_NO_PREDICATE))
-    assert (
-        "/ExampleRecord/@Label/Emphasis writes @ before a step that is not its last, "
-        "where an attribute is the node a path ends at"
-    ) in said_about(package)
+        def test_reports_a_bridge_samefactas_naming_a_path_the_accounting_does_not_carry(self, package):
+            """reports a `bridge:sameFactAs` naming a path the accounting does not carry"""
+            accounted(
+                package,
+                entry(THE_MAPPING_MENTIONS),
+                entry(THE_ACCESSION, verdict=REDUNDANT_WITH, same_fact_as=NO_QUERY_MENTIONS),
+            )
+            said = said_about(package)
+            assert "bridge:sameFactAs" in said
+            assert NO_QUERY_MENTIONS in said
 
+        def test_reports_a_bridge_samefactas_naming_the_entrys_own_path(self, package):
+            """reports a `bridge:sameFactAs` naming the entry's own path"""
+            accounted(package, entry(THE_ACCESSION, verdict=REDUNDANT_WITH, same_fact_as=THE_ACCESSION))
+            said = said_about(package)
+            assert "bridge:sameFactAs" in said
+            assert THE_ACCESSION in said
 
-def test_reports_nothing_for_a_source_path_naming_an_element_in_a_namespace(package):
-    accounted(
-        package,
-        entry(A_NAMESPACED_ELEMENT_NO_QUERY_MENTIONS, verdict=NO_HOME, names_gap=A_GAP_WITH_NO_PREDICATE),
-    )
-    assert not said_about(package)
+    class TestGivenTheGapAnEntryNames:
+        def test_reports_a_bridge_namesgap_that_is_no_gap_of_the_adapters_own_gap_scheme(self, package):
+            """reports a `bridge:namesGap` that is no gap of the adapter's own gap scheme"""
+            accounted(package, entry(NO_QUERY_MENTIONS, verdict=NO_HOME, names_gap="ex:a-gap-the-scheme-does-not-hold"))
+            said = said_about(package)
+            assert "bridge:namesGap" in said
+            assert "a-gap-the-scheme-does-not-hold" in said
 
+        def test_reports_a_no_home_entry_whose_gap_is_of_a_kind_the_verdict_does_not_imply(self, package):
+            """reports a no-home entry whose gap is of a kind the verdict does not imply"""
+            accounted(package, entry(NO_QUERY_MENTIONS, verdict=NO_HOME, names_gap=A_GAP_OF_A_VALUE_NOT_MAPPED))
+            said = said_about(package)
+            assert "bridge:noPredicate" in said
+            assert A_GAP_OF_A_VALUE_NOT_MAPPED.removeprefix("ex:") in said
 
-def test_reports_nothing_for_a_source_path_naming_an_attribute_in_a_namespace(package):
-    accounted(package, entry(A_NAMESPACED_ATTRIBUTE_OF_THE_RECORD, verdict=CONSUMED))
-    assert not said_about(package)
+        def test_reports_nothing_for_a_no_home_entry_naming_a_gap_of_a_source_lacking_what_a_shape_requires(
+            self, package
+        ):
+            """reports nothing for a no-home entry naming a gap of a source lacking what a shape requires"""
+            accounted(
+                package,
+                entry(NO_QUERY_MENTIONS, verdict=NO_HOME, names_gap=A_GAP_OF_A_SOURCE_LACKING_WHAT_A_SHAPE_REQUIRES),
+            )
+            assert not said_about(package)
 
+        def test_reports_nothing_for_a_carried_in_part_entry_naming_a_gap_of_a_value_not_mapped(self, package):
+            """reports nothing for a carried-in-part entry naming a gap of a value not mapped"""
+            accounted(
+                package,
+                entry(THE_MAPPING_MENTIONS, verdict=CARRIED_IN_PART, names_gap=A_GAP_OF_A_VALUE_NOT_MAPPED),
+            )
+            assert not said_about(package)
 
-def test_reports_a_carried_entry_for_an_element_in_a_namespace_by_the_local_name_the_mapping_would_write(package):
-    accounted(package, entry(A_NAMESPACED_ELEMENT_NO_QUERY_MENTIONS))
-    said = said_about(package)
-    assert "no bridge:mapping of this adapter mentions Extension" in said
+        def test_reports_a_no_home_entry_naming_a_gap_carried_with_loss(self, package):
+            """reports a no-home entry naming a gap carried with loss"""
+            accounted(package, entry(NO_QUERY_MENTIONS, verdict=NO_HOME, names_gap=A_GAP_CARRIED_WITH_LOSS))
+            assert A_GAP_CARRIED_WITH_LOSS.removeprefix("ex:") in said_about(package)
 
-    accounted(package, entry(A_NAMESPACED_ELEMENT_THE_MAPPING_MENTIONS))
-    assert not said_about(package)
+        def test_reports_a_carried_in_part_entry_whose_gap_is_of_a_kind_the_verdict_does_not_imply(self, package):
+            """reports a carried-in-part entry whose gap is of a kind the verdict does not imply"""
+            accounted(package, entry(THE_MAPPING_MENTIONS, verdict=CARRIED_IN_PART, names_gap=A_GAP_WITH_NO_PREDICATE))
+            said = said_about(package)
+            assert "bridge:carriedWithLoss" in said
+            assert A_GAP_WITH_NO_PREDICATE.removeprefix("ex:") in said
 
+    class TestGivenAnEntrysVerdictAndWhatTheMappingsMention:
+        """given an entry's verdict and what the mappings mention"""
 
-def test_reports_two_entries_sharing_a_source_path(package):
-    accounted(package, entry(THE_MAPPING_MENTIONS), entry(THE_MAPPING_MENTIONS, verdict=CONSUMED))
-    said = said_about(package)
-    assert "bridge:sourcePath" in said
-    assert THE_MAPPING_MENTIONS in said
+        def test_reports_a_carried_entry_for_a_path_only_a_findings_query_mentions(
+            self,
+            package,
+        ):
+            accounted(package, entry(ONLY_THE_FINDINGS_QUERY_MENTIONS))
+            said = said_about(package)
+            assert ONLY_THE_FINDINGS_QUERY_MENTIONS in said
+            assert CARRIED in said
 
+        def test_reports_nothing_for_a_carried_entry_once_a_mapping_mentions_the_path_it_accounts_for(self, package):
+            accounted(package, entry(ONLY_THE_FINDINGS_QUERY_MENTIONS))
+            package.edit("in/example-record.rq", "xyz:Label ; rdf:_1 ?label", "xyz:Note ; rdf:_1 ?label")
+            assert not said_about(package)
 
-def test_reports_a_same_fact_as_naming_a_path_the_accounting_does_not_carry(package):
-    accounted(
-        package,
-        entry(THE_MAPPING_MENTIONS),
-        entry(THE_ACCESSION, verdict=REDUNDANT_WITH, same_fact_as=NO_QUERY_MENTIONS),
-    )
-    said = said_about(package)
-    assert "bridge:sameFactAs" in said
-    assert NO_QUERY_MENTIONS in said
+        def test_reports_a_carried_in_part_entry_for_a_path_no_mapping_mentions(
+            self,
+            package,
+        ):
+            """reports a carried-in-part entry for a path no mapping mentions"""
+            accounted(package, entry(NO_QUERY_MENTIONS, verdict=CARRIED_IN_PART, names_gap=A_GAP_CARRIED_WITH_LOSS))
+            said = said_about(package)
+            assert NO_QUERY_MENTIONS in said
+            assert CARRIED_IN_PART in said
 
+        def test_reports_nothing_for_a_no_home_entry_for_a_path_no_mapping_mentions(self, package):
+            accounted(package, entry(NO_QUERY_MENTIONS, verdict=NO_HOME, names_gap=A_GAP_WITH_NO_PREDICATE))
+            assert not said_about(package)
 
-def test_reports_a_same_fact_as_naming_the_entrys_own_path(package):
-    accounted(package, entry(THE_ACCESSION, verdict=REDUNDANT_WITH, same_fact_as=THE_ACCESSION))
-    said = said_about(package)
-    assert "bridge:sameFactAs" in said
-    assert THE_ACCESSION in said
+        def test_reports_nothing_for_an_accounting_carrying_an_entry_of_each_verdict(self, package):
+            accounted(
+                package,
+                entry(THE_MAPPING_MENTIONS),
+                entry(THE_VERSION, verdict=CARRIED_IN_PART, names_gap=A_GAP_CARRIED_WITH_LOSS),
+                entry(ONLY_THE_FINDINGS_QUERY_MENTIONS, verdict=REDUNDANT_WITH, same_fact_as=THE_MAPPING_MENTIONS),
+                entry(THE_ACCESSION, verdict=CONSUMED),
+                entry(NO_QUERY_MENTIONS, verdict=NO_HOME, names_gap=A_GAP_WITH_NO_PREDICATE),
+                entry("/ExampleRecord/@SchemaVersion", verdict=IGNORED, because='"A schema version is not data."'),
+            )
+            assert not said_about(package)
 
-
-def test_reports_a_names_gap_that_is_no_gap_of_the_adapters_own_gap_scheme(package):
-    accounted(package, entry(NO_QUERY_MENTIONS, verdict=NO_HOME, names_gap="ex:a-gap-the-scheme-does-not-hold"))
-    said = said_about(package)
-    assert "bridge:namesGap" in said
-    assert "a-gap-the-scheme-does-not-hold" in said
-
-
-def test_reports_a_no_home_entry_whose_gap_is_of_a_kind_the_verdict_does_not_imply(package):
-    accounted(package, entry(NO_QUERY_MENTIONS, verdict=NO_HOME, names_gap=A_GAP_OF_A_VALUE_NOT_MAPPED))
-    said = said_about(package)
-    assert "bridge:noPredicate" in said
-    assert A_GAP_OF_A_VALUE_NOT_MAPPED.removeprefix("ex:") in said
-
-
-def test_reports_nothing_for_a_no_home_entry_naming_a_gap_of_a_source_lacking_what_a_shape_requires(package):
-    accounted(
-        package,
-        entry(NO_QUERY_MENTIONS, verdict=NO_HOME, names_gap=A_GAP_OF_A_SOURCE_LACKING_WHAT_A_SHAPE_REQUIRES),
-    )
-    assert not said_about(package)
-
-
-def test_reports_nothing_for_a_carried_in_part_entry_naming_a_gap_of_a_value_not_mapped(package):
-    accounted(
-        package,
-        entry(THE_MAPPING_MENTIONS, verdict=CARRIED_IN_PART, names_gap=A_GAP_OF_A_VALUE_NOT_MAPPED),
-    )
-    assert not said_about(package)
-
-
-def test_reports_a_no_home_entry_naming_a_gap_carried_with_loss(package):
-    accounted(package, entry(NO_QUERY_MENTIONS, verdict=NO_HOME, names_gap=A_GAP_CARRIED_WITH_LOSS))
-    assert A_GAP_CARRIED_WITH_LOSS.removeprefix("ex:") in said_about(package)
-
-
-def test_reports_nothing_for_the_accounting_the_synthetic_adapter_commits(crate):
-    assert not list(source_accounting.faulty(crate))
-
-
-def test_reports_a_carried_in_part_entry_whose_gap_is_of_a_kind_the_verdict_does_not_imply(package):
-    accounted(package, entry(THE_MAPPING_MENTIONS, verdict=CARRIED_IN_PART, names_gap=A_GAP_WITH_NO_PREDICATE))
-    said = said_about(package)
-    assert "bridge:carriedWithLoss" in said
-    assert A_GAP_WITH_NO_PREDICATE.removeprefix("ex:") in said
-
-
-def test_reports_a_carried_entry_for_a_path_only_a_findings_query_mentions_and_nothing_once_the_mapping_mentions_it(
-    package,
-):
-    accounted(package, entry(ONLY_THE_FINDINGS_QUERY_MENTIONS))
-    said = said_about(package)
-    assert ONLY_THE_FINDINGS_QUERY_MENTIONS in said
-    assert CARRIED in said
-
-    package.edit("in/example-record.rq", "xyz:Label ; rdf:_1 ?label", "xyz:Note ; rdf:_1 ?label")
-    assert not said_about(package)
-
-
-def test_reports_a_carried_in_part_entry_for_a_path_no_mapping_mentions_and_nothing_where_the_verdict_is_no_home(
-    package,
-):
-    accounted(package, entry(NO_QUERY_MENTIONS, verdict=CARRIED_IN_PART, names_gap=A_GAP_CARRIED_WITH_LOSS))
-    said = said_about(package)
-    assert NO_QUERY_MENTIONS in said
-    assert CARRIED_IN_PART in said
-
-    accounted(package, entry(NO_QUERY_MENTIONS, verdict=NO_HOME, names_gap=A_GAP_WITH_NO_PREDICATE))
-    assert not said_about(package)
-
-
-def test_reports_nothing_for_an_accounting_carrying_an_entry_of_each_verdict(package):
-    accounted(
-        package,
-        entry(THE_MAPPING_MENTIONS),
-        entry(THE_VERSION, verdict=CARRIED_IN_PART, names_gap=A_GAP_CARRIED_WITH_LOSS),
-        entry(ONLY_THE_FINDINGS_QUERY_MENTIONS, verdict=REDUNDANT_WITH, same_fact_as=THE_MAPPING_MENTIONS),
-        entry(THE_ACCESSION, verdict=CONSUMED),
-        entry(NO_QUERY_MENTIONS, verdict=NO_HOME, names_gap=A_GAP_WITH_NO_PREDICATE),
-        entry("/ExampleRecord/@SchemaVersion", verdict=IGNORED, because='"A schema version is not data."'),
-    )
-    assert not said_about(package)
-
-    package.edit("in/example-record.rq", "xyz:Label ; rdf:_1 ?label", "xyz:Nowhere ; rdf:_1 ?label")
-    assert THE_MAPPING_MENTIONS in said_about(package)
+            package.edit("in/example-record.rq", "xyz:Label ; rdf:_1 ?label", "xyz:Nowhere ; rdf:_1 ?label")
+            assert THE_MAPPING_MENTIONS in said_about(package)

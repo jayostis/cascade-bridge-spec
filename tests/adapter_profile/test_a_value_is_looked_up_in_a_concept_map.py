@@ -82,54 +82,69 @@ def every_value_outside_the_map(crate):
     return found
 
 
-def test_an_entry_declares_the_concept_map_its_paths_values_are_looked_up_in_and_the_gap_a_value_outside_it_opens(
-    crate,
-):
-    _, concept_map, gap = the_one_lookup(crate)
-    assert concept_map in set(crate.graph.objects(crate.root, BRIDGE.table))
-    assert crate.file_at(concept_map) is not None
-    scheme = scheme_named_by(crate)
-    assert (gap, RDF.type, SKOS.Concept) in scheme
-    assert scheme.value(gap, SKOS.broader) == BRIDGE.valueNotMapped
+class TestFindingsABridgeReportsForAValueOutsideAConceptMap:
+    """Findings a Bridge reports for a value outside a concept map · fixtures/synthetic-adapter/fixtures/findings/
 
+    A Bridge cannot be run here, so what it must report is shown by the findings the synthetic adapter expects. These
+    hold that vector to the rule for a looked-up value its concept map lacks.
+    """
 
-def test_a_value_the_concept_map_lacks_is_reported_once_per_distinct_value_and_a_value_it_carries_nowhere(crate):
-    reported = every_value_outside_the_map(crate)
-    assert len(reported) == 1, "the vector reports one status outside the concept map, and reports it once"
-    for named, graph, _, finding, value, _ in reported:
-        assert graph.value(finding, OA.motivatedBy) == OA.classifying, f"{named}: {value}"
+    class TestGivenAnEntryThatLooksItsPathsValuesUp:
+        """given an entry that looks its path's values up"""
 
+        def test_declares_a_concept_map_the_crate_lists_as_a_table_and_a_gap_of_the_adapters_scheme(
+            self,
+            crate,
+        ):
+            """declares a concept map the crate lists as a table and a gap of the adapter's scheme"""
+            _, concept_map, gap = the_one_lookup(crate)
+            assert concept_map in set(crate.graph.objects(crate.root, BRIDGE.table))
+            assert crate.file_at(concept_map) is not None
+            scheme = scheme_named_by(crate)
+            assert (gap, RDF.type, SKOS.Concept) in scheme
+            assert scheme.value(gap, SKOS.broader) == BRIDGE.valueNotMapped
 
-def test_a_lookup_finding_is_addressed_at_the_first_occurrence_of_its_value_in_the_record(crate):
-    for named, graph, record, finding, value, holding in every_value_outside_the_map(crate):
-        assert selected_by(graph, finding) == (selector_of(record), refinement_of(record, holding[0])), (
-            f"{named}: {value}"
-        )
+    class TestGivenAValueTheConceptMapLacks:
+        def test_is_reported_once_per_distinct_value_and_no_value_the_concept_map_holds_is_reported(self, crate):
+            """is reported once per distinct value, and no value the concept map holds is reported"""
+            reported = every_value_outside_the_map(crate)
+            assert len(reported) == 1, "the vector reports one status outside the concept map, and reports it once"
+            _, concept_map, _ = the_one_lookup(crate)
+            held = notations_of(crate, concept_map)
+            for named, graph, _, finding, value, _ in reported:
+                assert graph.value(finding, OA.motivatedBy) == OA.classifying, f"{named}: {value}"
+                assert key_of(value) not in held, f"{named}: {value}"
 
+    class TestGivenALookupFinding:
+        def test_is_addressed_at_the_first_occurrence_of_its_value_in_the_record(self, crate):
+            for named, graph, record, finding, value, holding in every_value_outside_the_map(crate):
+                assert selected_by(graph, finding) == (selector_of(record), refinement_of(record, holding[0])), (
+                    f"{named}: {value}"
+                )
 
-def test_a_lookup_finding_carries_the_value_as_the_record_wrote_it_and_never_the_key_or_the_path(crate):
-    source_path, _, _ = the_one_lookup(crate)
-    reported = every_value_outside_the_map(crate)
-    assert any(value != key_of(value) for _, _, _, _, value, _ in reported), (
-        "every value the vector reports is already its own key, so nothing there tells "
-        "the value as the record wrote it from the key it is looked up by"
-    )
-    for named, graph, _, finding, value, _ in reported:
-        assert graph.value(finding, SH.value) == Literal(value), f"{named}: {value}"
-        assert value != source_path, f"{named}: {value}"
+        def test_carries_the_value_as_the_record_wrote_it_never_the_key_or_the_path(self, crate):
+            """carries the value as the record wrote it, never the key or the path"""
+            source_path, _, _ = the_one_lookup(crate)
+            reported = every_value_outside_the_map(crate)
+            assert any(value != key_of(value) for _, _, _, _, value, _ in reported), (
+                "every value the vector reports is already its own key, so nothing there tells "
+                "the value as the record wrote it from the key it is looked up by"
+            )
+            for named, graph, _, finding, value, _ in reported:
+                assert graph.value(finding, SH.value) == Literal(value), f"{named}: {value}"
+                assert value != source_path, f"{named}: {value}"
 
+        def test_counts_the_nodes_of_the_record_holding_its_value_where_they_are_more_than_one(self, crate):
+            counted = []
+            for named, graph, _, finding, value, holding in every_value_outside_the_map(crate):
+                expected = None if len(holding) == 1 else Literal(len(holding), datatype=XSD.integer)
+                assert graph.value(finding, CASCADE.occurrenceCount) == expected, f"{named}: {value}"
+                counted.append(len(holding))
+            assert 2 in counted, "no record of the vector holds one value outside the concept map twice"
 
-def test_a_lookup_finding_counts_the_nodes_of_the_record_holding_its_value_where_they_are_more_than_one(crate):
-    counted = []
-    for named, graph, _, finding, value, holding in every_value_outside_the_map(crate):
-        expected = None if len(holding) == 1 else Literal(len(holding), datatype=XSD.integer)
-        assert graph.value(finding, CASCADE.occurrenceCount) == expected, f"{named}: {value}"
-        counted.append(len(holding))
-    assert 2 in counted, "no record of the vector holds one value outside the concept map twice"
-
-
-def test_a_lookup_finding_takes_the_severity_its_gap_declares_and_sh_info_where_it_declares_none(crate):
-    _, _, gap = the_one_lookup(crate)
-    declared = scheme_named_by(crate).value(gap, SH.resultSeverity) or SH.Info
-    for named, graph, _, finding, value, _ in every_value_outside_the_map(crate):
-        assert graph.value(finding, SH.resultSeverity) == declared, f"{named}: {value}"
+        def test_takes_the_severity_its_gap_declares_and_sh_info_where_it_declares_none(self, crate):
+            """takes the severity its gap declares and `sh:Info` where it declares none"""
+            _, _, gap = the_one_lookup(crate)
+            declared = scheme_named_by(crate).value(gap, SH.resultSeverity) or SH.Info
+            for named, graph, _, finding, value, _ in every_value_outside_the_map(crate):
+                assert graph.value(finding, SH.resultSeverity) == declared, f"{named}: {value}"
