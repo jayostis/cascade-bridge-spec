@@ -1,0 +1,340 @@
+{
+  "about": "The Bridge specification's own tests: what the vectors an engine must reproduce, an adapter package, and the compatibility tool are held to. Each heading names the files it is about.",
+  "shaped": [
+    "bench/test_repeat_entries.py",
+    "bench/test_synthea_person.py",
+    "specification/test_a_reference_json_lift_reproduces_every_json_vector.py",
+    "specification/test_shapes_are_valid_shacl.py",
+    "specification/test_the_fake_engine_offers_every_command.py",
+    "specification/test_the_reference_text_values_reproduce_every_xml_vector.py",
+    "specification/test_the_synthetic_adapters_graphs_are_the_records_layer.py",
+    "specification/test_the_synthetic_vocabularies_hold_the_synthetic_adapters.py",
+    "specification/test_the_vocabulary_is_this_repositorys_own.py",
+    "specification/test_turtle_files_parse.py",
+    "specification/test_vector_manifests.py",
+    "specification/test_versioning_vectors.py",
+    "specification/test_what_the_library_shapes_refuse.py",
+    "specification/test_what_the_result_schema_refuses.py"
+  ],
+  "capabilities": [
+    "Lifting a JSON document · engine/sparql.md, fixtures/lift/",
+    "Text values the XML lift writes on an element · engine/sparql.md, fixtures/lift/",
+    "Naming the versions of a mapped graph · engine/stages.md, fixtures/versioning/",
+    "The graph a Bridge writes for a document · engine/stages.md, fixtures/synthetic-adapter/, fixtures/synthetic-json-adapter/",
+    "A vocabulary checkout to run the synthetic adapters with · fixtures/synthetic-vocabularies/",
+    "Library cases an engine is run through · fixtures/library/manifest.ttl, shapes/bridge.shapes.ttl",
+    "Commands an engine offers · engine/command.md, fixtures/fake-engine/engine.py",
+    "Manifests that list the vectors · fixtures/*/manifest.ttl, shapes/bridge.shapes.ttl",
+    "Terms of the Bridge vocabulary · vocab/bridge.ttl",
+    "Results a benchmark harness writes · bench/result.schema.json, fixtures/bench/result.json"
+  ],
+  "build": [
+    "Files of the specification that parse · **/*.ttl, **/*.nt, shapes/, bench/result.schema.json",
+    "Checks of the check on a manifest's files · tests/specification/test_vector_manifests.py",
+    "Checks of the reference versioning · tests/specification/versioning.py",
+    "Checks of the check on a version's name · tests/specification/test_the_synthetic_adapters_graphs_are_the_records_layer.py",
+    "Checks of the fake engine's own output · fixtures/fake-engine/engine.py",
+    "Repeating a document's entries for a benchmark input · bench/generate/repeat_entries.py",
+    "Making a Synthea person's record safe to commit · bench/generate/synthea_person.py"
+  ],
+  "glossary": [
+    {
+      "term": "adapter",
+      "aliases": [
+        "adapters",
+        "adapter package"
+      ],
+      "definition": "here, a package of data for one XML or JSON source format, with no code in it: queries, schemas, sample inputs and what converting them must give."
+    },
+    {
+      "term": "arrival",
+      "aliases": [
+        "arrivals"
+      ],
+      "definition": "the node of a document's graph that says how one version arrived: from which document and where in it, in which import, and with the version and update time the source itself gave the record."
+    },
+    {
+      "term": "Bridge",
+      "aliases": [
+        "Bridges"
+      ],
+      "definition": "a program that runs adapters: it reads a source document, runs the adapter's queries over it and writes records in the Cascade vocabulary, with findings."
+    },
+    {
+      "term": "Bridge vocabulary",
+      "definition": "`vocab/bridge.ttl`: the terms this specification defines, under `https://ns.cascadeprotocol.org/bridge/v1-draft#`, as distinct from the Cascade vocabulary a person's records are written in."
+    },
+    {
+      "term": "canonical content",
+      "definition": "a version's statements written one to a line and sorted, with the placeholder standing for the version itself; the SHA-256 of these bytes is the version's name."
+    },
+    {
+      "term": "conversion",
+      "aliases": [
+        "conversions"
+      ],
+      "definition": "one test of an adapter: an input, the envelope it arrives in, and the graph and findings converting it must give."
+    },
+    {
+      "term": "digest",
+      "aliases": [
+        "digests"
+      ],
+      "definition": "the SHA-256 hash of some bytes; in a name it follows `ni:///sha-256;`, written in base64url without padding."
+    },
+    {
+      "term": "domain",
+      "definition": "in RDF Schema, the kind of thing a term is stated of; a term with no domain may be stated of anything."
+    },
+    {
+      "term": "EARL",
+      "definition": "the W3C's vocabulary for test results; a report in it gives each test one of five outcomes: passed, failed, cannot tell, inapplicable, untested."
+    },
+    {
+      "term": "engine",
+      "aliases": [
+        "engines"
+      ],
+      "definition": "here, a Bridge as a compatibility run meets it: a repository that builds the program which runs adapters."
+    },
+    {
+      "term": "envelope",
+      "aliases": [
+        "envelopes"
+      ],
+      "definition": "one outer form a source document takes around its records, such as a set of records or one record alone."
+    },
+    {
+      "term": "envelope skeleton",
+      "aliases": [
+        "skeleton test",
+        "skeleton tests"
+      ],
+      "definition": "the lift of a whole document with each record kept only in outline, which is all an adapter's detect query sees; a skeleton test is a vector of it."
+    },
+    {
+      "term": "expected graph",
+      "aliases": [
+        "expected graphs"
+      ],
+      "definition": "the records a conversion must produce, as a Turtle file the test names."
+    },
+    {
+      "term": "facts",
+      "aliases": [
+        "supplied facts"
+      ],
+      "definition": "statements about an input document that the document cannot make itself (who it came from, when it was imported), supplied to a Bridge with it."
+    },
+    {
+      "term": "failure kind",
+      "aliases": [
+        "failure kinds"
+      ],
+      "definition": "one of the named ways a call on an engine's library fails, such as `bridge:documentFailure` for a document that cannot be read."
+    },
+    {
+      "term": "fake engine",
+      "definition": "`fixtures/fake-engine/engine.py`: a small program that offers an engine's three commands and is no Bridge, for testing the tools that run engines."
+    },
+    {
+      "term": "finding",
+      "aliases": [
+        "findings"
+      ],
+      "definition": "a note a Bridge writes about one node of one input: something not carried, a schema rule broken, a value outside a map."
+    },
+    {
+      "term": "fixture",
+      "aliases": [
+        "fixtures"
+      ],
+      "definition": "here, a sample package the specification carries to test with, such as `fixtures/synthetic-adapter/`."
+    },
+    {
+      "term": "graph",
+      "aliases": [
+        "graphs"
+      ],
+      "definition": "a set of RDF statements, each a subject, a predicate and an object; what a lift, a mapping or a whole conversion writes is one."
+    },
+    {
+      "term": "harness",
+      "aliases": [
+        "benchmark harness"
+      ],
+      "definition": "a program that times an engine on the benchmark inputs and writes the results file `bench/result.schema.json` describes."
+    },
+    {
+      "term": "import",
+      "definition": "one run of a Bridge over one document, written in the document's graph as a node of its own that says which document it used and which adapter it applied."
+    },
+    {
+      "term": "IRI",
+      "aliases": [
+        "IRIs"
+      ],
+      "definition": "a web-style identifier, such as `https://ns.cascadeprotocol.org/cascade#Record`; every term and every record is named by one."
+    },
+    {
+      "term": "library",
+      "definition": "what a program that loads an engine calls: describe, load, ask, convert and test, each taking bytes and returning bytes (`engine/library.md`)."
+    },
+    {
+      "term": "library case",
+      "aliases": [
+        "library cases"
+      ],
+      "definition": "a list of calls on an engine's library, in order, and what each must return or fail with, listed in `fixtures/library/manifest.ttl`."
+    },
+    {
+      "term": "lift",
+      "aliases": [
+        "lifted"
+      ],
+      "definition": "the first step of a conversion: the source record written as statements, element by element, before any mapping runs."
+    },
+    {
+      "term": "manifest",
+      "aliases": [
+        "manifests",
+        "test manifest"
+      ],
+      "definition": "here, a list of test cases, a Turtle file in the W3C's test vocabulary: an adapter's, which its crate names, or the one in each folder of vectors."
+    },
+    {
+      "term": "mapped graph",
+      "aliases": [
+        "mapped graphs"
+      ],
+      "definition": "what a mapping wrote for one source record, before a Bridge names its versions."
+    },
+    {
+      "term": "mapping",
+      "aliases": [
+        "mappings"
+      ],
+      "definition": "a SPARQL CONSTRUCT an adapter names that writes records in the Cascade vocabulary from a lifted source record."
+    },
+    {
+      "term": "namespace",
+      "aliases": [
+        "namespaces"
+      ],
+      "definition": "the common beginning of a vocabulary's IRIs, such as `https://ns.cascadeprotocol.org/cascade#`."
+    },
+    {
+      "term": "naming rule",
+      "aliases": [
+        "naming rules"
+      ],
+      "definition": "a query the vocabulary publishes that gives the name of a thing from what it is made from, such as a record's name from its address on a server."
+    },
+    {
+      "term": "nested node",
+      "aliases": [
+        "nested nodes"
+      ],
+      "definition": "a part of a version with an IRI of its own, the version's IRI followed by `#` and a fragment; it is renamed with its version."
+    },
+    {
+      "term": "ontology file",
+      "aliases": [
+        "ontology files"
+      ],
+      "definition": "a Turtle file under `ontologies/` that declares terms."
+    },
+    {
+      "term": "placeholder",
+      "definition": "`urn:cascade:this-version`, which stands for a version in its own canonical content, since the version's name is not known until that content is hashed."
+    },
+    {
+      "term": "pod",
+      "aliases": [
+        "pods"
+      ],
+      "definition": "one person's records, and what that person has said about them, kept as files in one folder."
+    },
+    {
+      "term": "record",
+      "aliases": [
+        "records",
+        "source record",
+        "source records"
+      ],
+      "definition": "here, one repeated item of a source document, such as one `ExampleRecord` element of a set; a Bridge converts a document record by record. What a mapping writes for it is called a record too, and a naming rule names it; where the two must be told apart the item is the source record."
+    },
+    {
+      "term": "record path",
+      "aliases": [
+        "record paths"
+      ],
+      "definition": "the JSONPath by which an envelope of a JSON adapter selects each record of a document, such as `$.entry[*]`; only `$`, `.name`, `['name']` and `[*]` may be used."
+    },
+    {
+      "term": "reference lift",
+      "definition": "`tests/specification/json_lift.py`: a JSON lift written from `engine/sparql.md` alone and sharing no code with any Bridge, which every JSON vector is run through."
+    },
+    {
+      "term": "shapes",
+      "aliases": [
+        "Bridge shapes"
+      ],
+      "definition": "here, the specification's requirements on a crate, a manifest, a findings file, a file of facts or an accounting, written in SHACL, the W3C language for checking data."
+    },
+    {
+      "term": "SPARQL",
+      "definition": "the W3C query language for data written as statements, as Turtle writes them.",
+      "vocabulary": "https://www.w3.org/TR/sparql11-query/"
+    },
+    {
+      "term": "synthetic adapter",
+      "aliases": [
+        "synthetic adapters"
+      ],
+      "definition": "`fixtures/synthetic-adapter/` (XML) and `fixtures/synthetic-json-adapter/` (JSON): made-up adapters that pass the profile, to copy and to test with."
+    },
+    {
+      "term": "synthetic vocabularies",
+      "definition": "`fixtures/synthetic-vocabularies/`: an invented stand-in for a checkout of the Cascade vocabulary, holding the ontology file and shapes the synthetic adapters name."
+    },
+    {
+      "term": "term",
+      "aliases": [
+        "terms"
+      ],
+      "definition": "here, one word a vocabulary defines, named by an IRI; `bridge:` terms are the specification's, others are the Cascade vocabulary's."
+    },
+    {
+      "term": "Turtle",
+      "definition": "a W3C text format for writing statements in the vocabulary's terms.",
+      "vocabulary": "https://www.w3.org/TR/turtle/"
+    },
+    {
+      "term": "vector",
+      "aliases": [
+        "vectors",
+        "versioning vector",
+        "versioning vectors"
+      ],
+      "definition": "a worked example an engine must reproduce: an input file and the output expected from it, listed in a manifest."
+    },
+    {
+      "term": "version",
+      "aliases": [
+        "versions"
+      ],
+      "definition": "what a record says at one time; when a source changes a record, the pod keeps the old version and adds a new one.",
+      "vocabulary": "https://ns.cascadeprotocol.org/cascade#version"
+    },
+    {
+      "term": "vocabulary",
+      "aliases": [
+        "vocabularies",
+        "Cascade vocabulary"
+      ],
+      "definition": "cascade-vocabulary, the project that defines the words health data is written in, the requirements every pod meets, and a set of ready-made questions.",
+      "vocabulary": "https://ns.cascadeprotocol.org/cascade#"
+    }
+  ]
+}

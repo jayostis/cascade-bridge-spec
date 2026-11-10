@@ -1,8 +1,9 @@
 import pytest
-from page import page_properties
 from rdflib.plugins.sparql.algebra import translateQuery
 from rdflib.plugins.sparql.parser import parseQuery
 from rdflib.plugins.sparql.processor import SPARQLProcessor
+
+from page import page_properties
 
 
 @pytest.hookimpl(tryfirst=True)

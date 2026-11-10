@@ -1,3 +1,4 @@
+import functools
 import shutil
 from pathlib import Path
 
@@ -7,7 +8,7 @@ from rdflib import RDF, BNode, Graph, Literal, Namespace, URIRef
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURES = ROOT / "fixtures"
-SHAPES = ROOT / "shapes" / "bridge.shapes.ttl"
+SHAPES = Graph().parse(ROOT / "shapes" / "bridge.shapes.ttl", format="turtle")
 VECTORS = ["lift", "versioning", "library"]
 
 MF = Namespace("http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#")
@@ -19,6 +20,11 @@ def manifest_of(directory):
     manifest = directory.resolve() / "manifest.ttl"
     assert manifest.is_file(), f"{manifest} is not there"
     return manifest, Graph().parse(manifest, format="turtle", publicID=manifest.as_uri())
+
+
+@functools.cache
+def committed(vectors):
+    return manifest_of(FIXTURES / vectors)[1]
 
 
 def unaccounted(directory):
@@ -45,76 +51,80 @@ def unaccounted(directory):
     return problems
 
 
-@pytest.mark.parametrize("vectors", VECTORS)
-def test_a_vector_manifest_conforms_to_the_bridge_shapes(vectors):
-    _, graph = manifest_of(FIXTURES / vectors)
-    conforms, _, text = validate(graph, shacl_graph=Graph().parse(SHAPES, format="turtle"), advanced=True)
-    assert conforms, text
-
-
-@pytest.mark.parametrize("vectors", VECTORS)
-def test_a_vector_manifest_lists_every_test_and_names_every_vector(vectors):
-    assert unaccounted(FIXTURES / vectors) == []
-
-
-def test_a_vector_no_entry_names_is_reported(tmp_path):
-    lift = shutil.copytree(FIXTURES / "lift", tmp_path / "lift")
-    (lift / "unnamed.xml").write_text("<unnamed/>", encoding="utf-8")
-    assert "unnamed.xml is a vector no entry names" in unaccounted(lift)
-
-
-def test_an_entry_naming_a_file_that_is_not_there_is_reported(tmp_path):
-    lift = shutil.copytree(FIXTURES / "lift", tmp_path / "lift")
-    (lift / "cdata.xml").unlink()
-    assert any("cdata.xml is named, not a file in lift" in problem for problem in unaccounted(lift))
-
-
 def said_about(graph):
-    _, _, text = validate(graph, shacl_graph=Graph().parse(SHAPES, format="turtle"), advanced=True)
+    _, _, text = validate(graph, shacl_graph=SHAPES, advanced=True)
     return text
 
 
+def entry_of(graph, name):
+    return next(graph.subjects(MF.name, Literal(name)))
+
+
 def action_of(graph, name):
-    entry = next(graph.subjects(MF.name, Literal(name)))
-    return graph.value(entry, MF.action)
+    return graph.value(entry_of(graph, name), MF.action)
 
 
-def test_a_lift_test_naming_no_media_type_is_refused():
-    _, graph = manifest_of(FIXTURES / "lift")
+def no_media_type(graph):
     graph.remove((action_of(graph, "json-null"), BRIDGE.sourceMediaType, None))
-    assert "names exactly one bridge:sourceMediaType, which selects the lift" in said_about(graph)
 
 
-def test_a_lift_test_naming_a_media_type_neither_lift_applies_to_is_refused():
-    _, graph = manifest_of(FIXTURES / "lift")
+def a_media_type_neither_lift_applies_to(graph):
     graph.set((action_of(graph, "attributes"), BRIDGE.sourceMediaType, Literal("text/csv")))
-    assert "names exactly one bridge:sourceMediaType, which selects the lift" in said_about(graph)
 
 
-def test_a_skeleton_test_naming_both_an_element_name_and_a_json_path_is_refused():
-    _, graph = manifest_of(FIXTURES / "lift")
+def an_element_name_and_a_json_path(graph):
     graph.add((action_of(graph, "skeleton-json"), BRIDGE.elementNameOfEachRecord, Literal("Unit")))
-    assert "names exactly one of bridge:elementNameOfEachRecord" in said_about(graph)
 
 
-def test_a_skeleton_test_naming_neither_an_element_name_nor_a_json_path_is_refused():
-    _, graph = manifest_of(FIXTURES / "lift")
+def neither_an_element_name_nor_a_json_path(graph):
     graph.remove((action_of(graph, "skeleton"), BRIDGE.elementNameOfEachRecord, None))
-    assert "names exactly one of bridge:elementNameOfEachRecord" in said_about(graph)
 
 
-def test_a_library_case_naming_a_failure_kind_that_is_not_one_of_the_six_is_refused():
-    kinds = set(Graph().parse(ROOT / "vocab" / "bridge.ttl", format="turtle").subjects(RDF.type, BRIDGE.FailureKind))
-    assert len(kinds) == 6, kinds
-    _, graph = manifest_of(FIXTURES / "library")
-    naming = [(subject, predicate, kind) for subject, predicate, kind in graph if kind in kinds]
-    assert naming, "no library case names a failure kind"
-    subject, predicate, kind = naming[0]
-    graph.remove((subject, predicate, kind))
-    graph.add((subject, predicate, BRIDGE.NotAFailureKind))
-    said = said_about(graph)
-    assert "Conforms: False" in said
-    assert all(str(kind).removeprefix(str(BRIDGE)) in said for kind in kinds), said
+LIFT_TESTS_BROKEN = [
+    pytest.param(
+        no_media_type,
+        "names exactly one bridge:sourceMediaType, which selects the lift",
+        id="a lift test naming no media type",
+    ),
+    pytest.param(
+        a_media_type_neither_lift_applies_to,
+        "names exactly one bridge:sourceMediaType, which selects the lift",
+        id="a lift test naming a media type neither lift applies to",
+    ),
+    pytest.param(
+        an_element_name_and_a_json_path,
+        "names exactly one of bridge:elementNameOfEachRecord",
+        id="a skeleton test naming both an element name and a JSON path",
+    ),
+    pytest.param(
+        neither_an_element_name_nor_a_json_path,
+        "names exactly one of bridge:elementNameOfEachRecord",
+        id="a skeleton test naming neither",
+    ),
+]
+
+
+def first_versioning_result(graph):
+    return graph.value(next(iter(sorted(graph.subjects(RDF.type, BRIDGE.VersioningTest), key=str))), MF.result)
+
+
+def a_name_that_is_not_43_base64url_characters(graph):
+    version = graph.value(first_versioning_result(graph), BRIDGE.expectedVersion)
+    graph.set((version, BRIDGE.expectedName, URIRef("ni:///sha-256;itXWoNc3qVdBH28_n3ixhPuOww69tNEuA0dS-GrXLB8=")))
+
+
+def no_expected_version(graph):
+    graph.remove((first_versioning_result(graph), BRIDGE.expectedVersion, None))
+
+
+VERSIONING_TESTS_BROKEN = [
+    pytest.param(
+        a_name_that_is_not_43_base64url_characters,
+        "43 unpadded base64url characters",
+        id="a version name that is not 43 base64url characters",
+    ),
+    pytest.param(no_expected_version, "bridge:expectedVersion for each version", id="no expected version"),
+]
 
 
 THE_VOCABULARYS_NAMING_VECTORS = """@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
@@ -172,94 +182,165 @@ def the_vocabularys_naming_vectors():
     return Graph().parse(data=THE_VOCABULARYS_NAMING_VECTORS, format="turtle", publicID="https://example.org/naming/")
 
 
-def entry_of(graph, name):
-    return next(graph.subjects(MF.name, Literal(name)))
+def parts(graph, name):
+    entry = entry_of(graph, name)
+    return entry, graph.value(entry, MF.action), graph.value(entry, MF.result)
 
 
-def test_the_manifest_form_of_the_vocabularys_naming_vectors_conforms_to_the_bridge_shapes():
-    conforms, _, text = validate(
-        the_vocabularys_naming_vectors(), shacl_graph=Graph().parse(SHAPES, format="turtle"), advanced=True
-    )
-    assert conforms, text
-
-
-def test_a_naming_test_naming_no_naming_rule_is_refused():
-    graph = the_vocabularys_naming_vectors()
+def no_naming_rule(graph):
     graph.remove((entry_of(graph, "record-from-server"), BRIDGE.namingRule, None))
-    assert "names exactly one bridge:namingRule" in said_about(graph)
 
 
-def test_a_base_url_refusal_test_carrying_a_result_is_refused():
-    graph = the_vocabularys_naming_vectors()
+def a_result_on_a_base_url_refusal_test(graph):
     result = BNode()
     graph.add((entry_of(graph, "base-url-userinfo"), MF.result, result))
     graph.add((result, CASCADE.serverBaseUrl, Literal("https://fhir.example.org/r4")))
-    assert "carries no mf:result" in said_about(graph)
 
 
-def the_naming_vector_with(name, mutate):
-    graph = the_vocabularys_naming_vectors()
-    mutate(graph, graph.value(entry_of(graph, name), MF.action), graph.value(entry_of(graph, name), MF.result))
-    return said_about(graph)
+def an_input_beside_a_query(graph):
+    _, action, _ = parts(graph, "record-from-server")
+    graph.remove((action, BRIDGE.nameInputs, None))
+    graph.add((action, BRIDGE.input, URIRef("urn:x:content.nt")))
 
 
-def test_a_naming_test_naming_a_query_and_an_input_is_refused():
-    def mutate(graph, action, result):
-        graph.remove((action, BRIDGE.nameInputs, None))
-        graph.add((action, BRIDGE.input, URIRef("urn:x:content.nt")))
-
-    assert "never a bridge:input beside a qt:query" in the_naming_vector_with("record-from-server", mutate)
+def a_name_input_that_is_not_a_plain_string(graph):
+    _, action, _ = parts(graph, "record-from-server")
+    graph.set((graph.value(action, BRIDGE.nameInputs), RDF.first, Literal(1)))
 
 
-def test_a_name_input_that_is_not_a_plain_string_is_refused():
-    def mutate(graph, action, result):
-        head = graph.value(action, BRIDGE.nameInputs)
-        graph.set((head, RDF.first, Literal(1)))
-
-    assert "is a plain string, or a list of plain strings" in the_naming_vector_with("record-from-server", mutate)
+def an_empty_list_of_name_inputs(graph):
+    _, action, _ = parts(graph, "view-entry")
+    graph.set((action, BRIDGE.nameInputs, RDF.nil))
 
 
-def test_an_empty_list_of_name_inputs_is_refused():
-    def mutate(graph, action, result):
-        graph.set((action, BRIDGE.nameInputs, RDF.nil))
-
-    assert "lists at least one input" in the_naming_vector_with("view-entry", mutate)
-
-
-def test_a_nested_list_of_name_inputs_beside_a_query_is_refused():
-    def mutate(graph, action, result):
-        head = graph.value(action, BRIDGE.nameInputs)
-        nested = BNode()
-        graph.add((nested, RDF.first, Literal("x")))
-        graph.add((nested, RDF.rest, RDF.nil))
-        graph.set((head, RDF.first, nested))
-
-    assert "a nested list of inputs only without a qt:query" in the_naming_vector_with("record-from-server", mutate)
+def a_nested_list_of_name_inputs_beside_a_query(graph):
+    _, action, _ = parts(graph, "record-from-server")
+    head = graph.value(action, BRIDGE.nameInputs)
+    nested = BNode()
+    graph.add((nested, RDF.first, Literal("x")))
+    graph.add((nested, RDF.rest, RDF.nil))
+    graph.set((head, RDF.first, nested))
 
 
-@pytest.mark.parametrize("name", [BNode(), Literal(7)], ids=["blank-node", "integer"])
-def test_an_expected_name_that_is_neither_an_iri_nor_a_plain_string_is_refused(name):
-    def mutate(graph, action, result):
-        graph.set((result, BRIDGE.expectedName, name))
-
-    assert "an IRI or a plain string" in the_naming_vector_with("record-from-server", mutate)
+def a_blank_node_as_the_expected_name(graph):
+    _, _, result = parts(graph, "record-from-server")
+    graph.set((result, BRIDGE.expectedName, BNode()))
 
 
-def test_canonical_content_beside_no_input_is_refused():
-    def mutate(graph, action, result):
-        graph.add((result, BRIDGE.canonicalContent, URIRef("urn:x:content.nq")))
+def an_integer_as_the_expected_name(graph):
+    _, _, result = parts(graph, "record-from-server")
+    graph.set((result, BRIDGE.expectedName, Literal(7)))
 
-    assert "only beside a bridge:input" in the_naming_vector_with("record-from-server", mutate)
 
+def canonical_content_beside_no_input(graph):
+    _, _, result = parts(graph, "record-from-server")
+    graph.add((result, BRIDGE.canonicalContent, URIRef("urn:x:content.nq")))
+
+
+NAMING_TESTS_BROKEN = [
+    pytest.param(no_naming_rule, "names exactly one bridge:namingRule", id="no naming rule"),
+    pytest.param(a_result_on_a_base_url_refusal_test, "carries no mf:result", id="a result on a base URL refusal test"),
+    pytest.param(an_input_beside_a_query, "never a bridge:input beside a qt:query", id="an input beside a query"),
+    pytest.param(
+        a_name_input_that_is_not_a_plain_string,
+        "is a plain string, or a list of plain strings",
+        id="a name input that is not a plain string",
+    ),
+    pytest.param(an_empty_list_of_name_inputs, "lists at least one input", id="an empty list of name inputs"),
+    pytest.param(
+        a_nested_list_of_name_inputs_beside_a_query,
+        "a nested list of inputs only without a qt:query",
+        id="a nested list of name inputs beside a query",
+    ),
+    pytest.param(a_blank_node_as_the_expected_name, "an IRI or a plain string", id="a blank node as the expected name"),
+    pytest.param(an_integer_as_the_expected_name, "an IRI or a plain string", id="an integer as the expected name"),
+    pytest.param(
+        canonical_content_beside_no_input, "only beside a bridge:input", id="canonical content beside no input"
+    ),
+]
 
 VOCABULARY_MANIFEST = ROOT.parent / "cascade-vocabulary" / "tests" / "vectors" / "naming" / "manifest.ttl"
 
 
-@pytest.mark.skipif(
-    not VOCABULARY_MANIFEST.is_file(),
-    reason=f"no cascade-vocabulary checkout beside this repository (looked for {VOCABULARY_MANIFEST})",
-)
-def test_the_vocabularys_naming_manifest_conforms_to_the_bridge_shapes():
-    graph = Graph().parse(VOCABULARY_MANIFEST, format="turtle", publicID=VOCABULARY_MANIFEST.as_uri())
-    conforms, _, text = validate(graph, shacl_graph=Graph().parse(SHAPES, format="turtle"), advanced=True)
-    assert conforms, text
+class TestManifestsThatListTheVectors:
+    """Manifests that list the vectors · fixtures/*/manifest.ttl, shapes/bridge.shapes.ttl
+
+    Each folder of vectors has a manifest that names every test in it, the files the test reads and what it expects,
+    and the Cascade vocabulary's naming vectors have one in the same form. The Bridge shapes say what each kind of test
+    must state, so an entry that would leave an engine guessing is refused with a sentence saying what is wrong.
+    """
+
+    class TestGivenAFolderOfVectors:
+        @pytest.mark.parametrize("vectors", VECTORS)
+        def test_conforms_to_the_bridge_shapes(self, vectors):
+            """conforms to the Bridge shapes"""
+            conforms, _, text = validate(committed(vectors), shacl_graph=SHAPES, advanced=True)
+            assert conforms, text
+
+        @pytest.mark.parametrize("vectors", VECTORS)
+        def test_leaves_no_test_unlisted_and_no_file_unnamed_or_missing(self, vectors):
+            """leaves no test unlisted and no file unnamed or missing
+
+            Every entry with an `mf:name` is typed and in `mf:entries`; every file the manifest names is in the folder;
+            every file in the folder is named.
+            """
+            assert unaccounted(FIXTURES / vectors) == []
+
+    class TestGivenALiftOrSkeletonTestBrokenInOneWay:
+        @pytest.mark.parametrize(("breaking", "words"), LIFT_TESTS_BROKEN)
+        def test_reports_the_sentence_that_says_what_the_test_must_name(self, breaking, words):
+            graph = Graph() + committed("lift")
+            breaking(graph)
+            assert words in said_about(graph)
+
+    class TestGivenAVersioningTestBrokenInOneWay:
+        @pytest.mark.parametrize(("breaking", "words"), VERSIONING_TESTS_BROKEN)
+        def test_reports_the_sentence_that_says_what_the_test_must_state(self, breaking, words):
+            graph = Graph() + committed("versioning")
+            breaking(graph)
+            assert words in said_about(graph)
+
+    class TestGivenANamingTest:
+        """given a naming test, as the vocabulary's naming manifest writes one"""
+
+        def test_conforms_to_the_bridge_shapes(self):
+            """conforms to the Bridge shapes"""
+            conforms, _, text = validate(the_vocabularys_naming_vectors(), shacl_graph=SHAPES, advanced=True)
+            assert conforms, text
+
+        @pytest.mark.parametrize(("breaking", "words"), NAMING_TESTS_BROKEN)
+        def test_reports_when_broken_in_one_way_the_sentence_that_says_what_is_wrong(self, breaking, words):
+            """reports, broken in one way, the sentence that says what is wrong"""
+            graph = the_vocabularys_naming_vectors()
+            breaking(graph)
+            assert words in said_about(graph)
+
+    class TestGivenTheCascadeVocabularyCheckoutBesideThisRepository:
+        """given the cascade-vocabulary checkout beside this repository"""
+
+        @pytest.mark.skipif(
+            not VOCABULARY_MANIFEST.is_file(),
+            reason=f"no cascade-vocabulary checkout beside this repository (looked for {VOCABULARY_MANIFEST})",
+        )
+        def test_conforms_to_the_bridge_shapes_in_its_naming_manifest(self):
+            """conforms to the Bridge shapes in its naming manifest"""
+            graph = Graph().parse(VOCABULARY_MANIFEST, format="turtle", publicID=VOCABULARY_MANIFEST.as_uri())
+            conforms, _, text = validate(graph, shacl_graph=SHAPES, advanced=True)
+            assert conforms, text
+
+
+class TestChecksOfTheCheckOnAManifestsFiles:
+    """Checks of the check on a manifest's files · tests/specification/test_vector_manifests.py"""
+
+    class TestUnaccounted:
+        """`unaccounted()`"""
+
+        def test_reports_a_file_that_no_entry_names(self, tmp_path):
+            lift = shutil.copytree(FIXTURES / "lift", tmp_path / "lift")
+            (lift / "unnamed.xml").write_text("<unnamed/>", encoding="utf-8")
+            assert "unnamed.xml is a vector no entry names" in unaccounted(lift)
+
+        def test_reports_an_entry_naming_a_file_that_is_not_there(self, tmp_path):
+            lift = shutil.copytree(FIXTURES / "lift", tmp_path / "lift")
+            (lift / "cdata.xml").unlink()
+            assert any("cdata.xml is named, not a file in lift" in problem for problem in unaccounted(lift))

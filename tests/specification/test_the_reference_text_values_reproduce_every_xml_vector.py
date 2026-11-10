@@ -51,20 +51,50 @@ def written(graph, predicate):
     )
 
 
-def test_the_lift_manifest_names_the_elements_breaking_text_in_the_vectors_of_text_with_element_breaks():
-    breaking = {vector.id for vector in VECTORS if vector.values[1]}
-    assert {
-        "text-with-element-breaks-table",
-        "text-with-element-breaks-paragraphs",
-        "text-with-element-breaks-inline",
-    } <= breaking
-
-
-@pytest.mark.parametrize(("document", "breaking", "expected"), VECTORS)
-def test_the_reference_text_values_are_the_vectors(document, breaking, expected):
+def held_and_graph(document, expected):
     held = [element for element in xml_text.elements(document.read_bytes()) if xml_text.holds_text(element)]
-    graph = Graph().parse(expected, format="nt")
-    assert written(graph, TEXT_CONTENT) == Counter((type_of(e), xml_text.text_content(e)) for e in held)
-    assert written(graph, BRIDGE.textWithElementBreaks) == Counter(
-        (type_of(e), xml_text.text_with_element_breaks(e, breaking)) for e in held if breaking
-    )
+    return held, Graph().parse(expected, format="nt")
+
+
+class TestTextValuesTheXmlLiftWritesOnAnElement:
+    """Text values the XML lift writes on an element · engine/sparql.md, fixtures/lift/
+
+    Beside its children, the XML lift writes two readings of an element's text: its text content, every character under
+    it joined, and its text with element breaks, a line for each run of text between the elements an adapter names as
+    breaking text. Reference text values, written from `engine/sparql.md` alone, show that the text and the vectors
+    agree.
+    """
+
+    class TestGivenTheLiftManifest:
+        def test_names_elements_breaking_text(self):
+            """names elements breaking text for `text-with-element-breaks-table`, `text-with-element-breaks-paragraphs` and
+            `text-with-element-breaks-inline`"""
+            breaking = {vector.id for vector in VECTORS if vector.values[1]}
+            assert {
+                "text-with-element-breaks-table",
+                "text-with-element-breaks-paragraphs",
+                "text-with-element-breaks-inline",
+            } <= breaking
+
+    class TestGivenAnXmlVector:
+        """given an XML vector"""
+
+        @pytest.mark.parametrize(("document", "breaking", "expected"), VECTORS)
+        def test_states_on_each_element_holding_text_the_text_content_the_reference_gives_it(
+            self, document, breaking, expected
+        ):
+            """states on each element holding text the text content the reference gives it
+
+            Counted by the element's type and the text, since a blank node has no name to match by.
+            """
+            held, graph = held_and_graph(document, expected)
+            assert written(graph, TEXT_CONTENT) == Counter((type_of(e), xml_text.text_content(e)) for e in held)
+
+        @pytest.mark.parametrize(("document", "breaking", "expected"), VECTORS)
+        def test_states_the_text_with_element_breaks_the_reference_gives_and_none_where_no_element_is_named(
+            self, document, breaking, expected
+        ):
+            held, graph = held_and_graph(document, expected)
+            assert written(graph, BRIDGE.textWithElementBreaks) == Counter(
+                (type_of(e), xml_text.text_with_element_breaks(e, breaking)) for e in held if breaking
+            )

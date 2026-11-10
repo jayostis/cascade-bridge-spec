@@ -1,3 +1,4 @@
+import functools
 from pathlib import Path
 
 import pytest
@@ -12,8 +13,13 @@ MF = Namespace("http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#")
 BRIDGE = Namespace("https://ns.cascadeprotocol.org/bridge/v1-draft#")
 
 
-def library():
+@functools.cache
+def committed():
     return Graph().parse(LIBRARY, format="turtle", publicID=LIBRARY.as_uri())
+
+
+def library():
+    return Graph() + committed()
 
 
 def said_about(graph):
@@ -114,11 +120,37 @@ REFUSED = {
 }
 
 
-@pytest.mark.parametrize("case", REFUSED)
-def test_the_library_shapes_refuse(case):
-    breaking, message = REFUSED[case]
-    graph = library()
-    breaking(graph)
-    conforms, text = said_about(graph)
-    assert not conforms
-    assert message in text, text
+class TestLibraryCasesAnEngineIsRunThrough:
+    """Library cases an engine is run through · fixtures/library/manifest.ttl, shapes/bridge.shapes.ttl
+
+    An engine's library is what a program calls: describe, load, ask, convert and test, bytes in and bytes out. A
+    library case lists calls in order and what each must return or fail with, and the Bridge shapes refuse a case that
+    could not be judged, with a sentence saying why.
+    """
+
+    class TestGivenACaseOfTheLibraryManifestBrokenInOneWay:
+        @pytest.mark.parametrize("case", REFUSED)
+        def test_reports_the_sentence_that_says_why_the_case_cannot_be_judged(self, case):
+            breaking, message = REFUSED[case]
+            graph = library()
+            breaking(graph)
+            conforms, text = said_about(graph)
+            assert not conforms
+            assert message in text, text
+
+    class TestGivenACallThatNamesAFailureKind:
+        def test_lists_every_failure_kind_the_bridge_vocabulary_declares_when_a_call_names_another(self):
+            """lists every failure kind the Bridge vocabulary declares when a call names another"""
+            kinds = set(
+                Graph().parse(ROOT / "vocab" / "bridge.ttl", format="turtle").subjects(RDF.type, BRIDGE.FailureKind)
+            )
+            assert kinds, "the Bridge vocabulary declares no bridge:FailureKind"
+            graph = library()
+            naming = [(subject, predicate, kind) for subject, predicate, kind in graph if kind in kinds]
+            assert naming, "no library case names a failure kind"
+            subject, predicate, kind = naming[0]
+            graph.remove((subject, predicate, kind))
+            graph.add((subject, predicate, BRIDGE.NotAFailureKind))
+            _, said = said_about(graph)
+            assert "Conforms: False" in said
+            assert all(str(kind).removeprefix(str(BRIDGE)) in said for kind in kinds), said

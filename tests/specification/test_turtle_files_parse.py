@@ -15,7 +15,13 @@ def tracked(*patterns):
     return sorted(path for path in run.stdout.split("\0") if path)
 
 
-@pytest.mark.parametrize("path", tracked("*.ttl", "*.nt"))
-def test_every_tracked_turtle_and_n_triples_file_parses(path):
-    file = ROOT / path
-    Graph().parse(file, format=FORMATS[file.suffix], publicID=file.as_uri())
+class TestFilesOfTheSpecificationThatParse:
+    """Files of the specification that parse · **/*.ttl, **/*.nt, shapes/, bench/result.schema.json"""
+
+    class TestGivenATrackedTurtleOrNTriplesFile:
+        """given a tracked Turtle or N-Triples file"""
+
+        @pytest.mark.parametrize("path", tracked("*.ttl", "*.nt"))
+        def test_parses(self, path):
+            file = ROOT / path
+            Graph().parse(file, format=FORMATS[file.suffix], publicID=file.as_uri())

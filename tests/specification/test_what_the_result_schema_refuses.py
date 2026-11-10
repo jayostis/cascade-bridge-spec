@@ -179,41 +179,79 @@ REFUSED = {
 }
 
 
-def test_the_refusal_kinds_are_the_librarys():
-    library = json.loads((ROOT / "engine" / "library-result.schema.json").read_text(encoding="utf-8"))
-    failing = next(branch for branch in library["oneOf"] if "failure" in branch["properties"])
-    kinds = failing["properties"]["failure"]["properties"]["kind"]["enum"]
-    refused = next(
-        branch["then"]["properties"]["name"]["pattern"]
-        for branch in SCHEMA["$defs"]["result"]["allOf"]
-        if "then" in branch and "refused" in json.dumps(branch)
-    )
-    assert refused.endswith("/refused/(" + "|".join(kinds) + ")$")
+class TestResultsABenchmarkHarnessWrites:
+    """Results a benchmark harness writes · bench/result.schema.json, fixtures/bench/result.json
+
+    A benchmark harness times an engine on the benchmark inputs and writes one JSON file: each result with its name,
+    kind, unit and value, the commit of each repository measured, and the machine. The schema refuses a file a reader
+    could misread, and the example beside it is a file that passes.
+    """
+
+    class TestGivenTheSchemasPatternForTheNameOfARefusedInputsResult:
+        """given the schema's pattern for the name of a refused input's result"""
+
+        def test_lists_exactly_the_failure_kinds_of_the_library_result_schema_in_its_order(self):
+            """lists exactly the failure kinds of `engine/library-result.schema.json`, in its order"""
+            library = json.loads((ROOT / "engine" / "library-result.schema.json").read_text(encoding="utf-8"))
+            failing = next(branch for branch in library["oneOf"] if "failure" in branch["properties"])
+            kinds = failing["properties"]["failure"]["properties"]["kind"]["enum"]
+            refused = next(
+                branch["then"]["properties"]["name"]["pattern"]
+                for branch in SCHEMA["$defs"]["result"]["allOf"]
+                if "then" in branch and "refused" in json.dumps(branch)
+            )
+            assert refused.endswith("/refused/(" + "|".join(kinds) + ")$")
+
+    class TestGivenTheExample:
+        """given the example
+
+        A schema cannot say that each result has a name of its own, or that a value lies within its range.
+        """
+
+        def test_conforms_to_the_schema(self):
+            assert not list(VALIDATOR.iter_errors(EXAMPLE))
+
+        def test_gives_every_result_a_name_of_its_own(self):
+            names = [entry["name"] for entry in EXAMPLE["results"]]
+            assert len(names) == len(set(names))
+
+        def test_keeps_each_value_that_has_a_range_within_it(self):
+            for entry in EXAMPLE["results"]:
+                if "range" in entry:
+                    low, high = (float(end) for end in entry["range"].split("-"))
+                    assert low <= entry["value"] <= high, entry["name"]
+
+    class TestGivenTheExampleChangedInOneWay:
+        """given the example changed in one way
+
+        A result's kind is `clock` (a time, which carries its samples and their range), `cost` or `output`; its unit is
+        `s`, `By` or `{count}`. An input that timed out is an output in seconds named `<input>/timeout/<what>`, and an
+        input the engine refused is an output counted once, named `<input>/refused/<failure kind>`. A keyword is the
+        word of JSON Schema that states a rule, such as `enum`, `required` or `pattern`.
+        """
+
+        @pytest.mark.parametrize("case", REFUSED)
+        def test_is_refused_at_the_member_changed_by_the_keyword_that_forbids_it(self, case):
+            """refuses it at the member changed, by the keyword that forbids it"""
+            document = copy.deepcopy(EXAMPLE)
+            path, keyword, *member = REFUSED[case](document)
+            member = member[0] if member else None
+            refusals = [
+                (tuple(error.absolute_path), error.validator, error.message)
+                for error in VALIDATOR.iter_errors(document)
+            ]
+            assert any(
+                where == path and validator == keyword and (not member or f"'{member}'" in message)
+                for where, validator, message in refusals
+            ), refusals
 
 
-def test_the_schema_is_valid_json_schema():
-    Draft202012Validator.check_schema(SCHEMA)
+class TestFilesOfTheSpecificationThatParse:
+    """Files of the specification that parse · **/*.ttl, **/*.nt, shapes/, bench/result.schema.json"""
 
+    class TestGivenTheResultSchema:
+        """given `bench/result.schema.json`"""
 
-def test_the_example_conforms_and_holds_the_rules_the_schema_cannot_say():
-    assert not list(VALIDATOR.iter_errors(EXAMPLE))
-    names = [entry["name"] for entry in EXAMPLE["results"]]
-    assert len(names) == len(set(names))
-    for entry in EXAMPLE["results"]:
-        if "range" in entry:
-            low, high = (float(end) for end in entry["range"].split("-"))
-            assert low <= entry["value"] <= high, entry["name"]
-
-
-@pytest.mark.parametrize("case", REFUSED)
-def test_the_result_schema_refuses(case):
-    document = copy.deepcopy(EXAMPLE)
-    path, keyword, *member = REFUSED[case](document)
-    member = member[0] if member else None
-    refusals = [
-        (tuple(error.absolute_path), error.validator, error.message) for error in VALIDATOR.iter_errors(document)
-    ]
-    assert any(
-        where == path and validator == keyword and (not member or f"'{member}'" in message)
-        for where, validator, message in refusals
-    ), refusals
+        def test_is_valid_json_schema(self):
+            """is valid JSON Schema"""
+            Draft202012Validator.check_schema(SCHEMA)
