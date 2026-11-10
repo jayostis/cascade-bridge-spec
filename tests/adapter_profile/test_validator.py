@@ -48,50 +48,67 @@ def the_committed_fixture():
     return validated(SYNTHETIC_ADAPTER)
 
 
-@VALIDATED_ONCE
-def test_the_committed_synthetic_adapter_passes_the_profile(the_committed_fixture):
-    assert the_committed_fixture.passed(), "\n".join(issue.message for issue in the_committed_fixture.get_issues())
+class TestCheckingAnAdapterPackageAgainstTheProfile:
+    """Checking an adapter package against the profile · rocrate-validator, adapter/profile/must/
 
+    An adapter package conforms when `rocrate-validator` passes it against RO-Crate 1.2 and this profile. Each `.ttl` or
+    `.py` file under `adapter/profile/must/` is one requirement, and a requirement that could not be checked fails the
+    package and says why.
+    """
 
-def test_the_committed_synthetic_json_adapter_passes_the_profile():
-    result = validated(JSON_FIXTURE)
-    assert result.passed(), "\n".join(issue.message for issue in result.get_issues())
+    class TestGivenTheSyntheticAdaptersAsCommitted:
+        @VALIDATED_ONCE
+        def test_passes_the_xml_adapter(self, the_committed_fixture):
+            """passes the XML adapter"""
+            assert the_committed_fixture.passed(), "\n".join(
+                issue.message for issue in the_committed_fixture.get_issues()
+            )
 
+        def test_passes_the_json_adapter(self):
+            """passes the JSON adapter"""
+            result = validated(JSON_FIXTURE)
+            assert result.passed(), "\n".join(issue.message for issue in result.get_issues())
 
-@VALIDATED_ONCE
-def test_every_file_the_profile_makes_a_check_of_is_run(the_committed_fixture):
-    requirements = services.get_profile(PROFILE, profiles_path=PROFILES).get_requirements()
-    declared = files_of(check for requirement in requirements for check in requirement.get_checks())
-    assert len(declared) > 1
-    assert declared <= files_of(the_committed_fixture.executed_checks)
-    assert not the_committed_fixture.skipped_checks
+        @VALIDATED_ONCE
+        def test_runs_every_file_the_profile_makes_a_check_of_skipping_none(self, the_committed_fixture):
+            """runs every file the profile makes a check of, skipping none"""
+            requirements = services.get_profile(PROFILE, profiles_path=PROFILES).get_requirements()
+            declared = files_of(check for requirement in requirements for check in requirement.get_checks())
+            assert len(declared) > 1
+            assert declared <= files_of(the_committed_fixture.executed_checks)
+            assert not the_committed_fixture.skipped_checks
 
+        @VALIDATED_ONCE
+        def test_runs_the_checks_of_ro_crate_1_2_as_well(self, the_committed_fixture):
+            """runs the checks of RO-Crate 1.2 as well"""
+            assert any(
+                check.requirement.profile.identifier == INHERITED for check in the_committed_fixture.executed_checks
+            )
 
-def test_a_carried_entry_naming_no_term_fails_the_profile(tracked_package):
-    tracked_package.edit(
-        ACCOUNTING, " ;\n  bridge:carriedAs [ bridge:asProperty ex:accession ; bridge:inRecordClass ex:Record ] .", " ."
-    )
-    restate_digest(tracked_package, ACCOUNTING)
+    class TestGivenAPackageAtFault:
+        def test_fails_one_whose_carried_entry_names_no_term_as_a_required_issue(self, tracked_package):
+            """fails one whose carried entry names no term, as a required issue"""
+            tracked_package.edit(
+                ACCOUNTING,
+                " ;\n  bridge:carriedAs [ bridge:asProperty ex:accession ; bridge:inRecordClass ex:Record ] .",
+                " .",
+            )
+            restate_digest(tracked_package, ACCOUNTING)
 
-    result = validated(tracked_package.path)
+            result = validated(tracked_package.path)
 
-    failed = [issue for issue in result.get_issues() if "names at least one bridge:carriedAs" in issue.message]
-    assert not result.passed()
-    assert {issue.severity for issue in failed} == {Severity.REQUIRED}
+            failed = [issue for issue in result.get_issues() if "names at least one bridge:carriedAs" in issue.message]
+            assert not result.passed()
+            assert {issue.severity for issue in failed} == {Severity.REQUIRED}
 
+        def test_fails_one_whose_check_could_not_run_naming_why_and_the_file(self, tracked_package):
+            """fails one whose check could not run, naming why and the file"""
+            tracked_package.edit(MANIFEST, "@prefix mf:", "@prefixx mf:")
+            restate_digest(tracked_package, MANIFEST)
 
-@VALIDATED_ONCE
-def test_the_checks_of_ro_crate_1_2_are_inherited(the_committed_fixture):
-    assert any(check.requirement.profile.identifier == INHERITED for check in the_committed_fixture.executed_checks)
+            result = validated(tracked_package.path)
 
-
-def test_a_check_that_could_not_run_fails_the_profile_naming_why(tracked_package):
-    tracked_package.edit(MANIFEST, "@prefix mf:", "@prefixx mf:")
-    restate_digest(tracked_package, MANIFEST)
-
-    result = validated(tracked_package.path)
-
-    said = "\n".join(issue.message for issue in result.get_issues())
-    assert not result.passed()
-    assert "could not be checked" in said
-    assert "manifest.ttl" in said
+            said = "\n".join(issue.message for issue in result.get_issues())
+            assert not result.passed()
+            assert "could not be checked" in said
+            assert "manifest.ttl" in said

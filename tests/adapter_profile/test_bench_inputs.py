@@ -81,16 +81,24 @@ def said_of(package, edit):
     return list(bench_inputs.faulty(package.crate))
 
 
-def test_the_committed_synthetic_manifest_passes(crate):
-    assert list(bench_inputs.faulty(crate)) == []
+class TestBenchmarkInputsAnAdapterOffers:
+    """Benchmark inputs an adapter offers · adapter/profile/must/bench_inputs.py, bench/manifest.json
 
+    An adapter may list inputs to measure a Bridge on. Where it does, each is a file that is there and is what the list
+    says of it.
+    """
 
-@pytest.mark.parametrize("edit, wanted", REFUSED.values(), ids=REFUSED.keys())
-def test_a_manifest_fault_is_reported_with_what_was_wanted(package, edit, wanted):
-    said = said_of(package, edit)
-    assert any(wanted in message for message in said), said
+    class TestGivenTheManifestTheSyntheticAdapterCommits:
+        def test_passes(self, crate):
+            assert list(bench_inputs.faulty(crate)) == []
 
+    class TestGivenAManifestAtFaultInOneWay:
+        @pytest.mark.parametrize("edit, wanted", REFUSED.values(), ids=REFUSED.keys())
+        def test_says_what_was_wanted(self, package, edit, wanted):
+            said = said_of(package, edit)
+            assert any(wanted in message for message in said), said
 
-def test_an_adapter_without_a_bench_manifest_gets_nothing(package):
-    shutil.rmtree(package.path / "bench")
-    assert list(bench_inputs.faulty(package.crate)) == []
+    class TestGivenAnAdapterWithNoBenchManifest:
+        def test_reports_nothing(self, package):
+            shutil.rmtree(package.path / "bench")
+            assert list(bench_inputs.faulty(package.crate)) == []

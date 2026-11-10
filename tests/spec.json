@@ -1,21 +1,5 @@
 {
   "about": "The Bridge specification's own tests: what the vectors an engine must reproduce, an adapter package, and the compatibility tool are held to. Each heading names the files it is about.",
-  "shaped": [
-    "bench/test_repeat_entries.py",
-    "bench/test_synthea_person.py",
-    "specification/test_a_reference_json_lift_reproduces_every_json_vector.py",
-    "specification/test_shapes_are_valid_shacl.py",
-    "specification/test_the_fake_engine_offers_every_command.py",
-    "specification/test_the_reference_text_values_reproduce_every_xml_vector.py",
-    "specification/test_the_synthetic_adapters_graphs_are_the_records_layer.py",
-    "specification/test_the_synthetic_vocabularies_hold_the_synthetic_adapters.py",
-    "specification/test_the_vocabulary_is_this_repositorys_own.py",
-    "specification/test_turtle_files_parse.py",
-    "specification/test_vector_manifests.py",
-    "specification/test_versioning_vectors.py",
-    "specification/test_what_the_library_shapes_refuse.py",
-    "specification/test_what_the_result_schema_refuses.py"
-  ],
   "capabilities": [
     "Lifting a JSON document · engine/sparql.md, fixtures/lift/",
     "Text values the XML lift writes on an element · engine/sparql.md, fixtures/lift/",
@@ -26,7 +10,53 @@
     "Commands an engine offers · engine/command.md, fixtures/fake-engine/engine.py",
     "Manifests that list the vectors · fixtures/*/manifest.ttl, shapes/bridge.shapes.ttl",
     "Terms of the Bridge vocabulary · vocab/bridge.ttl",
-    "Results a benchmark harness writes · bench/result.schema.json, fixtures/bench/result.json"
+    "Results a benchmark harness writes · bench/result.schema.json, fixtures/bench/result.json",
+    "Checking an adapter package against the profile · rocrate-validator, adapter/profile/must/",
+    "What an adapter's crate names · adapter/profile/must/adapter.ttl",
+    "Envelopes a source document arrives in · adapter/profile/must/envelope.ttl",
+    "Media types a package may declare · adapter/profile/must/media_types.ttl",
+    "Files a package tracks · adapter/profile/must/inventory.py",
+    "Digests a crate records · adapter/profile/must/digests.py",
+    "Terms an adapter may write · adapter/profile/must/declared_terms.py, vocab/bridge.ttl",
+    "The crate and its test manifest as one graph · adapter/profile/must/shapes.py, shapes/bridge.shapes.ttl",
+    "Queries an adapter names · adapter/profile/must/queries.py",
+    "Committed inputs held to their schemas · adapter/profile/must/inputs.py",
+    "Schema files a schema includes or imports · adapter/profile/must/schema_imports.py, bridge:schemaImport",
+    "Expected graphs of a conversion · adapter/profile/must/expected_graphs.py",
+    "Where an expected finding points · adapter/profile/must/expected_findings.py",
+    "What an expected finding is a finding of · adapter/profile/must/expected_findings.py, oa:hasBody",
+    "The form of a finding · shapes/bridge.shapes.ttl",
+    "Facts supplied with an input · adapter/profile/must/facts.py, shapes/facts.shapes.ttl",
+    "An adapter's gap scheme · adapter/profile/must/gap_scheme.py, shapes/gap-scheme.shapes.ttl",
+    "Accounting for every path of a source · adapter/profile/must/source_accounting.py",
+    "The form of an accounting entry · shapes/bridge.shapes.ttl",
+    "Terms a carried path is carried as · adapter/profile/must/carried_as.py, shapes/carried-as.shapes.ttl",
+    "Looking a value up in a concept map · adapter/profile/must/lookups.py, shapes/concept-map.shapes.ttl",
+    "Declaring a JSON source format · bridge:recordPath, bridge:rootMember",
+    "Inputs, findings and queries of a JSON source · adapter/profile/must/inputs.py, expected_findings.py, source_accounting.py, queries.py",
+    "Benchmark inputs an adapter offers · adapter/profile/must/bench_inputs.py, bench/manifest.json",
+    "Faults that name the node that broke · adapter/profile/_findings.py",
+    "Findings a Bridge reports for a value outside a concept map · fixtures/synthetic-adapter/fixtures/findings/",
+    "Findings a Bridge reports for an accounting entry · fixtures/synthetic-adapter/vocab/example-accounting.ttl, fixtures/synthetic-adapter/fixtures/findings/",
+    "Findings a Bridge reports for a path no entry accounts for · fixtures/synthetic-adapter/fixtures/findings/example-0004.ttl",
+    "Records a mapping leaves out as withdrawn · fixtures/synthetic-adapter/",
+    "What a repository's compatibility.json may say · compatibility.json, vocab/compatibility.context.jsonld",
+    "Picking the version of each repository a run uses · Depends-On:",
+    "Pull requests named in the repository under test · Depends-On:",
+    "Pull requests a run cannot read · GITHUB_TOKEN",
+    "Picking the Cascade vocabulary an adapter names · bridge:cascadeVocabularyRepository",
+    "Running an adapter on every host of an engine · host, mustPassWith",
+    "Running an engine's host from its release · release, build-<commit>",
+    "Library cases run on every host of an engine · fixtures/library/, compatibility_tool/library.py",
+    "Judging an EARL report · engine/faults-of-a-report.rq",
+    "Running a runtime on the repositories it names · cascade-runtime.json, --folder, --checkout-only",
+    "Running on a developer's machine · python3 scripts/compatibility.py <dir>",
+    "The table a run writes · table.md",
+    "The report a run names for its caller · .github/actions/start",
+    "The merge gate · --check ready-to-merge",
+    "Re-running a check when a description is edited · .github/actions/rerun-when-edited",
+    "Running the checks from the version a run picked · scripts/compatibility.py",
+    "The run record handed to the version a run picked · compatibility_tool/record.py"
   ],
   "build": [
     "Files of the specification that parse · **/*.ttl, **/*.nt, shapes/, bench/result.schema.json",
@@ -36,9 +66,20 @@
     "Checks of the check on a version's name · tests/specification/test_the_synthetic_adapters_graphs_are_the_records_layer.py",
     "Checks of the fake engine's own output · fixtures/fake-engine/engine.py",
     "Repeating a document's entries for a benchmark input · bench/generate/repeat_entries.py",
-    "Making a Synthea person's record safe to commit · bench/generate/synthea_person.py"
+    "Making a Synthea person's record safe to commit · bench/generate/synthea_person.py",
+    "Tripwire: no sentence written on a finding · shapes/, vocab/, adapter/, fixtures/",
+    "Checks of the suite's own checks · tests/compatibility/",
+    "Tripwire: the synthetic adapter names an ontology and a shapes file of the Cascade vocabulary · fixtures/synthetic-adapter/ro-crate-metadata.json"
   ],
   "glossary": [
+    {
+      "term": "accounting",
+      "aliases": [
+        "source accounting",
+        "accountings"
+      ],
+      "definition": "a Turtle file in which an adapter says, path by path, what becomes of each element and attribute of a source record."
+    },
     {
       "term": "adapter",
       "aliases": [
@@ -73,6 +114,13 @@
       "definition": "a node of a graph with no IRI, so that it can be told from another only by what is stated of it."
     },
     {
+      "term": "body",
+      "aliases": [
+        "bodies"
+      ],
+      "definition": "the part of a finding that says what kind of finding it is, as an IRI."
+    },
+    {
       "term": "Bridge",
       "aliases": [
         "Bridges"
@@ -84,8 +132,20 @@
       "definition": "`vocab/bridge.ttl`: the terms this specification defines, under `https://ns.cascadeprotocol.org/bridge/v1-draft#`, as distinct from the Cascade vocabulary a person's records are written in."
     },
     {
+      "term": "C-CDA",
+      "definition": "Consolidated Clinical Document Architecture: HL7's standard for the XML summary documents patient portals hand out."
+    },
+    {
       "term": "canonical content",
       "definition": "a version's statements written one to a line and sorted, with the placeholder standing for the version itself; the SHA-256 of these bytes is the version's name."
+    },
+    {
+      "term": "census",
+      "aliases": [
+        "census finding",
+        "census findings"
+      ],
+      "definition": "what a Bridge reports of every path of a record that the accounting has no entry for."
     },
     {
       "term": "clock",
@@ -95,11 +155,40 @@
       "definition": "in a benchmark result, a measurement of time: the kind of result that carries its samples and their range."
     },
     {
+      "term": "concept map",
+      "aliases": [
+        "concept maps"
+      ],
+      "definition": "a table from a source's own values (each a notation) to Cascade terms, written as a SKOS concept scheme."
+    },
+    {
       "term": "conversion",
       "aliases": [
         "conversions"
       ],
       "definition": "one test of an adapter: an input, the envelope it arrives in, and the graph and findings converting it must give."
+    },
+    {
+      "term": "counterpart",
+      "aliases": [
+        "counterparts"
+      ],
+      "definition": "a repository a run tests the repository under test with: for an engine an adapter, for an adapter an engine."
+    },
+    {
+      "term": "crate",
+      "aliases": [
+        "crates"
+      ],
+      "definition": "an adapter's `ro-crate-metadata.json`, a file in the RO-Crate format that describes every file of the package; its root entity is the adapter itself."
+    },
+    {
+      "term": "cycle",
+      "aliases": [
+        "cycles",
+        "cycle member"
+      ],
+      "definition": "pull requests that name each other on `Depends-On:` lines, directly or through others, and so must merge together."
     },
     {
       "term": "digest",
@@ -131,6 +220,14 @@
       "definition": "in XML, a name written between `&` and `;` that stands for some text, such as `&amp;` for an ampersand."
     },
     {
+      "term": "entry",
+      "aliases": [
+        "entries",
+        "path entry"
+      ],
+      "definition": "one line of an accounting: a source path, its verdict, and what the verdict requires beside it."
+    },
+    {
       "term": "envelope",
       "aliases": [
         "envelopes"
@@ -144,6 +241,10 @@
         "skeleton tests"
       ],
       "definition": "the lift of a whole document with each record kept only in outline, which is all an adapter's detect query sees; a skeleton test is a vector of it."
+    },
+    {
+      "term": "expected findings",
+      "definition": "the findings a conversion must produce, as a Turtle file the test names."
     },
     {
       "term": "expected graph",
@@ -171,6 +272,13 @@
       "definition": "`fixtures/fake-engine/engine.py`: a small program that offers an engine's three commands and is no Bridge, for testing the tools that run engines."
     },
     {
+      "term": "fault",
+      "aliases": [
+        "faults"
+      ],
+      "definition": "one line a failing check prints: what was wanted and where it was not met."
+    },
+    {
       "term": "finding",
       "aliases": [
         "findings"
@@ -178,11 +286,39 @@
       "definition": "a note a Bridge writes about one node of one input: something not carried, a schema rule broken, a value outside a map."
     },
     {
+      "term": "findings query",
+      "aliases": [
+        "findings queries"
+      ],
+      "definition": "a SPARQL CONSTRUCT an adapter names that writes findings about the record being converted."
+    },
+    {
       "term": "fixture",
       "aliases": [
         "fixtures"
       ],
       "definition": "here, a sample package the specification carries to test with, such as `fixtures/synthetic-adapter/`."
+    },
+    {
+      "term": "focus node",
+      "aliases": [
+        "focus nodes"
+      ],
+      "definition": "in SHACL, a thing a shape is checked against."
+    },
+    {
+      "term": "gap",
+      "aliases": [
+        "gaps"
+      ],
+      "definition": "a named reason that something in a source is not carried into the Cascade vocabulary."
+    },
+    {
+      "term": "gap scheme",
+      "aliases": [
+        "gap schemes"
+      ],
+      "definition": "the SKOS concept scheme an adapter keeps its gaps in."
     },
     {
       "term": "graph",
@@ -199,8 +335,26 @@
       "definition": "a program that times an engine on the benchmark inputs and writes the results file `bench/result.schema.json` describes."
     },
     {
+      "term": "host",
+      "aliases": [
+        "hosts"
+      ],
+      "definition": "one way an engine or runtime is built and run, such as natively or under Node; `compatibility.json` gives each a name, a setup and a command."
+    },
+    {
+      "term": "identity relation test",
+      "definition": "a test over several conversions that says whether they must give the same record."
+    },
+    {
       "term": "import",
       "definition": "one run of a Bridge over one document, written in the document's graph as a node of its own that says which document it used and which adapter it applied."
+    },
+    {
+      "term": "input-only entry",
+      "aliases": [
+        "input-only entries"
+      ],
+      "definition": "a manifest entry that only supplies an input to others, and so must not be reported as a test."
     },
     {
       "term": "IRI",
@@ -235,6 +389,18 @@
       "definition": "a value written in a statement as text with a datatype, such as `\"2.00\"^^xsd:decimal`, as distinct from an IRI that names a thing."
     },
     {
+      "term": "local run",
+      "definition": "a run on a developer's machine, outside CI: it reads no pull request and uses the checkouts beside it."
+    },
+    {
+      "term": "lookup",
+      "aliases": [
+        "lookups",
+        "looked up"
+      ],
+      "definition": "an entry's statement that its path's values are found in a concept map, and which gap a value outside the map opens."
+    },
+    {
       "term": "manifest",
       "aliases": [
         "manifests",
@@ -257,8 +423,19 @@
       "definition": "a SPARQL CONSTRUCT an adapter names that writes records in the Cascade vocabulary from a lifted source record."
     },
     {
+      "term": "merge gate",
+      "definition": "the check `ready-to-merge`, which passes a pull request only once those it names have merged or are ready with it."
+    },
+    {
       "term": "N-Triples",
       "definition": "a W3C text format for writing statements, one to a line, with no abbreviations."
+    },
+    {
+      "term": "named pull request",
+      "aliases": [
+        "named pull requests"
+      ],
+      "definition": "a pull request reached from the one under test by `Depends-On:` lines, each a line of a description giving another pull request's address."
     },
     {
       "term": "namespace",
@@ -282,6 +459,13 @@
       "definition": "a part of a version with an IRI of its own, the version's IRI followed by `#` and a fragment; it is renamed with its version."
     },
     {
+      "term": "notation",
+      "aliases": [
+        "notations"
+      ],
+      "definition": "in SKOS, the code a concept is known by; in a concept map, a source's value."
+    },
+    {
       "term": "ontology file",
       "aliases": [
         "ontology files"
@@ -298,6 +482,10 @@
         "pods"
       ],
       "definition": "one person's records, and what that person has said about them, kept as files in one folder."
+    },
+    {
+      "term": "profile",
+      "definition": "the set of requirements an adapter package is validated against, under `adapter/profile/`."
     },
     {
       "term": "record",
@@ -320,8 +508,49 @@
       "definition": "`tests/specification/json_lift.py`: a JSON lift written from `engine/sparql.md` alone and sharing no code with any Bridge, which every JSON vector is run through."
     },
     {
+      "term": "refinement",
+      "aliases": [
+        "refined"
+      ],
+      "definition": "the second half of a selector: a path from a record to one node inside it."
+    },
+    {
+      "term": "release",
+      "definition": "here, a build of an engine published on GitHub as `build-<commit>`, which an adapter's run uses instead of building the engine."
+    },
+    {
+      "term": "repository under test",
+      "definition": "the repository whose pull request or branch a run was started for."
+    },
+    {
+      "term": "run",
+      "aliases": [
+        "runs"
+      ],
+      "definition": "one execution of `scripts/compatibility.py` over a repository, in CI or locally."
+    },
+    {
+      "term": "run record",
+      "definition": "the file a run writes of each repository it used, its commit and how it was picked."
+    },
+    {
+      "term": "runtime",
+      "definition": "software that reads and writes pods as the vocabulary requires.",
+      "aliases": [
+        "runtimes"
+      ]
+    },
+    {
       "term": "same content",
       "definition": "two versions of a record whose canonical content is byte for byte alike, so that they get the one name."
+    },
+    {
+      "term": "selector",
+      "aliases": [
+        "selectors",
+        "record selector"
+      ],
+      "definition": "the part of a finding's target that picks a node of the input: an XPath for XML, a JSON Pointer for JSON."
     },
     {
       "term": "shapes",
@@ -329,6 +558,20 @@
         "Bridge shapes"
       ],
       "definition": "here, the specification's requirements on a crate, a manifest, a findings file, a file of facts or an accounting, written in SHACL, the W3C language for checking data."
+    },
+    {
+      "term": "sibling",
+      "aliases": [
+        "siblings"
+      ],
+      "definition": "a checkout in the folder beside the one a local run is given."
+    },
+    {
+      "term": "source path",
+      "aliases": [
+        "source paths"
+      ],
+      "definition": "a path from a record's element to one element or attribute under it, with no positions, as an accounting writes it."
     },
     {
       "term": "SPARQL",
@@ -359,18 +602,18 @@
       "definition": "`fixtures/synthetic-vocabularies/`: an invented stand-in for a checkout of the Cascade vocabulary, holding the ontology file and shapes the synthetic adapters name."
     },
     {
-      "term": "triple",
-      "aliases": [
-        "triples"
-      ],
-      "definition": "one statement of a graph: a subject, a property and a value."
-    },
-    {
       "term": "term",
       "aliases": [
         "terms"
       ],
       "definition": "here, one word a vocabulary defines, named by an IRI; `bridge:` terms are the specification's, others are the Cascade vocabulary's."
+    },
+    {
+      "term": "triple",
+      "aliases": [
+        "triples"
+      ],
+      "definition": "one statement of a graph: a subject, a property and a value."
     },
     {
       "term": "Turtle",
@@ -385,6 +628,13 @@
         "versioning vectors"
       ],
       "definition": "a worked example an engine must reproduce: an input file and the output expected from it, listed in a manifest."
+    },
+    {
+      "term": "verdict",
+      "aliases": [
+        "verdicts"
+      ],
+      "definition": "what an entry says becomes of its path, one of six: carried, carried in part, redundant with another path, consumed, no home, ignored."
     },
     {
       "term": "version",

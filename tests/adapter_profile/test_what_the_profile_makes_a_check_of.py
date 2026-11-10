@@ -51,12 +51,24 @@ def discovered(profile):
     return checks
 
 
-def test_the_profile_makes_a_check_of_these_files_and_of_nothing_else():
-    assert discovered(PROFILE) == CHECKS, DISCOVERED
+class TestCheckingAnAdapterPackageAgainstTheProfile:
+    """Checking an adapter package against the profile · rocrate-validator, adapter/profile/must/
 
+    An adapter package conforms when `rocrate-validator` passes it against RO-Crate 1.2 and this profile. Each `.ttl` or
+    `.py` file under `adapter/profile/must/` is one requirement, and a requirement that could not be checked fails the
+    package and says why.
+    """
 
-def test_a_shapes_file_dropped_in_must_becomes_a_check_over_every_crate(tmp_path):
-    profile = tmp_path / "adapter"
-    shutil.copytree(PROFILE, profile)
-    (profile / "profile" / "must" / "concept_map.ttl").write_text(A_CONCEPT_MAPS_SHAPES, encoding="utf-8")
-    assert discovered(profile) == {**CHECKS, "profile/must/concept_map.ttl": 2}
+    class TestGivenTheFilesUnderAdapterProfile:
+        """given the files under `adapter/profile/`"""
+
+        def test_makes_a_check_of_each_ttl_and_py_under_must_and_of_nothing_else(self):
+            """makes a check of each `.ttl` and `.py` under `must/`, and of nothing else"""
+            assert discovered(PROFILE) == CHECKS, DISCOVERED
+
+        def test_makes_a_shapes_file_dropped_into_must_a_check_over_every_crate(self, tmp_path):
+            """makes a shapes file dropped into `must/` a check over every crate"""
+            profile = tmp_path / "adapter"
+            shutil.copytree(PROFILE, profile)
+            (profile / "profile" / "must" / "concept_map.ttl").write_text(A_CONCEPT_MAPS_SHAPES, encoding="utf-8")
+            assert discovered(profile) == {**CHECKS, "profile/must/concept_map.ttl": 2}
