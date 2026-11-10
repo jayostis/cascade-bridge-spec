@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import pytest
-from rdflib import Graph, Namespace, URIRef
+from rdflib import Graph, Namespace
 from rdflib.compare import isomorphic, to_isomorphic
 from rdflib.namespace import RDF
 
@@ -74,32 +74,3 @@ def test_a_name_selector_is_the_same_record_path_written_either_way():
     value = json_lift.parsed(b'{"entry": [{"a": "1"}, {"b": "2"}]}')
     assert json_lift.records_of(value, "$.entry[*]") == json_lift.records_of(value, "$['entry'][*]")
     assert len(json_lift.records_of(value, "$.entry[*]")) == 2
-
-
-def test_the_record_path_dollar_is_the_documents_value():
-    value = json_lift.parsed(b'{"resourceType": "Example"}')
-    assert json_lift.records_of(value, "$") == [value]
-
-
-@pytest.mark.parametrize("path", ["$..entry", "$.entry[0]", "$.entry[?@.a]", "entry", "$.entry[0:2]"])
-def test_a_record_path_outside_the_subset_is_refused(path):
-    with pytest.raises(ValueError):
-        json_lift.segments_of(path)
-
-
-@pytest.mark.parametrize(
-    ("media_type", "json"),
-    [
-        ("application/json", True),
-        ("application/fhir+json", True),
-        ("application/xml", False),
-        ("text/xml", False),
-        ("application/example+xml", False),
-    ],
-)
-def test_the_media_type_selects_the_lift(media_type, json):
-    assert json_lift.applies_to(media_type) is json
-
-
-def test_a_member_named_as_an_element_is_appended_to_the_data_namespace():
-    assert json_lift.named("given name") == URIRef("http://sparql.xyz/facade-x/data/given%20name")

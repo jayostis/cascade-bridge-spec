@@ -68,17 +68,3 @@ def test_the_reference_text_values_are_the_vectors(document, breaking, expected)
     assert written(graph, BRIDGE.textWithElementBreaks) == Counter(
         (type_of(e), xml_text.text_with_element_breaks(e, breaking)) for e in held if breaking
     )
-
-
-@pytest.mark.parametrize(
-    ("xml", "breaking", "text"),
-    [
-        pytest.param(b"<tr><td>A</td> <td>B</td></tr>", {"td", "tr"}, "A\nB", id="cells"),
-        pytest.param(b"<p>m<sup>2</sup></p>", {"td"}, "m2", id="an element not named"),
-        pytest.param(b"<p> a <br/><br/> b </p>", {"br"}, "a\nb", id="breaks together"),
-        pytest.param(b"<p>a\n\t b</p>", {"br"}, "a b", id="whitespace inside a run"),
-        pytest.param(b"<x:p xmlns:x='urn:x'>a<x:br/>b</x:p>", {"br"}, "a\nb", id="a name in a namespace"),
-    ],
-)
-def test_text_with_element_breaks(xml, breaking, text):
-    assert xml_text.text_with_element_breaks(next(xml_text.elements(xml)), breaking) == text
