@@ -30,6 +30,7 @@ class Verdict:
     unreadable_manifest: str | None = None
     tests: int | None = None
     faults: list[str] = field(default_factory=list)
+    named: list[tuple[str | None, str]] = field(default_factory=list)
 
     @property
     def holds(self):
@@ -78,22 +79,32 @@ def judge_report(path, adapter):
         name = outcome_name(outcome)
         tally[name] = tally.get(name, 0) + 1
     if adapter is None:
-        return Verdict(tally=tally, faults=faults_of(graph))
+        return with_faults(Verdict(tally=tally), graph)
 
     adapter = adapter.resolve()
     try:
         manifest_path, manifest = read_test_manifest(adapter)
     except Exception as error:
-        return Verdict(tally=tally, unreadable_manifest=first_line(str(error)), faults=faults_of(graph))
-    return Verdict(
-        tally=tally,
-        tests=count_of_tests(manifest_path, manifest),
-        faults=faults_of(graph + manifest),
-    )
+        return with_faults(Verdict(tally=tally, unreadable_manifest=first_line(str(error))), graph)
+    return with_faults(Verdict(tally=tally, tests=count_of_tests(manifest_path, manifest)), graph + manifest)
+
+
+def fault_rows(graph):
+    """Each fault of a report with the test it names, or None where it names none."""
+    return [
+        (None if row.entry is None else str(row.entry), str(row.fault))
+        for row in graph.query(FAULTS_OF_A_REPORT.read_text(encoding="utf-8"))
+    ]
 
 
 def faults_of(graph):
-    return [str(row.fault) for row in graph.query(FAULTS_OF_A_REPORT.read_text(encoding="utf-8"))]
+    return [fault for _, fault in fault_rows(graph)]
+
+
+def with_faults(verdict, graph):
+    verdict.named = fault_rows(graph)
+    verdict.faults = [fault for _, fault in verdict.named]
+    return verdict
 
 
 def plural(count, word):
