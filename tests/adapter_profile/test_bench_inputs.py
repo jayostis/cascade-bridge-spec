@@ -89,16 +89,16 @@ class TestBenchmarkInputsAnAdapterOffers:
     """
 
     class TestGivenTheManifestTheSyntheticAdapterCommits:
-        def test_passes(self, crate):
+        def test_reports_nothing_for_the_manifest_the_synthetic_adapter_commits(self, crate):
             assert list(bench_inputs.faulty(crate)) == []
 
     class TestGivenAManifestAtFaultInOneWay:
         @pytest.mark.parametrize("edit, wanted", REFUSED.values(), ids=REFUSED.keys())
-        def test_says_what_was_wanted(self, package, edit, wanted):
+        def test_reports_a_manifest_fault_and_says_what_was_wanted(self, package, edit, wanted):
             said = said_of(package, edit)
             assert any(wanted in message for message in said), said
 
     class TestGivenAnAdapterWithNoBenchManifest:
-        def test_reports_nothing(self, package):
+        def test_reports_nothing_for_an_adapter_with_no_bench_manifest(self, package):
             shutil.rmtree(package.path / "bench")
             assert list(bench_inputs.faulty(package.crate)) == []

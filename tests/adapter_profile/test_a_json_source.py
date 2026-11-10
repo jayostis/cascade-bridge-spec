@@ -162,8 +162,8 @@ class TestInputsFindingsAndQueriesOfAJSONSource:
             json_package.edit(RECORD_SCHEMA, "draft-06", "draft-07")
             assert "names no JSON Schema draft-06 as its $schema" in said(inputs, json_package.crate)
 
-        def test_reports_a_ref_to_nothing_in_the_package_and_fetches_nothing(self, json_package):
-            """reports a `$ref` to nothing in the package, and fetches nothing"""
+        def test_reports_a_ref_to_nothing_in_the_package(self, json_package):
+            """reports a `$ref` to nothing in the package"""
             json_package.edit(RECORD_SCHEMA, '"$ref": "#/definitions/positiveInteger"', '"$ref": "other.schema.json"')
             assert "which is not a file in this package" in said(inputs, json_package.crate)
 

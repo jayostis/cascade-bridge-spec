@@ -286,8 +286,8 @@ class TestTheFormOfAnAccountingEntry:
 
     class TestGivenHalfALookup:
         @pytest.mark.parametrize("verdict", A_MINIMAL_ENTRY_OF_EACH_VERDICT)
-        def test_breaks_a_constraint_under_every_verdict_where_both_halves_conform(self, verdict):
-            """breaks a constraint under every verdict, where both halves conform"""
+        def test_breaks_a_constraint_under_every_verdict_for_either_half_alone_and_conforms_with_both(self, verdict):
+            """breaks a constraint under every verdict for either half alone, and conforms with both"""
             assert "bridge:lookupIn" in said_about(looks_up(verdict, lookup_in=None))
             assert "bridge:lookupNamesGap" in said_about(looks_up(verdict, lookup_names_gap=None))
             assert not said_about(looks_up(verdict))

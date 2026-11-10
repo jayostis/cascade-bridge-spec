@@ -121,6 +121,6 @@ class TestSchemaFilesASchemaIncludesOrImports:
             declared(package, crate, "example-part")
             assert not said(crate)
 
-        def test_reads_no_schema_of_a_json_source(self, json_crate):
-            """reads no schema of a JSON source"""
+        def test_reports_nothing_for_a_json_source(self, json_crate):
+            """reports nothing for a JSON source"""
             assert not said(json_crate)

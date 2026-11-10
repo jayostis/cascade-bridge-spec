@@ -1,3 +1,4 @@
+import pytest
 from rdflib import Literal
 
 from _terms import BRIDGE, SCHEMA
@@ -14,10 +15,11 @@ class TestMediaTypesAPackageMayDeclare:
         def test_reports_nothing_for_media_types_an_adapter_package_may_declare(self, crate):
             assert not shape_file_messages(crate, "media_types.ttl")
 
-        def test_reports_nothing_for_a_media_type_with_the_json_or_xml_suffix(self, crate):
+        @pytest.mark.parametrize("media_type", ["application/fhir+json", "application/fhir+xml"])
+        def test_reports_nothing_for_a_media_type_with_the_json_or_xml_suffix(self, crate, media_type):
             """reports nothing for a media type with the JSON or XML suffix"""
             mapping = next(crate.graph.objects(crate.root, BRIDGE.mapping))
-            crate.graph.set((mapping, SCHEMA.encodingFormat, Literal("application/fhir+json")))
+            crate.graph.set((mapping, SCHEMA.encodingFormat, Literal(media_type)))
             assert not shape_file_messages(crate, "media_types.ttl")
 
     class TestGivenAMediaTypeItMayNot:

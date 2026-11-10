@@ -33,7 +33,7 @@ class TestFactsSuppliedWithAnInput:
         def test_reports_nothing_for_the_facts_the_synthetic_adapter_supplies(self, crate):
             assert not said(crate)
 
-        def test_reports_nothing_for_the_scope_a_pull_states_of_its_document(self, package):
+        def test_reports_nothing_for_the_scope_a_fetch_states_of_its_document(self, package):
             """reports nothing for the scope a fetch states of its document"""
             package.write(
                 FACTS,

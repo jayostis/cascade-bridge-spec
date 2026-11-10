@@ -25,7 +25,7 @@ class TestLookingAValueUpInAConceptMap:
             assert not said_about(crate)
 
     class TestGivenAnAdapterNamingNoAccounting:
-        def test_reports_nothing(self, crate):
+        def test_reports_nothing_for_an_adapter_that_names_no_accounting(self, crate):
             crate.graph.remove((crate.root, BRIDGE.sourceAccounting, None))
             assert not said_about(crate)
 

@@ -53,8 +53,8 @@ class TestTheFormOfAFinding:
     These are the shapes every findings file is held to, whoever wrote it.
     """
 
-    class TestGivenAFindingsBodyMotivationAndCounts:
-        """given a finding's body, motivation and counts"""
+    class TestGivenAFindingsBodyMotivationCountsSeverityAndNode:
+        """given a finding's body, motivation, counts, severity and node"""
 
         def test_rejects_a_finding_whose_body_is_an_oa_textualbody(self):
             """rejects a finding whose body is an `oa:TextualBody`"""
@@ -110,12 +110,6 @@ class TestTheFormOfAFinding:
             assert "cascade:occurrenceCount" in said_about_findings(a_finding(occurrences="1"))
             assert not said_about_findings(a_finding())
 
-    class TestGivenAFindingsTargetAndSelector:
-        """given a finding's target and selector"""
-
-        def test_rejects_a_finding_with_no_selector(self):
-            assert "carries exactly one oa:hasSelector" in said_about_findings(a_finding(record=None))
-
         def test_rejects_a_finding_with_no_severity(self):
             assert "carries exactly one sh:resultSeverity" in said_about_findings(a_finding(severity=None))
 
@@ -123,6 +117,17 @@ class TestTheFormOfAFinding:
             assert "sh:Info, sh:Warning, sh:Violation" in said_about_findings(
                 a_finding(severity="<https://example.org/synthetic-adapter/severe>")
             )
+
+        def test_rejects_a_finding_named_rather_than_written_for_itself(self):
+            assert "A finding is a blank node written for that one finding" in said_about_findings(
+                a_finding().replace("[] a oa:Annotation", "<#the-one-finding> a oa:Annotation")
+            )
+
+    class TestGivenAFindingsTargetAndSelector:
+        """given a finding's target and selector"""
+
+        def test_rejects_a_finding_with_no_selector(self):
+            assert "carries exactly one oa:hasSelector" in said_about_findings(a_finding(record=None))
 
         def test_rejects_two_findings_sharing_one_selector(self):
             assert "selector of its own, shared with no other finding" in said_about_findings(
@@ -144,11 +149,6 @@ class TestTheFormOfAFinding:
             assert (
                 "A finding's target names exactly one oa:hasSource by IRI, the document the record was read from."
             ) in said_about_findings(a_finding(source='"example-0001.xml"'))
-
-        def test_rejects_a_finding_named_rather_than_written_for_itself(self):
-            assert "A finding is a blank node written for that one finding" in said_about_findings(
-                a_finding().replace("[] a oa:Annotation", "<#the-one-finding> a oa:Annotation")
-            )
 
         def test_rejects_a_record_selector_that_is_not_an_xpath_selector(self):
             """rejects a record selector that is not an XPath selector"""

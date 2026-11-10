@@ -89,6 +89,21 @@
       "definition": "here, a package of data for one XML or JSON source format, with no code in it: queries, schemas, sample inputs and what converting them must give."
     },
     {
+      "term": "allowlist",
+      "aliases": [
+        "allowlists"
+      ],
+      "definition": "a list of what is permitted, so that anything not on it is refused."
+    },
+    {
+      "term": "annotation",
+      "aliases": [
+        "annotations",
+        "Web Annotation"
+      ],
+      "definition": "a note about one thing, written in the W3C Web Annotation model: a body, a target and a motivation; a finding is one."
+    },
+    {
       "term": "arrival",
       "aliases": [
         "arrivals"
@@ -378,6 +393,14 @@
       "definition": "a web-style identifier, such as `https://ns.cascadeprotocol.org/cascade#Record`; every term and every record is named by one."
     },
     {
+      "term": "JSON Pointer",
+      "aliases": [
+        "JSON pointer",
+        "JSON pointers"
+      ],
+      "definition": "a way of naming one value in a JSON document by the path to it, such as `/entry/0/resource`."
+    },
+    {
       "term": "JSONPath",
       "definition": "a language for picking values out of a JSON document, such as `$.entry[*]`."
     },
@@ -610,6 +633,10 @@
         "record selector"
       ],
       "definition": "the part of a finding's target that picks a node of the input: an XPath for XML, a JSON Pointer for JSON."
+    },
+    {
+      "term": "severity",
+      "definition": "how serious a finding is, one of `sh:Info`, `sh:Warning` and `sh:Violation`."
     },
     {
       "term": "shapes",

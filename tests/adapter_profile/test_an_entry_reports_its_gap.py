@@ -176,7 +176,7 @@ class TestFindingsABridgeReportsForAnAccountingEntry:
             )
 
     class TestGivenAnEntryWhoseVerdictNamesNoGap:
-        def test_reports_nothing(self, crate):
+        def test_reports_nothing_for_a_path_whose_entry_names_no_gap(self, crate):
             silent = [path for path, gap, _ in entries_of(crate) if gap is None]
             assert A_PATH_WHOSE_ENTRY_NAMES_NO_GAP in silent
             _, graph, records = the_case(crate, THE_CASE)

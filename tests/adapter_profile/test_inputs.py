@@ -126,6 +126,25 @@ class TestCommittedInputsHeldToTheirSchemas:
                 "example-0001.xml holds no MissingRecord, the adapter's bridge:elementNameOfEachRecord"
             ) in "\n".join(inputs.invalid(crate))
 
+        def test_reports_an_input_that_is_not_well_formed_xml_where_the_schema_is_one_it_reads(self, package):
+            """reports an input that is not well formed XML where the schema is one it reads"""
+            package.edit("fixtures/in/example-0001.xml", "</ExampleRecordSet>", "")
+            assert "example-0001.xml is not well-formed XML" in "\n".join(inputs.invalid(package.crate))
+
+        def test_reports_a_schema_failure_its_entrys_expected_findings_record_as_a_gap_rather_than_a_broken_rule(
+            self, package
+        ):
+            """reports a schema failure its entry's expected findings record as a gap rather than a broken rule"""
+            for rule in ("cvc-complex-type", "cvc-elt"):
+                package.edit(
+                    "fixtures/findings/example-0003.ttl",
+                    f"<https://www.w3.org/TR/xmlschema-1/#{rule}>",
+                    "<https://example.org/synthetic-adapter/v1#no-term-for-a-free-text-note>",
+                )
+            assert "example-0003.xml does not validate against example-set.xsd" in "\n".join(
+                inputs.invalid(package.crate)
+            )
+
     class TestGivenTheSchemaAnAdapterNames:
         def test_reports_a_source_schema_no_record_was_validated_against_for_want_of_an_element_name(self, crate):
             crate.graph.remove((crate.root, BRIDGE.elementNameOfEachRecord, None))
@@ -142,11 +161,6 @@ class TestCommittedInputsHeldToTheirSchemas:
                 "example-record.xsd is declared application/schema+json, a JSON Schema, where an XML source is validated "
                 "against an XSD 1.0 schema declared application/xml or text/xml"
             ) in "\n".join(inputs.invalid(crate))
-
-        def test_reports_an_input_that_is_not_well_formed_xml_where_the_schema_is_one_it_reads(self, package):
-            """reports an input that is not well formed XML where the schema is one it reads"""
-            package.edit("fixtures/in/example-0001.xml", "</ExampleRecordSet>", "")
-            assert "example-0001.xml is not well-formed XML" in "\n".join(inputs.invalid(package.crate))
 
         def test_reports_a_schema_that_is_not_a_file_in_the_package(self, crate):
             schema = crate.graph.value(crate.root, BRIDGE.sourceSchema)
@@ -172,20 +186,6 @@ class TestCommittedInputsHeldToTheirSchemas:
             crate.file_at(source_schema).write_text("<not-a-schema/>", encoding="utf-8")
             faults = [message for message in inputs.invalid(crate) if "does not compile" in message]
             assert len(faults) == len(tests)
-
-        def test_reports_a_schema_failure_its_entrys_expected_findings_record_as_a_gap_rather_than_a_broken_rule(
-            self, package
-        ):
-            """reports a schema failure its entry's expected findings record as a gap rather than a broken rule"""
-            for rule in ("cvc-complex-type", "cvc-elt"):
-                package.edit(
-                    "fixtures/findings/example-0003.ttl",
-                    f"<https://www.w3.org/TR/xmlschema-1/#{rule}>",
-                    "<https://example.org/synthetic-adapter/v1#no-term-for-a-free-text-note>",
-                )
-            assert "example-0003.xml does not validate against example-set.xsd" in "\n".join(
-                inputs.invalid(package.crate)
-            )
 
         def test_reports_an_xsd_named_with_a_fragment(self, crate):
             """reports an XSD named with a fragment"""

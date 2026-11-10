@@ -202,14 +202,6 @@ class TestWhereAnExpectedFindingPoints:
             package.write(FINDINGS, a_findings_file(refined="@Version"))
             assert not list(expected_findings.faulty(package.crate))
 
-
-class TestWhatAnExpectedFindingIsAFindingOf:
-    """What an expected finding is a finding of · adapter/profile/must/expected_findings.py, oa:hasBody
-
-    A finding's body says what kind of finding it is: a gap of the adapter's own gap scheme, a rule of W3C XML Schema
-    that was broken, a SHACL constraint component, or one of the concepts the specification keeps for a Bridge.
-    """
-
     class TestGivenAFindingAboutTheWholeDocument:
         def test_reports_nothing_for_one_selecting_the_document_element(self, package):
             package.write(FINDINGS, a_findings_file(record="/ExampleRecordSet", refined=None))
@@ -238,6 +230,14 @@ class TestWhatAnExpectedFindingIsAFindingOf:
                 "example-0001: example-0001.ttl: * selects 2 nodes of example-0001.xml, where a finding selects exactly one"
             ]
 
+
+class TestWhatAnExpectedFindingIsAFindingOf:
+    """What an expected finding is a finding of · adapter/profile/must/expected_findings.py, oa:hasBody
+
+    A finding's body says what kind of finding it is: a gap of the adapter's own gap scheme, a rule of W3C XML Schema
+    that was broken, a SHACL constraint component, or one of the concepts the specification keeps for a Bridge.
+    """
+
     class TestGivenTheBodyOfAFinding:
         def test_reports_a_finding_whose_body_is_no_gap_of_the_adapters_gap_scheme(self, package):
             """reports a finding whose body is no gap of the adapter's gap scheme"""
@@ -261,7 +261,9 @@ class TestWhatAnExpectedFindingIsAFindingOf:
             package.write(FINDINGS, a_findings_file(body="bridge:versionNotKept"))
             assert not said_about(package.crate)
 
-        def test_reports_the_concept_an_address_selecting_other_than_one_node_carries(self, package):
+        def test_reports_a_finding_whose_body_is_the_concept_for_an_address_selecting_other_than_one_node(
+            self, package
+        ):
             package.write(FINDINGS, a_findings_file(body="bridge:addressNotOneNode"))
             assert (
                 "https://ns.cascadeprotocol.org/bridge/v1-draft#addressNotOneNode is not a gap of the adapter's "

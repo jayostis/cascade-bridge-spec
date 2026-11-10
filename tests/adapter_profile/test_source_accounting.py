@@ -243,7 +243,7 @@ class TestAccountingForEveryPathOfASource:
             assert ONLY_THE_FINDINGS_QUERY_MENTIONS in said
             assert CARRIED in said
 
-        def test_reports_nothing_for_that_entry_once_a_mapping_mentions_the_path(self, package):
+        def test_reports_nothing_for_a_carried_entry_once_a_mapping_mentions_the_path_it_accounts_for(self, package):
             accounted(package, entry(ONLY_THE_FINDINGS_QUERY_MENTIONS))
             package.edit("in/example-record.rq", "xyz:Label ; rdf:_1 ?label", "xyz:Note ; rdf:_1 ?label")
             assert not said_about(package)
@@ -258,7 +258,7 @@ class TestAccountingForEveryPathOfASource:
             assert NO_QUERY_MENTIONS in said
             assert CARRIED_IN_PART in said
 
-        def test_reports_nothing_for_that_path_where_the_verdict_is_no_home(self, package):
+        def test_reports_nothing_for_a_no_home_entry_for_a_path_no_mapping_mentions(self, package):
             accounted(package, entry(NO_QUERY_MENTIONS, verdict=NO_HOME, names_gap=A_GAP_WITH_NO_PREDICATE))
             assert not said_about(package)
 
