@@ -112,6 +112,7 @@ class TestAReportOfEveryCaseAnEngineRan:
             assert "description" not in case_named(clean, "example-0001")["extra"]
 
         def test_gives_a_case_the_manifests_path_and_the_line_its_entry_begins_on(self, clean):
+            """gives a case the manifest's path and the line its entry begins on"""
             lines = MANIFEST.read_text(encoding="utf-8").splitlines()
             begins = next(number for number, text in enumerate(lines, 1) if text.startswith("<#example-0003>"))
 
@@ -139,6 +140,7 @@ class TestAReportOfEveryCaseAnEngineRan:
             assert summary["pending"] == 0
 
         def test_names_the_adapters_repository_and_commit_on_each_case(self, clean):
+            """names the adapter's repository and commit on each case"""
             adapter = clean.record()["repositories"]["adapter"]
 
             assert re.fullmatch(r"[0-9a-f]{40}", adapter["commit"])
@@ -301,17 +303,21 @@ class TestAReportOfEveryCaseAnEngineRan:
             assert "with engine on second" in closed[1]
 
         def test_says_a_failed_cases_fault_beside_its_name(self, written):
+            """says a failed case's fault beside its name"""
             text, _ = written
 
             (line,) = [line for line in text.splitlines() if "`example-0001`" in line and FAILED_SENTENCE in line]
             assert line
 
         def test_holds_no_markdown_table(self, written):
+            """holds no Markdown table"""
             text, _ = written
 
             assert not [line for line in text.splitlines() if line.lstrip().startswith("|")]
 
     class TestGivenARunInCI:
+        """given a run in CI"""
+
         @pytest.fixture(scope="class")
         def ran(self, shared_world):
             engine, event = shared_world.engine_under_test()
@@ -356,7 +362,7 @@ class TestAReportOfEveryCaseAnEngineRan:
             world.tool(engine, **variables)
 
             (line,) = [line for line in world.table_in_results().splitlines() if "/actions/runs/77" in line]
-            assert "artifact" not in line
+            assert "report.ctrf.json" not in line
 
         def test_says_nothing_of_a_report_in_table_md_when_the_run_wrote_none(self, world):
             """says nothing of a report in `table.md` when the run wrote none"""

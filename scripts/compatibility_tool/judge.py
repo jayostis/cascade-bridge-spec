@@ -31,6 +31,7 @@ class Verdict:
     tests: int | None = None
     faults: list[str] = field(default_factory=list)
     named: list[tuple[str | None, str]] = field(default_factory=list)
+    reported: list[tuple[str | None, str]] = field(default_factory=list)
 
     @property
     def holds(self):
@@ -74,19 +75,36 @@ def judge_report(path, adapter):
         raise
     except Exception as error:
         return Verdict(unjudged=f"its report does not parse as Turtle: {first_line(str(error))}")
+    reported = outcomes_reported(graph)
     tally = {}
-    for outcome in graph.objects(None, packages.installed("rdflib").URIRef(EARL + "outcome")):
-        name = outcome_name(outcome)
+    for _, name in reported:
         tally[name] = tally.get(name, 0) + 1
     if adapter is None:
-        return with_faults(Verdict(tally=tally), graph)
+        return with_faults(Verdict(tally=tally, reported=reported), graph)
 
     adapter = adapter.resolve()
     try:
         manifest_path, manifest = read_test_manifest(adapter)
     except Exception as error:
-        return with_faults(Verdict(tally=tally, unreadable_manifest=first_line(str(error))), graph)
-    return with_faults(Verdict(tally=tally, tests=count_of_tests(manifest_path, manifest)), graph + manifest)
+        return with_faults(Verdict(tally=tally, reported=reported, unreadable_manifest=first_line(str(error))), graph)
+    return with_faults(
+        Verdict(tally=tally, reported=reported, tests=count_of_tests(manifest_path, manifest)), graph + manifest
+    )
+
+
+def outcomes_reported(graph):
+    """Each outcome a report gives a test, once however often it is asserted; a result naming no test is counted on its own."""
+    rdflib = packages.installed("rdflib")
+    found = {}
+    for result, outcome in graph.subject_objects(rdflib.URIRef(EARL + "outcome")):
+        tests = {
+            str(test)
+            for assertion in graph.subjects(rdflib.URIRef(EARL + "result"), result)
+            for test in graph.objects(assertion, rdflib.URIRef(EARL + "test"))
+        }
+        for test in tests or {None}:
+            found[(test if tests else result.n3(), outcome_name(outcome))] = test
+    return [(test, name) for (_, name), test in found.items()]
 
 
 def fault_rows(graph):
@@ -125,6 +143,7 @@ def judge(record, options):
         return Status.NOTHING_TO_CHECK
     for entry in [*counterparts, *runs]:
         verdict = judge_report(entry.report, entry.adapter)
+        entry.verdict = verdict
         entry.holds = verdict.holds
         entry.result = verdict.describe()
         whose = "the conformance of " if entry.role is Role.CONFORMANCE else ""
@@ -202,9 +221,9 @@ def append_to_summary(text):
             handle.write(text + "\n")
 
 
-def write_table(record, options):
+def write_table(record, options, after=""):
     if options.mode != "ci":
         return
-    written = table(record)
+    written = table(record) + after
     (options.results / "table.md").write_text(written, encoding="utf-8")
     append_to_summary(written)

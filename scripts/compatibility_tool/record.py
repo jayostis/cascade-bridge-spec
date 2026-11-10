@@ -62,6 +62,7 @@ class Row:
     pull_request: str | None = None
     host: str | None = None
     vocabularies: Path | None = None
+    verdict: object = field(default=None, repr=False, compare=False)
 
     @property
     def on_host(self):

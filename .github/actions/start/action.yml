@@ -45,6 +45,18 @@ outputs:
       The path of the EARL report the check wrote, when it wrote exactly one;
       empty when it wrote none or several.
     value: ${{ steps.report.outputs.path }}
+  cases:
+    description: >-
+      The path of report.ctrf.json, the report of each case on each engine
+      host in CTRF, when the check wrote one; empty when it wrote none. It is
+      uploaded as the artifact report-artifact names.
+    value: ${{ steps.report.outputs.cases }}
+  report-artifact:
+    description: >-
+      The name of the artifact that holds report.ctrf.json, report.md and the
+      EARL reports: report- and the directory under test. It is not uploaded
+      when the check wrote no report.ctrf.json.
+    value: ${{ steps.artifact.outputs.report }}
 
 runs:
   using: composite
@@ -120,7 +132,11 @@ runs:
       env:
         JOB: ${{ github.job }}
         CHECK: ${{ inputs.check }}
-      run: echo "name=${CHECK}-${JOB}-${RANDOM}${RANDOM}" >> "$GITHUB_OUTPUT"
+        REPOSITORY_PATH: ${{ inputs.path }}
+      run: |
+        set -euo pipefail
+        echo "name=${CHECK}-${JOB}-${RANDOM}${RANDOM}" >> "$GITHUB_OUTPUT"
+        echo "report=report-$(basename "${REPOSITORY_PATH}")" >> "$GITHUB_OUTPUT"
 
     - name: run the check
       shell: bash
@@ -132,6 +148,7 @@ runs:
         SPEC_REPOSITORY: ${{ steps.specification.outputs.repository }}
         RESULTS: ${{ runner.temp }}/compatibility-${{ inputs.check }}
         CASCADE_CHECK_RUN_ID: ${{ job.check_run_id }}
+        CASCADE_REPORT_ARTIFACT: ${{ steps.artifact.outputs.report }}
         CASCADE_GITHUB_TOKEN: ${{ inputs.token }}
         # Emptied, not omitted: a caller that sets either at workflow or job level
         # would otherwise hand it to the engines and adapters the run starts.
@@ -150,12 +167,13 @@ runs:
       if: always()
       shell: bash
       env:
-        EARL: ${{ runner.temp }}/compatibility-${{ inputs.check }}/earl
+        RESULTS: ${{ runner.temp }}/compatibility-${{ inputs.check }}
       run: |
         set -euo pipefail
         shopt -s nullglob
-        reports=("${EARL}"/*.ttl)
+        reports=("${RESULTS}/earl"/*.ttl)
         if [ "${#reports[@]}" -eq 1 ]; then echo "path=${reports[0]}" >> "$GITHUB_OUTPUT"; fi
+        if [ -f "${RESULTS}/report.ctrf.json" ]; then echo "cases=${RESULTS}/report.ctrf.json" >> "$GITHUB_OUTPUT"; fi
 
     - name: comment the table the check wrote
       if: always() && github.event.pull_request.number && inputs.checkout-only != 'true'
@@ -190,4 +208,17 @@ runs:
       with:
         name: ${{ steps.artifact.outputs.name }}
         path: ${{ runner.temp }}/compatibility-${{ inputs.check }}
+        if-no-files-found: ignore
+
+    # Under a name of its own, with report.ctrf.json at its root where the hub's fetch looks, and kept to what a reader
+    # of a case wants: the whole results folder, uploaded above, stays for the one who debugs the run.
+    - name: keep the case report
+      if: always() && steps.report.outputs.cases != ''
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ steps.artifact.outputs.report }}
+        path: |
+          ${{ runner.temp }}/compatibility-${{ inputs.check }}/report.ctrf.json
+          ${{ runner.temp }}/compatibility-${{ inputs.check }}/report.md
+          ${{ runner.temp }}/compatibility-${{ inputs.check }}/earl/
         if-no-files-found: ignore
