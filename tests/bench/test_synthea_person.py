@@ -1,4 +1,6 @@
+import contextlib
 import gzip
+import io
 import json
 
 import pytest
@@ -135,29 +137,12 @@ def synthea_folder(root, fhir=FHIR, ccda=CCDA):
     return root
 
 
-def written(tmp_path, name, root):
-    out = tmp_path / name
-    synthea_person.main([str(root), PERSON, str(out)])
-    return gzip.decompress(out.read_bytes()).decode("utf-8")
-
-
-def test_a_fhir_record_loses_each_removed_value_as_a_whole_and_keeps_every_other_byte(tmp_path, capsys):
-    root = synthea_folder(tmp_path / "synthea")
-    assert written(tmp_path, "record.json.gz", root) == FHIR_SCRUBBED
-    assert "entries 3" in capsys.readouterr().out
-
-
-def test_a_ccda_loses_each_removed_value_as_a_whole_text_node_or_attribute_and_keeps_every_other_byte(tmp_path, capsys):
-    root = synthea_folder(tmp_path / "synthea")
-    assert written(tmp_path, "record.xml.gz", root) == CCDA_SCRUBBED
-    assert "entries 2" in capsys.readouterr().out
-
-
-def test_two_runs_write_the_same_bytes(tmp_path):
-    root = synthea_folder(tmp_path / "synthea")
-    for name in ("first.json.gz", "second.json.gz"):
-        synthea_person.main([str(root), PERSON, str(tmp_path / name)])
-    assert (tmp_path / "first.json.gz").read_bytes() == (tmp_path / "second.json.gz").read_bytes()
+def made(folder, name):
+    """The decompressed output and what `main()` printed, from one run over a fresh Synthea folder."""
+    out = folder / name
+    with contextlib.redirect_stdout(io.StringIO()) as printed:
+        synthea_person.main([str(synthea_folder(folder / "synthea")), PERSON, str(out)])
+    return gzip.decompress(out.read_bytes()).decode("utf-8"), printed.getvalue()
 
 
 def unreadable_name(root):
@@ -178,28 +163,78 @@ def no_hospitals(root):
     (root / "fhir" / "practitionerInformation1790812800000.json").unlink()
 
 
-@pytest.mark.parametrize(
-    ("damage", "reason"),
-    [
-        (unreadable_name, "removed values are left"),
-        (second_file, "2 .json files"),
-        (no_person, "0 .json files"),
-        (no_hospitals, "no hospitalInformation"),
-    ],
-    ids=["a removed value written in a form the scrub cannot see", "two files", "no file", "no provider files"],
-)
-def test_a_record_it_cannot_make_safe_or_find_is_refused_for_its_reason_and_nothing_is_written(
-    tmp_path, damage, reason
-):
-    root = synthea_folder(tmp_path / "synthea")
-    damage(root)
-    out = tmp_path / "record.json.gz"
-    with pytest.raises(SystemExit, match=reason):
-        synthea_person.main([str(root), PERSON, str(out)])
-    assert not out.exists()
+class TestMakingASyntheaPersonsRecordSafeToCommit:
+    """Making a Synthea person's record safe to commit · bench/generate/synthea_person.py
 
+    Synthea writes real hospitals' names, addresses and telephone numbers into the records it invents. Each such value
+    is removed: replaced by a stand-in such as `Bench Hospital`, wherever it stands whole in a string, a text node or an
+    attribute.
+    """
 
-def test_an_output_name_that_is_neither_json_nor_xml_gz_is_refused(tmp_path):
-    root = synthea_folder(tmp_path / "synthea")
-    with pytest.raises(SystemExit):
-        synthea_person.main([str(root), PERSON, str(tmp_path / "record.gz")])
+    class TestGivenAPersonsFhirRecord:
+        """given a person's FHIR record"""
+
+        @pytest.fixture(scope="class")
+        @classmethod
+        def result(cls, tmp_path_factory):
+            return made(tmp_path_factory.mktemp("fhir"), "record.json.gz")
+
+        def test_replaces_each_removed_value_with_its_stand_in_and_keeps_every_other_byte(self, result):
+            """replaces each removed value with its stand-in and keeps every other byte"""
+            assert result[0] == FHIR_SCRUBBED
+
+        def test_prints_how_many_entries_the_record_has(self, result):
+            assert "entries 3" in result[1]
+
+        def test_writes_the_same_bytes_on_two_runs(self, tmp_path):
+            root = synthea_folder(tmp_path / "synthea")
+            for name in ("first.json.gz", "second.json.gz"):
+                synthea_person.main([str(root), PERSON, str(tmp_path / name)])
+            assert (tmp_path / "first.json.gz").read_bytes() == (tmp_path / "second.json.gz").read_bytes()
+
+    class TestGivenAPersonsCcdaDocument:
+        """given a person's C-CDA document"""
+
+        @pytest.fixture(scope="class")
+        @classmethod
+        def result(cls, tmp_path_factory):
+            return made(tmp_path_factory.mktemp("ccda"), "record.xml.gz")
+
+        def test_replaces_each_removed_value_with_its_stand_in_and_keeps_every_other_byte(self, result):
+            """replaces each removed value with its stand-in and keeps every other byte"""
+            assert result[0] == CCDA_SCRUBBED
+
+        def test_prints_how_many_entries_the_document_has(self, result):
+            assert "entries 2" in result[1]
+
+    class TestGivenARecordItCannotMakeSafeOrCannotFind:
+        @pytest.mark.parametrize(
+            ("damage", "reason"),
+            [
+                pytest.param(
+                    unreadable_name,
+                    "removed values are left",
+                    id="a removed value written in a form the scrub cannot see",
+                ),
+                pytest.param(second_file, "2 .json files", id="two files"),
+                pytest.param(no_person, "0 .json files", id="no file"),
+                pytest.param(no_hospitals, "no hospitalInformation", id="no provider files"),
+            ],
+        )
+        def test_exits_with_the_reason_having_written_nothing(self, tmp_path, damage, reason):
+            """exits with the reason, having written nothing"""
+            root = synthea_folder(tmp_path / "synthea")
+            damage(root)
+            out = tmp_path / "record.json.gz"
+            with pytest.raises(SystemExit, match=reason):
+                synthea_person.main([str(root), PERSON, str(out)])
+            assert not out.exists()
+
+    class TestMain:
+        """`main()`"""
+
+        def test_exits_for_an_output_name_that_ends_in_neither_json_gz_nor_xml_gz(self, tmp_path):
+            """exits for an output name that ends in neither `.json.gz` nor `.xml.gz`"""
+            root = synthea_folder(tmp_path / "synthea")
+            with pytest.raises(SystemExit):
+                synthea_person.main([str(root), PERSON, str(tmp_path / "record.gz")])

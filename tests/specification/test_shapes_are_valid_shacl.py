@@ -12,8 +12,13 @@ SHAPES_FILES = [
 ]
 
 
-@pytest.mark.parametrize("shapes_file", SHAPES_FILES, ids=lambda path: path.relative_to(ROOT).as_posix())
-def test_every_shapes_file_is_valid_shacl(shapes_file):
-    shapes = Graph().parse(shapes_file, format="turtle")
-    conforms, _, text = validate(shapes, shacl_graph=shapes, meta_shacl=True)
-    assert conforms, text
+class TestFilesOfTheSpecificationThatParse:
+    """Files of the specification that parse · **/*.ttl, **/*.nt, shapes/, bench/result.schema.json"""
+
+    class TestGivenAShapesFile:
+        @pytest.mark.parametrize("shapes_file", SHAPES_FILES, ids=lambda path: path.relative_to(ROOT).as_posix())
+        def test_is_valid_shacl_by_the_shapes_shacl_has_for_itself(self, shapes_file):
+            """is valid SHACL, by the shapes SHACL has for itself"""
+            shapes = Graph().parse(shapes_file, format="turtle")
+            conforms, _, text = validate(shapes, shacl_graph=shapes, meta_shacl=True)
+            assert conforms, text

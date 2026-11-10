@@ -1,3 +1,4 @@
+import functools
 import json
 import xml.etree.ElementTree as ElementTree
 from pathlib import Path
@@ -63,11 +64,13 @@ class JsonAdapter:
 ADAPTERS = {"synthetic-adapter": XmlAdapter, "synthetic-json-adapter": JsonAdapter}
 
 
+@functools.cache
 def manifest_of(adapter):
     manifest = adapter.directory / "fixtures" / "manifest.ttl"
     return Graph().parse(manifest, format="turtle", publicID=manifest.as_uri())
 
 
+@functools.cache
 def crate_of(adapter):
     graph = json.loads((adapter.directory / "ro-crate-metadata.json").read_text(encoding="utf-8"))["@graph"]
     return next(entity for entity in graph if entity["@id"] == "./")
@@ -93,6 +96,7 @@ def input_of(adapter, test):
     return path_of(adapter, action_value(adapter, test, BRIDGE.input))
 
 
+@functools.cache
 def facts_of(adapter, test):
     return Graph().parse(path_of(adapter, action_value(adapter, test, BRIDGE.facts)), format="turtle")
 
@@ -102,6 +106,7 @@ def expected_file_of(adapter, test):
     return path_of(adapter, manifest.value(manifest.value(test, MF.result), BRIDGE.expectedGraph))
 
 
+@functools.cache
 def expected_of(adapter, test):
     return Graph().parse(expected_file_of(adapter, test), format="turtle")
 
@@ -135,50 +140,6 @@ def holder_of(adapter, selector):
     return selector.rpartition(adapter.HELD)[0] if adapter is JsonAdapter and adapter.HELD in selector else None
 
 
-@pytest.mark.parametrize("adapter", ADAPTERS.values(), ids=ADAPTERS.keys())
-def test_every_conversion_of_a_synthetic_adapter_is_supplied_facts(adapter):
-    tests = list(manifest_of(adapter).subjects(RDF.type, BRIDGE.IsomorphicConversionTest))
-    assert tests
-    assert all(action_value(adapter, test, BRIDGE.facts) is not None for test in tests)
-
-
-@pytest.mark.parametrize(("adapter", "test"), CONVERSIONS)
-def test_the_document_is_named_by_the_sha256_of_its_bytes_and_carries_the_facts_supplied_with_it(adapter, test):
-    expected = expected_of(adapter, test)
-    document = the_one(expected, PROV.Entity)
-    assert str(document) == ni_name(input_of(adapter, test).read_bytes())
-    supplied = Graph()
-    for subject, predicate, value in facts_of(adapter, test):
-        if predicate == CASCADE.serverBaseUrl:
-            value = expected.value(document, CASCADE.serverBaseUrl)
-        supplied.add((document if subject == BRIDGE.thisDocument else subject, predicate, value))
-    written = described(expected, document)
-    written.remove((document, RDF.type, PROV.Entity))
-    assert isomorphic(written, described(supplied, document))
-
-
-@pytest.mark.parametrize(("adapter", "test"), CONVERSIONS)
-def test_the_import_carries_the_facts_supplied_with_it_and_applied_the_adapters_release(adapter, test):
-    expected = expected_of(adapter, test)
-    crate = crate_of(adapter)
-    run = the_one(expected, PROV.Activity)
-    assert expected.value(run, PROV.used) == the_one(expected, PROV.Entity)
-    association = expected.value(run, PROV.qualifiedAssociation)
-    plan = expected.value(association, PROV.hadPlan)
-    assert (plan, RDF.type, PROV.Plan) in expected
-    assert expected.value(plan, RDFS.label) == Literal(crate["identifier"])
-    assert expected.value(plan, PAV.version) == Literal(crate["version"])
-    assert not list(expected.predicate_objects(expected.value(association, PROV.agent)))
-    supplied = Graph()
-    for predicate, value in facts_of(adapter, test).predicate_objects(BRIDGE.thisImport):
-        supplied.add((run, predicate, value))
-    written = Graph()
-    for predicate, value in expected.predicate_objects(run):
-        if predicate not in (RDF.type, PROV.used, PROV.qualifiedAssociation):
-            written.add((run, predicate, value))
-    assert isomorphic(written, supplied)
-
-
 NAMING_VECTORS = ROOT.parent / "cascade-vocabulary" / "tests" / "vectors" / "naming"
 
 
@@ -187,31 +148,6 @@ def named_by_the_vocabulary(rule, *inputs):
     rows = list(Graph().query(query, initBindings={f"input{n}": Literal(text) for n, text in enumerate(inputs, 1)}))
     assert len(rows) == 1
     return str(rows[0]["name"])
-
-
-@pytest.mark.skipif(
-    not NAMING_VECTORS.is_dir(),
-    reason=f"no cascade-vocabulary checkout beside this repository (looked for {NAMING_VECTORS})",
-)
-@pytest.mark.parametrize(("adapter", "test"), CONVERSIONS)
-def test_each_record_is_named_by_the_rule_its_mapping_chooses_with_the_vocabularys_own_rule_text(adapter, test):
-    expected = expected_of(adapter, test)
-    document = the_one(expected, PROV.Entity)
-    held = adapter.accessions(input_of(adapter, test))
-    by_selector = {selector_of(expected, record): record for record in expected.subjects(RDF.type, EX.Record)}
-    for selector, record in by_selector.items():
-        accession = str(expected.value(record, EX.accession))
-        holder = holder_of(adapter, selector)
-        if holder is not None:
-            container = adapter.selected(input_of(adapter, test), holder)
-            scope = container.get("version") or container.get("lastUpdated") or ""
-            name = named_by_the_vocabulary("ContainedRecordNamingRule", str(by_selector[holder]), scope, accession)
-        elif held.count(accession) == 1:
-            server = str(expected.value(document, CASCADE.serverBaseUrl))
-            name = named_by_the_vocabulary("RecordFromServerNamingRule", server, "ExampleRecord", accession)
-        else:
-            name = named_by_the_vocabulary("RecordFromDocumentNamingRule", str(document), selector)
-        assert str(record) == name
 
 
 def content_of(graph, version):
@@ -236,46 +172,6 @@ def misnamed_versions(graph):
     }
 
 
-def test_a_version_holding_nested_nodes_is_named_by_its_content_theirs_included():
-    versioned = ROOT / "fixtures" / "versioning" / "nested-nodes.versioned.nt"
-    assert not misnamed_versions(Graph().parse(versioned, format="nt"))
-
-
-@pytest.mark.parametrize(("adapter", "test"), CONVERSIONS)
-def test_each_version_is_named_by_the_sha256_of_its_content(adapter, test):
-    assert not misnamed_versions(expected_of(adapter, test))
-
-
-@pytest.mark.parametrize(("adapter", "test"), CONVERSIONS)
-def test_each_arrival_selects_its_record_in_the_document_and_carries_the_version_the_source_gave_it(adapter, test):
-    expected = expected_of(adapter, test)
-    document = the_one(expected, PROV.Entity)
-    run = the_one(expected, PROV.Activity)
-    for record in expected.subjects(RDF.type, EX.Record):
-        arrival = arrival_of(expected, record)
-        selector = selector_of(expected, record)
-        node = adapter.selected(input_of(adapter, test), selector)
-        if holder_of(adapter, selector) is None:
-            assert node["accession"] == str(expected.value(record, EX.accession))
-            assert expected.value(arrival, PAV.version) == Literal(node["version"])
-        else:
-            assert expected.value(arrival, PAV.version) is None
-        assert expected.value(arrival, PROV.wasDerivedFrom) == document
-        assert expected.value(arrival, PROV.wasGeneratedBy) == run
-
-
-@pytest.mark.parametrize(("adapter", "test"), CONVERSIONS)
-def test_an_arrival_says_when_the_source_last_updated_its_record_in_the_sources_own_text(adapter, test):
-    expected = expected_of(adapter, test)
-    written = expected_file_of(adapter, test).read_text(encoding="utf-8")
-    for record in expected.subjects(RDF.type, EX.Record):
-        updated = adapter.selected(input_of(adapter, test), selector_of(expected, record)).get("lastUpdated")
-        if updated is not None:
-            stated = "dateTime" if "T" in updated else "date"
-            assert expected.value(arrival_of(expected, record), PAV.lastUpdateOn).datatype == XSD[stated]
-            assert f'pav:lastUpdateOn "{updated}"^^xsd:{stated}' in written
-
-
 def mapped_by_the_synthetic_json_adapter(record):
     graph = lifted(json.dumps(record).encode("utf-8"))
     graph += graph.query((JsonAdapter.directory / "in" / "example-table.rq").read_text(encoding="utf-8")).graph
@@ -284,30 +180,220 @@ def mapped_by_the_synthetic_json_adapter(record):
     return graph.query((JsonAdapter.directory / "in" / "example-record.rq").read_text(encoding="utf-8")).graph
 
 
-@pytest.mark.parametrize(
-    ("updated", "datatype"), [("2026-08-01", XSD.date), ("2026-08-01T09:30:00.000+01:00", XSD.dateTime)]
-)
-def test_the_synthetic_json_mapping_types_a_last_update_as_the_date_or_date_time_its_source_states(updated, datatype):
-    mapped = mapped_by_the_synthetic_json_adapter({"accession": "EX000199", "version": 1, "lastUpdated": updated})
-    assert set(mapped.objects(None, PAV.lastUpdateOn)) == {Literal(updated, datatype=datatype)}
+class TestTheGraphABridgeWritesForADocument:
+    """The graph a Bridge writes for a document · engine/stages.md, fixtures/synthetic-adapter/, fixtures/synthetic-json-adapter/
+
+    Beside the records a mapping writes, a Bridge's graph for a document holds the document, the import that read it,
+    and an arrival for each version: where in the document its record was read, and what the source said of it. Each
+    conversion of the two synthetic adapters carries the graph an engine must write for it, and these hold each of
+    those expected graphs to the rules of `engine/stages.md`.
+    """
+
+    class TestGivenASyntheticAdapter:
+        @pytest.mark.parametrize("adapter", ADAPTERS.values(), ids=ADAPTERS.keys())
+        def test_supplies_facts_with_every_conversion(self, adapter):
+            tests = list(manifest_of(adapter).subjects(RDF.type, BRIDGE.IsomorphicConversionTest))
+            assert tests
+            assert all(action_value(adapter, test, BRIDGE.facts) is not None for test in tests)
+
+    class TestGivenAConversionsExpectedGraph:
+        """given a conversion's expected graph"""
+
+        @pytest.mark.parametrize(("adapter", "test"), CONVERSIONS)
+        def test_names_the_document_by_the_digest_of_its_bytes(self, adapter, test):
+            """names the document `ni:///sha-256;` and the digest of its bytes"""
+            document = the_one(expected_of(adapter, test), PROV.Entity)
+            assert str(document) == ni_name(input_of(adapter, test).read_bytes())
+
+        @pytest.mark.parametrize(("adapter", "test"), CONVERSIONS)
+        def test_states_on_the_document_exactly_the_facts_supplied_about_it_a_base_url_apart(self, adapter, test):
+            """states on the document exactly the facts supplied about it, a server's base URL apart
+
+            A base URL is written normalised, as the Cascade vocabulary's naming vectors give it, so it is not
+            compared.
+            """
+            expected = expected_of(adapter, test)
+            document = the_one(expected, PROV.Entity)
+            supplied = Graph()
+            for subject, predicate, value in facts_of(adapter, test):
+                if predicate == CASCADE.serverBaseUrl:
+                    value = expected.value(document, CASCADE.serverBaseUrl)
+                supplied.add((document if subject == BRIDGE.thisDocument else subject, predicate, value))
+            written = described(expected, document)
+            written.remove((document, RDF.type, PROV.Entity))
+            assert isomorphic(written, described(supplied, document))
+
+        @pytest.mark.parametrize(("adapter", "test"), CONVERSIONS)
+        def test_links_the_import_to_the_document_it_used_and_to_the_adapters_identifier_and_version(
+            self, adapter, test
+        ):
+            """links the import to the document it used and to the adapter's identifier and version"""
+            expected = expected_of(adapter, test)
+            crate = crate_of(adapter)
+            run = the_one(expected, PROV.Activity)
+            assert expected.value(run, PROV.used) == the_one(expected, PROV.Entity)
+            plan = expected.value(expected.value(run, PROV.qualifiedAssociation), PROV.hadPlan)
+            assert (plan, RDF.type, PROV.Plan) in expected
+            assert expected.value(plan, RDFS.label) == Literal(crate["identifier"])
+            assert expected.value(plan, PAV.version) == Literal(crate["version"])
+
+        @pytest.mark.parametrize(("adapter", "test"), CONVERSIONS)
+        def test_leaves_the_name_and_version_of_the_bridge_that_ran_unstated(self, adapter, test):
+            """leaves the name and version of the Bridge that ran unstated
+
+            An engine writes its own name and version there, and a conversion's comparison leaves them out.
+            """
+            expected = expected_of(adapter, test)
+            association = expected.value(the_one(expected, PROV.Activity), PROV.qualifiedAssociation)
+            assert not list(expected.predicate_objects(expected.value(association, PROV.agent)))
+
+        @pytest.mark.parametrize(("adapter", "test"), CONVERSIONS)
+        def test_states_on_the_import_exactly_the_facts_supplied_about_it(self, adapter, test):
+            expected = expected_of(adapter, test)
+            run = the_one(expected, PROV.Activity)
+            supplied = Graph()
+            for predicate, value in facts_of(adapter, test).predicate_objects(BRIDGE.thisImport):
+                supplied.add((run, predicate, value))
+            written = Graph()
+            for predicate, value in expected.predicate_objects(run):
+                if predicate not in (RDF.type, PROV.used, PROV.qualifiedAssociation):
+                    written.add((run, predicate, value))
+            assert isomorphic(written, supplied)
+
+        @pytest.mark.skipif(
+            not NAMING_VECTORS.is_dir(),
+            reason=f"no cascade-vocabulary checkout beside this repository (looked for {NAMING_VECTORS})",
+        )
+        @pytest.mark.parametrize(("adapter", "test"), CONVERSIONS)
+        def test_names_each_record_by_the_naming_rule_of_the_cascade_vocabulary_its_mapping_chooses(
+            self, adapter, test
+        ):
+            """names each record by the naming rule of the Cascade vocabulary its mapping chooses
+
+            A record held inside another is named by `ContainedRecordNamingRule`; one whose accession its document
+            holds once, by `RecordFromServerNamingRule`; any other, by `RecordFromDocumentNamingRule`. Run with the vocabulary's own
+            query text, from the cascade-vocabulary checkout beside this repository.
+            """
+            expected = expected_of(adapter, test)
+            document = the_one(expected, PROV.Entity)
+            held = adapter.accessions(input_of(adapter, test))
+            by_selector = {selector_of(expected, record): record for record in expected.subjects(RDF.type, EX.Record)}
+            for selector, record in by_selector.items():
+                accession = str(expected.value(record, EX.accession))
+                holder = holder_of(adapter, selector)
+                if holder is not None:
+                    container = adapter.selected(input_of(adapter, test), holder)
+                    scope = container.get("version") or container.get("lastUpdated") or ""
+                    name = named_by_the_vocabulary(
+                        "ContainedRecordNamingRule", str(by_selector[holder]), scope, accession
+                    )
+                elif held.count(accession) == 1:
+                    server = str(expected.value(document, CASCADE.serverBaseUrl))
+                    name = named_by_the_vocabulary("RecordFromServerNamingRule", server, "ExampleRecord", accession)
+                else:
+                    name = named_by_the_vocabulary("RecordFromDocumentNamingRule", str(document), selector)
+                assert str(record) == name
+
+        @pytest.mark.parametrize(("adapter", "test"), CONVERSIONS)
+        def test_names_each_version_by_the_digest_of_its_content_nested_nodes_included(self, adapter, test):
+            """names each version by the digest of its content, nested nodes included"""
+            assert not misnamed_versions(expected_of(adapter, test))
+
+        @pytest.mark.parametrize(("adapter", "test"), CONVERSIONS)
+        def test_points_each_arrival_at_its_record_in_the_document_at_the_document_and_at_the_import(
+            self, adapter, test
+        ):
+            """points each arrival at its record in the document, at the document and at the import"""
+            expected = expected_of(adapter, test)
+            document = the_one(expected, PROV.Entity)
+            run = the_one(expected, PROV.Activity)
+            for record in expected.subjects(RDF.type, EX.Record):
+                selector = selector_of(expected, record)
+                node = adapter.selected(input_of(adapter, test), selector)
+                if holder_of(adapter, selector) is None:
+                    assert node["accession"] == str(expected.value(record, EX.accession))
+                arrival = arrival_of(expected, record)
+                assert expected.value(arrival, PROV.wasDerivedFrom) == document
+                assert expected.value(arrival, PROV.wasGeneratedBy) == run
+
+        @pytest.mark.parametrize(("adapter", "test"), CONVERSIONS)
+        def test_carries_on_each_arrival_the_version_the_source_gave_its_record_and_none_for_a_held_record(
+            self, adapter, test
+        ):
+            """carries on each arrival the version the source gave its record, and none for a record held inside another"""
+            expected = expected_of(adapter, test)
+            for record in expected.subjects(RDF.type, EX.Record):
+                selector = selector_of(expected, record)
+                arrival = arrival_of(expected, record)
+                if holder_of(adapter, selector) is None:
+                    node = adapter.selected(input_of(adapter, test), selector)
+                    assert expected.value(arrival, PAV.version) == Literal(node["version"])
+                else:
+                    assert expected.value(arrival, PAV.version) is None
+
+        @pytest.mark.parametrize(("adapter", "test"), CONVERSIONS)
+        def test_states_when_the_source_last_updated_a_record_in_the_sources_own_characters(self, adapter, test):
+            """states when the source last updated a record in the source's own characters, as a date or a date-time"""
+            expected = expected_of(adapter, test)
+            written = expected_file_of(adapter, test).read_text(encoding="utf-8")
+            for record in expected.subjects(RDF.type, EX.Record):
+                updated = adapter.selected(input_of(adapter, test), selector_of(expected, record)).get("lastUpdated")
+                if updated is not None:
+                    stated = "dateTime" if "T" in updated else "date"
+                    assert expected.value(arrival_of(expected, record), PAV.lastUpdateOn).datatype == XSD[stated]
+                    assert f'pav:lastUpdateOn "{updated}"^^xsd:{stated}' in written
+
+    class TestWhenTheSyntheticJsonAdaptersMappingRunsOnARecord:
+        """when the synthetic JSON adapter's mapping runs on a record"""
+
+        @pytest.mark.parametrize(
+            ("updated", "datatype"),
+            [
+                pytest.param("2026-08-01", XSD.date, id="a date"),
+                pytest.param("2026-08-01T09:30:00.000+01:00", XSD.dateTime, id="a date-time"),
+            ],
+        )
+        def test_types_a_last_update_as_the_date_or_the_date_time_the_record_states(self, updated, datatype):
+            """types a last update as the date or the date-time the record states
+
+            The adapter's `example-table.rq` and `example-record.rq`, run by rdflib over the reference lift of one
+            record.
+            """
+            record = {"accession": "EX000199", "version": 1, "lastUpdated": updated}
+            mapped = mapped_by_the_synthetic_json_adapter(record)
+            assert set(mapped.objects(None, PAV.lastUpdateOn)) == {Literal(updated, datatype=datatype)}
+
+    class TestGivenTheSyntheticJsonAdaptersExpectedGraphs:
+        """given the synthetic JSON adapter's expected graphs"""
+
+        def test_states_a_last_update_as_a_date_in_one_arrival_and_as_a_date_time_in_another(self):
+            stated = {
+                value.datatype
+                for adapter, test in (param.values for param in CONVERSIONS)
+                if adapter is JsonAdapter
+                for value in expected_of(JsonAdapter, test).objects(None, PAV.lastUpdateOn)
+            }
+            assert stated == {XSD.date, XSD.dateTime}
+
+        def test_holds_a_record_inside_another_and_a_record_that_is_its_documents_value(self):
+            """holds a record inside another and a record that is its document's value"""
+            selectors = {
+                selector_of(expected_of(JsonAdapter, test), record)
+                for adapter, test in (param.values for param in CONVERSIONS)
+                if adapter is JsonAdapter
+                for record in expected_of(JsonAdapter, test).subjects(RDF.type, EX.Record)
+            }
+            assert "/records/0/contained/0" in selectors
+            assert "" in selectors
 
 
-def test_a_synthetic_json_arrival_states_a_last_update_as_a_date_and_another_as_a_date_time():
-    stated = {
-        value.datatype
-        for adapter, test in (param.values for param in CONVERSIONS)
-        if adapter is JsonAdapter
-        for value in expected_of(JsonAdapter, test).objects(None, PAV.lastUpdateOn)
-    }
-    assert stated == {XSD.date, XSD.dateTime}
+class TestChecksOfTheCheckOnAVersionsName:
+    """Checks of the check on a version's name · tests/specification/test_the_synthetic_adapters_graphs_are_the_records_layer.py"""
 
+    class TestMisnamedVersions:
+        """`misnamed_versions()`"""
 
-def test_the_synthetic_json_adapter_holds_a_record_inside_another_and_a_record_that_is_its_documents_value():
-    selectors = {
-        selector_of(expected_of(JsonAdapter, test), record)
-        for adapter, test in (param.values for param in CONVERSIONS)
-        if adapter is JsonAdapter
-        for record in expected_of(JsonAdapter, test).subjects(RDF.type, EX.Record)
-    }
-    assert "/records/0/contained/0" in selectors
-    assert "" in selectors
+        def test_finds_no_misnamed_version_in_a_graph_whose_versions_hold_nested_nodes(self):
+            """finds no misnamed version in `nested-nodes.versioned.nt`, whose versions hold nested nodes"""
+            versioned = ROOT / "fixtures" / "versioning" / "nested-nodes.versioned.nt"
+            assert not misnamed_versions(Graph().parse(versioned, format="nt"))
