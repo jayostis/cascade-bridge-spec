@@ -184,5 +184,6 @@ class TestAnAdaptersGapScheme:
             assert not list(gap_scheme.faulty(crate))
 
         def test_reports_nothing_for_a_gap_carrying_a_label_its_scheme_one_kind_and_a_closing_term(self, package):
+            """reports nothing for a gap carrying a label, its scheme, one kind and a closing term"""
             package.write(GAP_SCHEME, scheme_of_one_gap(closed_by="<https://ns.cascadeprotocol.org/cascade#onsetDate>"))
             assert not list(gap_scheme.faulty(package.crate))

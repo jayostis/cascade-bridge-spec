@@ -148,6 +148,13 @@
       "definition": "what a Bridge reports of every path of a record that the accounting has no entry for."
     },
     {
+      "term": "checkout",
+      "aliases": [
+        "checkouts"
+      ],
+      "definition": "a copy of a repository's files at one commit, placed in a folder."
+    },
+    {
       "term": "clock",
       "aliases": [
         "clocks"
@@ -200,6 +207,13 @@
     {
       "term": "domain",
       "definition": "in RDF Schema, the kind of thing a term is stated of; a term with no domain may be stated of anything."
+    },
+    {
+      "term": "dotfile",
+      "aliases": [
+        "dotfiles"
+      ],
+      "definition": "a file whose name begins with a dot, such as `.gitignore`."
     },
     {
       "term": "EARL",
@@ -364,6 +378,18 @@
       "definition": "a web-style identifier, such as `https://ns.cascadeprotocol.org/cascade#Record`; every term and every record is named by one."
     },
     {
+      "term": "JSONPath",
+      "definition": "a language for picking values out of a JSON document, such as `$.entry[*]`."
+    },
+    {
+      "term": "label",
+      "aliases": [
+        "labels",
+        "labelled"
+      ],
+      "definition": "a short name written for a thing, such as `rdfs:label` or `skos:prefLabel`; in a query, the name written after `_:` for a blank node."
+    },
+    {
       "term": "library",
       "definition": "what a program that loads an engine calls: describe, load, ask, convert and test, each taking bytes and returning bytes (`engine/library.md`)."
     },
@@ -393,12 +419,26 @@
       "definition": "a run on a developer's machine, outside CI: it reads no pull request and uses the checkouts beside it."
     },
     {
+      "term": "lone surrogate",
+      "aliases": [
+        "surrogate"
+      ],
+      "definition": "in a JSON string, one half of the pair of numbers written with a u escape that stands for a single character; alone it stands for no character."
+    },
+    {
       "term": "lookup",
       "aliases": [
         "lookups",
         "looked up"
       ],
       "definition": "an entry's statement that its path's values are found in a concept map, and which gap a value outside the map opens."
+    },
+    {
+      "term": "lowercasing",
+      "aliases": [
+        "lowercased"
+      ],
+      "definition": "writing a value in lower-case letters; SPARQL does it letter by letter, where Unicode case folding goes further."
     },
     {
       "term": "manifest",
@@ -429,6 +469,10 @@
     {
       "term": "N-Triples",
       "definition": "a W3C text format for writing statements, one to a line, with no abbreviations."
+    },
+    {
+      "term": "name shorthand",
+      "definition": "in a JSONPath, `.name` written for `['name']`, the short way to select a member."
     },
     {
       "term": "named pull request",
@@ -488,6 +532,17 @@
       "definition": "the set of requirements an adapter package is validated against, under `adapter/profile/`."
     },
     {
+      "term": "pull request",
+      "aliases": [
+        "pull requests"
+      ],
+      "definition": "a proposed change to a repository on GitHub, which is reviewed and then merged."
+    },
+    {
+      "term": "rdflib",
+      "definition": "the Python library that reads Turtle for the specification's checks."
+    },
+    {
       "term": "record",
       "aliases": [
         "records",
@@ -521,6 +576,10 @@
     {
       "term": "repository under test",
       "definition": "the repository whose pull request or branch a run was started for."
+    },
+    {
+      "term": "rocrate-validator",
+      "definition": "the program that checks an adapter package against RO-Crate 1.2 and the profile, running each file under `adapter/profile/must/` as one requirement."
     },
     {
       "term": "run",
@@ -567,6 +626,10 @@
       "definition": "a checkout in the folder beside the one a local run is given."
     },
     {
+      "term": "SKOS",
+      "definition": "the W3C's vocabulary for lists of named concepts, which a gap scheme and a concept map are written in."
+    },
+    {
       "term": "source path",
       "aliases": [
         "source paths"
@@ -587,6 +650,14 @@
       "definition": "a made-up value written where a real one was removed, such as `Bench Hospital` for a hospital's name."
     },
     {
+      "term": "superclass",
+      "aliases": [
+        "superclasses",
+        "subclass"
+      ],
+      "definition": "in RDF Schema, a class that another class is a kind of; a property defined for the superclass applies to the subclass."
+    },
+    {
       "term": "Synthea",
       "definition": "a program that invents people and writes health records for them, from which the benchmark inputs are made."
     },
@@ -600,6 +671,15 @@
     {
       "term": "synthetic vocabularies",
       "definition": "`fixtures/synthetic-vocabularies/`: an invented stand-in for a checkout of the Cascade vocabulary, holding the ontology file and shapes the synthetic adapters name."
+    },
+    {
+      "term": "table row",
+      "aliases": [
+        "row",
+        "rows",
+        "table rows"
+      ],
+      "definition": "one line of the table a run writes, for one repository the run used."
     },
     {
       "term": "term",
@@ -652,6 +732,43 @@
       ],
       "definition": "cascade-vocabulary, the project that defines the words health data is written in, the requirements every pod meets, and a set of ready-made questions.",
       "vocabulary": "https://ns.cascadeprotocol.org/cascade#"
+    },
+    {
+      "term": "vouch",
+      "aliases": [
+        "vouches",
+        "vouched"
+      ],
+      "definition": "to give the digest of a file in a release's notes, saying the file is what it should be."
+    },
+    {
+      "term": "well formed",
+      "aliases": [
+        "well-formed"
+      ],
+      "definition": "written by XML's own rules of syntax, whether or not it also meets a schema."
+    },
+    {
+      "term": "whitespace",
+      "definition": "characters that show nothing between words; XML counts only the space, tab, carriage return and line feed, where Unicode counts more, such as the no-break space."
+    },
+    {
+      "term": "XPath",
+      "aliases": [
+        "XPaths"
+      ],
+      "definition": "the W3C language for picking nodes out of an XML document, such as `/ExampleRecord/Status`."
+    },
+    {
+      "term": "XSD",
+      "aliases": [
+        "XML Schema"
+      ],
+      "definition": "the W3C's XML Schema language, in which a source's rules for an XML document are written, in `.xsd` files."
+    },
+    {
+      "term": "Zuul",
+      "definition": "a system that tests the changes of several repositories merged together, as this tool does for the pull requests a description names."
     }
   ]
 }

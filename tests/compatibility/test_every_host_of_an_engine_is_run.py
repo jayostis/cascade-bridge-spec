@@ -28,61 +28,6 @@ def judged(world, said, verdict):
     return [line.replace(str(world.root), "") for line in lines]
 
 
-def test_an_adapters_run_runs_every_host_of_the_engine_it_names(world):
-    adapter = world.adapter_beside_engine(engine_document([], host=native_and_node(on_node="failed")))
-
-    said = world.tool(adapter, 1)
-
-    assert sorted(entry["holds"] for entry in entries(world)) == [False, True]
-    [failing] = judged(world, said, "does not hold")
-    assert "node" in failing
-
-
-def test_an_adapter_failing_on_the_second_host_only_is_two_entries_and_two_table_rows_and_the_run_fails(world):
-    engine, event = world.engine_under_test(host=native_and_node(on_node="failed"))
-
-    said = world.tool(engine, 1, **world.ci(event=event))
-
-    assert sorted(entry["holds"] for entry in entries(world)) == [False, True]
-    [holding] = judged(world, said, "holds")
-    [failing] = judged(world, said, "does not hold")
-    assert "native" in holding and "node" not in holding
-    assert "node" in failing and "native" not in failing
-    rows = [row for row in world.table_rows() if row["repository"].startswith("[adapter]")]
-    assert sorted((row["engine host"], row["result"].split(":")[0]) for row in rows) == [
-        ("native", "✅ holds"),
-        ("node", "❌ does not hold"),
-    ]
-    assert world.table_row("cascade-bridge-spec")["engine host"] == "—"
-
-
-def test_a_counterpart_engine_listing_a_host_with_no_name_is_not_run_rather_than_run_on_the_named_one(world):
-    unnamed = {key: value for key, value in a_host(canned="failed").items() if key != "name"}
-    said = world.tool(world.adapter_beside_engine(engine_document([], host=[a_host("native"), unnamed])), 1)
-
-    assert "a host with no name" in said
-    assert "does not hold; it was not run" in said
-    assert ": holds" not in said
-
-
-def test_a_counterpart_engine_naming_two_hosts_alike_is_not_run_rather_than_run_on_one_of_them(world):
-    hosts = [a_host("native", canned="failed"), a_host("native")]
-    said = world.tool(world.adapter_beside_engine(engine_document([], host=hosts)), 1)
-
-    assert "more than one host native" in said
-    assert "does not hold; it was not run" in said
-    assert ": holds" not in said
-
-
-def test_a_host_whose_name_is_no_file_name_is_still_run_and_judged_by_its_report(world):
-    said = world.tool(world.engine_beside_adapter(host=[a_host("node/22")]))
-
-    [holding] = judged(world, said, "holds")
-    assert "node/22" in holding
-    [entry] = entries(world)
-    assert entry["holds"] is True
-
-
 def released_engine(world, monkeypatch, tmp_path, vouched=True, node_path="dist", packed=None):
     """Each host of the engine at main has a build in that commit's release, and a setup that fails."""
     monkeypatch.setattr(releases, "on_a_runner_releases_serve", lambda: True)
@@ -163,51 +108,6 @@ def a_setup(engine):
     path.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8", newline="")
 
 
-@pytest.mark.parametrize(
-    "merging", [None, only_compatibility_json], ids=["at main", "pr-changing-only-compatibility.json"]
-)
-def test_an_adapters_run_runs_each_host_of_a_released_engine_from_its_release_and_runs_no_setup(
-    world, monkeypatch, tmp_path, merging
-):
-    adapter = released_engine(world, monkeypatch, tmp_path)
-    variables = named_engine_pull_request(world, adapter, merging) if merging else world.ci(repository="adapter")
-
-    said = world.tool(adapter, **variables)
-
-    assert "  setup " not in said
-    assert said.count("  release ") == 2
-    assert [entry["holds"] for entry in entries(world)] == [True, True]
-
-
-@pytest.mark.parametrize(
-    "vouched,merging",
-    [(False, None), (True, code), (True, a_setup)],
-    ids=["digest-not-in-notes", "pr-changing-code", "pr-changing-only-a-setup-in-compatibility.json"],
-)
-def test_an_engines_host_is_built_by_its_setup_where_its_release_does_not_serve(
-    world, monkeypatch, tmp_path, vouched, merging
-):
-    adapter = released_engine(world, monkeypatch, tmp_path, vouched=vouched)
-    variables = named_engine_pull_request(world, adapter, merging) if merging else world.ci(repository="adapter")
-
-    said = world.tool(adapter, 1, **variables)
-
-    assert f"  setup {sys.executable} -c raise SystemExit(1)" in said
-
-
-@pytest.mark.parametrize("node_path", [".", "", "dist/.."])
-def test_a_release_path_naming_the_engine_itself_is_built_by_its_setup_and_leaves_the_engine_in_place(
-    world, monkeypatch, tmp_path, node_path
-):
-    adapter = released_engine(world, monkeypatch, tmp_path, node_path=node_path)
-
-    said = world.tool(adapter, 1, **world.ci(repository="adapter"))
-
-    assert "is no path in" in said
-    assert f"  setup {sys.executable} -c raise SystemExit(1)" in said
-    assert [entry["holds"] for entry in entries(world)].count(True) == 1
-
-
 def not_gzip():
     return b"vouched for, but no gzip"
 
@@ -220,59 +120,6 @@ def holding_a_link():
         member.linkname = "/etc/passwd"
         archive.addfile(member)
     return packed.getvalue()
-
-
-@pytest.mark.parametrize("packed", [not_gzip, holding_a_link], ids=["not-gzip", "a-link-the-data-filter-refuses"])
-def test_a_vouched_archive_that_cannot_be_unpacked_is_built_by_its_setup(world, monkeypatch, tmp_path, packed):
-    adapter = released_engine(world, monkeypatch, tmp_path, packed=packed())
-
-    said = world.tool(adapter, 1, **world.ci(repository="adapter"))
-
-    assert "could not be placed" in said
-    assert f"  setup {sys.executable} -c raise SystemExit(1)" in said
-
-
-def test_a_download_cut_off_partway_is_built_by_its_setup(world, monkeypatch, tmp_path):
-    adapter = released_engine(world, monkeypatch, tmp_path)
-
-    def cut_off(url):
-        raise http.client.IncompleteRead(b"part", 10)
-
-    monkeypatch.setattr(releases, "download", cut_off)
-
-    said = world.tool(adapter, 1, **world.ci(repository="adapter"))
-
-    assert "could not be downloaded" in said
-    assert f"  setup {sys.executable} -c raise SystemExit(1)" in said
-
-
-def test_a_release_answered_with_no_json_is_built_by_its_setup(world, monkeypatch, tmp_path):
-    adapter = released_engine(world, monkeypatch, tmp_path)
-    reading = github.Api.get
-
-    def no_json(api, path):
-        if "/releases/tags/" in path:
-            raise json.JSONDecodeError("Expecting value", "<html>", 0)
-        return reading(api, path)
-
-    monkeypatch.setattr(github.Api, "get", no_json)
-
-    said = world.tool(adapter, 1, **world.ci(repository="adapter"))
-
-    assert "has no release" in said
-    assert f"  setup {sys.executable} -c raise SystemExit(1)" in said
-
-
-def test_a_pull_request_the_run_fast_forwards_to_runs_each_host_from_its_heads_release(world, monkeypatch, tmp_path):
-    adapter = released_engine(world, monkeypatch, tmp_path)
-    variables = named_engine_pull_request(world, adapter, code)
-    released_as_well(world, head_of(world, 2))
-
-    said = world.tool(adapter, **variables)
-
-    assert "  setup " not in said
-    assert said.count("  release ") == 2
-    assert f"of build-{head_of(world, 2)}" in said
 
 
 def later_commit_on_main(world):
@@ -298,24 +145,6 @@ def two_on_one_engine(world, adapter):
     both = depends_on("engine", 2) + depends_on("engine", 3).splitlines()[-1] + "\n"
     world.pull_request("adapter", 1, body=both)
     return world.ci(repository="adapter", event=world.event(1, "adapter"))
-
-
-@pytest.mark.parametrize(
-    "arrangement,told,status",
-    [(behind, True, 1), (contained, False, 0), (two_on_one_engine, False, 1)],
-    ids=["behind-its-base", "already-in-its-base", "two-on-one-engine"],
-)
-def test_only_a_pull_request_behind_its_base_is_told_to_catch_up_with_it(
-    world, monkeypatch, tmp_path, arrangement, told, status
-):
-    adapter = released_engine(world, monkeypatch, tmp_path)
-    variables = arrangement(world, adapter)
-
-    said = world.tool(adapter, status, **variables)
-
-    assert ("engine/pull/2 is behind main" in said) is told
-    assert ("(git merge origin/main, then push)" in said) is told
-    assert (f"  setup {sys.executable} -c raise SystemExit(1)" in said) is (status == 1)
 
 
 class Clock:
@@ -351,128 +180,352 @@ def requests_failing(monkeypatch, where, error):
     monkeypatch.setattr(github.Api, "get", get)
 
 
-def test_a_release_being_published_is_waited_for_and_then_used(world, monkeypatch, tmp_path):
-    adapter = released_engine(world, monkeypatch, tmp_path)
-    key, release, commit = withheld_release(world)
-    world.pull_requests.run("engine", commit)
-    clock = Clock(monkeypatch, on_sleep=lambda: world.pull_requests.releases.update({key: release}))
+class TestRunningAnAdapterOnEveryHostOfAnEngine:
+    """Running an adapter on every host of an engine · host, mustPassWith
 
-    said = world.tool(adapter, **world.ci(repository="adapter"))
+    A host is one way an engine is built and run, such as natively or under Node. A counterpart is run and judged on
+    every host, and one host on which it does not hold fails the run.
+    """
 
-    assert clock.slept == [releases.POLL_SECONDS]
-    assert "  setup " not in said
-    assert said.count("  release ") == 2
+    class TestGivenAnAdaptersRun:
+        """given an adapter's run"""
 
+        def test_runs_every_host_of_the_engine_it_names(self, world):
+            adapter = world.adapter_beside_engine(engine_document([], host=native_and_node(on_node="failed")))
 
-def test_a_release_published_in_the_last_window_is_used(world, monkeypatch, tmp_path):
-    adapter = released_engine(world, monkeypatch, tmp_path)
-    key, release, commit = withheld_release(world)
-    world.pull_requests.run("engine", commit)
-    last = releases.WAIT_SECONDS // releases.POLL_SECONDS
+            said = world.tool(adapter, 1)
 
-    def publish_in_the_last_window():
-        if len(clock.slept) == last:
-            world.pull_requests.releases[key] = release
+            assert sorted(entry["holds"] for entry in entries(world)) == [False, True]
+            [failing] = judged(world, said, "does not hold")
+            assert "node" in failing
 
-    clock = Clock(monkeypatch, on_sleep=publish_in_the_last_window)
+    class TestGivenAnAdapterFailingOnTheSecondHostOnly:
+        def test_is_two_entries_and_two_table_rows_and_fails_the_run(self, world):
+            """is two entries and two table rows, and fails the run"""
+            engine, event = world.engine_under_test(host=native_and_node(on_node="failed"))
 
-    said = world.tool(adapter, **world.ci(repository="adapter"))
+            said = world.tool(engine, 1, **world.ci(event=event))
 
-    assert sum(clock.slept) == releases.WAIT_SECONDS
-    assert f"build-{commit} appeared after {releases.WAIT_SECONDS} s" in said
-    assert "  setup " not in said
+            assert sorted(entry["holds"] for entry in entries(world)) == [False, True]
+            [holding] = judged(world, said, "holds")
+            [failing] = judged(world, said, "does not hold")
+            assert "native" in holding and "node" not in holding
+            assert "node" in failing and "native" not in failing
+            rows = [row for row in world.table_rows() if row["repository"].startswith("[adapter]")]
+            assert sorted((row["engine host"], row["result"].split(":")[0]) for row in rows) == [
+                ("native", "✅ holds"),
+                ("node", "❌ does not hold"),
+            ]
+            assert world.table_row("cascade-bridge-spec")["engine host"] == "—"
 
+    class TestGivenACounterpartEngineListingAHostWithNoName:
+        def test_is_not_run_rather_than_run_on_the_named_one(self, world):
+            unnamed = {key: value for key, value in a_host(canned="failed").items() if key != "name"}
+            said = world.tool(world.adapter_beside_engine(engine_document([], host=[a_host("native"), unnamed])), 1)
 
-def test_a_heads_release_is_used_where_the_branchs_is_missing_and_no_run_is_making_it(world, monkeypatch, tmp_path):
-    adapter = released_engine(world, monkeypatch, tmp_path)
-    variables = named_engine_pull_request(world, adapter, only_compatibility_json)
-    _, release, _ = withheld_release(world)
-    head = head_of(world, 2)
-    world.pull_requests.releases["engine", f"build-{head}"] = {**release, "tag_name": f"build-{head}"}
-    clock = Clock(monkeypatch)
+            assert "a host with no name" in said
+            assert "does not hold; it was not run" in said
+            assert ": holds" not in said
 
-    said = world.tool(adapter, **variables)
+    class TestGivenACounterpartEngineNamingTwoHostsAlike:
+        def test_is_not_run_rather_than_run_on_one_of_them(self, world):
+            hosts = [a_host("native", canned="failed"), a_host("native")]
+            said = world.tool(world.adapter_beside_engine(engine_document([], host=hosts)), 1)
 
-    assert clock.slept == []
-    assert "  setup " not in said
-    assert f"of build-{head}" in said
+            assert "more than one host native" in said
+            assert "does not hold; it was not run" in said
+            assert ": holds" not in said
 
+    class TestGivenAHostWhoseNameIsNoFileName:
+        def test_is_still_run_and_judged_by_its_report(self, world):
+            """is still run, and judged by its report"""
+            said = world.tool(world.engine_beside_adapter(host=[a_host("node/22")]))
 
-@pytest.mark.parametrize(
-    "runs",
-    [[], [("schedule", "in_progress")], [("push", "completed")]],
-    ids=["none", "of-another-event", "all-done"],
-)
-def test_a_release_no_run_is_making_is_not_waited_for(world, monkeypatch, tmp_path, runs):
-    adapter = released_engine(world, monkeypatch, tmp_path)
-    _, _, commit = withheld_release(world)
-    for event, status in runs:
-        world.pull_requests.run("engine", commit, event, status)
-    clock = Clock(monkeypatch)
-
-    said = world.tool(adapter, 1, **world.ci(repository="adapter"))
-
-    assert clock.slept == []
-    assert f"  setup {sys.executable} -c raise SystemExit(1)" in said
-
-
-def test_a_release_that_never_appears_is_given_six_minutes_each_request_short_of_them_and_then_built(
-    world, monkeypatch, tmp_path
-):
-    adapter = released_engine(world, monkeypatch, tmp_path)
-    _, _, commit = withheld_release(world)
-    run = world.pull_requests.run("engine", commit)
-    clock = Clock(monkeypatch)
-    asked = []
-    reading = github.Api.get
-
-    def get(api, path, timeout=None):
-        asked.append((path, timeout))
-        return reading(api, path, timeout=timeout)
-
-    monkeypatch.setattr(github.Api, "get", get)
-
-    said = world.tool(adapter, 1, **world.ci(repository="adapter"))
-
-    assert sum(clock.slept) == releases.WAIT_SECONDS
-    assert max(clock.slept) == releases.POLL_SECONDS
-    assert len([path for path, _ in asked if "releases/tags" in path]) == len(clock.slept) + 1
-    assert f"waited 6 min for build-{commit}; {run['html_url']} had not finished" in said
-    assert f"  setup {sys.executable} -c raise SystemExit(1)" in said
-    polls = [timeout for path, timeout in asked if "actions/runs" in path]
-    polls += [timeout for path, timeout in asked if "releases/tags" in path][1:]
-    assert polls and None not in polls and max(polls) <= releases.POLL_TIMEOUT_SECONDS
+            [holding] = judged(world, said, "holds")
+            assert "node/22" in holding
+            [entry] = entries(world)
+            assert entry["holds"] is True
 
 
-def test_a_forks_pull_request_is_built_at_once_without_reading_the_runs(world, monkeypatch, tmp_path):
-    adapter = released_engine(world, monkeypatch, tmp_path)
-    variables = named_engine_pull_request(world, adapter, code, fork=True)
-    world.pull_requests.run("engine", head_of(world, 2))
-    clock = Clock(monkeypatch)
+class TestRunningAnEnginesHostFromItsRelease:
+    """Running an engine's host from its release · release, build-<commit>
 
-    said = world.tool(adapter, 1, **variables)
+    An adapter's run need not build the engine: where the engine's commit has a release whose bytes its notes vouch for,
+    the host runs from that asset. Where the release does not serve, the host's setup runs instead.
+    """
 
-    assert clock.slept == [] and world.pull_requests.runs_read == []
-    assert f"  setup {sys.executable} -c raise SystemExit(1)" in said
+    class TestGivenAnEngineWithARelease:
+        @pytest.mark.parametrize(
+            "merging",
+            [None, only_compatibility_json],
+            ids=["at main", "a pull request changing only compatibility.json"],
+        )
+        def test_runs_each_host_from_the_release_running_no_setup(self, world, monkeypatch, tmp_path, merging):
+            """runs each host from the release, running no setup"""
+            adapter = released_engine(world, monkeypatch, tmp_path)
+            variables = (
+                named_engine_pull_request(world, adapter, merging) if merging else world.ci(repository="adapter")
+            )
 
+            said = world.tool(adapter, **variables)
 
-@pytest.mark.parametrize(
-    "where,error,told",
-    [
-        ("actions/runs", TimeoutError("timed out"), "could not be read"),
-        ("releases/tags", urllib.error.HTTPError("https://example.invalid", 500, "boom", {}, None), "has no release"),
-    ],
-    ids=["the-runs-time-out", "the-release-answers-500"],
-)
-def test_a_wait_that_cannot_go_on_builds_at_once_and_says_why(world, monkeypatch, tmp_path, where, error, told):
-    adapter = released_engine(world, monkeypatch, tmp_path)
-    _, _, commit = withheld_release(world)
-    world.pull_requests.run("engine", commit)
-    requests_failing(monkeypatch, where, error)
-    clock = Clock(monkeypatch)
+            assert "  setup " not in said
+            assert said.count("  release ") == 2
+            assert [entry["holds"] for entry in entries(world)] == [True, True]
 
-    said = world.tool(adapter, 1, **world.ci(repository="adapter"))
+    class TestGivenAReleaseThatDoesNotServe:
+        @pytest.mark.parametrize(
+            "vouched,merging",
+            [(False, None), (True, code), (True, a_setup)],
+            ids=[
+                "a digest the notes do not give",
+                "a pull request changing code",
+                "a pull request changing only a setup in compatibility.json",
+            ],
+        )
+        def test_builds_the_host_by_its_setup(self, world, monkeypatch, tmp_path, vouched, merging):
+            adapter = released_engine(world, monkeypatch, tmp_path, vouched=vouched)
+            variables = (
+                named_engine_pull_request(world, adapter, merging) if merging else world.ci(repository="adapter")
+            )
 
-    assert clock.slept == []
-    assert told in said
-    assert f"  setup {sys.executable} -c raise SystemExit(1)" in said
+            said = world.tool(adapter, 1, **variables)
+
+            assert f"  setup {sys.executable} -c raise SystemExit(1)" in said
+
+    class TestGivenAReleasePathNamingTheEngineItself:
+        @pytest.mark.parametrize(
+            "node_path", [".", "", "dist/.."], ids=["a dot", "an empty path", "a path that returns to its folder"]
+        )
+        def test_builds_the_host_by_its_setup_leaving_the_engine_in_place(
+            self, world, monkeypatch, tmp_path, node_path
+        ):
+            """builds the host by its setup, leaving the engine in place"""
+            adapter = released_engine(world, monkeypatch, tmp_path, node_path=node_path)
+
+            said = world.tool(adapter, 1, **world.ci(repository="adapter"))
+
+            assert "is no path in" in said
+            assert f"  setup {sys.executable} -c raise SystemExit(1)" in said
+            assert [entry["holds"] for entry in entries(world)].count(True) == 1
+
+    class TestGivenAVouchedArchiveThatCannotBeUnpacked:
+        @pytest.mark.parametrize(
+            "packed",
+            [not_gzip, holding_a_link],
+            ids=["a file that is not gzip", "an archive holding a link the data filter refuses"],
+        )
+        def test_builds_the_host_by_its_setup(self, world, monkeypatch, tmp_path, packed):
+            adapter = released_engine(world, monkeypatch, tmp_path, packed=packed())
+
+            said = world.tool(adapter, 1, **world.ci(repository="adapter"))
+
+            assert "could not be placed" in said
+            assert f"  setup {sys.executable} -c raise SystemExit(1)" in said
+
+    class TestGivenADownloadCutOffPartway:
+        def test_builds_the_host_by_its_setup(self, world, monkeypatch, tmp_path):
+            adapter = released_engine(world, monkeypatch, tmp_path)
+
+            def cut_off(url):
+                raise http.client.IncompleteRead(b"part", 10)
+
+            monkeypatch.setattr(releases, "download", cut_off)
+
+            said = world.tool(adapter, 1, **world.ci(repository="adapter"))
+
+            assert "could not be downloaded" in said
+            assert f"  setup {sys.executable} -c raise SystemExit(1)" in said
+
+    class TestGivenAReleaseAnsweredWithNoJSON:
+        """given a release answered with no JSON"""
+
+        def test_builds_the_host_by_its_setup(self, world, monkeypatch, tmp_path):
+            adapter = released_engine(world, monkeypatch, tmp_path)
+            reading = github.Api.get
+
+            def no_json(api, path):
+                if "/releases/tags/" in path:
+                    raise json.JSONDecodeError("Expecting value", "<html>", 0)
+                return reading(api, path)
+
+            monkeypatch.setattr(github.Api, "get", no_json)
+
+            said = world.tool(adapter, 1, **world.ci(repository="adapter"))
+
+            assert "has no release" in said
+            assert f"  setup {sys.executable} -c raise SystemExit(1)" in said
+
+    class TestGivenAPullRequestTheRunFastForwardsTo:
+        """given a pull request the run fast-forwards to"""
+
+        def test_runs_each_host_from_its_heads_release(self, world, monkeypatch, tmp_path):
+            """runs each host from its head's release"""
+            adapter = released_engine(world, monkeypatch, tmp_path)
+            variables = named_engine_pull_request(world, adapter, code)
+            released_as_well(world, head_of(world, 2))
+
+            said = world.tool(adapter, **variables)
+
+            assert "  setup " not in said
+            assert said.count("  release ") == 2
+            assert f"of build-{head_of(world, 2)}" in said
+
+    class TestGivenAPullRequestBehindItsBase:
+        @pytest.mark.parametrize(
+            "arrangement,told,status",
+            [(behind, True, 1), (contained, False, 0), (two_on_one_engine, False, 1)],
+            ids=[
+                "a pull request behind its base",
+                "a pull request already in its base",
+                "two pull requests on one engine",
+            ],
+        )
+        def test_is_the_only_one_told_to_catch_up_with_it(
+            self, world, monkeypatch, tmp_path, arrangement, told, status
+        ):
+            adapter = released_engine(world, monkeypatch, tmp_path)
+            variables = arrangement(world, adapter)
+
+            said = world.tool(adapter, status, **variables)
+
+            assert ("engine/pull/2 is behind main" in said) is told
+            assert ("(git merge origin/main, then push)" in said) is told
+            assert (f"  setup {sys.executable} -c raise SystemExit(1)" in said) is (status == 1)
+
+    class TestGivenAReleaseBeingPublished:
+        def test_is_waited_for_then_used(self, world, monkeypatch, tmp_path):
+            """is waited for, then used"""
+            adapter = released_engine(world, monkeypatch, tmp_path)
+            key, release, commit = withheld_release(world)
+            world.pull_requests.run("engine", commit)
+            clock = Clock(monkeypatch, on_sleep=lambda: world.pull_requests.releases.update({key: release}))
+
+            said = world.tool(adapter, **world.ci(repository="adapter"))
+
+            assert clock.slept == [releases.POLL_SECONDS]
+            assert "  setup " not in said
+            assert said.count("  release ") == 2
+
+    class TestGivenAReleasePublishedInTheLastWindow:
+        def test_is_used(self, world, monkeypatch, tmp_path):
+            adapter = released_engine(world, monkeypatch, tmp_path)
+            key, release, commit = withheld_release(world)
+            world.pull_requests.run("engine", commit)
+            last = releases.WAIT_SECONDS // releases.POLL_SECONDS
+
+            def publish_in_the_last_window():
+                if len(clock.slept) == last:
+                    world.pull_requests.releases[key] = release
+
+            clock = Clock(monkeypatch, on_sleep=publish_in_the_last_window)
+
+            said = world.tool(adapter, **world.ci(repository="adapter"))
+
+            assert sum(clock.slept) == releases.WAIT_SECONDS
+            assert f"build-{commit} appeared after {releases.WAIT_SECONDS} s" in said
+            assert "  setup " not in said
+
+    class TestGivenAHeadWhoseReleaseExistsWhereTheBranchsIsMissing:
+        """given a head whose release exists where the branch's is missing"""
+
+        def test_uses_the_heads_release_when_no_run_is_making_the_branchs(self, world, monkeypatch, tmp_path):
+            """uses the head's release, when no run is making the branch's"""
+            adapter = released_engine(world, monkeypatch, tmp_path)
+            variables = named_engine_pull_request(world, adapter, only_compatibility_json)
+            _, release, _ = withheld_release(world)
+            head = head_of(world, 2)
+            world.pull_requests.releases["engine", f"build-{head}"] = {**release, "tag_name": f"build-{head}"}
+            clock = Clock(monkeypatch)
+
+            said = world.tool(adapter, **variables)
+
+            assert clock.slept == []
+            assert "  setup " not in said
+            assert f"of build-{head}" in said
+
+    class TestGivenAReleaseNoRunIsMaking:
+        @pytest.mark.parametrize(
+            "runs",
+            [[], [("schedule", "in_progress")], [("push", "completed")]],
+            ids=["no run", "a run of another event", "runs that are all done"],
+        )
+        def test_is_not_waited_for(self, world, monkeypatch, tmp_path, runs):
+            adapter = released_engine(world, monkeypatch, tmp_path)
+            _, _, commit = withheld_release(world)
+            for event, status in runs:
+                world.pull_requests.run("engine", commit, event, status)
+            clock = Clock(monkeypatch)
+
+            said = world.tool(adapter, 1, **world.ci(repository="adapter"))
+
+            assert clock.slept == []
+            assert f"  setup {sys.executable} -c raise SystemExit(1)" in said
+
+    class TestGivenAReleaseThatNeverAppears:
+        def test_is_given_six_minutes_each_request_short_of_them_then_built(self, world, monkeypatch, tmp_path):
+            """is given six minutes, each request short of them, then built"""
+            adapter = released_engine(world, monkeypatch, tmp_path)
+            _, _, commit = withheld_release(world)
+            run = world.pull_requests.run("engine", commit)
+            clock = Clock(monkeypatch)
+            asked = []
+            reading = github.Api.get
+
+            def get(api, path, timeout=None):
+                asked.append((path, timeout))
+                return reading(api, path, timeout=timeout)
+
+            monkeypatch.setattr(github.Api, "get", get)
+
+            said = world.tool(adapter, 1, **world.ci(repository="adapter"))
+
+            assert sum(clock.slept) == releases.WAIT_SECONDS
+            assert max(clock.slept) == releases.POLL_SECONDS
+            assert len([path for path, _ in asked if "releases/tags" in path]) == len(clock.slept) + 1
+            assert f"waited 6 min for build-{commit}; {run['html_url']} had not finished" in said
+            assert f"  setup {sys.executable} -c raise SystemExit(1)" in said
+            polls = [timeout for path, timeout in asked if "actions/runs" in path]
+            polls += [timeout for path, timeout in asked if "releases/tags" in path][1:]
+            assert polls and None not in polls and max(polls) <= releases.POLL_TIMEOUT_SECONDS
+
+    class TestGivenAForksPullRequest:
+        """given a fork's pull request"""
+
+        def test_is_built_at_once_without_reading_the_runs(self, world, monkeypatch, tmp_path):
+            """is built at once, without reading the runs"""
+            adapter = released_engine(world, monkeypatch, tmp_path)
+            variables = named_engine_pull_request(world, adapter, code, fork=True)
+            world.pull_requests.run("engine", head_of(world, 2))
+            clock = Clock(monkeypatch)
+
+            said = world.tool(adapter, 1, **variables)
+
+            assert clock.slept == [] and world.pull_requests.runs_read == []
+            assert f"  setup {sys.executable} -c raise SystemExit(1)" in said
+
+    class TestGivenAWaitThatCannotGoOn:
+        @pytest.mark.parametrize(
+            "where,error,told",
+            [
+                ("actions/runs", TimeoutError("timed out"), "could not be read"),
+                (
+                    "releases/tags",
+                    urllib.error.HTTPError("https://example.invalid", 500, "boom", {}, None),
+                    "has no release",
+                ),
+            ],
+            ids=["the runs time out", "the release answers 500"],
+        )
+        def test_builds_at_once_and_says_why(self, world, monkeypatch, tmp_path, where, error, told):
+            adapter = released_engine(world, monkeypatch, tmp_path)
+            _, _, commit = withheld_release(world)
+            world.pull_requests.run("engine", commit)
+            requests_failing(monkeypatch, where, error)
+            clock = Clock(monkeypatch)
+
+            said = world.tool(adapter, 1, **world.ci(repository="adapter"))
+
+            assert clock.slept == []
+            assert told in said
+            assert f"  setup {sys.executable} -c raise SystemExit(1)" in said

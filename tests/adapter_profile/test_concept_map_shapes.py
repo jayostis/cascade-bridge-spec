@@ -108,7 +108,7 @@ class TestLookingAValueUpInAConceptMap:
 
     class TestGivenAConceptOfAConceptMapThatConforms:
         def test_accepts_a_notation_holding_a_character_that_is_whitespace_nowhere_xml_calls_whitespace(self):
-            """accepts a notation holding a character that is whitespace nowhere XML calls whitespace"""
+            """accepts a notation holding a character only Unicode calls whitespace"""
             assert not said_about(concept(notation='"\\u00A0current"'))
 
         def test_accepts_a_notation_lowercased_as_sparql_lowercases_it_where_case_folding_would_go_further(self):

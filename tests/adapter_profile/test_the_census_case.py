@@ -90,6 +90,7 @@ class TestFindingsABridgeReportsForAPathNoEntryAccountsFor:
 
     class TestGivenEveryCensusFinding:
         def test_is_a_backlog_item_rather_than_a_defect_in_the_document(self, crate):
+            """is only information (`sh:Info`), not a defect in the document"""
             for _, graph, finding in every(crate):
                 assert graph.value(finding, SH.resultSeverity) == SH.Info
 

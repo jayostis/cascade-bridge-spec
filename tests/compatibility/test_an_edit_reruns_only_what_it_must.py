@@ -46,11 +46,6 @@ DECISIONS = {
 }
 
 
-@pytest.mark.parametrize(("event", "expected"), DECISIONS.values(), ids=DECISIONS)
-def test_an_edit_reruns_only_when_it_changed_what_a_run_reads(event, expected):
-    assert decide(event) == expected
-
-
 def run(identifier=1, status="completed", attempt=1, number=7, head="h1", **more):
     return {
         "id": identifier,
@@ -217,24 +212,40 @@ ACTING = {
 }
 
 
-@pytest.mark.parametrize(("case", "calls", "exit_code", "said"), ACTING.values(), ids=ACTING)
-def test_a_stale_run_is_stopped_if_it_runs_and_run_again_and_a_refusal_says_what_to_do_by_hand(
-    case, calls, exit_code, said, capsys
-):
-    api, event, workflows = case
+class TestReRunningACheckWhenADescriptionIsEdited:
+    """Re-running a check when a description is edited · .github/actions/rerun-when-edited
 
-    assert rerun_when_edited(event, workflows, "o/r", api, sleep=lambda seconds: None) == exit_code
+    Editing a description starts no run of the check, so this action re-runs the latest one when the edit changed a
+    `Depends-On:` line or the base, and only then.
+    """
 
-    assert api.calls == calls
-    assert said in capsys.readouterr().out
+    class TestGivenAnEditToAPullRequest:
+        @pytest.mark.parametrize(("event", "expected"), DECISIONS.values(), ids=DECISIONS)
+        def test_reruns_only_when_it_changed_what_a_run_reads(self, event, expected):
+            assert decide(event) == expected
 
+    class TestGivenTheLatestRunOfAWorkflowOnThePullRequestsHead:
+        """given the latest run of a workflow on the pull request's head"""
 
-def test_a_description_of_blank_lines_is_read_in_linear_time():
-    newlines = "\n" * 65536
-    spaces = " " * 65536
-    started = time.perf_counter()
+        @pytest.mark.parametrize(("case", "calls", "exit_code", "said"), ACTING.values(), ids=ACTING)
+        def test_makes_the_calls_its_row_lists_exiting_and_saying_as_the_row_lists(
+            self, case, calls, exit_code, said, capsys
+        ):
+            """makes the calls listed for its case, exiting and saying what is listed for it"""
+            api, event, workflows = case
 
-    assert decide(body_edit(newlines, newlines + LINE)) == LINES
-    assert decide(body_edit(spaces + "\n", f"{spaces}x\n{LINE}")) == LINES
+            assert rerun_when_edited(event, workflows, "o/r", api, sleep=lambda seconds: None) == exit_code
 
-    assert time.perf_counter() - started < 1
+            assert api.calls == calls
+            assert said in capsys.readouterr().out
+
+    class TestGivenADescriptionOfBlankLines:
+        def test_is_read_in_linear_time(self):
+            newlines = "\n" * 65536
+            spaces = " " * 65536
+            started = time.perf_counter()
+
+            assert decide(body_edit(newlines, newlines + LINE)) == LINES
+            assert decide(body_edit(spaces + "\n", f"{spaces}x\n{LINE}")) == LINES
+
+            assert time.perf_counter() - started < 1

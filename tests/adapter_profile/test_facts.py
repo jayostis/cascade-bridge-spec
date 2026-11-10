@@ -34,6 +34,7 @@ class TestFactsSuppliedWithAnInput:
             assert not said(crate)
 
         def test_reports_nothing_for_the_scope_a_pull_states_of_its_document(self, package):
+            """reports nothing for the scope a fetch states of its document"""
             package.write(
                 FACTS,
                 SCOPED
@@ -104,6 +105,7 @@ bridge:thisDocument prov:qualifiedAttribution
             assert "exactly one rdfs:label" in said(package.crate)
 
         def test_reports_an_import_time_that_is_no_datetime(self, package):
+            """reports an import time that is not a date with a time of day"""
             package.edit(
                 FACTS, 'prov:startedAtTime "2026-09-01T10:00:00Z"^^xsd:dateTime', 'prov:startedAtTime "yesterday"'
             )
