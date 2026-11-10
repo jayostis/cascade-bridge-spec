@@ -125,7 +125,7 @@ THE_VOCABULARYS_NAMING_VECTORS = """@prefix rdfs:    <http://www.w3.org/2000/01/
 
 <> a mf:Manifest ;
   rdfs:label "naming vectors" ;
-  mf:entries ( <#record-from-server> <#claim> <#version> <#view-entry> <#base-url-case> <#base-url-userinfo> ) .
+  mf:entries ( <#record-from-server> <#matcher-judgment> <#version> <#view-entry> <#base-url-case> <#base-url-userinfo> ) .
 
 <#record-from-server> a bridge:NamingTest ;
   mf:name "record-from-server" ;
@@ -134,12 +134,12 @@ THE_VOCABULARYS_NAMING_VECTORS = """@prefix rdfs:    <http://www.w3.org/2000/01/
   mf:action [ qt:query <RecordFromServerNamingRule.rq> ; bridge:nameInputs ( "https://fhir.example.org/api/FHIR/R4" "AllergyIntolerance" "eQ3xk2RtVb7Lm9Pw1aZy8A3" ) ] ;
   mf:result [ bridge:expectedName <urn:uuid:81ad3fab-98f1-890c-8abe-e93c84afd9e0> ] .
 
-<#claim> a bridge:NamingTest ;
-  mf:name "claim" ;
-  rdfs:comment "A claim: the maker, the matcher rule, the justification, then the members and the versions used, each list written as its count and its items in code point order; listed here unsorted." ;
-  bridge:namingRule cascade:ClaimNamingRule ;
+<#matcher-judgment> a bridge:NamingTest ;
+  mf:name "matcher-judgment" ;
+  rdfs:comment "A matcher judgment: the maker, the matcher rule, the justification, then the members and the versions used, each list written as its count and its items in code point order; listed here unsorted." ;
+  bridge:namingRule cascade:MatcherJudgmentNamingRule ;
   mf:action [ bridge:nameInputs ( "https://ns.cascadeprotocol.org/cascade#CascadeMatcher" "https://ns.cascadeprotocol.org/cascade#SameCodeRule" "https://ns.cascadeprotocol.org/cascade#SameCode" ("urn:uuid:f83d6a9d-1d0e-84bd-826c-e3f00989c291" "urn:uuid:7435b3b8-2d93-8912-9d48-940c5870dc81") ("ni:///sha-256;eplyjFwBziuuDGwAXYG-OsnSc_l9nZRWlgn28AA-riY" "ni:///sha-256;Q2zb2hq5EC43OWgfnQ-uPPQDVO6_EFXtdyhjpb_8PnQ") ) ] ;
-  mf:result [ bridge:expectedName <urn:uuid:35ee949a-9a6f-8cbb-81ef-378e145711f0> ] .
+  mf:result [ bridge:expectedName <urn:uuid:b8cae3a2-1a7d-8821-8625-133247dfbbd0> ] .
 
 <#version> a bridge:NamingTest ;
   mf:name "version" ;
