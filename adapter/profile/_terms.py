@@ -5,3 +5,7 @@ CASCADE = Namespace("https://ns.cascadeprotocol.org/cascade#")
 SCHEMA = Namespace("http://schema.org/")
 MF = Namespace("http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#")
 OA = Namespace("http://www.w3.org/ns/oa#")
+
+
+def shortened(term):
+    return str(term).replace(str(BRIDGE), "bridge:")

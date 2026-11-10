@@ -13,7 +13,7 @@ from rocrate_validator.requirements.python import PyFunctionCheck, check, requir
 from _codes import scheme_named_by
 from _findings import SHAPES, report_findings, shapes_of, unmet
 from _json_source import A_PATH, named_in_the_lift, syntax_of
-from _terms import BRIDGE
+from _terms import BRIDGE, shortened
 
 THE_KINDS_A_VERDICT_MAY_NAME = {
     BRIDGE.carriedInPart: (BRIDGE.carriedWithLoss, BRIDGE.valueNotMapped),
@@ -46,10 +46,6 @@ A_JSON_PATH_IS_STEPS = (
 
 A_TERM = re.compile(r"(?:[^\s<>\"'{}()\[\];,/:#?*+=!|&^$@\\]|\\[-_~.!$&'()*+,;=/?#@%])+")
 AN_ESCAPE = re.compile(r"\\(.)")
-
-
-def shortened(term):
-    return str(term).replace(str(BRIDGE), "bridge:")
 
 
 def steps_of(source_path):
