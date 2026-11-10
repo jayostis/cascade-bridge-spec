@@ -54,10 +54,7 @@ class TestCommandsAnEngineOffers:
 
         @pytest.mark.parametrize("declared", FORMATS)
         def test_says_what_else_it_has_to_say_on_standard_error(self, declared):
-            """says what else it has to say on standard error
-
-            The fake says which document it read.
-            """
+            """says which document it read on standard error"""
             run = convert(str(ADAPTER), str(DOCUMENT), "--format", declared)
             assert str(DOCUMENT) in run.stderr
 
@@ -123,13 +120,17 @@ class TestCommandsAnEngineOffers:
                 "format": "turtle",
             }
             calls = folder / "calls.json"
-            calls.write_text(json.dumps({"cases": [{"name": "a-case", "calls": [{"describe": describe}]}]}), "utf-8")
+            calls.write_text(
+                json.dumps({"cases": [{"name": "a-case", "calls": [{"describe": describe}, {"describe": describe}]}]}),
+                "utf-8",
+            )
             engine("library", str(calls), str(folder / "results"))
             return folder / "results"
 
         def test_writes_each_calls_result_as_case_and_number_json_in_the_results_directory(self, results):
             """writes each call's result as `<case>/<number>.json` in the results directory"""
-            assert json.loads((results / "a-case" / "1.json").read_text(encoding="utf-8")) == {}
+            for number in ("1", "2"):
+                assert json.loads((results / "a-case" / f"{number}.json").read_text(encoding="utf-8")) == {}
 
         def test_writes_the_graph_a_call_returned_beside_its_result_as_case_and_number_graph(self, results):
             """writes the graph a call returned beside its result, as `<case>/<number>.graph`"""

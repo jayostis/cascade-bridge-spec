@@ -85,7 +85,9 @@ class TestTextValuesTheXmlLiftWritesOnAnElement:
         ):
             """states on each element holding text the text content the reference gives it
 
-            Counted by the element's type and the text, since a blank node has no name to match by.
+            "States" is checked by equality: the expected graph writes the same text content, no more and no fewer,
+            as the reference gives the elements of the document. The elements are counted by their type and their
+            text together, since a blank node, the form an element takes in the graph, has no name to match it by.
             """
             held, graph = held_and_graph(document, expected)
             assert written(graph, TEXT_CONTENT) == Counter((type_of(e), xml_text.text_content(e)) for e in held)
@@ -94,6 +96,12 @@ class TestTextValuesTheXmlLiftWritesOnAnElement:
         def test_states_the_text_with_element_breaks_the_reference_gives_and_none_where_no_element_is_named(
             self, document, breaking, expected
         ):
+            """states the text with element breaks the reference gives and none where no element is named
+
+            The same equality, counted the same way: where the adapter names elements as breaking text, the expected
+            graph writes each such element's text with element breaks as the reference gives it; where it names none,
+            the expected graph writes none.
+            """
             held, graph = held_and_graph(document, expected)
             assert written(graph, BRIDGE.textWithElementBreaks) == Counter(
                 (type_of(e), xml_text.text_with_element_breaks(e, breaking)) for e in held if breaking

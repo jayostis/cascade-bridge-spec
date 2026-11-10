@@ -55,6 +55,24 @@
       "definition": "the node of a document's graph that says how one version arrived: from which document and where in it, in which import, and with the version and update time the source itself gave the record."
     },
     {
+      "term": "attachment",
+      "aliases": [
+        "attachments"
+      ],
+      "definition": "an element or property of a source record that holds a file's bytes, such as the data of an HL7 V3 `ED` (encapsulated data) element, usually written in base64."
+    },
+    {
+      "term": "base64",
+      "definition": "a way of writing bytes as letters, digits, `+`, `/` and `=`, which a Bridge decodes to text when the attachment is of a text media type."
+    },
+    {
+      "term": "blank node",
+      "aliases": [
+        "blank nodes"
+      ],
+      "definition": "a node of a graph with no IRI, so that it can be told from another only by what is stated of it."
+    },
+    {
       "term": "Bridge",
       "aliases": [
         "Bridges"
@@ -210,6 +228,13 @@
       "definition": "the first step of a conversion: the source record written as statements, element by element, before any mapping runs."
     },
     {
+      "term": "literal",
+      "aliases": [
+        "literals"
+      ],
+      "definition": "a value written in a statement as text with a datatype, such as `\"2.00\"^^xsd:decimal`, as distinct from an IRI that names a thing."
+    },
+    {
       "term": "manifest",
       "aliases": [
         "manifests",
@@ -295,6 +320,10 @@
       "definition": "`tests/specification/json_lift.py`: a JSON lift written from `engine/sparql.md` alone and sharing no code with any Bridge, which every JSON vector is run through."
     },
     {
+      "term": "same content",
+      "definition": "two versions of a record whose canonical content is byte for byte alike, so that they get the one name."
+    },
+    {
       "term": "shapes",
       "aliases": [
         "Bridge shapes"
@@ -328,6 +357,13 @@
     {
       "term": "synthetic vocabularies",
       "definition": "`fixtures/synthetic-vocabularies/`: an invented stand-in for a checkout of the Cascade vocabulary, holding the ontology file and shapes the synthetic adapters name."
+    },
+    {
+      "term": "triple",
+      "aliases": [
+        "triples"
+      ],
+      "definition": "one statement of a graph: a subject, a property and a value."
     },
     {
       "term": "term",

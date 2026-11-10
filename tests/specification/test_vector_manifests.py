@@ -367,6 +367,12 @@ class TestChecksOfTheCopyOfTheVocabularysNamingVectors:
             reason=f"no cascade-vocabulary checkout beside this repository (looked for {VOCABULARY_MANIFEST})",
         )
         def test_holds_each_naming_vector_as_the_vocabularys_manifest_writes_it(self):
+            """holds each naming vector as the vocabulary's manifest writes it
+
+            Compares each of the six entries copied here with the vocabulary's own, comment included; it looks at no
+            entry the vocabulary has and the copy lacks. It is skipped in CI until a checkout of the vocabulary is
+            made there (#174).
+            """
             copy = the_vocabularys_naming_vectors()
             vocabulary = Graph().parse(VOCABULARY_MANIFEST, format="turtle", publicID="https://example.org/naming/")
             for entry in copy.subjects(MF.name, None):

@@ -59,7 +59,8 @@ class TestLiftingAJsonDocument:
             """reproduces the vector's expected graph in the reference lift
 
             A vector of the envelope skeleton is lifted with its `bridge:jsonPathOfEachRecord`; the failure lists the
-            triples only one side holds.
+            triples only one side holds. The two graphs are the same when each triple of one is a triple of the other,
+            blank nodes aside, which may be named differently.
             """
             data = document.read_bytes()
             produced = json_lift.lifted(data) if path is None else json_lift.skeleton(data, path)

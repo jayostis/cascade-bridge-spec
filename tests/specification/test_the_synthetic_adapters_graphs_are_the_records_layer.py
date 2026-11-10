@@ -270,8 +270,8 @@ class TestTheGraphABridgeWritesForADocument:
         ):
             """names each record by the naming rule of the Cascade vocabulary its mapping chooses
 
-            A record held inside another by `ContainedRecordNamingRule`; one whose accession its document holds once
-            by `RecordFromServerNamingRule`; any other by `RecordFromDocumentNamingRule`. Run with the vocabulary's own
+            A record held inside another is named by `ContainedRecordNamingRule`; one whose accession its document
+            holds once, by `RecordFromServerNamingRule`; any other, by `RecordFromDocumentNamingRule`. Run with the vocabulary's own
             query text, from the cascade-vocabulary checkout beside this repository.
             """
             expected = expected_of(adapter, test)

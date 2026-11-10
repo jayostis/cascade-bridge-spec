@@ -86,7 +86,8 @@ class TestNamingTheVersionsOfAMappedGraph:
         def test_keeps_each_canonical_content_sorted_one_statement_to_a_line(self, test):
             """keeps each canonical content sorted, one statement to a line
 
-            Each literal is written as the mapping wrote it.
+            Each literal is written as the mapping wrote it, with the datatype and the digits it had, never as a store
+            gives it back; so `"2.00"` stays `"2.00"`. The lines are in the order that sorting their text gives.
             """
             for nquads in expected_versions(test).values():
                 assert canonical_nquads(parsed_ntriples(nquads)) == nquads
