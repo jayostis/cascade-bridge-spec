@@ -1,6 +1,8 @@
 """Which version of each repository a run uses, as Zuul checks out a required project."""
 
+from compatibility_tool.github import Event
 from compatibility_world import MATCHING, depends_on, git
+from place_vocabulary import named_head
 
 
 class TestPickingTheVersionOfEachRepositoryARunUses:
@@ -154,3 +156,27 @@ class TestPickingTheVersionOfEachRepositoryARunUses:
             repositories = world.record()["repositories"]
             assert repositories["adapter"]["how"] == "main, the branch this run is on"
             assert repositories["engine"]["commit"] == git("rev-parse", "HEAD", cwd=engine)
+
+    class TestGivenASliceThatReadsTheVocabularyBesideTheRepositoryUnderTest:
+        @staticmethod
+        def the_vocabulary_picked(body):
+            event = Event("jayostis/cascade-bridge-spec", 5, "main")
+
+            class Api:
+                def pull_request(self, named):
+                    if named.number == 5:
+                        return {"body": body}
+                    return {"head": {"repo": {"clone_url": "https://github.com/someone/fork.git"}, "sha": "abc"}}
+
+            return named_head(Api(), event)
+
+        def test_is_the_head_of_the_vocabulary_pull_request_the_description_names(self):
+            body = depends_on("cascade-vocabulary", 9) + depends_on("cascade-runtime-js", 3)
+
+            assert self.the_vocabulary_picked(body) == ("https://github.com/someone/fork.git", "abc")
+
+        def test_is_the_default_branch_when_the_description_names_none(self):
+            assert self.the_vocabulary_picked(depends_on("cascade-runtime-js", 3)) is None
+
+        def test_is_the_default_branch_on_a_push(self):
+            assert named_head(None, Event("jayostis/cascade-bridge-spec", None, "main")) is None

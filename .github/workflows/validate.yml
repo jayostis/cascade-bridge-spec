@@ -80,6 +80,12 @@ jobs:
           python3 -m pip install --upgrade pip
           python3 -m pip install --group dev
 
+      # Beside the workspace, where two specification files read it: actions/checkout refuses a path outside it.
+      - name: cascade-vocabulary beside this repository
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 scripts/place_vocabulary.py ../cascade-vocabulary
+
       - name: Run pytest
         run: python3 -m pytest ${{ matrix.tests }} --junitxml=junit.xml
 
