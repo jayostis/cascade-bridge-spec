@@ -14,6 +14,29 @@ BRIDGE = Namespace("https://ns.cascadeprotocol.org/bridge/v1-draft#")
 
 MANIFEST = Graph().parse(LIFT / "manifest.ttl", format="turtle", publicID=(LIFT / "manifest.ttl").as_uri())
 
+LIBRARY = ROOT / "fixtures" / "library"
+LIBRARY_MANIFEST = Graph().parse(
+    LIBRARY / "manifest.ttl", format="turtle", publicID=(LIBRARY / "manifest.ttl").as_uri()
+)
+NOT_LIFTED = [
+    pytest.param("json-with-a-byte-order-mark.json", id="a byte order mark"),
+    pytest.param("json-with-a-lone-surrogate-in-a-string.json", id="a lone surrogate in a string"),
+    pytest.param("json-with-a-lone-surrogate-in-a-name.json", id="a lone surrogate in a name"),
+    pytest.param("json-holding-a-string.json", id="a string as the value"),
+    pytest.param("json-holding-a-number.json", id="a number as the value"),
+    pytest.param("json-holding-nan.json", id="NaN"),
+    pytest.param("json-that-is-not-utf-8.json", id="text that is not UTF-8"),
+]
+
+
+def refused_documents():
+    """The names of the files that a library case converts and expects refused as a document failure."""
+    refused = set()
+    for call in LIBRARY_MANIFEST.subjects(BRIDGE.failure, BRIDGE.documentFailure):
+        document = LIBRARY_MANIFEST.value(call, BRIDGE.document)
+        refused.add(str(LIBRARY_MANIFEST.value(document, BRIDGE.file)).rsplit("/", 1)[-1])
+    return refused
+
 
 def local(iri):
     return LIFT / str(iri).rsplit("/", 1)[1]
@@ -47,9 +70,16 @@ class TestLiftingAJsonDocument:
 
     class TestGivenTheLiftManifest:
         def test_holds_json_vectors(self):
-            """holds `json-scalars`, `json-names`, `skeleton-json` and `skeleton-json-record-root` among its JSON vectors"""
+            """holds `json-scalars`, `json-names`, `skeleton-json`, `skeleton-json-bracket-path` and `skeleton-json-record-root`
+            among its JSON vectors"""
             names = {vector.id for vector in VECTORS}
-            assert {"json-scalars", "json-names", "skeleton-json", "skeleton-json-record-root"} <= names
+            assert {
+                "json-scalars",
+                "json-names",
+                "skeleton-json",
+                "skeleton-json-bracket-path",
+                "skeleton-json-record-root",
+            } <= names
 
     class TestGivenAJsonVector:
         """given a JSON vector"""
@@ -73,25 +103,19 @@ class TestLiftingAJsonDocument:
     class TestGivenADocumentThatIsNoJsonTextInUtf8HoldingAnObjectOrAnArray:
         """given a document that is no JSON text in UTF-8 holding an object or an array"""
 
-        @pytest.mark.parametrize(
-            "data",
-            [
-                pytest.param(b'\xef\xbb\xbf{"a": "1"}', id="a byte order mark"),
-                pytest.param(b'{"a": "\\ud800"}', id="a lone surrogate in a string"),
-                pytest.param(b'{"\\udc00": "1"}', id="a lone surrogate in a name"),
-                pytest.param(b'"a string"', id="a string as the value"),
-                pytest.param(b"12", id="a number as the value"),
-                pytest.param(b'{"a": NaN}', id="NaN"),
-                pytest.param('{"a": "é"}'.encode("latin-1"), id="text that is not UTF-8"),
-            ],
-        )
-        def test_lifts_nothing_from_it(self, data):
+        @pytest.mark.parametrize("name", NOT_LIFTED)
+        def test_lifts_nothing_from_it(self, name):
             """lifts nothing from it
 
-            No vector shows this: a lift vector states a graph, and no library case feeds a JSON document.
+            Each document is a library case on the synthetic JSON adapter, refused as a document failure.
             """
             with pytest.raises(json_lift.NotLifted):
-                json_lift.lifted(data)
+                json_lift.lifted((LIBRARY / name).read_bytes())
+
+        @pytest.mark.parametrize("name", NOT_LIFTED)
+        def test_is_a_library_case_refused_as_a_document_failure(self, name):
+            """is a library case refused as a document failure"""
+            assert name in refused_documents()
 
     class TestGivenARecordPath:
         def test_selects_the_same_records_written_dot_name_or_bracket_name(self):

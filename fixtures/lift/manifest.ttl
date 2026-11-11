@@ -32,6 +32,9 @@
     <#json-base64-attachment>
     <#skeleton-json>
     <#skeleton-json-record-root>
+    <#skeleton-json-bracket-path>
+    <#attributes-text-xml>
+    <#attributes-plus-xml>
   ) .
 
 <#attributes> a bridge:LiftTest ;
@@ -198,3 +201,21 @@
   rdfs:comment "A record that is the document's value is lifted in the same way: the skeleton is the lift root's type and its members whose value is a string, a number, true or false." ;
   mf:action [ bridge:sourceMediaType "application/json" ; bridge:input <skeleton-json-record-root.json> ; bridge:jsonPathOfEachRecord "$" ] ;
   mf:result [ bridge:expectedGraph <skeleton-json-record-root.nt> ] .
+
+<#skeleton-json-bracket-path> a bridge:SkeletonTest ;
+  mf:name "skeleton-json-bracket-path" ;
+  rdfs:comment "A record path written $['entry'][*] selects the records that $.entry[*] does, so the skeleton is the one `skeleton-json` states." ;
+  mf:action [ bridge:sourceMediaType "application/json" ; bridge:input <skeleton-json.json> ; bridge:jsonPathOfEachRecord "$['entry'][*]" ] ;
+  mf:result [ bridge:expectedGraph <skeleton-json.nt> ] .
+
+<#attributes-text-xml> a bridge:LiftTest ;
+  mf:name "attributes-text-xml" ;
+  rdfs:comment "A document of media type text/xml is lifted as one of application/xml is, to the graph `attributes` states." ;
+  mf:action [ bridge:sourceMediaType "text/xml" ; bridge:input <attributes.xml> ] ;
+  mf:result [ bridge:expectedGraph <attributes.nt> ] .
+
+<#attributes-plus-xml> a bridge:LiftTest ;
+  mf:name "attributes-plus-xml" ;
+  rdfs:comment "A document whose media type has the +xml suffix is lifted as one of application/xml is, to the graph `attributes` states." ;
+  mf:action [ bridge:sourceMediaType "application/example+xml" ; bridge:input <attributes.xml> ] ;
+  mf:result [ bridge:expectedGraph <attributes.nt> ] .

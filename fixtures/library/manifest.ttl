@@ -27,6 +27,7 @@
     <#an-element-s-text-content-is-read-in-document-order>
     <#a-base64-attachment-s-text-is-read-decoded>
     <#an-element-s-text-with-element-breaks-is-read-a-line-for-each-cell-and-paragraph>
+    <#a-json-document-that-is-no-json-text-in-utf-8-holding-an-object-or-an-array-is-refused>
   ) .
 
 _:synthetic-adapter
@@ -402,4 +403,62 @@ _:load-the-synthetic-adapter-reading-each-label-s-text-with-element-breaks a bri
       bridge:envelope <https://example.org/adapters/synthetic-adapter/ro-crate-metadata.json#envelope-set> ;
       bridge:graphFormat "turtle" ;
       bridge:expectedGraph <../lifted-text/expected/text-with-element-breaks.ttl> ]
+  ) .
+
+<#a-json-document-that-is-no-json-text-in-utf-8-holding-an-object-or-an-array-is-refused> a bridge:LibraryTest ;
+  mf:name "a-json-document-that-is-no-json-text-in-utf-8-holding-an-object-or-an-array-is-refused" ;
+  rdfs:comment "The JSON lift lifts nothing from a document written with a byte order mark, with a lone surrogate in a string or a name, holding a string or a number as its value, holding NaN, or in a text that is not UTF-8: each is refused as a document failure, and the loaded adapter converts the next." ;
+  mf:action (
+    [ a bridge:LoadCall ;
+      bridge:adapterFiles _:synthetic-json-adapter-to-load ;
+      bridge:vocabularyFiles _:synthetic-vocabularies ]
+    [ a bridge:ConvertCall ;
+      bridge:document [
+        bridge:iri <https://example.org/documents/json-with-a-byte-order-mark.json> ;
+        bridge:file <json-with-a-byte-order-mark.json>
+      ] ;
+      bridge:graphFormat "ntriples" ;
+      bridge:failure bridge:documentFailure ]
+    [ a bridge:ConvertCall ;
+      bridge:document [
+        bridge:iri <https://example.org/documents/json-with-a-lone-surrogate-in-a-string.json> ;
+        bridge:file <json-with-a-lone-surrogate-in-a-string.json>
+      ] ;
+      bridge:graphFormat "ntriples" ;
+      bridge:failure bridge:documentFailure ]
+    [ a bridge:ConvertCall ;
+      bridge:document [
+        bridge:iri <https://example.org/documents/json-with-a-lone-surrogate-in-a-name.json> ;
+        bridge:file <json-with-a-lone-surrogate-in-a-name.json>
+      ] ;
+      bridge:graphFormat "ntriples" ;
+      bridge:failure bridge:documentFailure ]
+    [ a bridge:ConvertCall ;
+      bridge:document [
+        bridge:iri <https://example.org/documents/json-holding-a-string.json> ;
+        bridge:file <json-holding-a-string.json>
+      ] ;
+      bridge:graphFormat "ntriples" ;
+      bridge:failure bridge:documentFailure ]
+    [ a bridge:ConvertCall ;
+      bridge:document [
+        bridge:iri <https://example.org/documents/json-holding-a-number.json> ;
+        bridge:file <json-holding-a-number.json>
+      ] ;
+      bridge:graphFormat "ntriples" ;
+      bridge:failure bridge:documentFailure ]
+    [ a bridge:ConvertCall ;
+      bridge:document [
+        bridge:iri <https://example.org/documents/json-holding-nan.json> ;
+        bridge:file <json-holding-nan.json>
+      ] ;
+      bridge:graphFormat "ntriples" ;
+      bridge:failure bridge:documentFailure ]
+    [ a bridge:ConvertCall ;
+      bridge:document [
+        bridge:iri <https://example.org/documents/json-that-is-not-utf-8.json> ;
+        bridge:file <json-that-is-not-utf-8.json>
+      ] ;
+      bridge:graphFormat "ntriples" ;
+      bridge:failure bridge:documentFailure ]
   ) .
