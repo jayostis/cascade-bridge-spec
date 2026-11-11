@@ -153,6 +153,19 @@ class TestAReportOfEveryCaseAnEngineRan:
                 assert summary[status] == sum(case["status"] == status for case in tests)
             assert summary["pending"] == 0
 
+        def test_gives_the_run_its_real_start_and_stop_around_the_hosts_runs(self, clean):
+            """gives `summary` the run's own `start` and `stop`, the stop after the start"""
+            summary = report_of(clean)["results"]["summary"]
+
+            assert summary["start"] < summary["stop"]
+
+        def test_marks_the_report_as_timing_no_case(self, clean):
+            """marks the report as timing no case: `results.extra.caseDurations` is `unmeasured`, each case's `duration` being 0"""
+            report = report_of(clean)
+
+            assert report["results"]["extra"]["caseDurations"] == "unmeasured"
+            assert {case["duration"] for case in cases_of(clean)} == {0}
+
         def test_names_the_adapters_repository_and_commit_on_each_case(self, clean):
             """names the adapter's repository and commit on each case"""
             adapter = clean.record()["repositories"]["adapter"]
