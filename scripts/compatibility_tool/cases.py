@@ -258,7 +258,14 @@ def ctrf(record, cases):
         "generatedBy": "cascade-bridge-spec scripts/compatibility.py",
         "results": {
             "tool": {"name": TOOL},
-            "summary": {"tests": len(cases), **count, "pending": 0, "start": start, "stop": stop, "duration": stop - start},
+            "summary": {
+                "tests": len(cases),
+                **count,
+                "pending": 0,
+                "start": start,
+                "stop": stop,
+                "duration": stop - start,
+            },
             "tests": cases,
             "environment": environment(record),
             "extra": {"caseDurations": "unmeasured"},
