@@ -253,6 +253,14 @@ neither, and removes any an earlier run left. In CI the `report.md` is appended
 to the run's summary page after the table, and `table.md` gains one line that
 says where.
 
+This repository's own slices of pytest read cascade-vocabulary as the sibling of
+the workspace, which `actions/checkout` cannot place (it refuses a `path` outside
+the workspace) and the start action does not (it is for a repository holding a
+`compatibility.json`). `scripts/place_vocabulary.py` clones it there with git: the
+head of the pull request a `Depends-On:` line of the pull request under test
+names, else the default branch. As for a counterpart, only a line of the pull
+request under test itself is read, and the head is not merged into anything.
+
 ## The workflow an adapter and an engine both run
 
 `check.yml`, the main workflow:
