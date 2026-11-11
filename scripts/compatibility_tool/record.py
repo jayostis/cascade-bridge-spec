@@ -118,6 +118,8 @@ class Record:
     directory: Path
     mode: str
     used: list[Row] = field(default_factory=list)
+    started: int | None = None
+    stopped: int | None = None
 
     @property
     def counterparts(self):
