@@ -20,13 +20,19 @@ def named_head(api, event):
     """The head of the vocabulary pull request the pull request under test names, as (clone url, commit), or None."""
     if event.under_test is None:
         return None
-    for named in github.named_in(api.pull_request(event.under_test).get("body")):
-        if github.repository_name(named.path) == VOCABULARY:
-            head = api.pull_request(named)["head"]
-            if not head.get("repo"):
-                raise Stop(f"{named.label} has no head repository to place {VOCABULARY} from")
-            return head["repo"]["clone_url"], head["sha"]
-    return None
+    names = [
+        named
+        for named in github.named_in(api.pull_request(event.under_test).get("body"))
+        if github.repository_name(named.path) == VOCABULARY
+    ]
+    if not names:
+        return None
+    if len(names) > 1:
+        raise Stop(f"Depends-On: names {VOCABULARY} twice, {names[0].label} and {names[1].label}; name one")
+    head = api.pull_request(names[0])["head"]
+    if not head.get("repo"):
+        raise Stop(f"{names[0].label} has no head repository to place {VOCABULARY} from")
+    return head["repo"]["clone_url"], head["sha"]
 
 
 def git(*arguments):
