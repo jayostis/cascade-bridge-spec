@@ -247,6 +247,7 @@ class Cases:
 
 def ctrf(record, cases):
     now = int(time.time() * 1000)
+    start, stop = record.started or now, record.stopped or now
     count = {
         status: sum(found["status"] == status for found in cases) for status in ("passed", "failed", "skipped", "other")
     }
@@ -257,9 +258,17 @@ def ctrf(record, cases):
         "generatedBy": "cascade-bridge-spec scripts/compatibility.py",
         "results": {
             "tool": {"name": TOOL},
-            "summary": {"tests": len(cases), **count, "pending": 0, "start": now, "stop": now},
+            "summary": {
+                "tests": len(cases),
+                **count,
+                "pending": 0,
+                "start": start,
+                "stop": stop,
+                "duration": stop - start,
+            },
             "tests": cases,
             "environment": environment(record),
+            "extra": {"caseDurations": "unmeasured"},
         },
     }
 

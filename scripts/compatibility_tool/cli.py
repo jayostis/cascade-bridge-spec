@@ -2,6 +2,7 @@ import argparse
 import os
 import sys
 import tempfile
+import time
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -136,8 +137,10 @@ def compatibility(directory, options, event, api, spec, partners):
         if runs_runtimes:
             runtimes.run(directory, record, options, set_up, api)
         else:
+            record.started = int(time.time() * 1000)
             engines.run(directory, record, options, set_up)
             library.run(directory, record, options, set_up)
+            record.stopped = int(time.time() * 1000)
         status = judge.judge(record, options)
         record.save(options.results)
         if not runs_runtimes:
