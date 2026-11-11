@@ -263,13 +263,26 @@ def load_adapter(given):
     return {"iri": iri, "root": root, "envelopes": envelopes, "vocabulary": vocabulary is not None}
 
 
+def json_text(data):
+    """A JSON object or array written in UTF-8 with no byte order mark, NaN or lone surrogate: all the lift reads."""
+
+    def no_constant(name):
+        raise ValueError(name)
+
+    value = json.loads(data.decode("utf-8"), parse_constant=no_constant)
+    json.dumps(value, ensure_ascii=False).encode("utf-8")
+    if not isinstance(value, (dict, list)):
+        raise ValueError("not an object or an array")
+    return value
+
+
 def read_document(loaded, document):
     data = Path(document["path"]).read_bytes()
     envelope = document.get("envelope")
     if envelope is not None and envelope not in loaded["envelopes"]:
         raise Failure("documentFailure")
     if loaded["root"]["bridge:sourceMediaType"].endswith("json"):
-        return parsed("documentFailure", data, json.loads)
+        return parsed("documentFailure", data, json_text)
     return parsed("documentFailure", data, ElementTree.fromstring)
 
 

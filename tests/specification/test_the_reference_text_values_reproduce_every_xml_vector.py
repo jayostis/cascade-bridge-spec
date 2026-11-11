@@ -76,6 +76,15 @@ class TestTextValuesTheXmlLiftWritesOnAnElement:
                 "text-with-element-breaks-inline",
             } <= breaking
 
+        def test_holds_an_xml_vector_for_text_xml_and_for_a_plus_xml_media_type(self):
+            """holds an XML vector for `text/xml` and one for a `+xml` media type, beside those for `application/xml`"""
+            media_types = {
+                str(MANIFEST.value(MANIFEST.value(entry, MF.action), BRIDGE.sourceMediaType))
+                for entry in MANIFEST.subjects(RDF.type, BRIDGE.LiftTest)
+            }
+            assert {"application/xml", "text/xml"} <= media_types
+            assert any(media_type.endswith("+xml") for media_type in media_types)
+
     class TestGivenAnXmlVector:
         """given an XML vector"""
 
