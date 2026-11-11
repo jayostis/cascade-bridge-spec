@@ -153,11 +153,27 @@ class TestAReportOfEveryCaseAnEngineRan:
                 assert summary[status] == sum(case["status"] == status for case in tests)
             assert summary["pending"] == 0
 
-        def test_gives_the_run_its_real_start_and_stop_around_the_hosts_runs(self, clean):
-            """gives `summary` the run's own `start` and `stop`, the stop after the start"""
+        def test_gives_the_run_its_real_start_and_stop_around_the_hosts_runs(self, world):
+            """gives `summary` the run's own `start` and `stop`, the host's run falling between them"""
+            engine = engine_writing(world, PASSING)
+            command = world.root / "write_report.py"
+            ran = world.root / "host_ran_at"
+            command.write_text(
+                command.read_text(encoding="utf-8")
+                + f"import time\npathlib.Path({str(ran)!r}).write_text(str(int(time.time() * 1000)))\n",
+                encoding="utf-8",
+            )
+
+            world.tool(engine)
+
+            summary = report_of(world)["results"]["summary"]
+            assert summary["start"] <= int(ran.read_text()) <= summary["stop"]
+
+        def test_gives_the_run_its_duration_as_the_stop_less_the_start(self, clean):
+            """gives `summary.duration` as the milliseconds from `start` to `stop`"""
             summary = report_of(clean)["results"]["summary"]
 
-            assert summary["start"] < summary["stop"]
+            assert summary["duration"] == summary["stop"] - summary["start"]
 
         def test_marks_the_report_as_timing_no_case(self, clean):
             """marks the report as timing no case: `results.extra.caseDurations` is `unmeasured`, each case's `duration` being 0"""

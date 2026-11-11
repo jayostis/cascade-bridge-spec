@@ -239,7 +239,12 @@ EARL report a run wrote reads the action's `report` output, never a path it
 assumes. A run that has an engine run an adapter's test manifest, in either
 direction and locally too, also writes `report.ctrf.json` and `report.md` into
 the results directory: each case of the manifest on each engine host, as CTRF
-for a tool and as Markdown for a person. No case is timed, so each case's `duration` is 0, which CTRF 0.2.0 requires, and `results.extra.caseDurations` is `"unmeasured"` to say so; `results.summary.start` and `stop` are the real times, in milliseconds, at which the run began and ended running the engines' hosts. A caller may rely on both, and on the
+for a tool and as Markdown for a person. No case is timed, so each case's
+`duration` is 0, which CTRF 0.2.0 requires, and `results.extra.caseDurations`
+is `"unmeasured"` to say so. `results.summary.start` and `stop` are the real
+times, in milliseconds, at which the run began and ended running the engines'
+hosts, setup included, and `results.summary.duration` is the milliseconds
+between them. A caller may rely on all three, and on the
 action's outputs `cases`, the path of `report.ctrf.json` (empty when the run
 wrote none), and `report-artifact`, the name `report-` and the directory under
 test, of the artifact the action uploads them in beside the EARL reports. A
