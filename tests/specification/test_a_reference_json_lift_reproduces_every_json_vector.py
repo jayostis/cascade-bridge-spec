@@ -15,7 +15,9 @@ BRIDGE = Namespace("https://ns.cascadeprotocol.org/bridge/v1-draft#")
 MANIFEST = Graph().parse(LIFT / "manifest.ttl", format="turtle", publicID=(LIFT / "manifest.ttl").as_uri())
 
 LIBRARY = ROOT / "fixtures" / "library"
-LIBRARY_MANIFEST = Graph().parse(LIBRARY / "manifest.ttl", format="turtle", publicID=(LIBRARY / "manifest.ttl").as_uri())
+LIBRARY_MANIFEST = Graph().parse(
+    LIBRARY / "manifest.ttl", format="turtle", publicID=(LIBRARY / "manifest.ttl").as_uri()
+)
 NOT_LIFTED = [
     pytest.param("json-with-a-byte-order-mark.json", id="a byte order mark"),
     pytest.param("json-with-a-lone-surrogate-in-a-string.json", id="a lone surrogate in a string"),
