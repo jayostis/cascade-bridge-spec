@@ -7,6 +7,7 @@ from pathlib import Path
 
 from compatibility_tool import (
     bootstrap,
+    cases,
     engines,
     github,
     judge,
@@ -125,6 +126,7 @@ def compatibility(directory, options, event, api, spec, partners):
     if options.checkout_only:
         return Status.OK
 
+    written = None
     status = validate.validate(directory, document, spec)
     for reading, vocabulary in placed:
         if status is not Status.FAIL:
@@ -138,7 +140,11 @@ def compatibility(directory, options, event, api, spec, partners):
             library.run(directory, record, options, set_up)
         status = judge.judge(record, options)
         record.save(options.results)
-    judge.write_table(record, options)
+        if not runs_runtimes:
+            written = cases.write(record, options)
+    judge.write_table(record, options, cases.pointer(options) if written else "")
+    if written and options.mode == "ci":
+        judge.append_to_summary(written)
     return status
 
 
@@ -164,6 +170,7 @@ def main(usage, argv=None):
         checkout_only=args.checkout_only,
     )
     options.results.mkdir(parents=True, exist_ok=True)
+    cases.remove(options.results)
     github.take_token()
     api = github.Api()
     try:

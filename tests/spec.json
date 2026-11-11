@@ -52,6 +52,7 @@
     "Running a runtime on the repositories it names · cascade-runtime.json, --folder, --checkout-only",
     "Running on a developer's machine · python3 scripts/compatibility.py <dir>",
     "The table a run writes · table.md",
+    "A report of every case an engine ran · report.ctrf.json, report.md",
     "The report a run names for its caller · .github/actions/start",
     "The merge gate · --check ready-to-merge",
     "Re-running a check when a description is edited · .github/actions/rerun-when-edited",
@@ -79,6 +80,14 @@
         "accountings"
       ],
       "definition": "a Turtle file in which an adapter says, path by path, what becomes of each element and attribute of a source record."
+    },
+    {
+      "term": "action",
+      "aliases": [
+        "actions",
+        "start action"
+      ],
+      "definition": "a reusable step of a GitHub workflow, kept in a folder of this repository; the start action is `.github/actions/start`."
     },
     {
       "term": "adapter",
@@ -109,6 +118,13 @@
         "arrivals"
       ],
       "definition": "the node of a document's graph that says how one version arrived: from which document and where in it, in which import, and with the version and update time the source itself gave the record."
+    },
+    {
+      "term": "artifact",
+      "definition": "a named bundle of files a CI run keeps after it ends, which a person or a later job downloads by that name.",
+      "aliases": [
+        "artifacts"
+      ]
     },
     {
       "term": "attachment",
@@ -205,6 +221,10 @@
       "definition": "an adapter's `ro-crate-metadata.json`, a file in the RO-Crate format that describes every file of the package; its root entity is the adapter itself."
     },
     {
+      "term": "CTRF",
+      "definition": "Common Test Report Format, an open JSON format for test results (ctrf.io)."
+    },
+    {
       "term": "cycle",
       "aliases": [
         "cycles",
@@ -254,7 +274,7 @@
         "entries",
         "path entry"
       ],
-      "definition": "one line of an accounting: a source path, its verdict, and what the verdict requires beside it."
+      "definition": "one line of an accounting: a source path, its verdict, and what the verdict requires beside it; in a test manifest, one item of its list, which is a test, or an input-only entry."
     },
     {
       "term": "envelope",
@@ -364,6 +384,14 @@
       "definition": "a program that times an engine on the benchmark inputs and writes the results file `bench/result.schema.json` describes."
     },
     {
+      "term": "hold",
+      "aliases": [
+        "holds",
+        "held"
+      ],
+      "definition": "of a report, to be one the judge finds no fault in."
+    },
+    {
       "term": "host",
       "aliases": [
         "hosts"
@@ -403,6 +431,15 @@
     {
       "term": "JSONPath",
       "definition": "a language for picking values out of a JSON document, such as `$.entry[*]`."
+    },
+    {
+      "term": "judge",
+      "aliases": [
+        "judges",
+        "judged",
+        "judging"
+      ],
+      "definition": "the part of the compatibility tool that reads an EARL report and the adapter's test manifest and prints the faults it finds, or none; `engine/faults-of-a-report.rq` is the query it asks."
     },
     {
       "term": "label",
@@ -540,6 +577,20 @@
       "definition": "a Turtle file under `ontologies/` that declares terms."
     },
     {
+      "term": "outcome",
+      "definition": "what an EARL report says of one test: `passed`, `failed`, `cantTell`, `inapplicable` or `untested`.",
+      "aliases": [
+        "outcomes"
+      ]
+    },
+    {
+      "term": "output",
+      "aliases": [
+        "outputs"
+      ],
+      "definition": "a named value an action gives back to the workflow that ran it, which a later step can read."
+    },
+    {
       "term": "placeholder",
       "definition": "`urn:cascade:this-version`, which stands for a version in its own canonical content, since the version's name is not known until that content is hashed."
     },
@@ -599,6 +650,10 @@
     {
       "term": "repository under test",
       "definition": "the repository whose pull request or branch a run was started for."
+    },
+    {
+      "term": "results directory",
+      "definition": "the folder a compatibility run writes into: `record.json`, `table.md`, the EARL reports under `earl/`, and the case report. The start action uploads it."
     },
     {
       "term": "rocrate-validator",
@@ -675,6 +730,13 @@
         "stand-ins"
       ],
       "definition": "a made-up value written where a real one was removed, such as `Bench Hospital` for a hospital's name."
+    },
+    {
+      "term": "summary page",
+      "definition": "the page GitHub shows for a workflow run, to which a step may append Markdown; the compatibility table is appended there.",
+      "aliases": [
+        "run's summary"
+      ]
     },
     {
       "term": "superclass",

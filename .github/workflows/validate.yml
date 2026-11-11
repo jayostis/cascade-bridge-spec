@@ -169,11 +169,25 @@ jobs:
 
       # By local path: the start action in this commit, not the default branch.
       - name: start action (compatibility) on the synthetic adapter
+        id: synthetic
         uses: ./cascade-bridge-spec/.github/actions/start
         with:
           path: cascade-bridge-spec/fixtures/synthetic-adapter
 
       - name: start action (compatibility) on the synthetic JSON adapter
+        id: synthetic-json
         uses: ./cascade-bridge-spec/.github/actions/start
         with:
           path: cascade-bridge-spec/fixtures/synthetic-json-adapter
+
+      # Neither adapter lists an engine, so no engine runs and no case report is written to be named or uploaded.
+      - name: the start action names the artifact of each adapter's case report, and a case report none wrote
+        env:
+          SYNTHETIC: ${{ steps.synthetic.outputs.report-artifact }}
+          SYNTHETIC_JSON: ${{ steps.synthetic-json.outputs.report-artifact }}
+          CASES: ${{ steps.synthetic.outputs.cases }}${{ steps.synthetic-json.outputs.cases }}
+        run: |
+          set -euo pipefail
+          test "${SYNTHETIC}" = report-synthetic-adapter
+          test "${SYNTHETIC_JSON}" = report-synthetic-json-adapter
+          test -z "${CASES}"

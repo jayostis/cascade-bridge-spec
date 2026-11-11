@@ -30,6 +30,8 @@ class Verdict:
     unreadable_manifest: str | None = None
     tests: int | None = None
     faults: list[str] = field(default_factory=list)
+    named: list[tuple[str | None, str]] = field(default_factory=list)
+    reported: list[tuple[str | None, str]] = field(default_factory=list)
 
     @property
     def holds(self):
@@ -73,27 +75,66 @@ def judge_report(path, adapter):
         raise
     except Exception as error:
         return Verdict(unjudged=f"its report does not parse as Turtle: {first_line(str(error))}")
-    tally = {}
-    for outcome in graph.objects(None, packages.installed("rdflib").URIRef(EARL + "outcome")):
-        name = outcome_name(outcome)
-        tally[name] = tally.get(name, 0) + 1
+    reported = outcomes_reported(graph)
+    tally = tally_of(reported)
     if adapter is None:
-        return Verdict(tally=tally, faults=faults_of(graph))
+        return with_faults(Verdict(tally=tally, reported=reported), graph)
 
     adapter = adapter.resolve()
     try:
         manifest_path, manifest = read_test_manifest(adapter)
     except Exception as error:
-        return Verdict(tally=tally, unreadable_manifest=first_line(str(error)), faults=faults_of(graph))
-    return Verdict(
-        tally=tally,
-        tests=count_of_tests(manifest_path, manifest),
-        faults=faults_of(graph + manifest),
+        return with_faults(Verdict(tally=tally, reported=reported, unreadable_manifest=first_line(str(error))), graph)
+    return with_faults(
+        Verdict(tally=tally, reported=reported, tests=count_of_tests(manifest_path, manifest)), graph + manifest
     )
 
 
+def tally_of(reported):
+    """Each test counted once, under the one word every outcome it is given agrees on, or `cantTell` for a mix; a result naming no test is counted on its own."""
+    words = {}
+    counted = [name for test, name in reported if test is None]
+    for test, name in reported:
+        if test is not None:
+            words.setdefault(test, set()).add(name)
+    counted += [next(iter(named)) if len(named) == 1 else "cantTell" for named in words.values()]
+    tally = {}
+    for name in counted:
+        tally[name] = tally.get(name, 0) + 1
+    return tally
+
+
+def outcomes_reported(graph):
+    """Each outcome a report gives a test, once however often it is asserted; a result naming no test is counted on its own."""
+    rdflib = packages.installed("rdflib")
+    found = {}
+    for result, outcome in graph.subject_objects(rdflib.URIRef(EARL + "outcome")):
+        tests = {
+            str(test)
+            for assertion in graph.subjects(rdflib.URIRef(EARL + "result"), result)
+            for test in graph.objects(assertion, rdflib.URIRef(EARL + "test"))
+        }
+        for test in tests or {None}:
+            found[(test if tests else result.n3(), outcome_name(outcome))] = test
+    return [(test, name) for (_, name), test in found.items()]
+
+
+def fault_rows(graph):
+    """Each fault of a report with the test it names, or None where it names none."""
+    return [
+        (None if row.entry is None else str(row.entry), str(row.fault))
+        for row in graph.query(FAULTS_OF_A_REPORT.read_text(encoding="utf-8"))
+    ]
+
+
 def faults_of(graph):
-    return [str(row.fault) for row in graph.query(FAULTS_OF_A_REPORT.read_text(encoding="utf-8"))]
+    return [fault for _, fault in fault_rows(graph)]
+
+
+def with_faults(verdict, graph):
+    verdict.named = fault_rows(graph)
+    verdict.faults = [fault for _, fault in verdict.named]
+    return verdict
 
 
 def plural(count, word):
@@ -114,6 +155,7 @@ def judge(record, options):
         return Status.NOTHING_TO_CHECK
     for entry in [*counterparts, *runs]:
         verdict = judge_report(entry.report, entry.adapter)
+        entry.verdict = verdict
         entry.holds = verdict.holds
         entry.result = verdict.describe()
         whose = "the conformance of " if entry.role is Role.CONFORMANCE else ""
@@ -184,12 +226,16 @@ def table(record):
     return "\n".join(lines) + "\n"
 
 
-def write_table(record, options):
-    if options.mode != "ci":
-        return
-    written = table(record)
-    (options.results / "table.md").write_text(written, encoding="utf-8")
+def append_to_summary(text):
     summary = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary:
         with Path(summary).open("a", encoding="utf-8") as handle:
-            handle.write(written + "\n")
+            handle.write(text + "\n")
+
+
+def write_table(record, options, after=""):
+    if options.mode != "ci":
+        return
+    written = table(record) + after
+    (options.results / "table.md").write_text(written, encoding="utf-8")
+    append_to_summary(written)

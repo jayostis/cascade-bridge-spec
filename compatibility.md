@@ -236,7 +236,17 @@ A job that needs only the counterparts a `Depends-On:` line picks passes
 the repository under test into its checkout, so a step that reads the checkout,
 an install from its lockfile among them, comes after it. A job that reads the
 EARL report a run wrote reads the action's `report` output, never a path it
-assumes.
+assumes. A run that has an engine run an adapter's test manifest, in either
+direction and locally too, also writes `report.ctrf.json` and `report.md` into
+the results directory: each case of the manifest on each engine host, as CTRF
+for a tool and as Markdown for a person. A caller may rely on both, and on the
+action's outputs `cases`, the path of `report.ctrf.json` (empty when the run
+wrote none), and `report-artifact`, the name `report-` and the directory under
+test, of the artifact the action uploads them in beside the EARL reports. A
+runtime's or a vocabulary's run, and a run that stops before the engines, writes
+neither, and removes any an earlier run left. In CI the `report.md` is appended
+to the run's summary page after the table, and `table.md` gains one line that
+says where.
 
 ## The workflow an adapter and an engine both run
 
