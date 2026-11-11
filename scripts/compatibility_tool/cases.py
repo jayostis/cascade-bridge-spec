@@ -109,14 +109,10 @@ def type_labels():
 
 
 def outcome_status(words):
-    """The status of a test the report gives these outcomes and no fault: passed only when every one is."""
-    if set(words) == {"passed"}:
-        return "passed"
-    if "cantTell" in words:
+    """The status of a test the report gives these outcomes and no fault: that of the one word they all are, `other` for a mix."""
+    if len(set(words)) > 1:
         return "other"
-    if "untested" in words:
-        return "skipped"
-    return None
+    return STATUS_OF.get(words[0])
 
 
 def environment(record):
@@ -173,16 +169,21 @@ class Cases:
         shared = {"adapter": {"repository": adapter.repository, "commit": adapter.commit}}
         if row.report is not None and row.report.is_file():
             shared["report"] = f"earl/{row.report.name}"
-        levels = [
-            {
-                "name": manifest.label,
-                "description": (
-                    f"{len(manifest.entries)} cases of {manifest.adapter.name}, each an entry of its test manifest, "
-                    "run by an engine host and judged by the compatibility tool."
-                ),
-            },
-            {"name": host},
-        ]
+        levels = [{"name": manifest.label}, {"name": host}]
+
+        def described(found):
+            """The cases written, with the manifest's level saying how many there are, or that there are none to count."""
+            if manifest.unreadable is not None:
+                levels[0]["description"] = (
+                    f"The test manifest of {manifest.adapter.name} could not be read, so its cases are not known."
+                )
+            else:
+                levels[0]["description"] = (
+                    f"{len(found)} cases of {manifest.adapter.name}, each an entry of its test manifest "
+                    "or a fault the judge names that no entry does, run by an engine host and judged by the "
+                    "compatibility tool."
+                )
+            return found
 
         def case(name, status, message=None, entry=None):
             found = {"name": name, "status": status, "duration": 0, "suite": suite}
@@ -206,9 +207,9 @@ class Cases:
             said = f"{MANIFEST_CASE} could not be read: {manifest.unreadable}"
             message = f"{row.result}; {said}" if verdict.unjudged else said
             own = [case(MANIFEST_CASE, "failed", message)]
-            return own + [case(fault, "failed", fault) for _, fault in verdict.named]
+            return described(own + [case(fault, "failed", fault) for _, fault in verdict.named])
         if verdict.unjudged is not None:
-            return [case(entry["name"], "failed", row.result, entry) for entry in manifest.entries]
+            return described([case(entry["name"], "failed", row.result, entry) for entry in manifest.entries])
 
         by_iri = {entry["iri"]: entry for entry in manifest.entries}
         faults = {iri: [] for iri in by_iri}
@@ -226,7 +227,7 @@ class Cases:
         nothing_reported = not verdict.reported
         cases = []
         for iri, entry in by_iri.items():
-            words = sorted(set(outcomes[iri]))
+            words = list(dict.fromkeys(outcomes[iri]))
             if faults[iri]:
                 status, message = "failed", "; ".join(faults[iri])
             elif not words:
@@ -239,9 +240,9 @@ class Cases:
                 status, message = "failed", f"{entry['name']} is reported {', '.join(words)}"
             found = case(entry["name"], status, message, entry)
             if words:
-                found["extra"]["outcome"] = ", ".join(words)
+                found["extra"]["outcome"] = words
             cases.append(found)
-        return cases + own
+        return described(cases + own)
 
 
 def ctrf(record, cases):

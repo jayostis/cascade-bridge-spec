@@ -59,11 +59,24 @@ def faults_judged(world, host=1):
     return judge_report(report, world.workspace / "adapter").faults
 
 
-def engine_writing(world, outcomes, more=""):
-    """An engine beside the adapter whose one host writes a report of these outcomes, whatever the adapter says."""
+def manifest_address(world):
+    return (world.workspace / "adapter" / "fixtures" / "manifest.ttl").resolve().as_uri()
+
+
+def assertion(world, test, outcome):
+    return (
+        f"[] a earl:Assertion ; earl:test <{manifest_address(world)}#{test}> ; "
+        f"earl:result [ a earl:TestResult ; earl:outcome earl:{outcome} ] .\n"
+    )
+
+
+def engine_writing(world, outcomes, more="", manifest=None):
+    """An engine beside the adapter whose one host writes a report of these outcomes, whatever the adapter says.
+
+    The report names the tests at the manifest's address, or at `manifest` where another is given.
+    """
     engine = world.engine_beside_adapter()
-    manifest = (world.workspace / "adapter" / "fixtures" / "manifest.ttl").resolve().as_uri()
-    command = writing(world.root, earl_report(manifest, outcomes) + more)
+    command = writing(world.root, earl_report(manifest or manifest_address(world), outcomes) + more)
     write_compatibility(engine, engine_document([world.url("adapter")], command=command))
     return engine
 
@@ -79,9 +92,10 @@ def clean(shared_world):
 class TestAReportOfEveryCaseAnEngineRan:
     """A report of every case an engine ran · report.ctrf.json, report.md
 
-    A compatibility run that has an engine run an adapter's test manifest writes each case's result on each engine
-    host into its results directory: `report.ctrf.json` for a tool, `report.md` for a person. A case fails here
-    exactly when the judge holds a fault against it, so the report and the table never disagree.
+    A case is one entry of an adapter's test manifest, run on one engine host. A compatibility run that has an engine
+    run the manifest writes each case's result into its results directory: `report.ctrf.json` for a tool, `report.md`
+    for a person. A case fails here exactly when the judge finds a fault against it, so the report and the table
+    never disagree.
     """
 
     class TestGivenAnAdapterWhoseEveryCaseTheEnginesOneHostJudgesWell:
@@ -126,7 +140,7 @@ class TestAReportOfEveryCaseAnEngineRan:
 
             for name, outcome in PASSING.items():
                 word = outcome.removeprefix("earl:")
-                assert by_name[name]["extra"]["outcome"] == word
+                assert by_name[name]["extra"]["outcome"] == [word]
                 assert by_name[name]["status"] == {"passed": "passed", "cantTell": "other", "untested": "skipped"}[word]
 
         def test_counts_the_cases_of_each_status_in_the_summary(self, clean):
@@ -198,6 +212,47 @@ class TestAReportOfEveryCaseAnEngineRan:
                 assert {case["message"] for case in cases_of(world)} == {fault}
                 assert sum(case["status"] == "failed" for case in cases_of(world)) == 11
 
+    class TestGivenAnEntryWhoseOutcomesDiffer:
+        """given an entry the report gives more than one outcome
+
+        One status where every outcome agrees, and `other` where they do not.
+        """
+
+        @pytest.mark.parametrize(
+            ("words", "status"),
+            [(["passed", "untested"], "other"), (["cantTell", "passed"], "other"), (["passed", "passed"], "passed")],
+            ids=["passed and untested", "cantTell and passed", "passed twice"],
+        )
+        def test_reports_other_unless_every_outcome_agrees(self, world, words, status):
+            """reports `other` unless every outcome agrees, and lists the outcomes in `extra.outcome` in report order"""
+            outcomes = PASSING | {"example-0001": f"earl:{words[0]}"}
+            more = "".join(assertion(world, "example-0001", word) for word in words[1:])
+            engine = engine_writing(world, outcomes, more)
+
+            world.tool(engine)
+
+            case = case_named(world, "example-0001")
+            assert case["status"] == status
+            assert case["extra"]["outcome"] == list(dict.fromkeys(words))
+            assert "message" not in case
+
+    class TestGivenAReportWhoseTestsAreNamedUnderAnotherAddress:
+        """given a report that names the tests at an address other than the manifest's
+
+        A report written where the adapter was checked out elsewhere: each test is matched to its entry by its path.
+        """
+
+        def test_matches_each_test_to_its_entry_by_the_path_within_the_adapter(self, world):
+            outcomes = PASSING | {"example-0001": "earl:failed"}
+            engine = engine_writing(world, outcomes, manifest="file:///elsewhere/adapter/fixtures/manifest.ttl")
+
+            world.tool(engine, expected=1)
+
+            assert case_named(world, "example-0001")["status"] == "failed"
+            assert case_named(world, "example-0001")["message"] == FAILED_SENTENCE
+            assert case_named(world, "example-0003")["status"] == "passed"
+            assert case_named(world, "example-0002")["status"] == "other"
+
     class TestGivenAHostWhoseReportCannotBeJudged:
         """given a host whose report cannot be judged
 
@@ -244,6 +299,18 @@ class TestAReportOfEveryCaseAnEngineRan:
             assert case["status"] == "failed"
             assert case["message"].startswith("the adapter's test manifest could not be read:")
             assert case["suite"] == ["adapter", NATIVE]
+            description = case["extra"]["levels"][0]["description"]
+            assert "could not be read" in description
+            assert "0 cases" not in description
+
+    class TestGivenAFaultNamingNoEntry:
+        def test_counts_its_case_in_the_manifests_description(self, world):
+            engine = engine_writing(world, PASSING, "[] earl:result [ earl:outcome earl:failed ] .\n")
+
+            world.tool(engine, expected=1)
+
+            assert len(cases_of(world)) == 11
+            assert case_named(world, "example-0001")["extra"]["levels"][0]["description"].startswith("11 cases")
 
     class TestGivenARunInWhichNoEngineRunsAnAdapter:
         """given a run in which no engine runs an adapter
@@ -279,7 +346,8 @@ class TestAReportOfEveryCaseAnEngineRan:
         """`report.md`"""
 
         @pytest.fixture(scope="class")
-        def written(self, shared_world):
+        @classmethod
+        def written(cls, shared_world):
             """One engine with a clean host listed first and a failing one second."""
             engine = shared_world.engine_beside_adapter(
                 host=[a_host("second", canned="passed"), a_host("native", canned="failed")]
@@ -319,7 +387,8 @@ class TestAReportOfEveryCaseAnEngineRan:
         """given a run in CI"""
 
         @pytest.fixture(scope="class")
-        def ran(self, shared_world):
+        @classmethod
+        def ran(cls, shared_world):
             engine, event = shared_world.engine_under_test()
             variables = {
                 **shared_world.ci(event=event),

@@ -76,9 +76,7 @@ def judge_report(path, adapter):
     except Exception as error:
         return Verdict(unjudged=f"its report does not parse as Turtle: {first_line(str(error))}")
     reported = outcomes_reported(graph)
-    tally = {}
-    for _, name in reported:
-        tally[name] = tally.get(name, 0) + 1
+    tally = tally_of(reported)
     if adapter is None:
         return with_faults(Verdict(tally=tally, reported=reported), graph)
 
@@ -90,6 +88,20 @@ def judge_report(path, adapter):
     return with_faults(
         Verdict(tally=tally, reported=reported, tests=count_of_tests(manifest_path, manifest)), graph + manifest
     )
+
+
+def tally_of(reported):
+    """Each test counted once, under the one word every outcome it is given agrees on, or `cantTell` for a mix; a result naming no test is counted on its own."""
+    words = {}
+    counted = [name for test, name in reported if test is None]
+    for test, name in reported:
+        if test is not None:
+            words.setdefault(test, set()).add(name)
+    counted += [next(iter(named)) if len(named) == 1 else "cantTell" for named in words.values()]
+    tally = {}
+    for name in counted:
+        tally[name] = tally.get(name, 0) + 1
+    return tally
 
 
 def outcomes_reported(graph):

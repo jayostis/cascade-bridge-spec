@@ -82,6 +82,14 @@
       "definition": "a Turtle file in which an adapter says, path by path, what becomes of each element and attribute of a source record."
     },
     {
+      "term": "action",
+      "aliases": [
+        "actions",
+        "start action"
+      ],
+      "definition": "a reusable step of a GitHub workflow, kept in a folder of this repository; the start action is `.github/actions/start`."
+    },
+    {
       "term": "adapter",
       "aliases": [
         "adapters",
@@ -266,7 +274,7 @@
         "entries",
         "path entry"
       ],
-      "definition": "one line of an accounting: a source path, its verdict, and what the verdict requires beside it."
+      "definition": "one line of an accounting: a source path, its verdict, and what the verdict requires beside it; in a test manifest, one item of its list, which is a test, or an input-only entry."
     },
     {
       "term": "envelope",
@@ -376,6 +384,14 @@
       "definition": "a program that times an engine on the benchmark inputs and writes the results file `bench/result.schema.json` describes."
     },
     {
+      "term": "hold",
+      "aliases": [
+        "holds",
+        "held"
+      ],
+      "definition": "of a report, to be one the judge finds no fault in."
+    },
+    {
       "term": "host",
       "aliases": [
         "hosts"
@@ -415,6 +431,15 @@
     {
       "term": "JSONPath",
       "definition": "a language for picking values out of a JSON document, such as `$.entry[*]`."
+    },
+    {
+      "term": "judge",
+      "aliases": [
+        "judges",
+        "judged",
+        "judging"
+      ],
+      "definition": "the part of the compatibility tool that reads an EARL report and the adapter's test manifest and prints the faults it finds, or none; `engine/faults-of-a-report.rq` is the query it asks."
     },
     {
       "term": "label",
@@ -557,6 +582,13 @@
       "aliases": [
         "outcomes"
       ]
+    },
+    {
+      "term": "output",
+      "aliases": [
+        "outputs"
+      ],
+      "definition": "a named value an action gives back to the workflow that ran it, which a later step can read."
     },
     {
       "term": "placeholder",
