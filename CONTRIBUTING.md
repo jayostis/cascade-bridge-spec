@@ -4,8 +4,7 @@ Thank you for helping. This repository is the Cascade Bridge Specification: the 
 and every Bridge follows. It is a draft; no compatibility is promised before a numbered v1.
 [`CLAUDE.md`](CLAUDE.md) holds the rules a change here follows, and [`README.md`](README.md) says where to start.
 
-Please follow the organisation's code of conduct and security policy. Report a security problem privately, as that
-policy says, never in a public issue.
+Report a security problem privately, by email to contact@cascadeprotocol.org, never in a public issue.
 
 ## Set up
 
