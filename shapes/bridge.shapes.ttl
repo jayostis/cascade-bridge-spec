@@ -744,6 +744,15 @@
     sh:message "An entry carries at most one bridge:lookupNamesGap, the gap a value outside its bridge:lookupIn opens: a gap of the adapter's bridge:gapScheme, by IRI."
   ] .
 
+<#Concern> a sh:NodeShape ;
+  sh:targetSubjectsOf bridge:concern ;
+  sh:property [
+    sh:path bridge:concern ;
+    sh:maxCount 1 ;
+    sh:in ( bridge:concernCodes bridge:concernDates bridge:concernReferences bridge:concernIdentity bridge:concernText ) ;
+    sh:message "A bridge:concern is at most one, one of bridge:concernCodes, bridge:concernDates, bridge:concernReferences, bridge:concernIdentity, bridge:concernText."
+  ] .
+
 <#EntryLookingItsValuesUp> a sh:NodeShape ;
   sh:target [
     a sh:SPARQLTarget ;

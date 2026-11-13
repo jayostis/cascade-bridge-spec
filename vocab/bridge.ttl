@@ -334,6 +334,40 @@ bridge:versionNotKept a skos:Concept ;
   skos:inScheme bridge:gapKinds ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
+bridge:concern a owl:ObjectProperty ;
+  rdfs:label "concern"@en ;
+  rdfs:range skos:Concept ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:concerns a skos:ConceptScheme ;
+  skos:prefLabel "What an entry, a gap or a test case is about"@en ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:concernCodes a skos:Concept ;
+  skos:prefLabel "codes and the code systems they come from"@en ;
+  skos:inScheme bridge:concerns ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:concernDates a skos:Concept ;
+  skos:prefLabel "dates and times"@en ;
+  skos:inScheme bridge:concerns ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:concernReferences a skos:Concept ;
+  skos:prefLabel "references from one record to another"@en ;
+  skos:inScheme bridge:concerns ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:concernIdentity a skos:Concept ;
+  skos:prefLabel "who the patient is"@en ;
+  skos:inScheme bridge:concerns ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:concernText a skos:Concept ;
+  skos:prefLabel "free text"@en ;
+  skos:inScheme bridge:concerns ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
 bridge:testManifest a owl:ObjectProperty ;
   rdfs:label "test manifest"@en ;
   rdfs:domain bridge:Adapter ;

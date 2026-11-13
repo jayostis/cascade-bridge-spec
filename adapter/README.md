@@ -14,3 +14,16 @@ An adapter is a package of data for one XML or JSON source format, with no code 
 A failing run prints what was wanted. The rest of this directory is what none of
 the above can show: [`ro-crate-metadata.md`](ro-crate-metadata.md),
 [`fixtures/README.md`](fixtures/README.md), [`fixtures/manifest.md`](fixtures/manifest.md).
+
+## Saying what a mapping is about
+
+A reader asks how an adapter handles codes, dates, references, who the patient is or free text. Tag what answers
+with `bridge:concern`, one concept of the scheme `bridge:concerns`
+(`https://ns.cascadeprotocol.org/bridge/v1-draft#concerns`): `bridge:concernCodes`, `bridge:concernDates`,
+`bridge:concernReferences`, `bridge:concernIdentity` or `bridge:concernText`. The tag is optional and at most one, on
+
+| what is tagged | where it is written | what checks it |
+|---|---|---|
+| an accounting entry | the `bridge:PathEntry` in the file `bridge:sourceAccounting` names | [`profile/must/source_accounting.py`](profile/must/source_accounting.py) |
+| a gap | the `skos:Concept` in the file `bridge:gapScheme` names | [`profile/must/gap_scheme.py`](profile/must/gap_scheme.py) |
+| a test case | the test in the manifest `bridge:testManifest` names | [`profile/must/shapes.py`](profile/must/shapes.py) |
