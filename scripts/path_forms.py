@@ -1,7 +1,5 @@
-"""Reads the forms in which an adapter's envelopes write one place.
-
-forms = path_forms.read(graph, adapter)        # the crate's graph and its bridge:Adapter node
-form, place = path_forms.place_of(forms, path)  # a bridge:sourcePath, the form it was written in, and the place
+"""forms = path_forms.read(graph, adapter)         # the crate's graph and its bridge:Adapter node
+form, place = path_forms.place_of(forms, path)  # a bridge:sourcePath
 """
 
 from dataclasses import dataclass
@@ -20,14 +18,15 @@ class Form:
 
 
 def read(graph, adapter):
-    """The forms of every envelope the adapter declares, the longest prefix first; an envelope that declares no
-    path is the form with no prefix."""
+    """The forms the adapter's envelopes declare, the longest prefix first."""
     forms = []
     for envelope in graph.objects(adapter, URIRef(BRIDGE + "envelope")):
         content, contained, kind = (
             graph.value(envelope, URIRef(BRIDGE + term))
-            for term in ("pathOfContentInRecord", "pathOfContainedContent", "pathOfRecordKind")
+            for term in ("pathOfContentInRecord", "pathOfContainedContentBelowContent", "pathOfRecordKindBelowContent")
         )
+        if content is contained is kind is None:
+            continue
         content = "" if content is None else str(content)
         for prefix, is_contained in ((content, False), (None if contained is None else content + str(contained), True)):
             if prefix is not None:
@@ -36,8 +35,7 @@ def read(graph, adapter):
 
 
 def place_of(forms, path):
-    """The form a path was written in and the path with that form's prefix taken off, or no form and the path as it
-    is. The longest prefix that a / follows is the form."""
+    """The form a path was written in, the longest prefix a / follows, and the path after it; else no form and the path."""
     for form in forms:
         if path.startswith(form.prefix + "/"):
             return form, path[len(form.prefix) :]

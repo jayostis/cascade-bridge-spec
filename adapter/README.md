@@ -32,17 +32,19 @@ with `bridge:concern`, one concept of the scheme `bridge:concerns`
 
 Some formats write one place several ways: FHIR writes the same element at the top of a resource, in a Bundle's entry, in a
 resource another contains and in one a Bundle's entry contains. A tool reading the adapter, and an explorer of it, must be
-told these are one place. An envelope says it with up to three optional properties, each a path of the source format
-(for JSON, as in [`engine/sparql.md`](../engine/sparql.md)), checked by [`profile/must/envelope.ttl`](profile/must/envelope.ttl):
+told these are one place. An envelope says it with optional properties, each a path of the source format
+(for JSON, as in [`engine/sparql.md`](../engine/sparql.md)), defined in [`vocab/bridge.ttl`](../vocab/bridge.ttl) and checked by
+[`profile/must/envelope.ttl`](profile/must/envelope.ttl):
 
-| property | the path it gives | FHIR R4, Bundle envelope | FHIR R4, resource envelope |
-|---|---|---|---|
-| `bridge:pathOfContentInRecord` | where the format's own content begins in a record read in the envelope; empty where the record is the content | `/resource` | empty |
-| `bridge:pathOfContainedContent` | where, below that content, the content of a nested record begins | `/contained` | `/contained` |
-| `bridge:pathOfRecordKind` | where, below the content, the record names its kind; the same below contained content | `/resourceType` | `/resourceType` |
+| property | FHIR R4, Bundle envelope | FHIR R4, resource envelope |
+|---|---|---|
+| `bridge:pathOfContentInRecord` | `/resource` | empty |
+| `bridge:pathOfContainedContentBelowContent` | `/contained` | `/contained` |
+| `bridge:pathOfRecordKindBelowContent` | `/resourceType` | `/resourceType` |
 
 A `bridge:sourcePath` that begins with a form's prefix and a `/` is that prefix, the form, and the place after it; the
-longest prefix is the form. The forms an adapter has are the content form of each of its envelopes, and the contained
-form of each that gives a contained path. An adapter that declares nothing has one form, the path itself. Each term is
-named in the crate's `@context`. [`scripts/path_forms.py`](../scripts/path_forms.py) reads the forms and the place of a path
-from a crate's graph.
+longest prefix is the form. An envelope's content form has its `bridge:pathOfContentInRecord` as its prefix, and its contained
+form that and its `bridge:pathOfContainedContentBelowContent`. An envelope that declares none of the three has no form, and an
+adapter with no form reads each path as its own place. No two envelopes of an adapter declare the same prefix, and a prefix
+must not equal a real member name of the source in another form: a `resource` member of a record read in the resource
+envelope would make `/resource/code` read as the Bundle form.

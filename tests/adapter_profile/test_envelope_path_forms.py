@@ -6,14 +6,14 @@ import path_forms
 from _terms import BRIDGE
 from adapter_profile_world import envelope_named, shape_file_messages
 
-TERMS = ("pathOfContentInRecord", "pathOfContainedContent", "pathOfRecordKind")
+TERMS = ("pathOfContentInRecord", "pathOfContainedContentBelowContent", "pathOfRecordKindBelowContent")
 
 
 def declare(crate, envelope, content=None, contained=None, kind=None):
     for term, value in (
         (BRIDGE.pathOfContentInRecord, content),
-        (BRIDGE.pathOfContainedContent, contained),
-        (BRIDGE.pathOfRecordKind, kind),
+        (BRIDGE.pathOfContainedContentBelowContent, contained),
+        (BRIDGE.pathOfRecordKindBelowContent, kind),
     ):
         if value is not None:
             crate.graph.set((envelope_named(crate, envelope), term, Literal(value)))
@@ -28,10 +28,10 @@ def declared_wrapped(crate):
 class TestWhereAnEnvelopesContentStandsInAPath:
     """Where an envelope's content stands in a path · adapter/profile/must/envelope.ttl, scripts/path_forms.py
 
-    A format can write one place four ways: in a record that is its content, in a record that wraps it, and in each of
-    those inside a resource it contains. An envelope says where the content stands in its records, where the content
-    of other records is contained in it, and which member names the kind of record, so that a tool reading only the
-    declaration treats the forms as one place.
+    A format can write one place in a record that is its content, in a record that wraps it, and in each of those inside
+    a record it contains. An envelope says where the content stands in its records, where the content of records nested
+    in it stands, and which member names the kind of record, so that a tool reading only the declaration treats the
+    forms as one place.
     """
 
     class TestGivenEnvelopesThatDeclareIt:
@@ -44,7 +44,7 @@ class TestWhereAnEnvelopesContentStandsInAPath:
             crate.graph.set(
                 (
                     envelope,
-                    BRIDGE.pathOfContainedContent,
+                    BRIDGE.pathOfContainedContentBelowContent,
                     Literal("/*[local-name()='contained' and namespace-uri()='urn:example:ns']"),
                 )
             )
@@ -62,30 +62,45 @@ class TestWhereAnEnvelopesContentStandsInAPath:
             ("term", "value", "wanted"),
             [
                 ("pathOfContentInRecord", "entry", "bridge:pathOfContentInRecord"),
-                ("pathOfContainedContent", "", "bridge:pathOfContainedContent"),
-                ("pathOfRecordKind", "/kind/", "bridge:pathOfRecordKind"),
-                ("pathOfContainedContent", "/contained//items", "bridge:pathOfContainedContent"),
-                ("pathOfRecordKind", "/kind~2", "bridge:pathOfRecordKind"),
+                ("pathOfContainedContentBelowContent", "", "bridge:pathOfContainedContentBelowContent"),
+                ("pathOfRecordKindBelowContent", "/kind/", "bridge:pathOfRecordKindBelowContent"),
+                (
+                    "pathOfContainedContentBelowContent",
+                    "/contained//items",
+                    "bridge:pathOfContainedContentBelowContent",
+                ),
+                ("pathOfRecordKindBelowContent", "/kind~2", "bridge:pathOfRecordKindBelowContent"),
             ],
         )
         def test_reports_a_path_that_is_not_one_the_source_format_writes(self, json_crate, term, value, wanted):
             json_crate.graph.set((envelope_named(json_crate, "set"), BRIDGE[term], Literal(value)))
             assert wanted in shape_file_messages(json_crate, "envelope.ttl")
 
+        def test_reports_two_envelopes_that_declare_the_same_prefix(self, json_crate):
+            declare(json_crate, "record", content="/entry")
+            declare(json_crate, "set", content="/entry")
+            assert "No two envelopes" in shape_file_messages(json_crate, "envelope.ttl")
+
+        def test_names_the_empty_reference_token_in_what_it_reports_of_a_path(self, json_crate):
+            declare(json_crate, "set", contained="/a//b")
+            assert "no empty reference token" in shape_file_messages(json_crate, "envelope.ttl")
+
         def test_reports_a_second_path_for_the_same_thing(self, json_crate):
             envelope = envelope_named(json_crate, "set")
-            json_crate.graph.add((envelope, BRIDGE.pathOfContainedContent, Literal("/contained")))
-            json_crate.graph.add((envelope, BRIDGE.pathOfContainedContent, Literal("/included")))
-            assert "at most one bridge:pathOfContainedContent" in shape_file_messages(json_crate, "envelope.ttl")
+            json_crate.graph.add((envelope, BRIDGE.pathOfContainedContentBelowContent, Literal("/contained")))
+            json_crate.graph.add((envelope, BRIDGE.pathOfContainedContentBelowContent, Literal("/included")))
+            assert "at most one bridge:pathOfContainedContentBelowContent" in shape_file_messages(
+                json_crate, "envelope.ttl"
+            )
 
         def test_reports_a_record_kind_that_stands_inside_the_contained_content(self, json_crate):
             declare(json_crate, "set", contained="/contained", kind="/contained/kind")
-            assert "bridge:pathOfRecordKind" in shape_file_messages(json_crate, "envelope.ttl")
+            assert "bridge:pathOfRecordKindBelowContent" in shape_file_messages(json_crate, "envelope.ttl")
 
         def test_reports_a_path_of_an_xml_adapter_that_does_not_begin_with_a_step(self, crate):
             envelope = next(crate.graph.objects(crate.root, BRIDGE.envelope))
-            crate.graph.set((envelope, BRIDGE.pathOfRecordKind, Literal("kind")))
-            assert "bridge:pathOfRecordKind" in shape_file_messages(crate, "envelope.ttl")
+            crate.graph.set((envelope, BRIDGE.pathOfRecordKindBelowContent, Literal("kind")))
+            assert "bridge:pathOfRecordKindBelowContent" in shape_file_messages(crate, "envelope.ttl")
 
     class TestGivenPathsInTwoFormsOfOnePlace:
         def test_resolves_a_content_path_and_the_same_path_in_a_wrapped_record_to_one_place(self, json_crate):
@@ -126,8 +141,8 @@ class TestWhereAnEnvelopesContentStandsInAPath:
             ]
 
         def test_leaves_a_path_in_no_form_of_a_declared_wrapper_as_its_own_place(self, json_crate):
-            for name in ("set", "record", "listing", "archive"):
-                declare(json_crate, name, content="/entry")
+            for name, prefix in (("set", "/entry"), ("record", "/a"), ("listing", "/b"), ("archive", "/c")):
+                declare(json_crate, name, content=prefix)
             forms = path_forms.read(json_crate.graph, json_crate.root)
             assert path_forms.place_of(forms, "/fullUrl") == (None, "/fullUrl")
 
@@ -139,6 +154,7 @@ class TestWhereAnEnvelopesContentStandsInAPath:
             assert (form.prefix, place) == ("/entry/contained", "/id")
 
     class TestGivenAnAdapterThatDeclaresNothing:
-        def test_reads_each_path_as_its_own_place(self, crate):
+        def test_reads_no_form_and_each_path_as_its_own_place(self, crate):
             forms = path_forms.read(crate.graph, crate.root)
+            assert forms == []
             assert path_forms.place_of(forms, "/a/b")[1] == "/a/b"
