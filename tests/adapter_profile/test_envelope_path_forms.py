@@ -118,7 +118,7 @@ class TestWhereAnEnvelopesContentStandsInAPath:
         def test_reads_the_path_that_names_the_kind_of_record_in_each_form(self, json_crate):
             declared_wrapped(json_crate)
             forms = path_forms.read(json_crate.graph, json_crate.root)
-            assert sorted(form.kind for form in forms) == [
+            assert sorted(form.kind for form in forms if form.kind) == [
                 "/contained/kind",
                 "/entry/contained/kind",
                 "/entry/kind",
@@ -126,8 +126,8 @@ class TestWhereAnEnvelopesContentStandsInAPath:
             ]
 
         def test_leaves_a_path_in_no_form_of_a_declared_wrapper_as_its_own_place(self, json_crate):
-            declare(json_crate, "record", content="/entry")
-            declare(json_crate, "set", content="/entry")
+            for name in ("set", "record", "listing", "archive"):
+                declare(json_crate, name, content="/entry")
             forms = path_forms.read(json_crate.graph, json_crate.root)
             assert path_forms.place_of(forms, "/fullUrl") == (None, "/fullUrl")
 

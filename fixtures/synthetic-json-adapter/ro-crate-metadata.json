@@ -21,6 +21,9 @@
       "bridge:docRootMemberName": "bridge:docRootMemberName",
       "bridge:docRootMemberValue": "bridge:docRootMemberValue",
       "bridge:jsonPathOfEachRecord": "bridge:jsonPathOfEachRecord",
+      "bridge:pathOfContentInRecord": "bridge:pathOfContentInRecord",
+      "bridge:pathOfContainedContent": "bridge:pathOfContainedContent",
+      "bridge:pathOfRecordKind": "bridge:pathOfRecordKind",
       "bridge:documentSchema": "bridge:documentSchema"
     }
   ],
@@ -267,7 +270,10 @@
       "@type": "bridge:Envelope",
       "name": "record",
       "bridge:docRootMemberName": "kind",
-      "bridge:jsonPathOfEachRecord": "$"
+      "bridge:jsonPathOfEachRecord": "$",
+      "bridge:pathOfContentInRecord": "",
+      "bridge:pathOfContainedContent": "/contained",
+      "bridge:pathOfRecordKind": "/kind"
     },
     {
       "@id": "#envelope-listing",

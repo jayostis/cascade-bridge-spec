@@ -102,6 +102,27 @@ bridge:jsonPathOfEachRecord a owl:DatatypeProperty ;
   rdfs:range xsd:string ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
+bridge:pathOfContentInRecord a owl:DatatypeProperty ;
+  rdfs:label "path of content in record"@en ;
+  rdfs:comment "Where, in a record read in the envelope, the content the source format defines begins, as a path that source path writes; the empty string where the record is the content. A bridge:sourcePath that begins with it, then a /, is the rest of that path in this form."@en ;
+  rdfs:domain bridge:Envelope ;
+  rdfs:range xsd:string ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:pathOfContainedContent a owl:DatatypeProperty ;
+  rdfs:label "path of contained content"@en ;
+  rdfs:comment "Where, below the content of a record, the content of a record the source format nests in it begins. The paths below it are the paths of that content, so a place has one more form."@en ;
+  rdfs:domain bridge:Envelope ;
+  rdfs:range xsd:string ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:pathOfRecordKind a owl:DatatypeProperty ;
+  rdfs:label "path of record kind"@en ;
+  rdfs:comment "Where, below the content of a record, the source names the record's kind, such as a FHIR resource's resourceType; the same below contained content."@en ;
+  rdfs:domain bridge:Envelope ;
+  rdfs:range xsd:string ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
 bridge:mapping a owl:ObjectProperty ;
   rdfs:label "mapping"@en ;
   rdfs:comment "A SPARQL 1.1 CONSTRUCT a Bridge runs on each record. A record's graph is the union of every mapping's results."@en ;
