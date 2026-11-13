@@ -1,8 +1,10 @@
+import pytest
 from rdflib import BNode, Literal
 from rdflib.namespace import RDF
 
 import shapes
 from _terms import BRIDGE, MF
+from adapter_profile_world import AT_MOST_ONE_CONCERN, THE_CONCERNS
 
 
 def result_of_a_conversion_test(crate):
@@ -30,6 +32,22 @@ class TestTheCrateAndItsTestManifestAsOneGraph:
     class TestGivenACrateAndManifestThatConform:
         def test_reports_nothing_for_a_crate_and_manifest_that_conform(self, crate):
             assert not list(shapes.violations(crate))
+
+    class TestGivenATestTaggedWithItsConcern:
+        @pytest.mark.parametrize("concern", THE_CONCERNS)
+        def test_reports_nothing_for_a_test_tagged_with_one_of_the_five_concerns(self, crate, concern):
+            crate.graph.add((an_identity_relation_test(crate), BRIDGE.concern, BRIDGE[concern.removeprefix("bridge:")]))
+            assert not list(shapes.violations(crate))
+
+        @pytest.mark.parametrize(
+            "concerns",
+            [["concernCode"], ["concernCodes", "concernDates"]],
+            ids=["outside the scheme of the five", "two concerns"],
+        )
+        def test_reports_a_test_whose_concern_is_not_exactly_one_of_the_five(self, crate, concerns):
+            for concern in concerns:
+                crate.graph.add((an_identity_relation_test(crate), BRIDGE.concern, BRIDGE[concern]))
+            assert AT_MOST_ONE_CONCERN in "\n".join(shapes.violations(crate))
 
     class TestGivenACrateOrManifestAtFaultInOneWay:
         def test_reports_a_manifest_that_does_not_point_back_at_the_adapter(self, crate):

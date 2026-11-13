@@ -3,6 +3,7 @@ from rdflib.namespace import RDF, SKOS
 
 import declared_terms
 from _terms import BRIDGE
+from adapter_profile_world import THE_CONCERNS
 
 CONCEPTS_OF_GAP_KINDS = {
     BRIDGE.noPredicate,
@@ -49,6 +50,18 @@ class TestTermsAnAdapterMayWrite:
             vocabulary = Graph().parse(declared_terms.VOCABULARY, format="turtle")
             assert (BRIDGE.gapKinds, RDF.type, SKOS.ConceptScheme) in vocabulary
             assert set(vocabulary.subjects(SKOS.inScheme, BRIDGE.gapKinds)) == CONCEPTS_OF_GAP_KINDS
+
+        def test_declares_the_five_concerns_in_the_scheme_bridge_concerns_and_no_other_concept_there(self):
+            """declares the five concerns in the scheme `bridge:concerns`, and no other concept there"""
+            vocabulary = Graph().parse(declared_terms.VOCABULARY, format="turtle")
+            assert (BRIDGE.concerns, RDF.type, SKOS.ConceptScheme) in vocabulary
+            assert {str(concern) for concern in vocabulary.subjects(SKOS.inScheme, BRIDGE.concerns)} == {
+                str(BRIDGE[concern.removeprefix("bridge:")]) for concern in THE_CONCERNS
+            }
+
+        def test_declares_bridge_concern_by_which_an_entry_a_gap_or_a_test_names_its_concern(self):
+            """declares `bridge:concern`, by which an entry, a gap or a test names its concern"""
+            assert str(BRIDGE.concern) in declared_terms.declared()
 
         def test_declares_bridge_closedby_by_which_a_gap_names_the_term_that_would_close_it(self):
             """declares `bridge:closedBy`, by which a gap names the term that would close it"""

@@ -2,6 +2,7 @@ import pytest
 
 from _findings import SHAPES
 from adapter_profile_world import (
+    AT_MOST_ONE_CONCERN,
     CARRIED,
     CARRIED_IN_PART,
     CONSUMED,
@@ -9,6 +10,7 @@ from adapter_profile_world import (
     NO_HOME,
     PREFIXES_OF_AN_ACCOUNTING,
     REDUNDANT_WITH,
+    THE_CONCERNS,
     said_over,
 )
 
@@ -43,6 +45,7 @@ def entry(
     lookup_in=None,
     lookup_names_gap=None,
     carried_as=None,
+    concern=None,
 ):
     written = ["a bridge:PathEntry"] if typed else []
     written += [
@@ -56,6 +59,7 @@ def entry(
             ("bridge:lookupIn", lookup_in),
             ("bridge:lookupNamesGap", lookup_names_gap),
             ("bridge:carriedAs", carried_as),
+            ("bridge:concern", concern),
         )
         if value is not None
     ]
@@ -108,6 +112,15 @@ ONE_SOURCE_RECORD_TYPE = (
 
 REJECTED = {
     "an entry carrying no verdict": (ONE_VERDICT, entry(verdict=None)),
+    "an entry whose concern is outside the scheme of the five": (
+        AT_MOST_ONE_CONCERN,
+        entry(concern="bridge:concernCode"),
+    ),
+    "an entry whose concern is a string": (AT_MOST_ONE_CONCERN, entry(concern='"codes"')),
+    "an entry carrying two concerns": (
+        AT_MOST_ONE_CONCERN,
+        entry(concern="bridge:concernCodes, bridge:concernDates"),
+    ),
     "an entry carrying two verdicts": (ONE_VERDICT, entry(verdict=f"{CARRIED}, {CONSUMED}")),
     "an entry whose verdict is outside the scheme of the six": (ONE_VERDICT, entry(verdict="ex:mostly-carried")),
     "an entry carrying no source path": (ONE_SOURCE_PATH, entry(path=None)),
@@ -274,6 +287,11 @@ class TestTheFormOfAnAccountingEntry:
         @pytest.mark.parametrize("verdict", A_MINIMAL_ENTRY_OF_EACH_VERDICT)
         def test_conforms_under_each_of_the_six_verdicts(self, verdict):
             assert not said_about(minimal(verdict))
+
+    class TestGivenAnEntryTaggedWithItsConcern:
+        @pytest.mark.parametrize("concern", THE_CONCERNS)
+        def test_conforms_under_each_of_the_five_concerns(self, concern):
+            assert not said_about(entry(concern=concern))
 
     class TestGivenACarriedEntryNamingWhatItIsCarriedAs:
         @pytest.mark.parametrize("verdict", [CARRIED, CARRIED_IN_PART])

@@ -3,6 +3,7 @@ from rdflib import URIRef
 
 import gap_scheme
 from _terms import BRIDGE
+from adapter_profile_world import AT_MOST_ONE_CONCERN, THE_CONCERNS
 
 GAP_SCHEME = "vocab/example-gaps.ttl"
 
@@ -30,6 +31,7 @@ def scheme_of_one_gap(
     broader="skos:broader bridge:noPredicate",
     closed_by=None,
     severity=None,
+    concern=None,
 ):
     written = ["ex:no-term-for-a-free-text-note a skos:Concept"]
     written += [statement for statement in (label, in_scheme, broader) if statement is not None]
@@ -37,6 +39,8 @@ def scheme_of_one_gap(
         written.append(f"bridge:closedBy {closed_by}")
     if severity is not None:
         written.append(f"sh:resultSeverity {severity}")
+    if concern is not None:
+        written.append(f"bridge:concern {concern}")
     return PREFIXES + "\n" + " ;\n  ".join(written) + " .\n"
 
 
@@ -77,6 +81,16 @@ class TestAnAdaptersGapScheme:
             assert THE_GAP in said
             assert "sh:resultSeverity" in said
             assert not said_about(package, severity="sh:Violation")
+
+        @pytest.mark.parametrize(
+            "concern",
+            ["bridge:concernCode", '"codes"', "bridge:concernCodes, bridge:concernDates"],
+            ids=["outside the scheme of the five", "a string", "two concerns"],
+        )
+        def test_reports_a_gap_whose_concern_is_not_exactly_one_of_the_five(self, package, concern):
+            said = said_about(package, concern=concern)
+            assert THE_GAP in said
+            assert AT_MOST_ONE_CONCERN in said
 
         def test_reports_an_adapter_that_names_a_findings_query_and_no_gap_scheme(self, crate):
             crate.graph.remove((crate.root, BRIDGE.gapScheme, None))
@@ -182,6 +196,10 @@ class TestAnAdaptersGapScheme:
             crate.graph.remove((crate.root, BRIDGE.findingsQuery, None))
             crate.graph.remove((crate.root, BRIDGE.gapScheme, None))
             assert not list(gap_scheme.faulty(crate))
+
+        @pytest.mark.parametrize("concern", THE_CONCERNS)
+        def test_reports_nothing_for_a_gap_tagged_with_one_of_the_five_concerns(self, package, concern):
+            assert not said_about(package, concern=concern)
 
         def test_reports_nothing_for_a_gap_carrying_a_label_its_scheme_one_kind_and_a_closing_term(self, package):
             """reports nothing for a gap carrying a label, its scheme, one kind and a closing term"""

@@ -37,6 +37,18 @@ CONSUMED = "bridge:consumed"
 NO_HOME = "bridge:noHome"
 IGNORED = "bridge:ignored"
 
+THE_CONCERNS = [
+    "bridge:concernCodes",
+    "bridge:concernDates",
+    "bridge:concernReferences",
+    "bridge:concernIdentity",
+    "bridge:concernText",
+]
+AT_MOST_ONE_CONCERN = (
+    "A bridge:concern is at most one, one of bridge:concernCodes, bridge:concernDates, bridge:concernReferences, "
+    "bridge:concernIdentity, bridge:concernText."
+)
+
 
 @functools.cache
 def shapes_in(path):
