@@ -1,6 +1,7 @@
 @prefix sh:   <http://www.w3.org/ns/shacl#> .
 @prefix owl:  <http://www.w3.org/2002/07/owl#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
 <> a owl:Ontology .
@@ -18,4 +19,10 @@
     sh:maxCount 1 ;
     sh:in ( bridge:concernCodes bridge:concernDates bridge:concernReferences bridge:concernIdentity bridge:concernText ) ;
     sh:message "A bridge:concern is at most one, one of bridge:concernCodes, bridge:concernDates, bridge:concernReferences, bridge:concernIdentity, bridge:concernText."
+  ] ;
+  sh:property [
+    sh:path rdfs:seeAlso ;
+    sh:nodeKind sh:IRI ;
+    sh:pattern "^https://github\\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/(issues|pull)/[1-9][0-9]*$" ;
+    sh:message "A gap's rdfs:seeAlso is a GitHub issue or pull request address, https://github.com/<owner>/<repo>/issues/<n> or .../pull/<n>."
   ] .
