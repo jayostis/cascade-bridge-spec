@@ -1,6 +1,7 @@
 @prefix sh:   <http://www.w3.org/ns/shacl#> .
 @prefix owl:  <http://www.w3.org/2002/07/owl#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
 <> a owl:Ontology .
 
@@ -11,4 +12,10 @@
     sh:maxCount 1 ;
     sh:in ( sh:Info sh:Warning sh:Violation ) ;
     sh:message "A gap declares at most one sh:resultSeverity, one of sh:Info, sh:Warning, sh:Violation."
+  ] ;
+  sh:property [
+    sh:path bridge:concern ;
+    sh:maxCount 1 ;
+    sh:in ( bridge:concernCodes bridge:concernDates bridge:concernReferences bridge:concernIdentity bridge:concernText ) ;
+    sh:message "A bridge:concern is at most one, one of bridge:concernCodes, bridge:concernDates, bridge:concernReferences, bridge:concernIdentity, bridge:concernText."
   ] .
