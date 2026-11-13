@@ -7,21 +7,13 @@ import queries
 import source_accounting
 from _json_source import segments_of
 from _terms import BRIDGE, SCHEMA
-from adapter_profile_world import shape_file_messages
+from adapter_profile_world import envelope_named, shape_file_messages
 
 RECORD_SCHEMA = "schema/example-record.schema.json"
 SET_ENVELOPE = "#envelope-set"
 FINDINGS_0001 = "fixtures/findings/json-0001.ttl"
 FINDINGS_0003 = "fixtures/findings/json-0003.ttl"
 DRAFT_06 = "https://datatracker.ietf.org/doc/html/draft-wright-json-schema-validation-01#section-6."
-
-
-def envelope_named(crate, name):
-    return next(
-        envelope
-        for envelope in crate.graph.objects(crate.root, BRIDGE.envelope)
-        if str(crate.graph.value(envelope, SCHEMA.name)) == name
-    )
 
 
 def said(check, crate):

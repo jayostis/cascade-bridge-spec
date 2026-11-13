@@ -14,6 +14,7 @@
     "Checking an adapter package against the profile · rocrate-validator, adapter/profile/must/",
     "What an adapter's crate names · adapter/profile/must/adapter.ttl",
     "Envelopes a source document arrives in · adapter/profile/must/envelope.ttl",
+    "Where an envelope's content stands in a path · adapter/profile/must/envelope.ttl, scripts/path_forms.py",
     "Media types a package may declare · adapter/profile/must/media_types.ttl",
     "Files a package tracks · adapter/profile/must/inventory.py",
     "Digests a crate records · adapter/profile/must/digests.py",

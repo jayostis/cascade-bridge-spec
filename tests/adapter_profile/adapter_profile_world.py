@@ -9,7 +9,7 @@ from rdflib.namespace import RDF, SH
 from _findings import SHAPES as FINDING_SHAPES
 from _findings import unmet
 from _selectors import step_of
-from _terms import BRIDGE, MF, OA
+from _terms import BRIDGE, MF, OA, SCHEMA
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURE = ROOT / "fixtures" / "synthetic-adapter"
@@ -128,6 +128,14 @@ def accounting_of(crate):
     named = crate.graph.value(crate.root, BRIDGE.sourceAccounting)
     assert named is not None, "the synthetic adapter names no bridge:sourceAccounting"
     return Graph().parse(crate.file_at(named), format="turtle")
+
+
+def envelope_named(crate, name):
+    return next(
+        envelope
+        for envelope in crate.graph.objects(crate.root, BRIDGE.envelope)
+        if str(crate.graph.value(envelope, SCHEMA.name)) == name
+    )
 
 
 def records_of(crate, document):
