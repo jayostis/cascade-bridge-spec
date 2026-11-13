@@ -9,6 +9,7 @@ GAP_SCHEME = "vocab/example-gaps.ttl"
 
 PREFIXES = """@prefix skos:   <http://www.w3.org/2004/02/skos/core#> .
 @prefix sh:     <http://www.w3.org/ns/shacl#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix bridge: <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 @prefix cascade: <https://ns.cascadeprotocol.org/cascade#> .
 @prefix ex:     <https://example.org/synthetic-adapter/v1#> .
@@ -32,11 +33,14 @@ def scheme_of_one_gap(
     closed_by=None,
     severity=None,
     concern=None,
+    see_also=None,
 ):
     written = ["ex:no-term-for-a-free-text-note a skos:Concept"]
     written += [statement for statement in (label, in_scheme, broader) if statement is not None]
     if closed_by is not None:
         written.append(f"bridge:closedBy {closed_by}")
+    if see_also is not None:
+        written.append(f"rdfs:seeAlso {see_also}")
     if severity is not None:
         written.append(f"sh:resultSeverity {severity}")
     if concern is not None:
@@ -91,6 +95,34 @@ class TestAnAdaptersGapScheme:
             said = said_about(package, concern=concern)
             assert THE_GAP in said
             assert AT_MOST_ONE_CONCERN in said
+
+        @pytest.mark.parametrize(
+            "see_also",
+            [
+                '"https://github.com/jayostis/cascade-bridge-spec/issues/188"',
+                "<https://gitlab.com/jayostis/cascade-bridge-spec/issues/188>",
+                "<https://github.com/jayostis/cascade-bridge-spec/issues>",
+                "<https://github.com/jayostis/cascade-bridge-spec/issues/188/>",
+                "<https://github.com/jayostis/cascade-bridge-spec/issues/188#issuecomment-1>",
+                "<https://github.com/jayostis/cascade-bridge-spec/pulls/188>",
+                "<https://github.com/jayostis/cascade-bridge-spec/issues/188>, <https://example.org/a-note>",
+                "[]",
+            ],
+            ids=[
+                "a literal",
+                "another host",
+                "no number",
+                "a trailing slash",
+                "a fragment",
+                "pulls where GitHub says pull",
+                "one address and one that is not",
+                "a blank node",
+            ],
+        )
+        def test_reports_a_gap_whose_see_also_is_not_a_github_issue_or_pull_request_address(self, package, see_also):
+            said = said_about(package, see_also=see_also)
+            assert THE_GAP in said
+            assert "rdfs:seeAlso" in said
 
         def test_reports_an_adapter_that_names_a_findings_query_and_no_gap_scheme(self, crate):
             crate.graph.remove((crate.root, BRIDGE.gapScheme, None))
@@ -200,6 +232,28 @@ class TestAnAdaptersGapScheme:
         @pytest.mark.parametrize("concern", THE_CONCERNS)
         def test_reports_nothing_for_a_gap_tagged_with_one_of_the_five_concerns(self, package, concern):
             assert not said_about(package, concern=concern)
+
+        @pytest.mark.parametrize(
+            "see_also",
+            [
+                "<https://github.com/jayostis/cascade-bridge-spec/issues/188>",
+                "<https://github.com/jayostis/cascade-bridge-spec/pull/191>",
+                "<https://github.com/jayostis/cascade-bridge-spec/issues/188>, "
+                "<https://github.com/jayostis/cascade-bridge-spec/pull/191>",
+            ],
+            ids=["an issue", "a pull request", "an issue and a pull request"],
+        )
+        def test_reports_nothing_for_a_gap_whose_see_also_is_a_github_issue_or_pull_request_address(
+            self, package, see_also
+        ):
+            assert not said_about(package, see_also=see_also)
+
+        def test_reports_nothing_for_a_gap_with_a_closing_term_and_an_issue_address(self, package):
+            assert not said_about(
+                package,
+                closed_by="<https://ns.cascadeprotocol.org/cascade#onsetDate>",
+                see_also="<https://github.com/jayostis/cascade-bridge-spec/issues/188>",
+            )
 
         def test_reports_nothing_for_a_gap_carrying_a_label_its_scheme_one_kind_and_a_closing_term(self, package):
             """reports nothing for a gap carrying a label, its scheme, one kind and a closing term"""
