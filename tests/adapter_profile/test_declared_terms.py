@@ -1,9 +1,12 @@
 from rdflib import Graph, URIRef
-from rdflib.namespace import RDF, SKOS
+from rdflib.collection import Collection
+from rdflib.namespace import RDF, SH, SKOS
 
 import declared_terms
 from _terms import BRIDGE
-from adapter_profile_world import THE_CONCERNS
+from adapter_profile_world import ROOT, THE_CONCERNS
+
+SHAPES = ROOT / "shapes"
 
 CONCEPTS_OF_GAP_KINDS = {
     BRIDGE.noPredicate,
@@ -66,3 +69,23 @@ class TestTermsAnAdapterMayWrite:
         def test_declares_bridge_closedby_by_which_a_gap_names_the_term_that_would_close_it(self):
             """declares `bridge:closedBy`, by which a gap names the term that would close it"""
             assert str(BRIDGE.closedBy) in declared_terms.declared()
+
+    class TestGivenAShapeListingTheMembersOfAScheme:
+        """given a shape listing the members of a scheme"""
+
+        def test_lists_every_member_of_the_scheme_and_no_other_concept(self):
+            """lists every member of the scheme and no other concept"""
+            vocabulary = Graph().parse(declared_terms.VOCABULARY, format="turtle")
+            checked = set()
+            for path in sorted(SHAPES.glob("*.shapes.ttl")):
+                shapes = Graph().parse(path, format="turtle")
+                for listed in shapes.objects(None, SH["in"]):
+                    members = set(Collection(shapes, listed))
+                    schemes = {scheme for member in members for scheme in vocabulary.objects(member, SKOS.inScheme)}
+                    if not schemes:
+                        continue
+                    assert len(schemes) == 1, f"{path.name} lists members of {sorted(schemes)}"
+                    (scheme,) = schemes
+                    assert members == set(vocabulary.subjects(SKOS.inScheme, scheme)), f"{path.name}, {scheme}"
+                    checked.add(scheme)
+            assert checked == {BRIDGE.concerns, BRIDGE.verdicts}
