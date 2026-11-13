@@ -28,6 +28,14 @@ with `bridge:concern`, one concept of the scheme `bridge:concerns`
 | a gap | the `skos:Concept` in the file `bridge:gapScheme` names | [`profile/must/gap_scheme.py`](profile/must/gap_scheme.py) |
 | a test case | the test in the manifest `bridge:testManifest` names | [`profile/must/shapes.py`](profile/must/shapes.py) |
 
+## Saying which issue tracks a gap
+
+Link the issue or pull request that tracks a gap from the gap with `rdfs:seeAlso`. It is optional, and a gap may carry
+more than one. Each value is an IRI of the form `https://github.com/<owner>/<repo>/issues/<n>` or
+`https://github.com/<owner>/<repo>/pull/<n>`, with nothing after the number, no trailing slash, query or fragment; the shape
+in [`../shapes/gap-scheme.shapes.ttl`](../shapes/gap-scheme.shapes.ttl) refuses any other value. It is not
+`bridge:closedBy`, which names the Cascade term that would let the adapter carry the gap.
+
 ## Saying where a place stands in each form of a path
 
 Some formats write one place several ways: FHIR writes the same element at the top of a resource, in a Bundle's entry, in a
