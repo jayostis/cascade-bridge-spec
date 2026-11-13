@@ -1,7 +1,7 @@
 import pytest
-import record_type_names
 from rdflib import URIRef
 
+import record_type_names
 from _terms import BRIDGE
 from adapter_profile_world import CARRIED, PREFIXES_OF_AN_ACCOUNTING
 
@@ -91,6 +91,10 @@ class TestNamesOfASourcesKindsOfRecord:
 
         def test_reports_a_concept_carrying_two_labels(self, package):
             accounted(package, carried_in(AN_ALLERGY), named(AN_ALLERGY, "Allergy", "Intolerance"))
+            assert wanted(AN_ALLERGY) in said_about(package)
+
+        def test_reports_an_id_two_concepts_hold_for_a_notation(self, package):
+            accounted(package, carried_in(AN_ALLERGY), named(AN_ALLERGY, "Allergy"), named(AN_ALLERGY, "Intolerance"))
             assert wanted(AN_ALLERGY) in said_about(package)
 
         @pytest.mark.parametrize("label", [AN_ALLERGY, "4.7", "", "  "], ids=["the id", "an id", "empty", "blank"])
