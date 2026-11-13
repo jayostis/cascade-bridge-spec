@@ -267,7 +267,9 @@ node, the record element first, separated by `/`, an attribute's last step
 written `@name`, no step carrying a position. A step names a node in no
 namespace by that name, and one in a namespace by `*[local-name()='…' and
 namespace-uri()='…']`, an attribute's after its `@`. The record element itself
-is no path. A path is the same under every envelope the adapter declares.
+is no path. A path is as the record writes it, the form of the envelope it was read in; which paths are one place an adapter
+says in [its envelopes](../adapter/README.md#saying-where-a-place-stands-in-each-form-of-a-path), and a census path is never
+rewritten to one.
 
 In a JSON record, a path is the names of the members from the record down to the
 node, each written as a JSON Pointer reference token after a `/`, `~` as `~0`

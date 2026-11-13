@@ -19,7 +19,7 @@ CHECKS = {
     "profile/must/carried_as.py": 1,
     "profile/must/declared_terms.py": 1,
     "profile/must/digests.py": 1,
-    "profile/must/envelope.ttl": 9,
+    "profile/must/envelope.ttl": 12,
     "profile/must/expected_findings.py": 1,
     "profile/must/expected_graphs.py": 1,
     "profile/must/facts.py": 1,

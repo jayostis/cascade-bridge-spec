@@ -76,6 +76,66 @@
     """
   ] ;
   sh:property [
+    sh:path bridge:pathOfContentInRecord ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:pattern "^(/.*[^/])?$" ;
+    sh:message "An envelope carries at most one bridge:pathOfContentInRecord, a path of its source format: empty, or beginning with a / and not ending with one."
+  ] ;
+  sh:property [
+    sh:path bridge:pathOfContainedContentBelowContent ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:pattern "^/.*[^/]$" ;
+    sh:message "An envelope carries at most one bridge:pathOfContainedContentBelowContent, a path of its source format beginning with a / and not ending with one."
+  ] ;
+  sh:property [
+    sh:path bridge:pathOfRecordKindBelowContent ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:pattern "^/.*[^/]$" ;
+    sh:message "An envelope carries at most one bridge:pathOfRecordKindBelowContent, a path of its source format beginning with a / and not ending with one."
+  ] ;
+  sh:sparql [
+    sh:message "A path an envelope of a JSON adapter declares in bridge:pathOfContentInRecord, bridge:pathOfContainedContentBelowContent or bridge:pathOfRecordKindBelowContent is the names of the members from the record down, each after a /, ~ written ~0 and / written ~1, with no empty reference token: {?value} is not." ;
+    sh:select """
+      SELECT $this ?value WHERE {
+        ?adapter <https://ns.cascadeprotocol.org/bridge/v1-draft#envelope> $this ;
+                 <https://ns.cascadeprotocol.org/bridge/v1-draft#sourceMediaType> ?mediaType .
+        FILTER (REGEX(?mediaType, "^(application/json|[a-z]+/[a-z0-9.!#$&^_-]+[+]json)$"))
+        $this ?term ?value .
+        FILTER (?term IN (
+          <https://ns.cascadeprotocol.org/bridge/v1-draft#pathOfContentInRecord>,
+          <https://ns.cascadeprotocol.org/bridge/v1-draft#pathOfContainedContentBelowContent>,
+          <https://ns.cascadeprotocol.org/bridge/v1-draft#pathOfRecordKindBelowContent>
+        ))
+        FILTER (STR(?value) != "" && !REGEX(STR(?value), "^(/([^/~]|~[01])+)+$"))
+      }
+    """
+  ] ;
+  sh:sparql [
+    sh:message "No two envelopes of an adapter declare the same bridge:pathOfContentInRecord: {?value} is declared twice." ;
+    sh:select """
+      SELECT $this ?value WHERE {
+        ?adapter <https://ns.cascadeprotocol.org/bridge/v1-draft#envelope> $this, ?other .
+        FILTER ($this != ?other)
+        $this <https://ns.cascadeprotocol.org/bridge/v1-draft#pathOfContentInRecord> ?value .
+        ?other <https://ns.cascadeprotocol.org/bridge/v1-draft#pathOfContentInRecord> ?otherValue .
+        FILTER (STR(?value) = STR(?otherValue))
+      }
+    """
+  ] ;
+  sh:sparql [
+    sh:message "An envelope's bridge:pathOfRecordKindBelowContent is not at or below its bridge:pathOfContainedContentBelowContent, where another record's content stands: {?value} is." ;
+    sh:select """
+      SELECT $this ?value WHERE {
+        $this <https://ns.cascadeprotocol.org/bridge/v1-draft#pathOfContainedContentBelowContent> ?contained ;
+              <https://ns.cascadeprotocol.org/bridge/v1-draft#pathOfRecordKindBelowContent> ?value .
+        FILTER (?value = ?contained || STRSTARTS(?value, CONCAT(?contained, "/")))
+      }
+    """
+  ] ;
+  sh:property [
     sh:path bridge:sourceSchema ;
     sh:maxCount 1 ;
     sh:nodeKind sh:IRI ;
