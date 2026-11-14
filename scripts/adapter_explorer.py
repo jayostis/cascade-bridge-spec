@@ -1,11 +1,12 @@
 """Builds an adapter's explorer, one page a reader browses the adapter on:
 
     python3 scripts/adapter_explorer.py <adapter> --vocabulary <cascade-vocabulary> \\
-        --repository <url> --report <url> --out <folder>
+        --repository <url> --report <url> [--way-back <label> <url>] --out <folder>
 
 <adapter> is a git checkout of an adapter; <cascade-vocabulary> a checkout of the vocabulary that the crate's
 bridge:vocabularyFile paths are read in, for the labels of terms; --repository is the adapter's repository on the web,
-where the page links each file at the checkout's commit; --report is the adapter's conformance report. Writes
+where the page links each file at the checkout's commit; --report is the adapter's conformance report; --way-back
+names the page the explorer was reached from, which the page links in its bar and at its end. Writes
 index.html, explorer.json (what the page shows, as data) and cases/<n>.json (a test case, read when a reader opens it)
 into <folder>.
 """
@@ -49,10 +50,11 @@ def main(argv=None):
     parser.add_argument("--vocabulary", type=Path, required=True)
     parser.add_argument("--repository", required=True)
     parser.add_argument("--report", required=True)
+    parser.add_argument("--way-back", nargs=2, metavar=("LABEL", "URL"))
     parser.add_argument("--out", type=Path, required=True)
     arguments = parser.parse_args(argv)
     data, cases = build(arguments.adapter, arguments.vocabulary, arguments.repository.rstrip("/"), arguments.report)
-    write(arguments.out, data, cases)
+    write(arguments.out, data, cases, arguments.way_back)
 
 
 def path_of(iri):
@@ -304,6 +306,7 @@ def read_cases(adapter):
             findings.parse(data=texts["expectedFindings"], format=guess_format(str(files["expectedFindings"])))
         cases.append(
             {
+                "findingsAreEmpty": len(findings) == 0,
                 "name": str(adapter.manifest.value(test, MF.name) or local_name(test)),
                 "comment": english(adapter.manifest, test, RDFS.comment),
                 "concern": adapter.manifest.value(test, BRIDGE.concern),
@@ -336,6 +339,7 @@ def read_entries(adapter, forms):
             {
                 "path": path,
                 "form": None if form is None else form_label(adapter, form),
+                "contained": form is not None and form.contained,
                 "steps": steps_of(place),
                 "verdict": local_name(graph.value(entry, BRIDGE.verdict)),
                 "because": english(graph, entry, BRIDGE.because),
@@ -439,6 +443,12 @@ def build(folder, vocabulary, repository, report):
     def node_of(path):
         return nodes_by_steps.get(steps_of(path_forms.place_of(forms, path)[1]))
 
+    def plain_form_of(path):
+        """The path a fact is read at where it is not contained, when the accounting names its contained form."""
+        place = path_forms.place_of(forms, path)[1]
+        same_place = [entry for entry in entries if path_forms.place_of(forms, entry["path"])[1] == place]
+        return min(((entry["contained"], entry["path"]) for entry in same_place), default=(False, path))[1]
+
     def mappings_of(node):
         grouped = {}
         for entry in node["entries"]:
@@ -455,7 +465,9 @@ def build(folder, vocabulary, repository, report):
                 {
                     "forms": [
                         {"path": path, "shown": shown_path(steps_of(path)), "form": form}
-                        for path, form in sorted((member["path"], member["form"] or "") for member in group)
+                        for _, path, form in sorted(
+                            (member["contained"], member["path"], member["form"] or "") for member in group
+                        )
                     ],
                     "verdict": entry["verdict"],
                     "because": entry["because"],
@@ -465,7 +477,7 @@ def build(folder, vocabulary, repository, report):
                     else {"table": adapter.relative(path_of(entry["lookupIn"])), "gap": gap(entry["lookupGap"])},
                     "sameFactAs": None
                     if same is None
-                    else {"path": str(same), "node": (node_of(str(same)) or {}).get("id")},
+                    else {"path": plain_form_of(str(same)), "node": (node_of(str(same)) or {}).get("id")},
                     "concern": None if entry["concern"] is None else local_name(entry["concern"]),
                     "becomes": [
                         {
@@ -582,6 +594,7 @@ def build(folder, vocabulary, repository, report):
             "comment": case["comment"],
             **{
                 role: {"file": case["files"][role], "link": blob + case["files"][role], "text": case["texts"][role]}
+                | ({"empty": case["findingsAreEmpty"]} if role == "expectedFindings" else {})
                 for role in case["files"]
             },
         }
@@ -628,14 +641,14 @@ def scheme_labels(scheme):
     }
 
 
-def write(out, data, cases):
+def write(out, data, cases, way_back=None):
     if out.exists() and any(out.iterdir()):
         sys.exit(f"{out} is not empty; the explorer is written into an empty folder")
     (out / "cases").mkdir(parents=True, exist_ok=True)
     (out / "explorer.json").write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
     for file, case in cases.items():
         (out / file).write_text(json.dumps(case, ensure_ascii=False), encoding="utf-8")
-    (out / "index.html").write_text(page(data), encoding="utf-8")
+    (out / "index.html").write_text(page(data, way_back), encoding="utf-8")
 
 
 def e(text):
@@ -649,6 +662,18 @@ def link(href, text):
 def badge(data, verdict):
     words = {item["verdict"]: item for item in data["verdicts"]}[verdict]
     return f'<span class="verdict v-{e(verdict)}" title="{e(words["label"] or "")}">{e(words["words"])}</span>'
+
+
+def an(name):
+    """The indefinite article a name takes, by how it is said: "an" before a vowel sound."""
+    word = re.sub(r"^\W+", "", name).lower()
+    vowel = word[:1] != "" and word[0] in "aeiou" or word.startswith(("hour", "honest", "honour", "heir"))
+    consonant_sound = word.startswith(("uni", "use", "usa", "uri", "eu", "one", "once", "ura"))
+    return "an" if vowel and not consonant_sound else "a"
+
+
+def named(item):
+    return item["label"] or item["term"].split(":")[-1]
 
 
 def term(item):
@@ -700,9 +725,11 @@ def a_mapping(data, mapping):
         shown = f"<code>{e(shown_path(steps_of(same['path'])))}</code>"
         parts.append(f"<p>The same fact as {link('#' + same['node'], shown) if same['node'] else shown}.</p>")
     for becomes in mapping["becomes"]:
-        kind = f", in a {e(becomes['kind'])}" if becomes["kind"] else ""
+        kind = f", in {an(becomes['kind'])} {e(becomes['kind'])}" if becomes["kind"] else ""
         written = f" Written by {a_queries(blob, becomes['queries'])}." if becomes["queries"] else ""
-        parts.append(f"<p>Becomes {term(becomes['property'])} on a {term(becomes['class'])}{kind}.{written}</p>")
+        parts.append(
+            f"<p>Becomes {term(becomes['property'])} on {an(named(becomes['class']))} {term(becomes['class'])}{kind}.{written}</p>"
+        )
     if mapping["queries"]:
         parts.append(f"<p>Written by {a_queries(blob, mapping['queries'])}.</p>")
     if mapping["case"]:
@@ -731,14 +758,14 @@ def a_node(data, node):
     )
 
 
-def page(data):
+def page(data, way_back=None):
     adapter = data["adapter"]
     figures = data["figures"]
     legend = "".join(f"<li>{badge(data, item['verdict'])} {e(item['label'] or '')}</li>" for item in data["verdicts"])
     kinds = "".join(
         f"<h3>{e(kind['kind'] or 'A kind of record the accounting does not name')}</h3><ul class='becomes'>"
         + "".join(
-            f"<li>{term(item['property'])} on a {term(item['class'])}, from {place_links(data, item['nodes'])}</li>"
+            f"<li>{term(item['property'])} on {an(named(item['class']))} {term(item['class'])}, from {place_links(data, item['nodes'])}</li>"
             for item in kind["becomes"]
         )
         + "</ul>"
@@ -762,6 +789,9 @@ def page(data):
         for group in data["notCarried"]
     )
     index = json.dumps(data["search"], ensure_ascii=False).replace("</", "<\\/")
+    back = link(way_back[1], e(way_back[0])) if way_back else ""
+    back_bar = f'<span class="back">← {back}</span>\n' if way_back else ""
+    back_end = f"<footer><p>← {back}</p></footer>\n" if way_back else ""
     here = Path(__file__).with_suffix("")
     style = here.with_suffix(".css").read_text(encoding="utf-8")
     script = here.with_suffix(".js").read_text(encoding="utf-8")
@@ -771,6 +801,7 @@ def page(data):
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{e(adapter["name"])}: an adapter explorer</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%230b5cad'/%3E%3C/svg%3E">
 <style>{style}</style>
 </head>
 <body>
@@ -785,11 +816,12 @@ test cases of a conversion hold it to what it makes.
 {link(adapter["accounting"], "its accounting, in its repository")}</p>
 </header>
 <nav>
-<a href="#paths">Source paths</a> <a href="#kinds">Kinds of record</a> <a href="#concerns">By concern</a>
+{back_bar}<a href="#paths">Source paths</a> <a href="#kinds">Kinds of record</a> <a href="#concerns">By concern</a>
 <a href="#not-carried">Not carried</a>
 <input id="search" type="search" aria-label="Search by path or term" placeholder="Search a path or a term">
-</nav>
+<p id="count" class="quiet" aria-live="polite"></p>
 <section id="results" hidden></section>
+</nav>
 <main>
 <section id="paths">
 <h2>Source paths</h2>
@@ -802,7 +834,7 @@ test cases of a conversion hold it to what it makes.
 <section id="not-carried"><h2>Not carried</h2>
 <p>What the adapter leaves out, wholly or in part, and why.</p>{not_carried}</section>
 </main>
-<script type="application/json" id="search-index">{index}</script>
+{back_end}<script type="application/json" id="search-index">{index}</script>
 <script>{script}</script>
 </body>
 </html>

@@ -2,6 +2,7 @@
 const index = JSON.parse(document.getElementById("search-index").textContent);
 const box = document.getElementById("search");
 const results = document.getElementById("results");
+const count = document.getElementById("count");
 const SHOWN = 50;
 
 function reveal(id) {
@@ -30,12 +31,15 @@ box.addEventListener("input", () => {
   const wanted = box.value.trim().toLowerCase();
   results.replaceChildren();
   results.hidden = wanted.length < 2;
+  count.textContent = "";
   if (results.hidden) return;
   const found = index.filter((item) => item.text.includes(wanted));
   if (found.length === 0) {
-    results.append(element("p", "No path or term matches."));
+    count.textContent = "No path or term matches.";
+    results.hidden = true;
     return;
   }
+  count.textContent = found.length === 1 ? "1 place matches." : found.length + " places match.";
   const list = element("ul");
   for (const item of found.slice(0, SHOWN)) {
     const entry = element("li");
@@ -46,7 +50,11 @@ box.addEventListener("input", () => {
     list.append(entry);
   }
   results.append(list);
-  if (found.length > SHOWN) results.append(element("p", "More match: narrow the search."));
+  if (found.length > SHOWN) results.append(element("p", "Only the first " + SHOWN + " are listed: narrow the search."));
+});
+
+results.addEventListener("click", (event) => {
+  if (event.target.closest("a")) results.hidden = true;
 });
 
 const ROLES = [
@@ -74,6 +82,15 @@ document.addEventListener(
         for (const [role, heading] of ROLES) {
           const file = testCase[role];
           if (!file) continue;
+          if (file.empty) {
+            const none = element("p", "This case expects no findings: ");
+            const where = element("a");
+            where.href = file.link;
+            where.append(element("code", file.file));
+            none.append(where, ".");
+            body.append(none);
+            continue;
+          }
           const title = element("h4", heading + ", ");
           const anchor = element("a");
           anchor.href = file.link;
