@@ -19,7 +19,6 @@ import json
 import re
 import subprocess
 import sys
-import xml.etree.ElementTree as ElementTree
 from collections import Counter
 from pathlib import Path
 from urllib.parse import urlparse
@@ -51,6 +50,7 @@ XPATH_STEP = re.compile(
     r"(@?)(?:\*\[local-name\(\)='([^']*)' and namespace-uri\(\)='([^']*)'\]|([A-Za-z_][\w.-]*))(?:\[(\d+)\])?"
 )
 JSON_DECODER = json.JSONDecoder()
+JSON_PATH_SEGMENT = re.compile(r"\.([A-Za-z_][\w-]*)|\['([^'\\]*)'\]|\[(\*)\]|\[(\d+)\]")
 
 
 def main(argv=None):
@@ -85,6 +85,11 @@ def in_words(name):
 
 def local_name(iri):
     return re.split(r"[#/]", str(iri))[-1]
+
+
+def token(name):
+    """A member's name as a JSON Pointer reference token."""
+    return name.replace("~", "~0").replace("/", "~1")
 
 
 def steps_of(path):
@@ -151,6 +156,7 @@ class Adapter:
         self.vocabulary = Graph()
         for file in self.crate.objects(self.root, BRIDGE.vocabularyFile):
             self.vocabulary.parse(vocabulary / str(file), format="turtle")
+        self.identifiers = {str(notation) for notation in self.accounting.objects(None, SKOS.notation)}
         self.names = Graph(bind_namespaces="none")
         for graph in (self.gaps, self.accounting):
             for prefix, namespace in graph.namespaces():
@@ -172,12 +178,107 @@ class Adapter:
             curie = f"<{iri}>"
         return {"term": curie, "label": english(self.vocabulary, iri, RDFS.label)}
 
+    def records(self, document):
+        """The pointer and value of each record each envelope finds in a JSON document. An envelope naming a member of
+        the document's root and its value, where the root has that value, outranks one naming the member alone, which
+        outranks one naming neither."""
+
+        def fit(envelope):
+            name = self.crate.value(envelope, BRIDGE.docRootMemberName)
+            value = self.crate.value(envelope, BRIDGE.docRootMemberValue)
+            if name is None:
+                return 1
+            if not isinstance(document, dict) or str(name) not in document:
+                return 0
+            return 2 if value is None else 3 * (str(document[str(name)]) == str(value))
+
+        envelopes = {envelope: fit(envelope) for envelope in self.crate.objects(self.root, BRIDGE.envelope)}
+        best = max(envelopes.values(), default=0)
+        return {
+            envelope: nodes_at(
+                document,
+                str(
+                    self.crate.value(envelope, BRIDGE.jsonPathOfEachRecord)
+                    or self.value(BRIDGE.jsonPathOfEachRecord)
+                    or "$"
+                ),
+            )
+            for envelope, fits in envelopes.items()
+            if fits and fits == best
+        }
+
     def kind_label(self, kind):
         if self.value(BRIDGE.sourceRecordTypesAreIdentifiers) != Literal(True):
             return kind
         for concept in self.accounting.subjects(SKOS.notation, Literal(kind)):
             return english(self.accounting, concept, SKOS.prefLabel)
         return kind
+
+
+def nodes_at(document, expression):
+    """The pointer and value of each node a JSONPath of member names, wildcards and indices selects; none for a path
+    of any other segment."""
+    if not expression.startswith("$"):
+        return []
+    reached, at = [("", document)], 1
+    while at < len(expression):
+        segment = JSON_PATH_SEGMENT.match(expression, at)
+        if not segment:
+            return []
+        name, quoted, wildcard, index = segment.groups()
+        name = quoted if name is None else name
+        following = []
+        for pointer, value in reached:
+            if wildcard and isinstance(value, list):
+                following += [(f"{pointer}/{at_}", item) for at_, item in enumerate(value)]
+            elif wildcard and isinstance(value, dict):
+                following += [(f"{pointer}/{token(key)}", item) for key, item in value.items()]
+            elif index is not None and isinstance(value, list) and int(index) < len(value):
+                following.append((f"{pointer}/{index}", value[int(index)]))
+            elif name is not None and isinstance(value, dict) and name in value:
+                following.append((f"{pointer}/{token(name)}", value[name]))
+        reached, at = following, segment.end()
+    return reached
+
+
+def landed(adapter, forms, lines, path, kinds):
+    """The lines of a test case's input where a path lands, in a record of a kind the path's mapping names where it
+    names any: none where the input or the path's form cannot say which record or which kind a node is in.
+
+    In an XML source whose kinds are identifiers, a node is in a record of a kind when it, or an element it sits in,
+    bears the kind; or when the nearest element it sits in that bears any identifier of the accounting, other than the
+    document element, holds an element bearing the kind, as a section or a concern holds the records read from it."""
+    form, place = path_forms.place_of(forms, path)
+    if lines.document is not None:
+        if form is not None or (kinds and adapter.value(BRIDGE.sourceRecordTypesAreIdentifiers) != Literal(True)):
+            return []
+
+        def of_kind(element):
+            outward = list(lineage(element))
+            if any(kinds & bears(holder) for holder in outward):
+                return True
+            nearest = next((holder for holder in outward if bears(holder) & adapter.identifiers), None)
+            return (
+                nearest is not None
+                and nearest["parent"].get("name") is not None
+                and any(kinds & bears(below) for below in lines.elements(nearest))
+            )
+
+        return sorted({line for line, element in lines.xml_reached(steps_of(place)) if not kinds or of_kind(element)})
+    if lines.value is None or form is None:
+        return []
+    found = set()
+    for record in adapter.records(lines.value).get(form.envelope, []):
+        within = lines.json_reached(record, steps_of(form.prefix) if form.prefix else ())
+        for content in (item for node in within for item in items_of(*node)):
+            if kinds:
+                named = (
+                    [] if form.kind is None else lines.json_reached(content, steps_of(form.kind[len(form.prefix) :]))
+                )
+                if not any(str(value) in kinds for _, value in named):
+                    continue
+            found |= {lines.at[pointer] for pointer, _ in lines.json_reached(content, steps_of(place))}
+    return sorted(found)
 
 
 def query_terms(text):
@@ -258,57 +359,6 @@ def without_strings_and_comments(text):
     return "".join(out)
 
 
-class Held:
-    """The paths a test case's input holds, from any node of it down."""
-
-    def __init__(self, text):
-        self.below = {}
-        try:
-            self.json(json.loads(text))
-        except ValueError:
-            try:
-                self.xml(ElementTree.fromstring(text))
-            except ElementTree.ParseError:
-                pass
-
-    def reached(self, parent, step):
-        node = {}
-        self.below.setdefault(step, []).append(node)
-        parent.setdefault(step, []).append(node)
-        return node
-
-    def json(self, value, parent=None):
-        if isinstance(value, list):
-            for item in value:
-                self.json(item, parent)
-        elif isinstance(value, dict):
-            for name, member in value.items():
-                node = self.reached({} if parent is None else parent, name.replace("~", "~0").replace("/", "~1"))
-                self.json(member, node)
-
-    def xml(self, element, parent=None):
-        node = self.reached({} if parent is None else parent, self.xml_step(element.tag))
-        for name in element.attrib:
-            self.reached(node, "@" + self.xml_step(name))
-        for child in element:
-            if isinstance(child.tag, str):
-                self.xml(child, node)
-
-    @staticmethod
-    def xml_step(name):
-        if name.startswith("{"):
-            namespace, local = name[1:].split("}", 1)
-            return f"*[local-name()='{local}' and namespace-uri()='{namespace}']"
-        return name
-
-    def holds(self, path):
-        steps = steps_of(path)
-        frontier = self.below.get(steps[0], [])
-        for step in steps[1:]:
-            frontier = [child for node in frontier for child in node.get(step, [])]
-        return bool(frontier)
-
-
 class Lines:
     """The line each node of a test case's input begins on, by the selector a finding would give it: a JSON Pointer,
     or an XPath of `*[local-name()=… and namespace-uri()=…][n]` and `@name` steps."""
@@ -317,8 +367,10 @@ class Lines:
         self.text = text
         self.starts = [0] + [at + 1 for at, character in enumerate(text) if character == "\n"]
         self.at = {}
+        self.value = self.document = None
         try:
             self.json_value(self.skip(0), "", 0)
+            self.value = json.loads(text)
         except (ValueError, IndexError):
             self.at = {}
             self.xml()
@@ -343,9 +395,7 @@ class Lines:
                 colon = self.skip(after)
                 if self.text[colon] != ":":
                     raise ValueError("a member's name is not followed by a colon")
-                at = self.json_value(
-                    self.skip(colon + 1), f"{pointer}/{name.replace('~', '~0').replace('/', '~1')}", at
-                )
+                at = self.json_value(self.skip(colon + 1), f"{pointer}/{token(name)}", at)
             else:
                 at = self.json_value(at, f"{pointer}/{index}", at)
                 index += 1
@@ -360,7 +410,14 @@ class Lines:
 
         def start(name, attributes):
             namespace, _, local = name.rpartition(" ")
-            node = {"name": (namespace, local), "line": parser.CurrentLineNumber, "children": [], "attributes": {}}
+            node = {
+                "name": (namespace, local),
+                "line": parser.CurrentLineNumber,
+                "children": [],
+                "attributes": {},
+                "values": set(attributes.values()),
+                "parent": stack[-1],
+            }
             for attribute in attributes:
                 attribute_namespace, _, attribute_local = attribute.rpartition(" ")
                 node["attributes"][(attribute_namespace, attribute_local)] = parser.CurrentLineNumber
@@ -393,6 +450,65 @@ class Lines:
                 return None
             node = same[index]
         return None if node is None or "line" not in node else node["line"]
+
+    def json_reached(self, base, steps):
+        """The pointer and value of each node the steps reach from (pointer, value) base, an array on the way read item
+        by item."""
+        reached = [base]
+        for step in steps:
+            name = step_label(step)
+            reached = [
+                (f"{pointer}/{token(name)}", value[name])
+                for pointer, value in (item for node in reached for item in items_of(*node))
+                if isinstance(value, dict) and name in value
+            ]
+        return reached
+
+    def xml_reached(self, steps):
+        """The line of each node the steps reach from the document, and the element it is or is an attribute of."""
+        frontier = [] if self.document is None else [self.document]
+        for at, step in enumerate(steps):
+            matched = XPATH_STEP.fullmatch(step)
+            if not matched:
+                return []
+            attribute, local, namespace, plain, position = matched.groups()
+            name = ("", plain) if plain else (namespace, local)
+            if attribute:
+                if at != len(steps) - 1:
+                    return []
+                return [(node["attributes"][name], node) for node in frontier if name in node["attributes"]]
+            frontier = [
+                child
+                for node in frontier
+                for child in [child for child in node["children"] if child["name"] == name][
+                    slice(None) if position is None else slice(int(position) - 1, int(position))
+                ]
+            ]
+        return [(node["line"], node) for node in frontier]
+
+    def elements(self, node=None):
+        node = self.document if node is None else node
+        for child in [] if node is None else node["children"]:
+            yield child
+            yield from self.elements(child)
+
+
+def items_of(pointer, value):
+    if isinstance(value, list):
+        return [item for at, member in enumerate(value) for item in items_of(f"{pointer}/{at}", member)]
+    return [(pointer, value)]
+
+
+def bears(element):
+    """The values an element's children carry in their attributes: an XML source's identifiers of the element."""
+    return {value for child in element["children"] for value in child["values"]}
+
+
+def lineage(element):
+    """The element and each element it sits in, out to the document element."""
+    while element is not None and "name" in element:
+        yield element
+        element = element["parent"]
 
 
 def selectors_of(findings, body):
@@ -466,7 +582,7 @@ def read_cases(adapter):
                 "concern": adapter.manifest.value(test, BRIDGE.concern),
                 "files": {role: adapter.relative(file) for role, file in files.items()},
                 "texts": texts,
-                "held": Held(texts["input"]),
+                "lines": Lines(texts["input"]),
                 "classes": set(graph.objects(None, RDF.type)),
                 "predicates": set(graph.predicates()),
                 "bodies": set(findings.objects(None, OA.hasBody)),
@@ -558,9 +674,9 @@ def build(folder, vocabulary, repository, report):
         return [name for name, (of, terms) in queries.items() if of == kind and str(term) in terms]
 
     def case_for(entry, paths):
-        """The case that holds the adapter to the entry: its input holds the place, and its expected graph holds
-        something the entry becomes, or, for an entry that becomes nothing, its expected findings name the entry's gap;
-        of those, the smallest input."""
+        """The case that holds the adapter to the entry: one of the entry's paths lands in its input, and its expected
+        graph holds something the entry becomes, or, for an entry that becomes nothing, its expected findings name the
+        entry's gap; of those, the smallest input."""
 
         def shows(case):
             if not entry["carried"]:
@@ -570,17 +686,22 @@ def build(folder, vocabulary, repository, report):
                 for _, record_class, property_ in entry["carried"]
             )
 
-        candidates = [case for case in cases if shows(case) and any(case["held"].holds(path) for path in paths)]
-        return min(candidates, key=lambda case: (len(case["texts"]["input"]), case["name"]), default=None)
+        for case in sorted(
+            (case for case in cases if shows(case)), key=lambda case: (len(case["texts"]["input"]), case["name"])
+        ):
+            if any(landed(adapter, forms, case["lines"], path, kinds_of(entry)) for path in paths):
+                return case
+        return None
+
+    def kinds_of(entry):
+        return {kind for kind, _, _ in entry["carried"] if kind}
 
     def marks_in(case, entry, paths):
         """The lines of the case's files a reader looks at for the entry: where each finding naming its gap points in
-        the input, on one of the entry's own paths, those findings, and each line of the expected graph naming a
-        property the entry becomes."""
+        the input, on one of the entry's own paths, and those findings; where the entry's paths land in the input,
+        where they raise no finding; and each line of the expected graph naming a property the entry becomes."""
         marks = {}
         if entry["gap"] is not None and "expectedFindings" in case["texts"]:
-            if "lines" not in case:
-                case["lines"] = Lines(case["texts"]["input"])
             own = [plain_steps(path) for path in paths]
             if "findings_by_line" not in case:
                 case["findings_by_line"] = {}
@@ -596,6 +717,11 @@ def build(folder, vocabulary, repository, report):
                 found |= {case["lines"].find(selector) for selector in on}
             marks["input"] = sorted(line for line in found if line is not None)
             marks["expectedFindings"] = finding_lines
+        if not marks.get("input"):
+            marks["input"] = sorted(
+                {line for path in paths for line in landed(adapter, forms, case["lines"], path, kinds_of(entry))}
+            )
+            marks["inputFrom"] = "path" if marks["input"] else None
         properties = sorted({str(property_) for _, _, property_ in entry["carried"]})
         if properties:
             marks["expectedGraph"] = lines_naming(case["texts"]["expectedGraph"], properties)
@@ -733,6 +859,7 @@ def build(folder, vocabulary, repository, report):
     ]
 
     concern_labels = scheme_labels(BRIDGE.concerns)
+    flow = flow_of(adapter, entries, cases)
     concerns = {}
 
     def concern(iri):
@@ -786,7 +913,9 @@ def build(folder, vocabulary, repository, report):
     case_files = {}
     for number_, case in enumerate(cases):
         file = f"cases/{number_ + 1}.json"
-        shown_cases.append({"name": case["name"], "file": file, "comment": case["comment"]})
+        shown_cases.append(
+            {"name": case["name"], "file": file, "comment": case["comment"], "input": case["files"]["input"]}
+        )
         case_files[file] = {
             "name": case["name"],
             "comment": case["comment"],
@@ -822,6 +951,7 @@ def build(folder, vocabulary, repository, report):
         ],
         "tree": shaped_tree,
         "kinds": kinds_list,
+        "flow": flow,
         "concerns": [concerns[name] for name in sorted(concerns, key=lambda name: concerns[name]["label"])],
         "notCarried": not_carried,
         "cases": shown_cases,
@@ -829,6 +959,57 @@ def build(folder, vocabulary, repository, report):
         "places": places,
     }
     return data, case_files
+
+
+def flow_of(adapter, entries, cases):
+    """Each place in the source a kind of record is drawn from, the classes its kinds become, and how many properties
+    each becomes on each. A kind is drawn from itself, or, where kinds are identifiers, from the outermost element below
+    the document element that bears an identifier of the accounting, wherever a test case's input has the kind."""
+    becomes = {}
+    for entry in entries:
+        for kind, record_class, property_ in entry["carried"]:
+            becomes.setdefault(kind, {}).setdefault(record_class, set()).add(property_)
+    sources = {kind: {kind} for kind in becomes}
+    if adapter.value(BRIDGE.sourceRecordTypesAreIdentifiers) == Literal(True):
+        identifiers = adapter.identifiers
+        sources = {}
+        for case in cases:
+            for element in case["lines"].elements():
+                for kind in bears(element) & identifiers & set(becomes):
+                    within = [
+                        holder
+                        for holder in lineage(element)
+                        if holder is not element and holder["parent"].get("name") and bears(holder) & identifiers
+                    ]
+                    source = min(bears(within[-1]) & identifiers) if within else kind
+                    sources.setdefault(source, set()).add(kind)
+        for kind in set(becomes) - {kind for kinds in sources.values() for kind in kinds}:
+            sources.setdefault(kind, set()).add(kind)
+
+    def label(kind):
+        return kind_name({"kind": adapter.kind_label(kind)})
+
+    drawn = sorted(sources, key=lambda source: (label(source).lower(), source))
+    classes, links = [], []
+    for at, source in enumerate(drawn):
+        properties = {}
+        for kind in sources[source]:
+            for record_class, named in becomes[kind].items():
+                properties.setdefault(record_class, set()).update(named)
+        for record_class in sorted(properties, key=lambda record_class: adapter.term(record_class)["term"]):
+            if record_class not in classes:
+                classes.append(record_class)
+            links.append(
+                {"source": at, "class": classes.index(record_class), "properties": len(properties[record_class])}
+            )
+    return {
+        "sources": [
+            {"label": label(source), "kinds": sorted({label(kind) for kind in sources[source]}, key=str.lower)}
+            for source in drawn
+        ],
+        "classes": [adapter.term(record_class) for record_class in classes],
+        "links": links,
+    }
 
 
 def shares(counts):
@@ -976,10 +1157,73 @@ class Page:
                 + "</details>"
             )
         if mapping["case"]:
+            parts.append(self.trace(mapping, place))
             parts.append(f'<p class="case-link">Test case: {self.case_link(mapping["case"], mapping["marks"])}</p>')
         elif mapping["becomes"] or mapping["gap"]:
             parts.append('<p class="quiet">No test case of the adapter shows this.</p>')
         return f'<section class="mapping">{"".join(parts)}</section>'
+
+    def trace(self, mapping, place):
+        blob = self.data["adapter"]["blob"]
+        case = self.cases[mapping["case"]]
+        kinds = sorted({becomes["kind"] for becomes in mapping["becomes"] if becomes["kind"]}, key=str.lower)
+        source = (
+            "<section><h4>The source</h4>"
+            + (f'<p class="t">{e(", ".join(kinds))}</p>' if kinds else "")
+            + f'<p class="sub"><code>{e(case["input"])}</code></p><pre data-role="input" hidden></pre></section>'
+        )
+        queries = (
+            sorted({query for becomes in mapping["becomes"] for query in becomes["queries"]}) or mapping["queries"]
+        )
+        adapter = (
+            f'<section><h4>The adapter</h4><p class="t"><code>{e(place).replace("/", "<wbr>/")}</code></p>'
+            f"<p>{self.pill(mapping['verdict'])}</p>"
+            + (f'<p class="sub">written by {a_queries(blob, queries)}</p>' if queries else "")
+            + "</section>"
+        )
+        if mapping["becomes"]:
+            classes = {becomes["class"]["term"]: becomes["class"] for becomes in mapping["becomes"]}
+            made = (
+                "<section><h4>The pod</h4>"
+                + "".join(f'<p class="t">{term(classes[key])}</p>' for key in sorted(classes))
+                + '<pre data-role="expectedGraph" hidden></pre></section>'
+            )
+        else:
+            gap = mapping["gap"] or {"label": "", "term": ""}
+            made = (
+                f'<section><h4>The findings</h4><p class="t">{e(gap["label"])}</p>'
+                f'<p class="sub"><code>{e(gap["term"])}</code></p><pre data-role="expectedFindings" hidden></pre>'
+                "</section>"
+            )
+        arrow = '<span class="arr" aria-hidden="true">→</span>'
+        marks = e(json.dumps(mapping["marks"], separators=(",", ":")))
+        return (
+            f'<h4>End to end</h4><div class="trace" data-trace="{e(case["file"])}" data-marks="{marks}">'
+            f"{source}{arrow}{adapter}{arrow}{made}</div>"
+        )
+
+    def flow(self):
+        flow = self.data["flow"]
+        if not flow["links"]:
+            return ""
+        grouped = any(source["kinds"] != [source["label"]] for source in flow["sources"])
+        heading = "Where in the source" if grouped else "A kind of record in the source"
+        said = (
+            "Where each kind of record sits in the source, and the classes it becomes in the pod"
+            if grouped
+            else "Each kind of record in the source, and the classes it becomes in the pod"
+        )
+        most = max(link["properties"] for link in flow["links"])
+
+        def weight(link):
+            return round(1.5 + 8.5 * link["properties"] / most, 1)
+
+        return (
+            '<h3>What the source becomes <span>line weight by the number of properties</span></h3><div class="flow">'
+            + wide_flow(flow, heading, said, weight)
+            + narrow_flow(flow, said, weight)
+            + "</div>"
+        )
 
     def case_link(self, name, marks=None):
         case = self.cases[name]
@@ -1089,6 +1333,81 @@ class Page:
         )
 
 
+INK, MUTED, LINE = "#14202a", "#5a6873", "#0b6a8a"
+SANS = "'IBM Plex Sans', -apple-system, 'Segoe UI', Roboto, sans-serif"
+MONO = "'IBM Plex Mono', ui-monospace, Menlo, monospace"
+
+
+def svg_text(x, y, text, size, fill, family=SANS, weight=None, anchor=None):
+    return (
+        f'<text x="{x:g}" y="{y:g}" font-size="{size}" fill="{fill}" font-family="{e(family)}"'
+        + (f' font-weight="{weight}"' if weight else "")
+        + (f' text-anchor="{anchor}"' if anchor else "")
+        + f">{e(text)}</text>"
+    )
+
+
+def svg(width, height, css, said, inside):
+    return (
+        f'<svg class="{css}" viewBox="0 0 {width:g} {height:g}" width="{width:g}" height="{height:g}" role="img" '
+        f'aria-label="{e(said)}">{inside}</svg>'
+    )
+
+
+def wide_flow(flow, heading, said, weight):
+    """Sources down the left, the classes they become down the right, a line from each source to each class."""
+    row, top, gap = 34, 34, 220
+    left = 12 + max(6.2 * len(heading), *(7.4 * len(source["label"]) for source in flow["sources"]))
+    right = left + gap + 16
+    width = right + 12 + max(*(max(7.4 * len(c["label"] or ""), 6.9 * len(c["term"])) for c in flow["classes"]), 160)
+    height = top + row * max(len(flow["sources"]), len(flow["classes"]))
+
+    def at(index):
+        return top + row * index + row / 2
+
+    parts = [
+        svg_text(left, 16, heading, 11, MUTED, anchor="end"),
+        svg_text(right, 16, "What it becomes in the pod", 11, MUTED),
+    ]
+    for link in flow["links"]:
+        start, end, x0, x1 = at(link["source"]), at(link["class"]), left + 8, left + 8 + gap
+        parts.append(
+            f'<path d="M{x0:g} {start:g} C {x0 + gap * 0.6:g} {start:g}, {x1 - gap * 0.6:g} {end:g}, {x1:g} {end:g}" '
+            f'fill="none" stroke="{LINE}" stroke-opacity="0.35" stroke-width="{weight(link)}"/>'
+        )
+    for index, source in enumerate(flow["sources"]):
+        parts.append(svg_text(left, at(index) + 4, source["label"], 13, INK, anchor="end"))
+    for index, record_class in enumerate(flow["classes"]):
+        parts.append(svg_text(right, at(index) + 1, record_class["label"] or record_class["term"], 13, INK))
+        parts.append(svg_text(right, at(index) + 14, record_class["term"], 11, MUTED, MONO))
+    return svg(width, height, "wide", said, "".join(parts))
+
+
+def narrow_flow(flow, said, weight):
+    """Each source, and under it each class it becomes, for a narrow screen."""
+    parts, y = [], 0
+    for index, source in enumerate(flow["sources"]):
+        y += 20
+        parts.append(svg_text(0, y, source["label"], 13, INK, weight=600))
+        for link in [link for link in flow["links"] if link["source"] == index]:
+            record_class = flow["classes"][link["class"]]
+            y += 20
+            parts.append(
+                f'<path d="M4 {y - 4:g} H24" fill="none" stroke="{LINE}" stroke-opacity="0.5" '
+                f'stroke-width="{weight(link)}"/>'
+            )
+            parts.append(svg_text(32, y, record_class["label"] or record_class["term"], 13, INK))
+            y += 14
+            parts.append(svg_text(32, y, record_class["term"], 11, MUTED, MONO))
+        y += 10
+    width = max(
+        320,
+        *(8 * len(source["label"]) for source in flow["sources"]),
+        *(40 + max(7.4 * len(c["label"] or ""), 6.9 * len(c["term"])) for c in flow["classes"]),
+    )
+    return svg(width, y, "narrow", said, "".join(parts))
+
+
 def kind_name(kind):
     return kind["kind"] or "A kind of record the accounting does not name"
 
@@ -1149,9 +1468,10 @@ def page(data, way_back=None, stylesheets=()):
         f"""<article class="view" id="overview" data-stop="overview"><h2 class="ph">Overview</h2><div class="insp">
 <h1 tabindex="-1">{name}</h1>
 <p class="sub"><code>{e(adapter["identifier"])}</code> {e(adapter["version"])} at {link(adapter["tree"], f"<code>{e(adapter['commit'][:7])}</code>")}</p>
-<div class="over"><div>
 <p class="gen">It accounts for {e(figures["paths"])} source paths, at {e(figures["places"])} places, and {e(figures["cases"])}
 test cases of a conversion hold it to what it makes.</p>
+{shown.flow()}
+<div class="over"><div>
 <h3>Where the paths go <span>select a verdict to see its paths</span></h3>
 {shown.bar(figures["shares"], "ledger-bar")}
 <table class="et verdicts"><tbody>{shown.verdict_rows()}</tbody></table>

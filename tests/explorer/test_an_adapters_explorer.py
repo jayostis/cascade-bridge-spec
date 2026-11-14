@@ -301,13 +301,18 @@ XML_ACCOUNTING = f"""
 [] a bridge:PathEntry ; bridge:sourcePath "{xpath(*OBSERVATION, "code", "@code")}" ; bridge:verdict bridge:carried ;
   bridge:carriedAs [ bridge:inSourceRecordType "4.1" ; bridge:inRecordClass ex:Finding ;
                      bridge:asProperty ex:findingCode ] .
+[] a bridge:PathEntry ; bridge:sourcePath "{xpath("doc", "section", "code", "@code")}" ; bridge:verdict bridge:carried ;
+  bridge:carriedAs [ bridge:inSourceRecordType "4.1" ; bridge:inRecordClass ex:Finding ;
+                     bridge:asProperty ex:findingSection ] .
+[] a bridge:PathEntry ; bridge:sourcePath "{xpath("doc", "id", "@root")}" ; bridge:verdict bridge:carried ;
+  bridge:carriedAs [ bridge:inRecordClass ex:Document ; bridge:asProperty ex:documentId ] .
 """
 
 XML_QUERY = """\
 PREFIX ex: <https://example.org/vocab#>
 CONSTRUCT {
-  ?document a ex:Document ; ex:title ?title .
-  ?finding a ex:Finding ; ex:findingValue ?value ; ex:findingCode ?code .
+  ?document a ex:Document ; ex:title ?title ; ex:documentId ?id .
+  ?finding a ex:Finding ; ex:findingValue ?value ; ex:findingCode ?code ; ex:findingSection ?section .
   ?other a ex:Other ; ex:otherValue ?otherValue .
 }
 WHERE { ?document ex:read ?title }
@@ -324,12 +329,15 @@ XML_MANIFEST = """
 XML_INPUT = """\
 <doc xmlns="urn:x">
   <templateId root="1.1"/>
+  <id root="d1"/>
   <title>A document</title>
   <section>
     <templateId root="2.1"/>
+    <code code="s1"/>
     <entry>
       <observation>
         <templateId root="4.1"/>
+        <statusCode code=""/>
         <code code="a"/>
         <value value="1"/>
       </observation>
@@ -337,6 +345,7 @@ XML_INPUT = """\
   </section>
   <section>
     <templateId root="2.2"/>
+    <code code="s2"/>
     <entry>
       <observation>
         <templateId root="4.2"/>
@@ -348,8 +357,8 @@ XML_INPUT = """\
 </doc>
 """
 
-XML_GRAPH = """<urn:d> a ex:Document ; ex:title "A document" .
-<urn:f> a ex:Finding ; ex:findingValue "1" ; ex:findingCode "a" .
+XML_GRAPH = """<urn:d> a ex:Document ; ex:title "A document" ; ex:documentId "d1" .
+<urn:f> a ex:Finding ; ex:findingValue "1" ; ex:findingCode "a" ; ex:findingSection "s1" .
 <urn:o> a ex:Other ; ex:otherValue "2" .
 """
 
@@ -1209,19 +1218,23 @@ class TestAnAdaptersExplorer:
 
             Where the kinds of record are identifiers, a kind is drawn under the outermost element below the document
             element that bears another identifier of the accounting, in a test case's input; a kind the document
-            element itself bears is drawn on its own.
+            element itself bears, and a path carried with no kind named, is drawn on its own, however empty a value
+            an element of the input carries.
             """
             flow = xml_explorer.data["flow"]
+            unnamed = "A kind of record the accounting does not name"
             assert flow["sources"] == [
+                {"label": unnamed, "kinds": [unnamed]},
                 {"label": "First Section", "kinds": ["Finding Observation"]},
                 {"label": "Header", "kinds": ["Header"]},
                 {"label": "Second Section", "kinds": ["Other Observation"]},
             ]
-            assert [item["term"] for item in flow["classes"]] == ["ex:Finding", "ex:Document", "ex:Other"]
+            assert [item["term"] for item in flow["classes"]] == ["ex:Document", "ex:Finding", "ex:Other"]
             assert flow["links"] == [
-                {"source": 0, "class": 0, "properties": 2},
-                {"source": 1, "class": 1, "properties": 1},
-                {"source": 2, "class": 2, "properties": 1},
+                {"source": 0, "class": 0, "properties": 1},
+                {"source": 1, "class": 1, "properties": 3},
+                {"source": 2, "class": 0, "properties": 1},
+                {"source": 3, "class": 2, "properties": 1},
             ]
             wide, _ = drawings(xml_explorer)
             texts = [text.text() for text in wide.all(lambda element: element.tag == "text")]
@@ -1244,6 +1257,16 @@ class TestAnAdaptersExplorer:
             }
             assert input_marks(xml_explorer, "/doc/title", "two-sections") == {
                 "ex:title": ["<title>A document</title>"]
+            }
+
+        def test_marks_a_place_above_a_record_only_where_it_holds_a_record_of_its_kind(self, xml_explorer):
+            """marks a place above a record only where it holds a record of its kind
+
+            A section's code is read for the records the section holds, so it is marked in the section holding a
+            record of the mapping's kind, never in another section.
+            """
+            assert input_marks(xml_explorer, "/doc/section/code/@code", "two-sections") == {
+                "ex:findingSection": ['<code code="s1"/>']
             }
 
     class TestGivenAStylesheet:

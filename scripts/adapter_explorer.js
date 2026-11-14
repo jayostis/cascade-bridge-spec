@@ -68,6 +68,7 @@ function select(moved, focus) {
     if (!narrow.matches) row.scrollIntoView({ block: "nearest" });
   }
   if (detail) {
+    for (const trace of view.querySelectorAll(".trace[data-trace]")) fill(trace);
     const first = view.querySelector("[data-case]");
     if (first) load(first);
     else {
@@ -196,7 +197,54 @@ const SAID = {
   1: "where a finding this path raises points in the input, and the finding",
   2: "the property this path becomes, wherever the graph expected has it",
 };
+const LANDS = "where this path lands in the input";
 let loaded = null;
+const read = new Map();
+
+function readCase(file) {
+  if (!read.has(file)) {
+    read.set(
+      file,
+      fetch(file).then((response) => {
+        if (!response.ok) throw new Error(response.statusText);
+        return response.json();
+      }),
+    );
+    read.get(file).catch(() => read.delete(file));
+  }
+  return read.get(file);
+}
+
+function fill(trace) {
+  if (trace.dataset.filled) return;
+  trace.dataset.filled = "1";
+  const marks = JSON.parse(trace.dataset.marks || "{}");
+  readCase(trace.dataset.trace)
+    .then((testCase) => {
+      for (const end of trace.querySelectorAll("pre[data-role]")) {
+        const file = testCase[end.dataset.role];
+        const marked = marks[end.dataset.role] || [];
+        if (!file || !marked.length) continue;
+        end.replaceChildren(...around(file.text, new Set(marked), marked[0]));
+        end.hidden = false;
+      }
+    })
+    .catch(() => delete trace.dataset.filled);
+}
+
+function around(text, marked, first) {
+  const rows = text.split("\n");
+  const shown = [];
+  const from = Math.max(1, first - 2);
+  const to = Math.min(rows.length, first + 2);
+  if (from > 1) shown.push("…\n");
+  for (let at = from; at <= to; at += 1) {
+    if (marked.has(at)) shown.push(element("span", rows[at - 1] + "\n", "hl"));
+    else shown.push(rows[at - 1] + "\n");
+  }
+  if (to < rows.length) shown.push("…\n");
+  return shown;
+}
 
 function load(link) {
   const marks = JSON.parse(link.dataset.marks || "{}");
@@ -204,11 +252,7 @@ function load(link) {
   if (wanted === loaded) return;
   loaded = wanted;
   casePane.replaceChildren(element("p", "Reading the test case…", "empty"));
-  fetch(link.dataset.case)
-    .then((response) => {
-      if (!response.ok) throw new Error(response.statusText);
-      return response.json();
-    })
+  readCase(link.dataset.case)
     .then((testCase) => {
       if (loaded !== wanted) return;
       casePane.replaceChildren(...shownCase(testCase, marks));
@@ -247,7 +291,8 @@ function shownCase(testCase, marks) {
     const notes = element("ol", undefined, "notes");
     for (const number of [...numbers].sort()) {
       const note = element("li");
-      note.append(element("b", number, "num"), element("span", SAID[number]));
+      const said = number === "1" && marks.inputFrom === "path" ? LANDS : SAID[number];
+      note.append(element("b", number, "num"), element("span", said));
       notes.append(note);
     }
     body.append(notes);
