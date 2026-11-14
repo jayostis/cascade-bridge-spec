@@ -38,6 +38,7 @@ CRATE = {
             "@type": "bridge:Envelope",
             "name": "listing",
             "bridge:pathOfContentInRecord": "/item",
+            "bridge:pathOfRecordKindBelowContent": "/resourceType",
         },
         {
             "@id": "#envelope-record",
@@ -45,6 +46,7 @@ CRATE = {
             "name": "record",
             "bridge:pathOfContentInRecord": "",
             "bridge:pathOfContainedContentBelowContent": "/contained",
+            "bridge:pathOfRecordKindBelowContent": "/resourceType",
         },
     ],
 }
@@ -149,13 +151,18 @@ MANIFEST = """
 """
 
 INPUTS = {
-    "category-coded": {"category": {"coding": [{"code": "vital-signs"}], "text": "Vital signs"}},
+    "category-coded": {
+        "resourceType": "Observation",
+        "category": {"coding": [{"code": "vital-signs"}], "text": "Vital signs"},
+    },
     "category-coded-at-length": {
+        "resourceType": "Observation",
         "category": {"coding": [{"code": "vital-signs", "display": "Vital signs"}], "text": "Vital signs"},
         "subject": {"reference": "Patient/a"},
         "note": "Taken at length, the record a reader should not be shown first.",
     },
     "subject-only": {
+        "resourceType": "Observation",
         "subject": {"reference": "Patient/a"},
         "note": "A subject alone, written at length, so that the smallest input whose graph has a subject holds none.",
     },
@@ -183,6 +190,9 @@ ex:unitValue rdfs:label "Unit value"@en .
 ex:categoryCode rdfs:label "Category code"@en .
 ex:subject rdfs:label "Subject"@en .
 ex:noteText rdfs:label "Note text"@en .
+ex:Document rdfs:label "Document"@en .
+ex:Finding rdfs:label "Finding"@en .
+ex:Other rdfs:label "Other"@en .
 """
 
 
@@ -212,6 +222,137 @@ SHARED_FINDINGS = """<urn:f1> oa:hasBody exa:categoryTextNotCarried ;
 <urn:f2> oa:hasBody exa:categoryTextNotCarried ;
   oa:hasTarget [ oa:hasSelector [ a oa:FragmentSelector ; rdf:value "/shared/second" ] ] ."""
 
+CARRIED_TOGETHER_ACCOUNTING = """
+[] a bridge:PathEntry ; bridge:sourcePath "/shared/first" ; bridge:verdict bridge:carried ;
+  bridge:carriedAs [ bridge:inSourceRecordType "Observation" ; bridge:inRecordClass ex:Observation ;
+                     bridge:asProperty ex:subject ] .
+[] a bridge:PathEntry ; bridge:sourcePath "/contained/shared/first" ; bridge:verdict bridge:carried ;
+  bridge:carriedAs [ bridge:inSourceRecordType "Observation" ; bridge:inRecordClass ex:Observation ;
+                     bridge:asProperty ex:subject ] .
+[] a bridge:PathEntry ; bridge:sourcePath "/shared/second" ; bridge:verdict bridge:carried ;
+  bridge:carriedAs [ bridge:inSourceRecordType "Observation" ; bridge:inRecordClass ex:Observation ;
+                     bridge:asProperty ex:noteText ] .
+"""
+
+CARRIED_TOGETHER_MANIFEST = """
+<> a mf:Manifest ; mf:entries ( <#two-places> ) .
+
+<#two-places> a bridge:IsomorphicConversionTest ; mf:name "two-places" ;
+  mf:action [ bridge:input <in/two-places.json> ] ;
+  mf:result [ bridge:expectedGraph <expected/two-places.ttl> ] .
+"""
+
+CARRIED_TOGETHER_INPUT = {
+    "resourceType": "Observation",
+    "shared": {"first": "a", "second": "b"},
+    "contained": [{"resourceType": "Unit", "shared": {"first": "c"}}],
+}
+
+XML_CRATE = {
+    "@context": CRATE["@context"],
+    "@graph": [
+        CRATE["@graph"][0],
+        {
+            "@id": "./",
+            "@type": ["Dataset", "bridge:Adapter"],
+            "identifier": "example-xml",
+            "name": "Example XML",
+            "version": "0.2.0",
+            "bridge:vocabularyFile": ["ontologies/example.ttl"],
+            "bridge:envelope": [{"@id": "#envelope-document"}],
+            "bridge:elementNameOfEachRecord": "doc",
+            "bridge:sourceRecordTypesAreIdentifiers": True,
+            "bridge:mapping": [{"@id": "in/document.rq"}],
+            "bridge:gapScheme": {"@id": "vocab/gaps.ttl"},
+            "bridge:sourceAccounting": {"@id": "vocab/accounting.ttl"},
+            "bridge:testManifest": {"@id": "fixtures/manifest.ttl"},
+        },
+        {
+            "@id": "#envelope-document",
+            "@type": "bridge:Envelope",
+            "name": "document",
+            "bridge:docRootElementName": "doc",
+        },
+    ],
+}
+
+
+def xpath(*steps):
+    return "".join(
+        f"/@{step[1:]}" if step.startswith("@") else f"/*[local-name()='{step}' and namespace-uri()='urn:x']"
+        for step in steps
+    )
+
+
+OBSERVATION = ("doc", "section", "entry", "observation")
+XML_ACCOUNTING = f"""
+[] a skos:Concept ; skos:notation "1.1" ; skos:prefLabel "Header"@en .
+[] a skos:Concept ; skos:notation "2.1" ; skos:prefLabel "First Section"@en .
+[] a skos:Concept ; skos:notation "2.2" ; skos:prefLabel "Second Section"@en .
+[] a skos:Concept ; skos:notation "4.1" ; skos:prefLabel "Finding Observation"@en .
+[] a skos:Concept ; skos:notation "4.2" ; skos:prefLabel "Other Observation"@en .
+[] a bridge:PathEntry ; bridge:sourcePath "{xpath("doc", "title")}" ; bridge:verdict bridge:carried ;
+  bridge:carriedAs [ bridge:inSourceRecordType "1.1" ; bridge:inRecordClass ex:Document ; bridge:asProperty ex:title ] .
+[] a bridge:PathEntry ; bridge:sourcePath "{xpath(*OBSERVATION, "value", "@value")}" ; bridge:verdict bridge:carried ;
+  bridge:carriedAs [ bridge:inSourceRecordType "4.1" ; bridge:inRecordClass ex:Finding ;
+                     bridge:asProperty ex:findingValue ] .
+[] a bridge:PathEntry ; bridge:sourcePath "{xpath(*OBSERVATION, "value", "@value")}" ; bridge:verdict bridge:carried ;
+  bridge:carriedAs [ bridge:inSourceRecordType "4.2" ; bridge:inRecordClass ex:Other ; bridge:asProperty ex:otherValue ] .
+[] a bridge:PathEntry ; bridge:sourcePath "{xpath(*OBSERVATION, "code", "@code")}" ; bridge:verdict bridge:carried ;
+  bridge:carriedAs [ bridge:inSourceRecordType "4.1" ; bridge:inRecordClass ex:Finding ;
+                     bridge:asProperty ex:findingCode ] .
+"""
+
+XML_QUERY = """\
+PREFIX ex: <https://example.org/vocab#>
+CONSTRUCT {
+  ?document a ex:Document ; ex:title ?title .
+  ?finding a ex:Finding ; ex:findingValue ?value ; ex:findingCode ?code .
+  ?other a ex:Other ; ex:otherValue ?otherValue .
+}
+WHERE { ?document ex:read ?title }
+"""
+
+XML_MANIFEST = """
+<> a mf:Manifest ; mf:entries ( <#two-sections> ) .
+
+<#two-sections> a bridge:IsomorphicConversionTest ; mf:name "two-sections" ;
+  mf:action [ bridge:input <in/two-sections.xml> ] ;
+  mf:result [ bridge:expectedGraph <expected/two-sections.ttl> ] .
+"""
+
+XML_INPUT = """\
+<doc xmlns="urn:x">
+  <templateId root="1.1"/>
+  <title>A document</title>
+  <section>
+    <templateId root="2.1"/>
+    <entry>
+      <observation>
+        <templateId root="4.1"/>
+        <code code="a"/>
+        <value value="1"/>
+      </observation>
+    </entry>
+  </section>
+  <section>
+    <templateId root="2.2"/>
+    <entry>
+      <observation>
+        <templateId root="4.2"/>
+        <code code="b"/>
+        <value value="2"/>
+      </observation>
+    </entry>
+  </section>
+</doc>
+"""
+
+XML_GRAPH = """<urn:d> a ex:Document ; ex:title "A document" .
+<urn:f> a ex:Finding ; ex:findingValue "1" ; ex:findingCode "a" .
+<urn:o> a ex:Other ; ex:otherValue "2" .
+"""
+
 
 def an_adapter(folder, accounting=ACCOUNTING, manifest=MANIFEST, inputs=INPUTS, graphs=GRAPHS, findings=FINDINGS):
     write(folder / "ro-crate-metadata.json", json.dumps(CRATE, indent=2))
@@ -226,6 +367,21 @@ def an_adapter(folder, accounting=ACCOUNTING, manifest=MANIFEST, inputs=INPUTS, 
         write(folder / "fixtures" / "expected" / f"{name}.ttl", PREFIXES + graphs[name])
     for name, text in findings.items():
         write(folder / "fixtures" / "findings" / f"{name}.ttl", PREFIXES + text)
+    return committed(folder)
+
+
+def an_xml_adapter(folder):
+    write(folder / "ro-crate-metadata.json", json.dumps(XML_CRATE, indent=2))
+    write(folder / "vocab" / "accounting.ttl", PREFIXES + XML_ACCOUNTING)
+    write(folder / "vocab" / "gaps.ttl", PREFIXES + GAPS)
+    write(folder / "in" / "document.rq", XML_QUERY)
+    write(folder / "fixtures" / "manifest.ttl", PREFIXES + XML_MANIFEST)
+    write(folder / "fixtures" / "in" / "two-sections.xml", XML_INPUT)
+    write(folder / "fixtures" / "expected" / "two-sections.ttl", PREFIXES + XML_GRAPH)
+    return committed(folder)
+
+
+def committed(folder):
     git = [
         "git",
         "-C",
@@ -427,6 +583,51 @@ def explorer_with_two_places_sharing_a_gap(tmp_path_factory):
     vocabulary = tmp_path_factory.mktemp("vocabulary")
     write(vocabulary / "ontologies" / "example.ttl", PREFIXES + VOCABULARY)
     return explore(tmp_path_factory, (adapter, vocabulary, commit))
+
+
+@pytest.fixture(scope="module")
+def explorer_with_two_places_carried_from_one_case(tmp_path_factory):
+    adapter = tmp_path_factory.mktemp("adapter")
+    commit = an_adapter(
+        adapter,
+        accounting=CARRIED_TOGETHER_ACCOUNTING,
+        manifest=CARRIED_TOGETHER_MANIFEST,
+        inputs={"two-places": CARRIED_TOGETHER_INPUT},
+        graphs={"two-places": '<urn:r> a ex:Observation ; ex:subject <urn:p> ; ex:noteText "b" .'},
+        findings={},
+    )
+    vocabulary = tmp_path_factory.mktemp("vocabulary")
+    write(vocabulary / "ontologies" / "example.ttl", PREFIXES + VOCABULARY)
+    return explore(tmp_path_factory, (adapter, vocabulary, commit))
+
+
+@pytest.fixture(scope="module")
+def xml_explorer(tmp_path_factory):
+    adapter = tmp_path_factory.mktemp("adapter")
+    commit = an_xml_adapter(adapter)
+    vocabulary = tmp_path_factory.mktemp("vocabulary")
+    write(vocabulary / "ontologies" / "example.ttl", PREFIXES + VOCABULARY)
+    return explore(tmp_path_factory, (adapter, vocabulary, commit))
+
+
+def drawings(explorer):
+    """The overview's drawings, the wide one first."""
+    return sorted(
+        explorer.by_id("overview").all(lambda element: element.tag == "svg"),
+        key=lambda svg: "narrow" in svg.classes,
+    )
+
+
+def input_marks(explorer, place, case="two-places"):
+    """Each mapping's marked lines of the case's input at a place, stripped, by what the mapping becomes."""
+    lines = explorer.case(case)["input"]["text"].split("\n")
+    out = {}
+    sections = explorer.by_id(explorer.node(place)["id"]).by_class("mapping")
+    for mapping, section in zip(explorer.node(place)["mappings"], sections, strict=True):
+        (link,) = section.having("data-case")
+        marks = json.loads(link.attrs["data-marks"])
+        out[mapping["becomes"][0]["property"]["term"]] = [lines[at - 1].strip() for at in marks.get("input", [])]
+    return out
 
 
 class TestAnAdaptersExplorer:
@@ -710,7 +911,102 @@ class TestAnAdaptersExplorer:
             file, marked = marks("/category/coding/code")
             graph = json.loads((explorer.out / file).read_text(encoding="utf-8"))["expectedGraph"]["text"].split("\n")
             assert [graph[at - 1] for at in marked["expectedGraph"]] == [GRAPHS["category-coded"]]
-            assert "input" not in marked
+
+        def test_marks_where_a_path_that_raises_no_finding_lands_in_the_input(self, explorer):
+            """marks where a path that raises no finding lands in the input
+
+            The path is read from each record of the input the adapter's envelopes find, below where the record's
+            content begins, in a record of a kind the path's mapping names.
+            """
+            assert input_marks(explorer, "/category/coding/code", "category-coded") == {
+                "ex:categoryCode": ['"code": "vital-signs"']
+            }
+            (link,) = explorer.by_id(explorer.node("/category/coding/code")["id"]).having("data-case")
+            assert json.loads(link.attrs["data-marks"])["inputFrom"] == "path"
+            (link,) = explorer.by_id(explorer.node("/category/text")["id"]).having("data-case")
+            assert "inputFrom" not in json.loads(link.attrs["data-marks"])
+            script = explorer.page.split("<script>")[-1]
+            assert "where this path lands in the input" in script
+
+        def test_draws_each_kind_of_record_flowing_into_the_classes_it_becomes(self, explorer):
+            """draws each kind of record flowing into the classes it becomes
+
+            A line's weight is the number of properties the kind becomes on the class. The page draws a wide drawing
+            and a narrow one for a phone, from the same data.
+            """
+            flow = explorer.data["flow"]
+            assert flow == {
+                "sources": [
+                    {"label": "Observation", "kinds": ["Observation"]},
+                    {"label": "Unit", "kinds": ["Unit"]},
+                ],
+                "classes": [
+                    {"term": "ex:Observation", "label": "Observation"},
+                    {"term": "ex:Unit", "label": "Unit"},
+                ],
+                "links": [
+                    {"source": 0, "class": 0, "properties": 3},
+                    {"source": 1, "class": 1, "properties": 1},
+                ],
+            }
+            wide, narrow = drawings(explorer)
+            assert "narrow" not in wide.classes and "narrow" in narrow.classes
+            captions = [text.text() for text in wide.all(lambda element: element.tag == "text")][:2]
+            assert captions == ["A kind of record in the source", "What it becomes in the pod"]
+            for drawing in (wide, narrow):
+                texts = [text.text() for text in drawing.all(lambda element: element.tag == "text")]
+                for name in ("Observation", "Unit", "ex:Observation", "ex:Unit"):
+                    assert name in texts, (name, texts)
+                assert drawing.attrs["role"] == "img" and drawing.attrs["aria-label"]
+                lines = list(drawing.all(lambda element: element.tag == "path"))
+                assert len(lines) == len(flow["links"])
+                widths = [float(line.attrs["stroke-width"]) for line in lines]
+                assert widths[0] > widths[1]
+                assert not re.search(r"\b[13]\b", " ".join(texts))
+
+        def test_draws_in_colours_that_need_no_stylesheet(self, explorer):
+            """draws in colours that need no stylesheet
+
+            Each line and each word of a drawing carries its colour as an attribute, so a reader who opens the page
+            without its styles sees no black shapes.
+            """
+            assert len(drawings(explorer)) == 2
+            for drawing in drawings(explorer):
+                for line in drawing.all(lambda element: element.tag == "path"):
+                    assert line.attrs.get("fill") == "none" and line.attrs.get("stroke", "").startswith("#")
+                for text in drawing.all(lambda element: element.tag == "text"):
+                    assert text.attrs.get("fill", "").startswith("#"), text.text()
+
+        def test_traces_a_carried_path_from_the_source_through_the_adapter_to_the_pod(self, explorer):
+            """traces a carried path from the source, through the adapter, to the pod
+
+            The source names the kind and the case's input, the adapter the path and its verdict, the pod the class;
+            the script fills each end with the case's lines around its mark.
+            """
+            detail = explorer.by_id(explorer.node("/category/coding/code")["id"])
+            (trace,) = detail.by_class("trace")
+            assert trace.attrs["data-trace"] == explorer.data["cases"][0]["file"]
+            source, adapter, pod = [part.text() for part in trace.all(lambda element: element.tag == "section")]
+            assert source.startswith("The source Observation") and "fixtures/in/category-coded.json" in source
+            assert adapter.startswith("The adapter /category/coding/code carried")
+            assert "in/observation.rq" in adapter
+            assert pod.startswith("The pod Observation ex:Observation")
+            assert [pre.attrs["data-role"] for pre in trace.all(lambda element: element.tag == "pre")] == [
+                "input",
+                "expectedGraph",
+            ]
+
+        def test_traces_a_path_not_carried_to_the_finding_it_raises(self, explorer):
+            """traces a path not carried to the finding it raises"""
+            (trace,) = explorer.by_id(explorer.node("/category/text")["id"]).by_class("trace")
+            *_, findings = [part.text() for part in trace.all(lambda element: element.tag == "section")]
+            assert findings.startswith("The findings A category's text has no Cascade predicate.")
+            assert "exa:categoryTextNotCarried" in findings
+            assert [pre.attrs["data-role"] for pre in trace.all(lambda element: element.tag == "pre")] == [
+                "input",
+                "expectedFindings",
+            ]
+            assert not explorer.by_id(explorer.node("/category/coding/display")["id"]).by_class("trace")
 
         def test_lists_the_plain_form_of_a_place_before_its_contained_form(self, explorer):
             """lists the plain form of a place before its contained form"""
@@ -893,6 +1189,62 @@ class TestAnAdaptersExplorer:
                 assert [lines[at - 1].strip() for at in marks["input"]] == [line], place
                 findings = case["expectedFindings"]["text"].split("\n")
                 assert [findings[at - 1].split()[0] for at in marks["expectedFindings"]] == [finding], place
+
+    class TestGivenTwoPlacesCarriedFromOneCase:
+        def test_marks_each_place_where_its_own_path_lands_in_a_record_of_its_own_kind(
+            self, explorer_with_two_places_carried_from_one_case
+        ):
+            """marks each place where its own path lands, in a record of its own kind
+
+            Neither raises a finding. A place is marked at its own path, never at the other's, and its contained form
+            is not marked in a contained record of a kind its mapping does not name.
+            """
+            explorer = explorer_with_two_places_carried_from_one_case
+            assert input_marks(explorer, "/shared/first") == {"ex:subject": ['"first": "a",']}
+            assert input_marks(explorer, "/shared/second") == {"ex:noteText": ['"second": "b"']}
+
+    class TestGivenAnXmlSource:
+        def test_draws_each_section_flowing_into_the_classes_its_records_become(self, xml_explorer):
+            """draws each section flowing into the classes its records become
+
+            Where the kinds of record are identifiers, a kind is drawn under the outermost element below the document
+            element that bears another identifier of the accounting, in a test case's input; a kind the document
+            element itself bears is drawn on its own.
+            """
+            flow = xml_explorer.data["flow"]
+            assert flow["sources"] == [
+                {"label": "First Section", "kinds": ["Finding Observation"]},
+                {"label": "Header", "kinds": ["Header"]},
+                {"label": "Second Section", "kinds": ["Other Observation"]},
+            ]
+            assert [item["term"] for item in flow["classes"]] == ["ex:Finding", "ex:Document", "ex:Other"]
+            assert flow["links"] == [
+                {"source": 0, "class": 0, "properties": 2},
+                {"source": 1, "class": 1, "properties": 1},
+                {"source": 2, "class": 2, "properties": 1},
+            ]
+            wide, _ = drawings(xml_explorer)
+            texts = [text.text() for text in wide.all(lambda element: element.tag == "text")]
+            assert texts[0] == "Where in the source"
+            assert {"First Section", "Header", "Second Section"} <= set(texts)
+
+        def test_marks_where_a_path_lands_only_in_an_element_bearing_its_kind(self, xml_explorer):
+            """marks where a path lands only in an element bearing its kind
+
+            Two kinds share a place and one case: each mapping is marked inside the element that bears its own kind,
+            and a second place of the same case only at its own path.
+            """
+            observation = "/doc/section/entry/observation"
+            assert input_marks(xml_explorer, f"{observation}/value/@value", "two-sections") == {
+                "ex:findingValue": ['<value value="1"/>'],
+                "ex:otherValue": ['<value value="2"/>'],
+            }
+            assert input_marks(xml_explorer, f"{observation}/code/@code", "two-sections") == {
+                "ex:findingCode": ['<code code="a"/>']
+            }
+            assert input_marks(xml_explorer, "/doc/title", "two-sections") == {
+                "ex:title": ["<title>A document</title>"]
+            }
 
     class TestGivenAStylesheet:
         def test_links_each_stylesheet_ahead_of_its_own_in_the_order_given(self, explorer_with_stylesheets):
