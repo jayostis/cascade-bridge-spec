@@ -30,6 +30,7 @@
     "Facts supplied with an input · adapter/profile/must/facts.py, shapes/facts.shapes.ttl",
     "An adapter's gap scheme · adapter/profile/must/gap_scheme.py, shapes/gap-scheme.shapes.ttl",
     "Accounting for every path of a source · adapter/profile/must/source_accounting.py",
+    "An unaccounted path a test case expects · adapter/profile/must/unaccounted_paths.py, bridge:testsUnaccountedSourcePath",
     "The form of an accounting entry · shapes/bridge.shapes.ttl",
     "Terms a carried path is carried as · adapter/profile/must/carried_as.py, shapes/carried-as.shapes.ttl",
     "Names of a source's kinds of record · adapter/profile/must/record_type_names.py",

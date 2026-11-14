@@ -62,6 +62,7 @@
 <#json-0004> a bridge:IsomorphicConversionTest ;
   mf:name "json-0004" ;
   rdfs:comment "A record carrying members the accounting names nowhere, one of them an array of objects: an array's items stand at its path, so the census finding for it and for a member of its items is addressed at the first item and counts the items. A status the concept map lacks, written twice in an array, is one lookup finding at its first occurrence." ;
+  bridge:testsUnaccountedSourcePath "/novelty" , "/extension" , "/extension/url" ;
   mf:action [
     bridge:input <in/json-0004.json> ;
     bridge:envelope <../ro-crate-metadata.json#envelope-set> ;
@@ -75,6 +76,7 @@
 <#json-0005> a bridge:IsomorphicConversionTest ;
   mf:name "json-0005" ;
   rdfs:comment "The input of json-0001 read in the record envelope, which admits it too: the whole document is then one record, the mapping finds no accession on it, the source schema reports the missing member, and the census reports every path below records. convert given --envelope naming each envelope in turn writes the findings of json-0001 and of this entry." ;
+  bridge:testsUnaccountedSourcePath "/records" , "/records/accession" , "/records/version" , "/records/label" , "/records/note" ;
   mf:action [
     bridge:input <in/json-0001.json> ;
     bridge:envelope <../ro-crate-metadata.json#envelope-record> ;

@@ -121,6 +121,11 @@
     sh:maxCount 1 ;
     sh:nodeKind sh:BlankNodeOrIRI ;
     sh:message "A test carries exactly one mf:action."
+  ] ;
+  sh:property [
+    sh:path bridge:testsUnaccountedSourcePath ;
+    sh:datatype xsd:string ;
+    sh:message "A test names each path it tests by bridge:testsUnaccountedSourcePath, an xsd:string."
   ] .
 
 <#IsomorphicConversionTest> a sh:NodeShape ;

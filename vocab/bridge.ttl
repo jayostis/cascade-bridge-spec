@@ -658,6 +658,12 @@ bridge:expectedFindings a owl:ObjectProperty ;
   rdfs:label "expected findings"@en ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
+bridge:testsUnaccountedSourcePath a owl:DatatypeProperty ;
+  rdfs:label "tests unaccounted source path"@en ;
+  rdfs:comment "Written as the record writes it, as the finding's sh:value does."@en ;
+  rdfs:range xsd:string ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
 bridge:recordsProcessedCount a owl:DatatypeProperty ;
   rdfs:label "records processed count"@en ;
   rdfs:range xsd:integer ;
