@@ -27,7 +27,7 @@ CRATE = {
             "version": "0.4.1",
             "bridge:vocabularyFile": ["ontologies/example.ttl"],
             "bridge:envelope": [{"@id": "#envelope-listing"}, {"@id": "#envelope-record"}],
-            "bridge:mapping": [{"@id": "in/observation.rq"}],
+            "bridge:mapping": [{"@id": "in/observation.rq"}, {"@id": "in/absent.rq"}],
             "bridge:findingsQuery": [{"@id": "in/findings.rq"}],
             "bridge:gapScheme": {"@id": "vocab/gaps.ttl"},
             "bridge:sourceAccounting": {"@id": "vocab/accounting.ttl"},
@@ -77,6 +77,11 @@ ACCOUNTING = """
 [] a bridge:PathEntry ; bridge:sourcePath "/subject/reference" ; bridge:verdict bridge:carried ;
   bridge:carriedAs [ bridge:inSourceRecordType "Observation" ; bridge:inRecordClass ex:Observation ;
                      bridge:asProperty ex:subject ] .
+[] a bridge:PathEntry ; bridge:sourcePath "/note/text" ; bridge:verdict bridge:carried ;
+  bridge:carriedAs [ bridge:inSourceRecordType "Observation" ; bridge:inRecordClass ex:Observation ;
+                     bridge:asProperty ex:subject ] ,
+                   [ bridge:inSourceRecordType "Observation" ; bridge:inRecordClass ex:Observation ;
+                     bridge:asProperty ex:noteText ] .
 [] a bridge:PathEntry ; bridge:sourcePath "/contained/subject/reference" ; bridge:verdict bridge:carried ;
   bridge:carriedAs [ bridge:inSourceRecordType "Observation" ; bridge:inRecordClass ex:Observation ;
                      bridge:asProperty ex:subject ] .
@@ -95,9 +100,15 @@ PREFIX ex: <https://example.org/vocab#>
 CONSTRUCT {
   ?record a ex:Observation ;
     ex:categoryCode ?code ; # a code of the category
-    ?subjectProperty ?subject .
+    ?subjectProperty ?subject ;
+    ex:noteText ?text .
 }
 WHERE { ?record ex:read ?code . OPTIONAL { ?record ex:read ?subject BIND (ex:subject AS ?subjectProperty) } }
+"""
+
+ABSENT_QUERY = """PREFIX ex: <https://example.org/vocab#>
+CONSTRUCT { ?absence ex:absentValueProperty ?property . }
+WHERE { VALUES ?property { ex:categoryCode ex:subject } ?absence ex:read ?property }
 """
 
 FINDINGS_QUERY = """\
@@ -152,6 +163,7 @@ VOCABULARY = """
 ex:Observation rdfs:label "Observation"@en .
 ex:categoryCode rdfs:label "Category code"@en .
 ex:subject rdfs:label "Subject"@en .
+ex:noteText rdfs:label "Note text"@en .
 """
 
 
@@ -165,6 +177,7 @@ def an_adapter(folder):
     write(folder / "vocab" / "accounting.ttl", PREFIXES + ACCOUNTING)
     write(folder / "vocab" / "gaps.ttl", PREFIXES + GAPS)
     write(folder / "in" / "observation.rq", OBSERVATION_QUERY)
+    write(folder / "in" / "absent.rq", ABSENT_QUERY)
     write(folder / "in" / "findings.rq", FINDINGS_QUERY)
     write(folder / "fixtures" / "manifest.ttl", PREFIXES + MANIFEST)
     for name, record in INPUTS.items():
@@ -315,16 +328,33 @@ class TestAnAdaptersExplorer:
                     "kind": "Observation",
                     "class": {"term": "ex:Observation", "label": "Observation"},
                     "property": {"term": "ex:categoryCode", "label": "Category code"},
+                    "queries": ["in/observation.rq"],
                 }
             ]
-            assert mapping["queries"] == ["in/observation.rq"]
             assert mapping["case"] == "category-coded"
             subject = explorer.mapping("/subject/reference")
-            assert (subject["queries"], subject["case"]) == (["in/observation.rq"], "subject-only")
+            assert ([becomes["queries"] for becomes in subject["becomes"]], subject["case"]) == (
+                [["in/observation.rq"]],
+                "subject-only",
+            )
             case = explorer.case("category-coded")
             assert '"vital-signs"' in case["input"]["text"]
             assert "ex:categoryCode" in case["expectedGraph"]["text"]
             assert "expectedFindings" not in case
+
+        def test_names_a_query_as_writing_a_property_only_where_the_property_is_in_a_template_predicate(self, explorer):
+            """names a query as writing a property only where the property is in a template predicate
+
+            A query that names the property as a value only, bound to a variable the template writes as an object,
+            does not write it, and a query lists once however many of the mapping's properties it writes.
+            """
+            code = explorer.mapping("/category/coding/code")
+            assert code["becomes"][0]["queries"] == ["in/observation.rq"]
+            note = explorer.mapping("/note/text")
+            assert {becomes["property"]["term"]: becomes["queries"] for becomes in note["becomes"]} == {
+                "ex:subject": ["in/observation.rq"],
+                "ex:noteText": ["in/observation.rq"],
+            }
 
         def test_shows_a_path_not_carried_with_its_reason_and_a_gap_with_the_case_that_reports_it(self, explorer):
             """shows a path not carried with its reason, and a gap with the case that reports it
@@ -374,7 +404,7 @@ class TestAnAdaptersExplorer:
                 form for node in explorer.nodes(explorer.data["tree"]) for m in node["mappings"] for form in m["forms"]
             ]
             exact = {len(INPUTS), len(entries)}
-            assert exact == {3, 8}
+            assert exact == {3, 9}
             assert not [count for count in exact if re.search(rf"\b{count}\b", shown)], shown
             assert f'href="{REPORT}"' in explorer.page
             assert f'href="{REPOSITORY}/blob/{explorer.commit}/vocab/accounting.ttl"' in explorer.page

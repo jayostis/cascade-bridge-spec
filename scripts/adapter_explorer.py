@@ -21,7 +21,10 @@ from pathlib import Path
 from urllib.parse import urlparse
 from urllib.request import url2pathname
 
-from rdflib import RDF, RDFS, SKOS, Graph, Literal, Namespace, URIRef
+from rdflib import RDF, RDFS, SKOS, Graph, Literal, Namespace, URIRef, Variable
+from rdflib.plugins.sparql.algebra import translateQuery
+from rdflib.plugins.sparql.parser import parseQuery
+from rdflib.plugins.sparql.parserutils import CompValue
 from rdflib.util import guess_format
 
 import path_forms
@@ -161,6 +164,44 @@ def query_terms(text):
         if (prefix or "") in prefixes:
             terms.add(prefixes[prefix or ""] + local)
     return terms
+
+
+def properties_written(text):
+    """The IRIs a CONSTRUCT query writes as the predicate of a template triple: named there, or bound by BIND or VALUES
+    to the variable that sits there. An IRI the query names only as a value, bound to a variable the template writes as
+    an object, is not written."""
+    query = translateQuery(parseQuery(text)).algebra
+    bound = {}
+
+    def children(node):
+        if isinstance(node, (CompValue, dict)):
+            return list(node.values())
+        return list(node) if isinstance(node, (list, tuple, set)) else []
+
+    def collect(node):
+        if isinstance(node, CompValue) and node.name == "Extend":
+            bound.setdefault(node["var"], set()).update(terms_in(node["expr"]))
+        if isinstance(node, CompValue) and node.name == "values":
+            for row in node["res"]:
+                for variable, value in row.items():
+                    bound.setdefault(variable, set()).add(value)
+        for child in children(node):
+            collect(child)
+
+    def terms_in(node):
+        if isinstance(node, (URIRef, Variable)):
+            return {node}
+        return {term for child in children(node) for term in terms_in(child)}
+
+    def resolved(term, seen=()):
+        if isinstance(term, URIRef):
+            return {term}
+        if term in seen:
+            return set()
+        return {iri for value in bound.get(term, ()) for iri in resolved(value, (*seen, term))}
+
+    collect(query["p"])
+    return {str(iri) for _, predicate, _ in query["template"] for iri in resolved(predicate)}
 
 
 def without_strings_and_comments(text):
@@ -336,9 +377,13 @@ def build(folder, vocabulary, repository, report):
     cases = read_cases(adapter)
     queries = {}
     for predicate in (BRIDGE.mapping, BRIDGE.findingsQuery):
-        for iri in adapter.crate.objects(adapter.root, predicate):
+        for iri in sorted(adapter.crate.objects(adapter.root, predicate)):
             file = path_of(iri)
-            queries[adapter.relative(file)] = (predicate, query_terms(file.read_text(encoding="utf-8")))
+            text = file.read_text(encoding="utf-8")
+            queries[adapter.relative(file)] = (
+                predicate,
+                query_terms(text) if predicate == BRIDGE.findingsQuery else properties_written(text),
+            )
     blob = f"{repository}/blob/{commit}/"
 
     def gap(iri):
@@ -350,10 +395,8 @@ def build(folder, vocabulary, repository, report):
             "issues": sorted(str(issue) for issue in adapter.gaps.objects(iri, RDFS.seeAlso)),
         }
 
-    def writers(entry):
-        wanted = [(BRIDGE.mapping, str(property_)) for _, _, property_ in entry["carried"]]
-        wanted += [(BRIDGE.findingsQuery, str(entry["gap"]))] if entry["gap"] is not None else []
-        return [name for kind, term in wanted for name, (of, terms) in queries.items() if of == kind and term in terms]
+    def writers(kind, term):
+        return [name for name, (of, terms) in queries.items() if of == kind and str(term) in terms]
 
     def case_for(entry, paths):
         """The case that holds the adapter to the entry: its input holds the place, and its expected graph holds
@@ -429,10 +472,11 @@ def build(folder, vocabulary, repository, report):
                             "kind": adapter.kind_label(kind),
                             "class": adapter.term(record_class),
                             "property": adapter.term(property_),
+                            "queries": writers(BRIDGE.mapping, property_),
                         }
                         for kind, record_class, property_ in entry["carried"]
                     ],
-                    "queries": writers(entry),
+                    "queries": [] if entry["gap"] is None else writers(BRIDGE.findingsQuery, entry["gap"]),
                     "case": case_for(entry, paths),
                 }
             )
@@ -657,10 +701,10 @@ def a_mapping(data, mapping):
         parts.append(f"<p>The same fact as {link('#' + same['node'], shown) if same['node'] else shown}.</p>")
     for becomes in mapping["becomes"]:
         kind = f", in a {e(becomes['kind'])}" if becomes["kind"] else ""
-        parts.append(f"<p>Becomes {term(becomes['property'])} on a {term(becomes['class'])}{kind}.</p>")
+        written = f" Written by {a_queries(blob, becomes['queries'])}." if becomes["queries"] else ""
+        parts.append(f"<p>Becomes {term(becomes['property'])} on a {term(becomes['class'])}{kind}.{written}</p>")
     if mapping["queries"]:
-        queries = ", ".join(link(blob + query, f"<code>{e(query)}</code>") for query in mapping["queries"])
-        parts.append(f"<p>Written by {queries}.</p>")
+        parts.append(f"<p>Written by {a_queries(blob, mapping['queries'])}.</p>")
     if mapping["case"]:
         (case,) = [case for case in data["cases"] if case["name"] == mapping["case"]]
         parts.append(
@@ -670,6 +714,10 @@ def a_mapping(data, mapping):
     elif mapping["becomes"] or mapping["gap"]:
         parts.append('<p class="quiet">No test case of the adapter shows this.</p>')
     return f'<div class="mapping">{"".join(parts)}</div>'
+
+
+def a_queries(blob, queries):
+    return ", ".join(link(blob + query, f"<code>{e(query)}</code>") for query in queries)
 
 
 def a_node(data, node):
