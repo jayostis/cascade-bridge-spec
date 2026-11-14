@@ -1,5 +1,5 @@
 import pytest
-from rdflib import URIRef
+from rdflib import Literal, URIRef
 
 import record_type_names
 from _terms import BRIDGE
@@ -33,15 +33,18 @@ def accounted(package, *statements):
     return package.write(ACCOUNTING, text + "\n".join(statements))
 
 
-def said_about(package):
-    return "\n".join(record_type_names.faulty(package.crate))
+def said_about(package, declared=True):
+    crate = package.crate
+    if declared is not None:
+        crate.graph.add((crate.root, BRIDGE.sourceRecordTypesAreIdentifiers, Literal(declared)))
+    return "\n".join(record_type_names.faulty(crate))
 
 
 def wanted(source_type):
     return (
-        f"{source_type} is the bridge:inSourceRecordType of an entry, where an id names its record type in words: "
-        f'a skos:Concept of example-accounting.ttl whose skos:notation is "{source_type}" and which carries '
-        "one skos:prefLabel, a name that is not itself an id"
+        f"{source_type} is the bridge:inSourceRecordType of an entry, and the adapter says its source record types are "
+        f'identifiers: a skos:Concept of example-accounting.ttl whose skos:notation is "{source_type}" and which '
+        "carries one skos:prefLabel, a name that is not itself the id"
     )
 
 
@@ -52,7 +55,7 @@ class TestNamesOfASourcesKindsOfRecord:
     tool showing the adapter to a reader prints the name with the id beside it.
     """
 
-    class TestGivenAnAccountingNamingKindsOfRecordByAnId:
+    class TestGivenAnAdapterSayingItsSourceRecordTypesAreIdentifiers:
         def test_reports_nothing_where_each_id_is_the_notation_of_a_concept_with_one_label(self, package):
             accounted(
                 package,
@@ -97,7 +100,7 @@ class TestNamesOfASourcesKindsOfRecord:
             accounted(package, carried_in(AN_ALLERGY), named(AN_ALLERGY, "Allergy"), named(AN_ALLERGY, "Intolerance"))
             assert wanted(AN_ALLERGY) in said_about(package)
 
-        @pytest.mark.parametrize("label", [AN_ALLERGY, "4.7", "", "  "], ids=["the id", "an id", "empty", "blank"])
+        @pytest.mark.parametrize("label", [AN_ALLERGY, "", "  "], ids=["the id", "empty", "blank"])
         def test_reports_a_label_that_is_no_name_in_words(self, package, label):
             accounted(package, carried_in(AN_ALLERGY), named(AN_ALLERGY, label))
             assert wanted(AN_ALLERGY) in said_about(package)
@@ -106,15 +109,20 @@ class TestNamesOfASourcesKindsOfRecord:
             accounted(package, carried_in(AN_ALLERGY), named(AN_ALLERGY, "Allergy", notation=AN_ALLERGY + "0"))
             assert wanted(AN_ALLERGY) in said_about(package)
 
-    class TestGivenAnAccountingNamingKindsOfRecordByName:
-        @pytest.mark.parametrize("source_type", ["Condition", "AllergyIntolerance", "ExampleRecord", "A1.2"])
-        def test_reports_nothing_for_a_name_that_is_no_dotted_number(self, package, source_type):
+        @pytest.mark.parametrize("source_type", ["A01", "7", "1.2 ", "Condition"])
+        def test_reports_an_id_of_any_form_with_no_concept(self, package, source_type):
             accounted(package, carried_in(source_type))
-            assert not said_about(package)
+            assert wanted(source_type) in said_about(package)
 
         def test_reports_nothing_for_an_accounting_naming_no_kind_of_record(self, package):
             accounted(package)
             assert not said_about(package)
+
+    class TestGivenAnAdapterNotSayingItsSourceRecordTypesAreIdentifiers:
+        @pytest.mark.parametrize("declared", [None, False], ids=["saying nothing", "saying false"])
+        def test_reports_nothing_for_a_dotted_id_with_no_concept(self, package, declared):
+            accounted(package, carried_in(AN_ALLERGY))
+            assert not said_about(package, declared)
 
     class TestGivenAnAdapterNamingNoAccounting:
         def test_reports_nothing(self, crate):

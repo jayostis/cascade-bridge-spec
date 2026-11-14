@@ -67,6 +67,10 @@ class TestWhatAnAdaptersCrateNames:
             crate.graph.set((scheme, SCHEMA.encodingFormat, Literal("text/plain")))
             assert "A gap scheme is declared text/turtle." in shape_file_messages(crate, "adapter.ttl")
 
+        def test_reports_source_record_types_are_identifiers_that_is_not_a_boolean(self, crate):
+            crate.graph.set((crate.root, BRIDGE.sourceRecordTypesAreIdentifiers, Literal("yes")))
+            assert "bridge:sourceRecordTypesAreIdentifiers" in shape_file_messages(crate, "adapter.ttl")
+
         def test_reports_a_crate_whose_source_accounting_is_no_file_entity_in_it(self, crate):
             accounting = crate.graph.value(crate.root, BRIDGE.sourceAccounting)
             assert accounting is not None

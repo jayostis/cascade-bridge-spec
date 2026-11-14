@@ -28,6 +28,25 @@ with `bridge:concern`, one concept of the scheme `bridge:concerns`
 | a gap | the `skos:Concept` in the file `bridge:gapScheme` names | [`profile/must/gap_scheme.py`](profile/must/gap_scheme.py) |
 | a test case | the test in the manifest `bridge:testManifest` names | [`profile/must/shapes.py`](profile/must/shapes.py) |
 
+## Naming a source's kinds of record
+
+Some sources name a kind of record by an identifier, as a C-CDA names a template by its `templateId` root, and a tool
+showing the adapter to a reader needs the name in words. Where the adapter's `bridge:inSourceRecordType` values are
+identifiers, declare it with `bridge:sourceRecordTypesAreIdentifiers true` on the adapter in the crate (and the term in
+the crate's `@context`). An adapter that declares nothing, or false, is not checked: a FHIR resource type is already a name.
+
+When it is declared, each `bridge:inSourceRecordType` value of the accounting is the `skos:notation` of one `skos:Concept`
+written in the same file `bridge:sourceAccounting` names, carrying one `skos:prefLabel`, a name in words that is not the
+id itself, and a `dct:source` naming where the source publishes the name (the check does not read `dct:source`).
+Checked by [`profile/must/record_type_names.py`](profile/must/record_type_names.py).
+
+```turtle
+<https://example.org/templates/2.16.840.1.113883.10.20.22.4.7> a skos:Concept ;
+  skos:notation "2.16.840.1.113883.10.20.22.4.7" ;
+  skos:prefLabel "Allergy - Intolerance Observation"@en ;
+  dct:source <https://www.hl7.org/ccdasearch/templates/2.16.840.1.113883.10.20.22.4.7.html> .
+```
+
 ## Saying which issue tracks a gap
 
 Link the issue or pull request that tracks a gap from the gap with `rdfs:seeAlso`. It is optional, and a gap may carry

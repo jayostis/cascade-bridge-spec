@@ -185,6 +185,13 @@ bridge:sourceAccounting a owl:ObjectProperty ;
   rdfs:domain bridge:Adapter ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
+bridge:sourceRecordTypesAreIdentifiers a owl:DatatypeProperty ;
+  rdfs:label "source record types are identifiers"@en ;
+  rdfs:comment "True where the adapter's values of bridge:inSourceRecordType are identifiers that need names in words, as a C-CDA templateId root does; absent or false where they are already names."@en ;
+  rdfs:domain bridge:Adapter ;
+  rdfs:range xsd:boolean ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
 bridge:PathEntry a owl:Class ;
   rdfs:label "Path entry"@en ;
   rdfs:comment "One path of the source, and what the adapter does with it."@en ;
