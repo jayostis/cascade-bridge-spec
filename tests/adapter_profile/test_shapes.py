@@ -1,6 +1,6 @@
 import pytest
 from rdflib import BNode, Literal
-from rdflib.namespace import RDF
+from rdflib.namespace import RDF, XSD
 
 import shapes
 from _terms import BRIDGE, MF
@@ -67,6 +67,15 @@ class TestTheCrateAndItsTestManifestAsOneGraph:
             crate.graph.remove((action, BRIDGE.facts, None))
             crate.graph.add((action, BRIDGE.facts, Literal("facts/example-registry.ttl")))
             assert "bridge:facts" in "\n".join(shapes.violations(crate))
+
+        @pytest.mark.parametrize(
+            "path",
+            [Literal("/ExampleRecord/Novelty", lang="en"), Literal("/ExampleRecord/Novelty", datatype=XSD.anyURI)],
+            ids=["a language-tagged string", "an xsd:anyURI"],
+        )
+        def test_reports_a_tested_unaccounted_path_that_is_no_plain_string(self, crate, path):
+            crate.graph.add((an_identity_relation_test(crate), BRIDGE.testsUnaccountedSourcePath, path))
+            assert "bridge:testsUnaccountedSourcePath, an xsd:string" in "\n".join(shapes.violations(crate))
 
         def test_reports_an_identity_relation_test_carrying_one_conversion(self, crate):
             action = crate.graph.value(an_identity_relation_test(crate), MF.action)

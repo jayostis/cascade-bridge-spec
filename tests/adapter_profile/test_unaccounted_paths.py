@@ -1,7 +1,7 @@
 from rdflib import Literal
 
 import unaccounted_paths
-from _terms import BRIDGE
+from _terms import BRIDGE, MF
 
 ACCOUNTING = "vocab/example-accounting.ttl"
 
@@ -75,6 +75,31 @@ class TestAnUnaccountedPathATestCaseExpects:
             )
             said = said_about(unmarked(json_package.crate, "json-0005", AN_ACCESSION_BELOW_RECORDS))
             assert unaccounted("json-0005", "json-0005.ttl", AN_ACCESSION_BELOW_RECORDS) in said
+
+    class TestGivenAnAdapterNamingNoAccounting:
+        def test_says_the_adapters_bridge_source_accounting_where_it_names_none(self, crate):
+            crate.graph.remove((crate.root, BRIDGE.sourceAccounting, None))
+            said = said_about(unmarked(crate, "example-0004", NOVELTY))
+            assert (
+                f"example-0004: example-0004.ttl: expects cascade:SourcePathNotAccounted at {NOVELTY}, where a path a "
+                "test's input holds is the bridge:sourcePath of an entry of the adapter's bridge:sourceAccounting, or "
+                "one its test case names by bridge:testsUnaccountedSourcePath"
+            ) in said
+
+    class TestGivenAFindingsFileThatDoesNotParse:
+        def test_reports_nothing_for_it_since_another_check_reports_the_fault(self, package):
+            package.write("fixtures/findings/example-0004.ttl", "this is not turtle {")
+            assert not said_about(package.crate)
+
+    class TestGivenACaseWithNoExpectedFindings:
+        def test_says_it_has_no_expected_findings_rather_than_that_they_hold_none(self, crate):
+            case = case_named(crate, "example-0004")
+            crate.graph.remove((crate.graph.value(case, MF.result), BRIDGE.expectedFindings, None))
+            said = said_about(crate)
+            assert (
+                f"example-0004: names {NOVELTY} by bridge:testsUnaccountedSourcePath, where it has no "
+                "bridge:expectedFindings"
+            ) in said
 
     class TestGivenACaseNamingAPathItTests:
         def test_reports_a_named_path_its_expected_findings_hold_no_census_finding_at(self, crate):
