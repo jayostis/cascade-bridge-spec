@@ -1,21 +1,10 @@
 :root {
-  color-scheme: light dark;
   --ink: #1b1f24;
   --quiet: #59636e;
   --line: #d6dbe1;
   --paper: #ffffff;
   --tint: #f4f6f8;
   --accent: #0b5cad;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --ink: #e6e9ec;
-    --quiet: #9aa4ae;
-    --line: #353c44;
-    --paper: #14171b;
-    --tint: #1c2127;
-    --accent: #6cb0f5;
-  }
 }
 * { box-sizing: border-box; }
 body {
@@ -24,7 +13,7 @@ body {
   color: var(--ink);
   background: var(--paper);
 }
-header, nav, main, #results { max-width: 64rem; margin: 0 auto; padding: 0 1rem; }
+header, nav, main, footer { max-width: 64rem; margin: 0 auto; padding: 0 1rem; }
 header { padding-top: 1.5rem; }
 h1 { margin: 0.2rem 0 0.5rem; font-size: 1.8rem; line-height: 1.2; }
 h2 { margin-top: 2.5rem; border-bottom: 1px solid var(--line); padding-bottom: 0.3rem; }
@@ -39,8 +28,12 @@ nav {
   background: var(--paper); border-bottom: 1px solid var(--line);
 }
 nav input { flex: 1 1 14rem; min-width: 0; padding: 0.35rem 0.5rem; font: inherit; color: inherit; background: var(--tint); border: 1px solid var(--line); border-radius: 4px; }
-#results { padding-top: 0.5rem; }
-#results ul { padding-left: 1.2rem; }
+section { scroll-margin-top: calc(var(--bar, 7rem) + 0.5rem); }
+footer { padding-bottom: 2rem; }
+#count { margin: 0; }
+#results { flex: 1 0 100%; max-height: 50vh; overflow: auto; }
+#results p { margin: 0.25rem 0; }
+#results ul { margin: 0.25rem 0; padding-left: 1.2rem; }
 .legend { list-style: none; padding: 0; margin: 0 0 1rem; display: grid; gap: 0.2rem; }
 .verdict {
   display: inline-block; margin: 0 0.15rem; padding: 0 0.4rem; border-radius: 3px;
@@ -52,7 +45,7 @@ nav input { flex: 1 1 14rem; min-width: 0; padding: 0.35rem 0.5rem; font: inheri
 .v-consumed { background: #5d6670; }
 .v-noHome { background: #b3261e; }
 .v-ignored { background: #6d4f8c; }
-details.node { margin: 0.1rem 0; scroll-margin-top: 7rem; }
+details.node { margin: 0.1rem 0; scroll-margin-top: calc(var(--bar, 7rem) + 0.5rem); }
 details.node > summary { cursor: pointer; padding: 0.1rem 0; }
 details.node > .below { margin-left: 0.55rem; padding-left: 0.8rem; border-left: 1px solid var(--line); }
 details.node:target > summary { background: var(--tint); }

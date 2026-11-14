@@ -24,7 +24,7 @@ CRATE = {
             "@type": ["Dataset", "bridge:Adapter"],
             "identifier": "example",
             "name": "Example JSON",
-            "version": "0.4.1",
+            "version": "0.7.1",
             "bridge:vocabularyFile": ["ontologies/example.ttl"],
             "bridge:envelope": [{"@id": "#envelope-listing"}, {"@id": "#envelope-record"}],
             "bridge:mapping": [{"@id": "in/observation.rq"}, {"@id": "in/absent.rq"}],
@@ -85,6 +85,11 @@ ACCOUNTING = """
 [] a bridge:PathEntry ; bridge:sourcePath "/contained/subject/reference" ; bridge:verdict bridge:carried ;
   bridge:carriedAs [ bridge:inSourceRecordType "Observation" ; bridge:inRecordClass ex:Observation ;
                      bridge:asProperty ex:subject ] .
+[] a bridge:PathEntry ; bridge:sourcePath "/note/display" ; bridge:verdict bridge:redundantWith ;
+  bridge:sameFactAs "/contained/subject/reference" .
+[] a bridge:PathEntry ; bridge:sourcePath "/unit/value" ; bridge:verdict bridge:carried ;
+  bridge:carriedAs [ bridge:inSourceRecordType "Unit" ; bridge:inRecordClass ex:Unit ;
+                     bridge:asProperty ex:unitValue ] .
 """
 
 GAPS = """
@@ -92,7 +97,7 @@ exa:gaps a skos:ConceptScheme .
 exa:categoryTextNotCarried a skos:Concept ; skos:inScheme exa:gaps ;
   skos:prefLabel "A category's text has no Cascade predicate."@en ;
   skos:broader bridge:noPredicate ;
-  rdfs:seeAlso <https://github.com/example/example-adapter/issues/4> .
+  rdfs:seeAlso <https://github.com/example/example-adapter/issues/8> .
 """
 
 OBSERVATION_QUERY = """\
@@ -119,7 +124,7 @@ WHERE { ?finding oa:hasTarget ?text }
 """
 
 MANIFEST = """
-<> a mf:Manifest ; mf:entries ( <#category-coded> <#category-coded-at-length> <#subject-only> ) .
+<> a mf:Manifest ; mf:entries ( <#category-coded> <#category-coded-at-length> <#subject-only> <#nothing-to-find> ) .
 
 <#category-coded> a bridge:IsomorphicConversionTest ; mf:name "category-coded" ;
   rdfs:comment "An observation's category, coded and in text." ;
@@ -134,6 +139,11 @@ MANIFEST = """
 <#subject-only> a bridge:IsomorphicConversionTest ; mf:name "subject-only" ;
   mf:action [ bridge:input <in/subject-only.json> ] ;
   mf:result [ bridge:expectedGraph <expected/subject-only.ttl> ] .
+
+<#nothing-to-find> a bridge:IsomorphicConversionTest ; mf:name "nothing-to-find" ;
+  mf:action [ bridge:input <in/nothing-to-find.json> ] ;
+  mf:result [ bridge:expectedGraph <expected/nothing-to-find.ttl> ;
+              bridge:expectedFindings <findings/nothing-to-find.ttl> ] .
 """
 
 INPUTS = {
@@ -147,20 +157,25 @@ INPUTS = {
         "subject": {"reference": "Patient/a"},
         "note": "A subject alone, written at length, so that the smallest input whose graph has a subject holds none.",
     },
+    "nothing-to-find": {"unrelated": 1},
 }
 
 GRAPHS = {
     "category-coded": '<urn:r> a ex:Observation ; ex:categoryCode "vital-signs" ; ex:subject <urn:p> .',
     "category-coded-at-length": '<urn:r> a ex:Observation ; ex:categoryCode "vital-signs" ; ex:subject <urn:p> .',
     "subject-only": "<urn:r> a ex:Observation ; ex:subject <urn:p> .",
+    "nothing-to-find": "",
 }
 
 FINDINGS = {
     "category-coded-at-length": "<urn:f> oa:hasBody exa:categoryTextNotCarried .",
+    "nothing-to-find": "",
 }
 
 VOCABULARY = """
 ex:Observation rdfs:label "Observation"@en .
+ex:Unit rdfs:label "Unit"@en .
+ex:unitValue rdfs:label "Unit value"@en .
 ex:categoryCode rdfs:label "Category code"@en .
 ex:subject rdfs:label "Subject"@en .
 ex:noteText rdfs:label "Note text"@en .
@@ -251,11 +266,16 @@ class Explorer:
 
 
 @pytest.fixture(scope="module")
-def explorer(tmp_path_factory):
+def checkout(tmp_path_factory):
     adapter = tmp_path_factory.mktemp("adapter")
     commit = an_adapter(adapter)
     vocabulary = tmp_path_factory.mktemp("vocabulary")
     write(vocabulary / "ontologies" / "example.ttl", PREFIXES + VOCABULARY)
+    return adapter, vocabulary, commit
+
+
+def explore(tmp_path_factory, checkout, *more):
+    adapter, vocabulary, commit = checkout
     out = tmp_path_factory.mktemp("explorer")
     adapter_explorer.main(
         [
@@ -268,9 +288,20 @@ def explorer(tmp_path_factory):
             REPORT,
             "--out",
             str(out),
+            *more,
         ]
     )
     return Explorer(out, commit)
+
+
+@pytest.fixture(scope="module")
+def explorer(tmp_path_factory, checkout):
+    return explore(tmp_path_factory, checkout)
+
+
+@pytest.fixture(scope="module")
+def explorer_with_a_way_back(tmp_path_factory, checkout):
+    return explore(tmp_path_factory, checkout, "--way-back", "Adapters", "../index.html")
 
 
 class TestAnAdaptersExplorer:
@@ -367,7 +398,7 @@ class TestAnAdaptersExplorer:
             gap = explorer.mapping("/category/text")
             assert gap["verdict"] == "noHome"
             assert gap["gap"]["label"] == "A category's text has no Cascade predicate."
-            assert gap["gap"]["issues"] == ["https://github.com/example/example-adapter/issues/4"]
+            assert gap["gap"]["issues"] == ["https://github.com/example/example-adapter/issues/8"]
             assert gap["queries"] == ["in/findings.rq"]
             assert gap["case"] == "category-coded-at-length"
             assert "exa:categoryTextNotCarried" in explorer.case(gap["case"])["expectedFindings"]["text"]
@@ -375,8 +406,7 @@ class TestAnAdaptersExplorer:
         def test_lists_its_kinds_of_record_its_concerns_and_what_it_does_not_carry(self, explorer):
             """lists its kinds of record, its concerns and what it does not carry"""
             code = explorer.node("/category/coding/code")["id"]
-            (kind,) = explorer.data["kinds"]
-            assert kind["kind"] == "Observation"
+            (kind,) = [kind for kind in explorer.data["kinds"] if kind["kind"] == "Observation"]
             assert {
                 "class": {"term": "ex:Observation", "label": "Observation"},
                 "property": {"term": "ex:categoryCode", "label": "Category code"},
@@ -393,18 +423,94 @@ class TestAnAdaptersExplorer:
         def test_names_its_version_and_commit_in_the_header(self, explorer):
             """names its version and commit in the header"""
             header = explorer.page.split("</header>")[0]
-            assert "0.4.1" in header
+            assert "0.7.1" in header
             assert f"{REPOSITORY}/tree/{explorer.commit}" in header
             assert explorer.commit[:7] in header
 
         def test_gives_rough_figures_and_links_never_an_exact_count(self, explorer):
             """gives rough figures and links, never an exact count"""
-            shown = explorer.shown_text()
-            entries = [
-                form for node in explorer.nodes(explorer.data["tree"]) for m in node["mappings"] for form in m["forms"]
-            ]
-            exact = {len(INPUTS), len(entries)}
-            assert exact == {3, 9}
-            assert not [count for count in exact if re.search(rf"\b{count}\b", shown)], shown
+            nodes = list(explorer.nodes(explorer.data["tree"]))
+            entries = [form for node in nodes for m in node["mappings"] for form in m["forms"]]
+            counts = (len(entries), len(nodes), len(INPUTS))
+            assert counts[0] == 11 and counts[2] == 4
+            figures = explorer.page.split("It accounts for ")[1].split("</p>")[0]
+            assert figures.startswith(
+                f"{adapter_explorer.rough(counts[0])} source paths, at {adapter_explorer.rough(counts[1])} places, "
+                f"and {adapter_explorer.rough(counts[2])}\ntest cases"
+            ), figures
+            assert not [count for count in counts if re.search(rf"\b{count}\b", figures)], figures
             assert f'href="{REPORT}"' in explorer.page
             assert f'href="{REPOSITORY}/blob/{explorer.commit}/vocab/accounting.ttl"' in explorer.page
+
+        def test_puts_no_article_before_a_class_or_a_kind_in_what_a_path_becomes(self, explorer):
+            """puts no article before a class or a kind in what a path becomes
+
+            English a and an follow how a word is said, which no spelling rule covers, so the page names the class and the kind
+            without one.
+            """
+            assert not hasattr(adapter_explorer, "an")
+            assert re.search(r"on the class <span class=\"term\"><b>Observation</b>", explorer.page)
+            assert re.search(r"on the class <span class=\"term\"><b>Unit</b>", explorer.page)
+            assert ", in the kind Observation." in explorer.page
+            assert ", in the kind Unit." in explorer.page
+            assert not re.search(r"\b(on|in) an? (<span|[A-Z])", explorer.page)
+
+        def test_lists_the_plain_form_of_a_place_before_its_contained_form(self, explorer):
+            """lists the plain form of a place before its contained form"""
+            subject = explorer.mapping("/subject/reference")
+            assert [form["path"] for form in subject["forms"]] == ["/subject/reference", "/contained/subject/reference"]
+
+        def test_names_the_plain_form_in_the_same_fact_as(self, explorer):
+            """names the plain form in "The same fact as"
+
+            The accounting names the contained form; the page names the plain form of the same place.
+            """
+            same = explorer.mapping("/note/display")["sameFactAs"]
+            assert same["path"] == "/subject/reference"
+            assert same["node"] == explorer.node("/subject/reference")["id"]
+            assert f'The same fact as <a href="#{same["node"]}"><code>/subject/reference</code></a>.' in explorer.page
+
+        def test_says_in_words_that_a_case_with_an_empty_findings_file_expects_no_findings(self, explorer):
+            """says in words that a case with an empty findings file expects no findings"""
+            empty = explorer.case("nothing-to-find")["expectedFindings"]
+            assert empty["empty"] is True
+            assert explorer.case("category-coded-at-length")["expectedFindings"]["empty"] is False
+            assert "This case expects no findings" in explorer.page
+
+        def test_declares_no_dark_colour_scheme(self, explorer):
+            """declares no dark colour scheme"""
+            assert "prefers-color-scheme" not in explorer.page
+            assert "dark" not in explorer.page.split("</style>")[0]
+
+        def test_leaves_room_above_a_section_a_link_scrolls_to(self, explorer):
+            """leaves room above a section a link scrolls to
+
+            The bar is 9 rem tall at 320 px and 7.4 rem at 400 px, so the room is the bar's own height, which the page sets.
+            """
+            style = explorer.page.split("<style>")[1].split("</style>")[0]
+            assert re.search(r"(^|\n)section[^{}]*\{[^}]*scroll-margin-top: *calc\(var\(--bar,", style)
+            assert re.search(r"details\.node[^{}]*\{[^}]*scroll-margin-top: *calc\(var\(--bar,", style)
+            assert 'setProperty("--bar"' in explorer.page.split("<script>")[-1]
+
+        def test_declares_an_icon_so_a_browser_asks_for_no_favicon(self, explorer):
+            """declares an icon so a browser asks for no favicon"""
+            assert re.search(r'<link rel="icon" href="data:', explorer.page.split("</head>")[0])
+
+        def test_shows_search_results_inside_the_sticky_bar_and_announces_their_count(self, explorer):
+            """shows search results inside the sticky bar and announces their count"""
+            bar = explorer.page.split("<nav>")[1].split("</nav>")[0]
+            assert 'id="results"' in bar
+            assert re.search(r'id="count"[^>]*aria-live="polite"', bar)
+
+    class TestGivenAWayBack:
+        def test_links_back_from_the_bar_and_from_the_end_of_the_page(self, explorer_with_a_way_back):
+            """links back from the bar and from the end of the page"""
+            page = explorer_with_a_way_back.page
+            link = '<a href="../index.html">Adapters</a>'
+            assert link in page.split("<nav>")[1].split("</nav>")[0]
+            assert link in page.split("</main>")[1]
+
+        def test_links_nowhere_back_without_one(self, explorer):
+            """links nowhere back without one"""
+            assert "../index.html" not in explorer.page
+            assert "<footer" not in explorer.page
