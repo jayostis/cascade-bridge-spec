@@ -4,6 +4,10 @@ const box = document.getElementById("search");
 const results = document.getElementById("results");
 const count = document.getElementById("count");
 const SHOWN = 50;
+const bar = document.querySelector("nav");
+const measureBar = () => document.documentElement.style.setProperty("--bar", `${bar.offsetHeight}px`);
+measureBar();
+new ResizeObserver(measureBar).observe(bar);
 
 function reveal(id) {
   const target = document.getElementById(id);

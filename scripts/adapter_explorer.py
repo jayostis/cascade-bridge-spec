@@ -664,18 +664,6 @@ def badge(data, verdict):
     return f'<span class="verdict v-{e(verdict)}" title="{e(words["label"] or "")}">{e(words["words"])}</span>'
 
 
-def an(name):
-    """The indefinite article a name takes, by how it is said: "an" before a vowel sound."""
-    word = re.sub(r"^\W+", "", name).lower()
-    vowel = word[:1] != "" and word[0] in "aeiou" or word.startswith(("hour", "honest", "honour", "heir"))
-    consonant_sound = word.startswith(("uni", "use", "usa", "uri", "eu", "one", "once", "ura"))
-    return "an" if vowel and not consonant_sound else "a"
-
-
-def named(item):
-    return item["label"] or item["term"].split(":")[-1]
-
-
 def term(item):
     shown = (
         f"<b>{e(item['label'])}</b> <code>{e(item['term'])}</code>"
@@ -725,10 +713,10 @@ def a_mapping(data, mapping):
         shown = f"<code>{e(shown_path(steps_of(same['path'])))}</code>"
         parts.append(f"<p>The same fact as {link('#' + same['node'], shown) if same['node'] else shown}.</p>")
     for becomes in mapping["becomes"]:
-        kind = f", in {an(becomes['kind'])} {e(becomes['kind'])}" if becomes["kind"] else ""
+        kind = f", in the kind {e(becomes['kind'])}" if becomes["kind"] else ""
         written = f" Written by {a_queries(blob, becomes['queries'])}." if becomes["queries"] else ""
         parts.append(
-            f"<p>Becomes {term(becomes['property'])} on {an(named(becomes['class']))} {term(becomes['class'])}{kind}.{written}</p>"
+            f"<p>Becomes {term(becomes['property'])} on the class {term(becomes['class'])}{kind}.{written}</p>"
         )
     if mapping["queries"]:
         parts.append(f"<p>Written by {a_queries(blob, mapping['queries'])}.</p>")
@@ -765,7 +753,7 @@ def page(data, way_back=None):
     kinds = "".join(
         f"<h3>{e(kind['kind'] or 'A kind of record the accounting does not name')}</h3><ul class='becomes'>"
         + "".join(
-            f"<li>{term(item['property'])} on {an(named(item['class']))} {term(item['class'])}, from {place_links(data, item['nodes'])}</li>"
+            f"<li>{term(item['property'])} on the class {term(item['class'])}, from {place_links(data, item['nodes'])}</li>"
             for item in kind["becomes"]
         )
         + "</ul>"

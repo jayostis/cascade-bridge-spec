@@ -429,23 +429,31 @@ class TestAnAdaptersExplorer:
 
         def test_gives_rough_figures_and_links_never_an_exact_count(self, explorer):
             """gives rough figures and links, never an exact count"""
-            shown = explorer.shown_text()
-            entries = [
-                form for node in explorer.nodes(explorer.data["tree"]) for m in node["mappings"] for form in m["forms"]
-            ]
-            exact = {len(INPUTS), len(entries)}
-            assert exact == {4, 11}
-            assert not [count for count in exact if re.search(rf"\b{count}\b", shown)], shown
+            nodes = list(explorer.nodes(explorer.data["tree"]))
+            entries = [form for node in nodes for m in node["mappings"] for form in m["forms"]]
+            counts = (len(entries), len(nodes), len(INPUTS))
+            assert counts[0] == 11 and counts[2] == 4
+            figures = explorer.page.split("It accounts for ")[1].split("</p>")[0]
+            assert figures.startswith(
+                f"{adapter_explorer.rough(counts[0])} source paths, at {adapter_explorer.rough(counts[1])} places, "
+                f"and {adapter_explorer.rough(counts[2])}\ntest cases"
+            ), figures
+            assert not [count for count in counts if re.search(rf"\b{count}\b", figures)], figures
             assert f'href="{REPORT}"' in explorer.page
             assert f'href="{REPOSITORY}/blob/{explorer.commit}/vocab/accounting.ttl"' in explorer.page
 
-        def test_puts_an_before_a_vowel_sound_and_a_before_a_consonant_in_what_a_path_becomes(self, explorer):
-            """puts "an" before a vowel sound and "a" before a consonant in what a path becomes"""
-            assert re.search(r"on an <span class=\"term\"><b>Observation</b>", explorer.page)
-            assert re.search(r", in an Observation\.", explorer.page)
-            assert re.search(r"on a <span class=\"term\"><b>Unit</b>", explorer.page)
-            assert ", in a Unit." in explorer.page
-            assert not re.search(r"\b[Aa] <span class=\"term\"><b>Observation", explorer.page)
+        def test_puts_no_article_before_a_class_or_a_kind_in_what_a_path_becomes(self, explorer):
+            """puts no article before a class or a kind in what a path becomes
+
+            English a and an follow how a word is said, which no spelling rule covers, so the page names the class and the kind
+            without one.
+            """
+            assert not hasattr(adapter_explorer, "an")
+            assert re.search(r"on the class <span class=\"term\"><b>Observation</b>", explorer.page)
+            assert re.search(r"on the class <span class=\"term\"><b>Unit</b>", explorer.page)
+            assert ", in the kind Observation." in explorer.page
+            assert ", in the kind Unit." in explorer.page
+            assert not re.search(r"\b(on|in) an? (<span|[A-Z])", explorer.page)
 
         def test_lists_the_plain_form_of_a_place_before_its_contained_form(self, explorer):
             """lists the plain form of a place before its contained form"""
@@ -475,9 +483,14 @@ class TestAnAdaptersExplorer:
             assert "dark" not in explorer.page.split("</style>")[0]
 
         def test_leaves_room_above_a_section_a_link_scrolls_to(self, explorer):
-            """leaves room above a section a link scrolls to"""
+            """leaves room above a section a link scrolls to
+
+            The bar is 9 rem tall at 320 px and 7.4 rem at 400 px, so the room is the bar's own height, which the page sets.
+            """
             style = explorer.page.split("<style>")[1].split("</style>")[0]
-            assert re.search(r"(^|\n)section[^{}]*\{[^}]*scroll-margin-top: *[1-9]", style)
+            assert re.search(r"(^|\n)section[^{}]*\{[^}]*scroll-margin-top: *calc\(var\(--bar,", style)
+            assert re.search(r"details\.node[^{}]*\{[^}]*scroll-margin-top: *calc\(var\(--bar,", style)
+            assert 'setProperty("--bar"' in explorer.page.split("<script>")[-1]
 
         def test_declares_an_icon_so_a_browser_asks_for_no_favicon(self, explorer):
             """declares an icon so a browser asks for no favicon"""
