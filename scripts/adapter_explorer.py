@@ -20,6 +20,7 @@ import re
 import subprocess
 import sys
 import xml.etree.ElementTree as ElementTree
+from collections import Counter
 from pathlib import Path
 from urllib.parse import urlparse
 from urllib.request import url2pathname
@@ -409,13 +410,32 @@ def selectors_of(findings, body):
     return out
 
 
-def lines_naming(text, iris):
-    """The lines of a Turtle text that name any of the IRIs, whole or under a prefix the text declares."""
+def naming(text, iris):
+    """A pattern for any of the IRIs as a Turtle text spells it, whole or under a prefix the text declares, and the
+    text's lines it matches."""
     spellings = {f"<{iri}>" for iri in iris}
     for prefix, namespace in TURTLE_PREFIX.findall(text):
         spellings |= {f"{prefix}:{iri[len(namespace) :]}" for iri in iris if iri.startswith(namespace)}
     named = re.compile("|".join(rf"(?<![\w:<-]){re.escape(spelling)}(?![\w-])" for spelling in sorted(spellings)))
-    return [at + 1 for at, line in enumerate(text.split("\n")) if spellings and named.search(line)]
+    return named, [at + 1 for at, line in enumerate(text.split("\n")) if spellings and named.search(line)]
+
+
+def lines_naming(text, iris):
+    """The lines of a Turtle text that name any of the IRIs, whole or under a prefix the text declares."""
+    return naming(text, iris)[1]
+
+
+def selectors_by_line(text, body):
+    """The selectors of the finding each line of a Turtle findings text names the body for, by the line: the
+    selectors the text loses when that line stops naming it."""
+    named, lines = naming(text, [str(body)])
+    whole = Counter(selectors_of(Graph().parse(data=text, format="turtle"), body))
+    by_line, rows = {}, text.split("\n")
+    for line in lines:
+        rows_without = rows[: line - 1] + [named.sub("<urn:x-explorer:other>", rows[line - 1])] + rows[line:]
+        left = Counter(selectors_of(Graph().parse(data="\n".join(rows_without), format="turtle"), body))
+        by_line[line] = sorted((whole - left).elements())
+    return by_line
 
 
 def read_cases(adapter):
@@ -562,13 +582,20 @@ def build(folder, vocabulary, repository, report):
             if "lines" not in case:
                 case["lines"] = Lines(case["texts"]["input"])
             own = [plain_steps(path) for path in paths]
-            found = {
-                case["lines"].find(selector)
-                for selector in selectors_of(case["findings"], entry["gap"])
-                if any(on_path(plain_steps(selector), steps) for steps in own)
-            }
+            if "findings_by_line" not in case:
+                case["findings_by_line"] = {}
+            if entry["gap"] not in case["findings_by_line"]:
+                case["findings_by_line"][entry["gap"]] = selectors_by_line(
+                    case["texts"]["expectedFindings"], entry["gap"]
+                )
+            found, finding_lines = set(), []
+            for line, selectors in case["findings_by_line"][entry["gap"]].items():
+                on = [selector for selector in selectors if any(on_path(plain_steps(selector), steps) for steps in own)]
+                if on:
+                    finding_lines.append(line)
+                found |= {case["lines"].find(selector) for selector in on}
             marks["input"] = sorted(line for line in found if line is not None)
-            marks["expectedFindings"] = lines_naming(case["texts"]["expectedFindings"], [str(entry["gap"])])
+            marks["expectedFindings"] = finding_lines
         properties = sorted({str(property_) for _, _, property_ in entry["carried"]})
         if properties:
             marks["expectedGraph"] = lines_naming(case["texts"]["expectedGraph"], properties)

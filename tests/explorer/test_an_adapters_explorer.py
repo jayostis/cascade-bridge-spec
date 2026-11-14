@@ -873,7 +873,9 @@ class TestAnAdaptersExplorer:
             assert not re.search(r"(^|\n)\s*:root\s*\{", explorer.style())
 
     class TestGivenTwoPlacesThatShareAGap:
-        def test_marks_only_what_a_finding_points_at_on_the_places_own_path(self, explorer_with_two_places_sharing_a_gap):
+        def test_marks_only_what_a_finding_points_at_on_the_places_own_path(
+            self, explorer_with_two_places_sharing_a_gap
+        ):
             """marks only what a finding points at on the place's own path
 
             Two places name one gap and each has one finding. A place is marked at its own finding, in the input and in
