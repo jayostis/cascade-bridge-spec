@@ -252,7 +252,9 @@ class Element:
     def text(self):
         if self.tag in ("script", "style"):
             return ""
-        return " ".join(" ".join(c.split()) if isinstance(c, str) else c.text() for c in self.children).strip()
+        return " ".join(
+            "".join(c if isinstance(c, str) else f" {c.text()} " * (c.tag != "wbr") for c in self.children).split()
+        )
 
     def all(self, test=lambda element: True):
         for child in self.children:

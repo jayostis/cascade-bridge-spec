@@ -1,17 +1,19 @@
 """Builds an adapter's explorer, one page a reader browses the adapter on:
 
     python3 scripts/adapter_explorer.py <adapter> --vocabulary <cascade-vocabulary> \\
-        --repository <url> --report <url> [--way-back <label> <url>] --out <folder>
+        --repository <url> --report <url> [--way-back <label> <url>] [--stylesheet <url>]... --out <folder>
 
 <adapter> is a git checkout of an adapter; <cascade-vocabulary> a checkout of the vocabulary that the crate's
 bridge:vocabularyFile paths are read in, for the labels of terms; --repository is the adapter's repository on the web,
 where the page links each file at the checkout's commit; --report is the adapter's conformance report; --way-back
-names the page the explorer was reached from, which the page links in its bar and at its end. Writes
+names the page the explorer was reached from, which the page links in its bar and at its end; each --stylesheet is
+linked ahead of the page's own, which reads the site's tokens by name and falls back to the site's values. Writes
 index.html, explorer.json (what the page shows, as data) and cases/<n>.json (a test case, read when a reader opens it)
 into <folder>.
 """
 
 import argparse
+import bisect
 import html
 import json
 import re
@@ -21,6 +23,7 @@ import xml.etree.ElementTree as ElementTree
 from pathlib import Path
 from urllib.parse import urlparse
 from urllib.request import url2pathname
+from xml.parsers import expat
 
 from rdflib import RDF, RDFS, SKOS, Graph, Literal, Namespace, URIRef, Variable
 from rdflib.plugins.sparql.algebra import translateQuery
@@ -42,6 +45,11 @@ NAMESPACED_STEP = re.compile(r"(@?)\*\[local-name\(\)='([^']*)' and namespace-ur
 PREFIX = re.compile(r"\bPREFIX\s+([A-Za-z][\w.-]*)?:\s*<([^>\s]*)>", re.IGNORECASE)
 PREFIXED_NAME = re.compile(r"(?<![\w?$:<])([A-Za-z][\w.-]*)?:([A-Za-z0-9_](?:[\w.-]*[\w-])?)")
 AN_IRI = re.compile(r"<([^<>\s]*)>")
+TURTLE_PREFIX = re.compile(r"(?:@prefix|PREFIX)\s+([A-Za-z][\w.-]*|):\s*<([^>\s]*)>", re.IGNORECASE)
+XPATH_STEP = re.compile(
+    r"(@?)(?:\*\[local-name\(\)='([^']*)' and namespace-uri\(\)='([^']*)'\]|([A-Za-z_][\w.-]*))(?:\[(\d+)\])?"
+)
+JSON_DECODER = json.JSONDecoder()
 
 
 def main(argv=None):
@@ -51,10 +59,11 @@ def main(argv=None):
     parser.add_argument("--repository", required=True)
     parser.add_argument("--report", required=True)
     parser.add_argument("--way-back", nargs=2, metavar=("LABEL", "URL"))
+    parser.add_argument("--stylesheet", action="append", default=[], metavar="URL")
     parser.add_argument("--out", type=Path, required=True)
     arguments = parser.parse_args(argv)
     data, cases = build(arguments.adapter, arguments.vocabulary, arguments.repository.rstrip("/"), arguments.report)
-    write(arguments.out, data, cases, arguments.way_back)
+    write(arguments.out, data, cases, arguments.way_back, arguments.stylesheet)
 
 
 def path_of(iri):
@@ -284,6 +293,116 @@ class Held:
         return bool(frontier)
 
 
+class Lines:
+    """The line each node of a test case's input begins on, by the selector a finding would give it: a JSON Pointer,
+    or an XPath of `*[local-name()=… and namespace-uri()=…][n]` and `@name` steps."""
+
+    def __init__(self, text):
+        self.text = text
+        self.starts = [0] + [at + 1 for at, character in enumerate(text) if character == "\n"]
+        self.at = {}
+        try:
+            self.json_value(self.skip(0), "", 0)
+        except (ValueError, IndexError):
+            self.at = {}
+            self.xml()
+
+    def line(self, offset):
+        return bisect.bisect_right(self.starts, offset)
+
+    def skip(self, at):
+        while at < len(self.text) and self.text[at] in " \t\r\n":
+            at += 1
+        return at
+
+    def json_value(self, at, pointer, begins):
+        self.at[pointer] = self.line(begins)
+        opening = self.text[at]
+        if opening not in "{[":
+            return JSON_DECODER.raw_decode(self.text, at)[1]
+        closing, at, index = "}" if opening == "{" else "]", self.skip(at + 1), 0
+        while self.text[at] != closing:
+            if opening == "{":
+                name, after = json.decoder.scanstring(self.text, at + 1)
+                colon = self.skip(after)
+                if self.text[colon] != ":":
+                    raise ValueError("a member's name is not followed by a colon")
+                at = self.json_value(
+                    self.skip(colon + 1), f"{pointer}/{name.replace('~', '~0').replace('/', '~1')}", at
+                )
+            else:
+                at = self.json_value(at, f"{pointer}/{index}", at)
+                index += 1
+            at = self.skip(at)
+            if self.text[at] == ",":
+                at = self.skip(at + 1)
+        return at + 1
+
+    def xml(self):
+        parser = expat.ParserCreate(namespace_separator=" ")
+        stack = [{"children": []}]
+
+        def start(name, attributes):
+            namespace, _, local = name.rpartition(" ")
+            node = {"name": (namespace, local), "line": parser.CurrentLineNumber, "children": [], "attributes": {}}
+            for attribute in attributes:
+                attribute_namespace, _, attribute_local = attribute.rpartition(" ")
+                node["attributes"][(attribute_namespace, attribute_local)] = parser.CurrentLineNumber
+            stack[-1]["children"].append(node)
+            stack.append(node)
+
+        parser.StartElementHandler = start
+        parser.EndElementHandler = lambda name: stack.pop()
+        try:
+            parser.Parse(self.text, True)
+        except expat.ExpatError:
+            return
+        self.document = stack[0]
+
+    def find(self, selector):
+        if selector in self.at:
+            return self.at[selector]
+        node = getattr(self, "document", None)
+        for step in [] if node is None else [step for step in steps_of(selector) if step]:
+            matched = XPATH_STEP.fullmatch(step)
+            if not matched:
+                return None
+            attribute, local, namespace, plain, position = matched.groups()
+            local, namespace = (plain, "") if plain else (local, namespace)
+            if attribute:
+                return node["attributes"].get((namespace, local))
+            same = [child for child in node["children"] if child["name"] == (namespace, local)]
+            index = int(position or 1) - 1
+            if index >= len(same):
+                return None
+            node = same[index]
+        return None if node is None or "line" not in node else node["line"]
+
+
+def selectors_of(findings, body):
+    """The selector of each finding with the body, its refinements appended: a JSON Pointer or an XPath, refined below
+    where its record is."""
+    out = []
+    for finding in sorted(findings.subjects(OA.hasBody, body)):
+        for target in findings.objects(finding, OA.hasTarget):
+            selector, path = findings.value(target, OA.hasSelector), ""
+            while selector is not None:
+                step = str(findings.value(selector, RDF.value) or "")
+                path = path + step if step.startswith("/") or not path else f"{path}/{step}"
+                selector = findings.value(selector, OA.refinedBy)
+            out.append(path)
+    return out
+
+
+def lines_naming(text, iris):
+    """The lines of a Turtle text that name any of the IRIs, whole or under a prefix the text declares."""
+    spellings = {f"<{iri}>" for iri in iris}
+    for prefix, namespace in TURTLE_PREFIX.findall(text):
+        spellings |= {f"{prefix}:{iri[len(namespace) :]}" for iri in iris if iri.startswith(namespace)}
+    named = re.compile("|".join(rf"(?<![\w:<-]){re.escape(spelling)}(?![\w-])" for spelling in sorted(spellings)))
+    return [at + 1 for at, line in enumerate(text.split("\n")) if spellings and named.search(line)]
+
+
 def read_cases(adapter):
     cases = []
     head = adapter.manifest.value(adapter.manifest_iri, MF.entries)
@@ -316,6 +435,7 @@ def read_cases(adapter):
                 "classes": set(graph.objects(None, RDF.type)),
                 "predicates": set(graph.predicates()),
                 "bodies": set(findings.objects(None, OA.hasBody)),
+                "findings": findings,
             }
         )
     return cases
@@ -416,8 +536,22 @@ def build(folder, vocabulary, repository, report):
             )
 
         candidates = [case for case in cases if shows(case) and any(case["held"].holds(path) for path in paths)]
-        best = min(candidates, key=lambda case: (len(case["texts"]["input"]), case["name"]), default=None)
-        return None if best is None else best["name"]
+        return min(candidates, key=lambda case: (len(case["texts"]["input"]), case["name"]), default=None)
+
+    def marks_in(case, entry):
+        """The lines of the case's files a reader looks at for the entry: where each finding naming its gap points in
+        the input, those findings, and each line of the expected graph naming a property the entry becomes."""
+        marks = {}
+        if entry["gap"] is not None and "expectedFindings" in case["texts"]:
+            if "lines" not in case:
+                case["lines"] = Lines(case["texts"]["input"])
+            found = {case["lines"].find(selector) for selector in selectors_of(case["findings"], entry["gap"])}
+            marks["input"] = sorted(line for line in found if line is not None)
+            marks["expectedFindings"] = lines_naming(case["texts"]["expectedFindings"], [str(entry["gap"])])
+        properties = sorted({str(property_) for _, _, property_ in entry["carried"]})
+        if properties:
+            marks["expectedGraph"] = lines_naming(case["texts"]["expectedGraph"], properties)
+        return {role: lines for role, lines in marks.items() if lines}
 
     tree = {}
     for entry in entries:
@@ -431,7 +565,9 @@ def build(folder, vocabulary, repository, report):
     nodes_by_steps, ordered = {}, []
 
     def number(level):
-        for steps in sorted(level, key=lambda steps: (step_label(steps[-1]).lower(), steps[-1])):
+        for steps in sorted(
+            level, key=lambda steps: (steps[-1].startswith("_"), step_label(steps[-1]).lower(), steps[-1])
+        ):
             node = level[steps]
             node["id"] = f"n{len(ordered) + 1}"
             nodes_by_steps[steps] = node
@@ -489,9 +625,13 @@ def build(folder, vocabulary, repository, report):
                         for kind, record_class, property_ in entry["carried"]
                     ],
                     "queries": [] if entry["gap"] is None else writers(BRIDGE.findingsQuery, entry["gap"]),
-                    "case": case_for(entry, paths),
+                    "case": None,
+                    "marks": {},
                 }
             )
+            case = case_for(entry, paths)
+            if case is not None:
+                mappings[-1]["case"], mappings[-1]["marks"] = case["name"], marks_in(case, entry)
         return sorted(mappings, key=lambda mapping: (VERDICTS.index(mapping["verdict"]), str(mapping["forms"])))
 
     for node in ordered:
@@ -502,8 +642,13 @@ def build(folder, vocabulary, repository, report):
         for steps in sorted(level, key=lambda steps: int(nodes_by_steps[steps]["id"][1:])):
             node = level[steps]
             children = shaped(node["children"])
-            verdicts = {mapping["verdict"] for mapping in node["mappings"]}
-            verdicts |= {verdict for child in children for verdict in child["rollUp"]}
+            counts = {verdict: 0 for verdict in VERDICTS}
+            for mapping in node["mappings"]:
+                counts[mapping["verdict"]] += len(mapping["forms"])
+            for child in children:
+                for verdict, count in child.pop("counts").items():
+                    counts[verdict] += count
+            verdicts = {verdict for verdict, count in counts.items() if count}
             out.append(
                 {
                     "id": node["id"],
@@ -511,12 +656,16 @@ def build(folder, vocabulary, repository, report):
                     "step": step_label(steps[-1]),
                     "mappings": node["mappings"],
                     "rollUp": [verdict for verdict in VERDICTS if verdict in verdicts],
+                    "shares": shares(counts),
+                    "counts": counts,
                     "children": children,
                 }
             )
         return out
 
     shaped_tree = shaped(tree)
+    for node in shaped_tree:
+        node.pop("counts")
     flat = list(walk(shaped_tree))
     places = {node["id"]: node["place"] for node in flat}
     by_place = sorted(flat, key=lambda node: node["place"])
@@ -583,6 +732,7 @@ def build(folder, vocabulary, repository, report):
                 words.append(becomes["kind"])
         search.append({"node": node["id"], "place": node["place"], "text": " ".join(words).lower()})
 
+    by_verdict = {verdict: len([entry for entry in entries if entry["verdict"] == verdict]) for verdict in VERDICTS}
     verdict_labels = scheme_labels(BRIDGE.verdicts)
     shown_cases = []
     case_files = {}
@@ -611,7 +761,13 @@ def build(folder, vocabulary, repository, report):
             "accounting": blob + adapter.relative(adapter.accounting_file),
             "report": report,
         },
-        "figures": {"paths": rough(len(entries)), "places": rough(len(flat)), "cases": rough(len(cases))},
+        "figures": {
+            "paths": rough(len(entries)),
+            "places": rough(len(flat)),
+            "cases": rough(len(cases)),
+            "verdicts": {verdict: rough(by_verdict[verdict]) for verdict in VERDICTS},
+            "shares": shares(by_verdict),
+        },
         "verdicts": [
             {"verdict": verdict, "words": in_words(verdict), "label": verdict_labels.get(verdict)}
             for verdict in VERDICTS
@@ -625,6 +781,12 @@ def build(folder, vocabulary, repository, report):
         "places": places,
     }
     return data, case_files
+
+
+def shares(counts):
+    """Each verdict's share of the counts, in hundredths, at least one where it has any: what a bar draws, not a figure."""
+    total = sum(counts.values())
+    return {verdict: max(1, round(100 * count / total)) for verdict, count in counts.items() if count}
 
 
 def walk(nodes):
@@ -641,14 +803,14 @@ def scheme_labels(scheme):
     }
 
 
-def write(out, data, cases, way_back=None):
+def write(out, data, cases, way_back=None, stylesheets=()):
     if out.exists() and any(out.iterdir()):
         sys.exit(f"{out} is not empty; the explorer is written into an empty folder")
     (out / "cases").mkdir(parents=True, exist_ok=True)
     (out / "explorer.json").write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
     for file, case in cases.items():
         (out / file).write_text(json.dumps(case, ensure_ascii=False), encoding="utf-8")
-    (out / "index.html").write_text(page(data, way_back), encoding="utf-8")
+    (out / "index.html").write_text(page(data, way_back, stylesheets), encoding="utf-8")
 
 
 def e(text):
@@ -659,17 +821,231 @@ def link(href, text):
     return f'<a href="{e(href)}">{text}</a>'
 
 
-def badge(data, verdict):
-    words = {item["verdict"]: item for item in data["verdicts"]}[verdict]
-    return f'<span class="verdict v-{e(verdict)}" title="{e(words["label"] or "")}">{e(words["words"])}</span>'
+FOLDER = (
+    '<svg class="ic" width="13" height="11" viewBox="0 0 13 11" aria-hidden="true">'
+    '<path d="M.5 1.5h4l1.2 1.4h6.8v7.6H.5z" fill="none" stroke="currentColor"/></svg>'
+)
+LEAF = (
+    '<svg class="ic lf" width="13" height="11" viewBox="0 0 13 11" aria-hidden="true">'
+    '<path d="M3 .5h5l2.5 2.5v7.5H3z" fill="none" stroke="currentColor"/></svg>'
+)
+
+
+class Page:
+    def __init__(self, data):
+        self.data = data
+        self.verdicts = {item["verdict"]: item for item in data["verdicts"]}
+        self.concerns = {concern["concern"]: concern["label"] for concern in data["concerns"]}
+        self.cases = {case["name"]: case for case in data["cases"]}
+
+    def pill(self, verdict, tag="span"):
+        item = self.verdicts[verdict]
+        kind = ' type="button"' if tag == "button" else ""
+        return f'<{tag} class="v v-{e(verdict)}"{kind} title="{e(item["label"] or "")}">{e(item["words"])}</{tag}>'
+
+    def bar(self, shares, css="mb"):
+        words = ", ".join(self.verdicts[verdict]["words"] for verdict in shares)
+        segments = "".join(f'<i class="s-{e(verdict)}" style="flex:{share}"></i>' for verdict, share in shares.items())
+        return f'<span class="{css}" role="img" aria-label="{e(words)}" title="{e(words)}">{segments}</span>'
+
+    def end(self, node):
+        if not node["children"] and len(node["rollUp"]) == 1:
+            return self.pill(node["rollUp"][0])
+        return self.bar(node["shares"])
+
+    def row(self, node, depth, opened):
+        own = sorted({mapping["verdict"] for mapping in node["mappings"]}, key=VERDICTS.index)
+        concerns = sorted({mapping["concern"] for mapping in node["mappings"] if mapping["concern"]})
+        attributes = (
+            f'data-node="{e(node["id"])}" data-v="{e(" ".join(own))}" data-c="{e(" ".join(concerns))}"'
+            f' style="--d:{depth}"' + (" data-own" if own else "")
+        )
+        end = f'<span class="end">{self.end(node)}</span>'
+        if not node["children"]:
+            return (
+                f'<li><a class="row" href="#{e(node["id"])}" {attributes}><span class="tw"></span>{LEAF}'
+                f'<span class="nm" title="{e(node["place"])}">{e(node["step"])}</span>{end}</a></li>'
+            )
+        alone = opened and len(node["children"]) == 1
+        inner = "".join(self.row(child, depth + 1, alone) for child in node["children"])
+        return (
+            f'<li><details{" open" if opened else ""}><summary class="row" {attributes}>'
+            f'<span class="tw" aria-hidden="true"></span>{FOLDER}<a class="nm" href="#{e(node["id"])}" title="{e(node["place"])}">'
+            f"{e(node['step'])}/</a>{end}</summary><ul>{inner}</ul></details></li>"
+        )
+
+    def facts(self, pairs):
+        if not pairs:
+            return ""
+        return '<dl class="kv">' + "".join(f"<dt>{name}</dt><dd>{value}</dd>" for name, value in pairs) + "</dl>"
+
+    def mapping(self, mapping, place):
+        blob = self.data["adapter"]["blob"]
+        verdict = self.verdicts[mapping["verdict"]]
+        parts = [f'<p class="gen">{self.pill(mapping["verdict"])} {e(verdict["label"] or "")}</p>']
+        if mapping["because"]:
+            parts.append(f'<p class="fx">{e(mapping["because"])}</p>')
+        if mapping["gap"]:
+            parts.append(f'<p class="fx">{a_gap(mapping["gap"])}</p>')
+        facts = []
+        if mapping["gap"]:
+            facts.append(("reported as", f"<code>{e(mapping['gap']['term'])}</code>"))
+        if mapping["queries"]:
+            facts.append(("written by", a_queries(blob, mapping["queries"])))
+        if mapping["lookup"]:
+            table, outside = mapping["lookup"]["table"], mapping["lookup"]["gap"]
+            facts.append(
+                (
+                    "looked up in",
+                    link(blob + table, f"<code>{e(table)}</code>")
+                    + (f"; a value outside it: {a_gap(outside)}" if outside else ""),
+                )
+            )
+        if mapping["concern"]:
+            facts.append(("concern", e(self.concerns.get(mapping["concern"], mapping["concern"]))))
+        parts.append(self.facts(facts))
+        if mapping["sameFactAs"]:
+            same = mapping["sameFactAs"]
+            shown = f"<code>{e(shown_path(steps_of(same['path'])))}</code>"
+            parts.append(f"<p>The same fact as {link('#' + same['node'], shown) if same['node'] else shown}.</p>")
+        if mapping["becomes"]:
+            rows = "".join(
+                f'<tr><td data-label="property">{term(becomes["property"])}</td>'
+                f'<td data-label="on the class">{term(becomes["class"])}</td>'
+                f'<td data-label="in the kind">{e(becomes["kind"])}</td>'
+                f'<td data-label="written by">{a_queries(blob, becomes["queries"])}</td></tr>'
+                for becomes in mapping["becomes"]
+            )
+            parts.append(
+                '<h4>Becomes</h4><table class="et stack"><thead><tr><th>property</th><th>on the class</th>'
+                f"<th>in the kind</th><th>written by</th></tr></thead><tbody>{rows}</tbody></table>"
+            )
+        also = [form for form in mapping["forms"] if form["shown"] != place]
+        if also:
+            parts.append(
+                '<details class="also"><summary>Also read at</summary>'
+                + self.facts([(e(form["form"]), f"<code>{e(form['shown'])}</code>") for form in also])
+                + "</details>"
+            )
+        if mapping["case"]:
+            parts.append(f'<p class="case-link">Test case: {self.case_link(mapping["case"], mapping["marks"])}</p>')
+        elif mapping["becomes"] or mapping["gap"]:
+            parts.append('<p class="quiet">No test case of the adapter shows this.</p>')
+        return f'<section class="mapping">{"".join(parts)}</section>'
+
+    def case_link(self, name, marks=None):
+        case = self.cases[name]
+        return (
+            f'<a href="{e(case["file"])}" data-case="{e(case["file"])}" '
+            f'data-marks="{e(json.dumps(marks or {}, separators=(",", ":")))}">{e(name)}</a>'
+        )
+
+    def detail(self, node, ancestors):
+        crumbs = " / ".join(
+            [link("#paths", "source paths")]
+            + [link(f"#{ancestor['id']}", e(ancestor["step"])) for ancestor in ancestors]
+            + [f"<b>{e(node['step'])}</b>"]
+        )
+        parts = [f'<p class="crumbs">{crumbs}</p><h1 class="path">{e(node["place"]).replace("/", "<wbr>/")}</h1>']
+        if not node["mappings"]:
+            parts.append('<p class="fx">No entry of the accounting names this place itself.</p>')
+        parts += [self.mapping(mapping, node["place"]) for mapping in node["mappings"]]
+        if node["children"]:
+            rows = "".join(
+                f"<tr><td>{link('#' + child['id'], '<code>' + e(child['step']) + folder + '</code>')}"
+                f'</td><td class="fig">{self.end(child)}</td></tr>'
+                for child in node["children"]
+                for folder in ["/" if child["children"] else ""]
+            )
+            parts.append(f'<h4>Under it</h4><table class="et under"><tbody>{rows}</tbody></table>')
+        own = " data-own" if node["mappings"] else ""
+        return (
+            f'<article class="view detail" id="{e(node["id"])}" data-stop="paths"{own}><h2 class="ph">Selected</h2>'
+            f'<div class="insp">{"".join(parts)}</div></article>'
+        )
+
+    def details(self, nodes, ancestors=()):
+        for node in nodes:
+            yield self.detail(node, ancestors)
+            yield from self.details(node["children"], (*ancestors, node))
+
+    def verdict_rows(self, figures=True):
+        return "".join(
+            f'<tr data-verdict="{e(item["verdict"])}"><td>{self.pill(item["verdict"], "button")}</td>'
+            f"<td>{e(item['label'] or '')}</td>"
+            + (f'<td class="fig">{e(self.data["figures"]["verdicts"][item["verdict"]])}</td>' if figures else "")
+            + "</tr>"
+            for item in self.data["verdicts"]
+        )
+
+    def kinds_table(self):
+        most = max(
+            (len({item["property"]["term"] for item in kind["becomes"]}) for kind in self.data["kinds"]), default=1
+        )
+        rows = []
+        for number, kind in enumerate(self.data["kinds"], 1):
+            classes = {item["class"]["term"]: item["class"] for item in kind["becomes"]}
+            properties = len({item["property"]["term"] for item in kind["becomes"]})
+            rows.append(
+                f'<tr><td class="mono">{link(f"#kind-{number}", e(kind_name(kind)))}</td>'
+                f"<td>{''.join(term(classes[key]) for key in sorted(classes))}</td>"
+                f'<td><span class="len" style="width:{max(4, round(100 * properties / most))}%"></span></td></tr>'
+            )
+        return (
+            '<table class="et kinds"><thead><tr><th>in the source</th><th>becomes</th><th class="len-h">properties</th>'
+            f"</tr></thead><tbody>{''.join(rows)}</tbody></table>"
+        )
+
+    def kind(self, number, kind):
+        rows = "".join(
+            f'<tr><td data-label="property">{term(item["property"])}</td>'
+            f'<td data-label="on the class">{term(item["class"])}</td>'
+            f'<td data-label="from">{place_links(self.data, item["nodes"])}</td></tr>'
+            for item in kind["becomes"]
+        )
+        return (
+            f'<article class="view" id="kind-{number}" data-stop="kinds"><h2 class="ph">Kinds of record</h2>'
+            f'<div class="insp"><p class="crumbs">{link("#kinds", "kinds of record")} / <b>{e(kind_name(kind))}</b></p>'
+            f"<h1>{e(kind_name(kind))}</h1>"
+            '<table class="et stack"><thead><tr><th>property</th><th>on the class</th><th>from</th></tr></thead>'
+            f"<tbody>{rows}</tbody></table></div></article>"
+        )
+
+    def concern(self, concern):
+        parts = [f"<h3>{e(concern['label'])}</h3>"]
+        if concern["nodes"]:
+            parts.append(
+                f'<p>{e(rough(len(concern["nodes"])))} places. <button class="chip" type="button" '
+                f'data-concern="{e(concern["concern"])}">Narrow the tree to these</button></p>'
+            )
+        if concern["gaps"]:
+            parts.append('<ul class="list">' + "".join(f"<li>{a_gap(gap)}</li>" for gap in concern["gaps"]) + "</ul>")
+        if concern["cases"]:
+            parts.append("<p>Test cases: " + ", ".join(self.case_link(name) for name in concern["cases"]) + "</p>")
+        return f'<section class="concern">{"".join(parts)}</section>'
+
+    def not_carried(self):
+        rows = "".join(
+            f'<tr><td><button class="narrow" type="button" data-nodes="{e(" ".join(group["nodes"]))}">'
+            f"{e(group['reason'] or 'No reason stated.')}</button>"
+            + (f" {a_gap({'label': '', 'issues': group['issues']})}" if group["issues"] else "")
+            + f"</td><td>{''.join(self.pill(verdict) for verdict in group['verdicts'])}</td>"
+            f'<td class="fig">{e(rough(len(group["nodes"])))}</td></tr>'
+            for group in self.data["notCarried"]
+        )
+        return (
+            '<table class="et"><thead><tr><th>reason</th><th>verdict</th><th class="fig">places</th></tr></thead>'
+            f"<tbody>{rows}</tbody></table>"
+        )
+
+
+def kind_name(kind):
+    return kind["kind"] or "A kind of record the accounting does not name"
 
 
 def term(item):
-    shown = (
-        f"<b>{e(item['label'])}</b> <code>{e(item['term'])}</code>"
-        if item["label"]
-        else f"<code>{e(item['term'])}</code>"
-    )
+    code = e(item["term"]).replace(":", ":<wbr>", 1)
+    shown = f"<b>{e(item['label'])}</b> <code>{code}</code>" if item["label"] else f"<code>{code}</code>"
     return f'<span class="term">{shown}</span>'
 
 
@@ -687,142 +1063,145 @@ def issue_name(url):
     return f"{parts[1]}#{parts[3]}" if len(parts) == 4 else url
 
 
-def a_mapping(data, mapping):
-    blob = data["adapter"]["blob"]
-    forms = "".join(
-        f"<li><code>{e(form['shown'])}</code>"
-        + (f' <span class="form">{e(form["form"])}</span>' if form["form"] else "")
-        + "</li>"
-        for form in mapping["forms"]
-    )
-    parts = [f'<ul class="forms">{forms}</ul>', f"<p>{badge(data, mapping['verdict'])}</p>"]
-    if mapping["because"]:
-        parts.append(f'<p class="why">{e(mapping["because"])}</p>')
-    if mapping["gap"]:
-        parts.append(f'<p class="why">{a_gap(mapping["gap"])}</p>')
-    if mapping["lookup"]:
-        table = mapping["lookup"]["table"]
-        outside = mapping["lookup"]["gap"]
-        parts.append(
-            f"<p>Looked up in {link(blob + table, f'<code>{e(table)}</code>')}"
-            + (f"; a value outside it: {a_gap(outside)}" if outside else ".")
-            + "</p>"
-        )
-    if mapping["sameFactAs"]:
-        same = mapping["sameFactAs"]
-        shown = f"<code>{e(shown_path(steps_of(same['path'])))}</code>"
-        parts.append(f"<p>The same fact as {link('#' + same['node'], shown) if same['node'] else shown}.</p>")
-    for becomes in mapping["becomes"]:
-        kind = f", in the kind {e(becomes['kind'])}" if becomes["kind"] else ""
-        written = f" Written by {a_queries(blob, becomes['queries'])}." if becomes["queries"] else ""
-        parts.append(
-            f"<p>Becomes {term(becomes['property'])} on the class {term(becomes['class'])}{kind}.{written}</p>"
-        )
-    if mapping["queries"]:
-        parts.append(f"<p>Written by {a_queries(blob, mapping['queries'])}.</p>")
-    if mapping["case"]:
-        (case,) = [case for case in data["cases"] if case["name"] == mapping["case"]]
-        parts.append(
-            f'<details class="case" data-file="{e(case["file"])}"><summary>Test case: {e(case["name"])}</summary>'
-            '<div class="case-body"></div></details>'
-        )
-    elif mapping["becomes"] or mapping["gap"]:
-        parts.append('<p class="quiet">No test case of the adapter shows this.</p>')
-    return f'<div class="mapping">{"".join(parts)}</div>'
-
-
 def a_queries(blob, queries):
     return ", ".join(link(blob + query, f"<code>{e(query)}</code>") for query in queries)
 
 
-def a_node(data, node):
-    badges = "".join(badge(data, verdict) for verdict in node["rollUp"])
-    label = node["step"]
-    inner = "".join(a_mapping(data, mapping) for mapping in node["mappings"])
-    inner += "".join(a_node(data, child) for child in node["children"])
-    return (
-        f'<details class="node" id="{e(node["id"])}"><summary><code>{e(label)}</code> {badges}</summary>'
-        f'<div class="below">{inner}</div></details>'
-    )
-
-
-def page(data, way_back=None):
+def page(data, way_back=None, stylesheets=()):
+    shown = Page(data)
     adapter = data["adapter"]
     figures = data["figures"]
-    legend = "".join(f"<li>{badge(data, item['verdict'])} {e(item['label'] or '')}</li>" for item in data["verdicts"])
-    kinds = "".join(
-        f"<h3>{e(kind['kind'] or 'A kind of record the accounting does not name')}</h3><ul class='becomes'>"
+    name = e(adapter["name"])
+    legend = "".join(shown.pill(item["verdict"]) for item in data["verdicts"])
+    chips = (
+        '<div class="chips" role="group" aria-label="Narrow by concern">'
+        '<button class="chip on" type="button" data-concern="" aria-pressed="true">every concern</button>'
         + "".join(
-            f"<li>{term(item['property'])} on the class {term(item['class'])}, from {place_links(data, item['nodes'])}</li>"
-            for item in kind["becomes"]
+            f'<button class="chip" type="button" data-concern="{e(concern["concern"])}" aria-pressed="false">'
+            f"{e(concern['label'])}</button>"
+            for concern in data["concerns"]
         )
-        + "</ul>"
-        for kind in data["kinds"]
+        + "</div>"
+        if data["concerns"]
+        else ""
     )
-    concerns = "".join(
-        f"<h3>{e(concern['label'])}</h3>"
-        + (f"<p>{place_links(data, concern['nodes'])}</p>" if concern["nodes"] else "")
-        + "".join(f'<p class="why">{a_gap(gap)}</p>' for gap in concern["gaps"])
-        + (f"<p>Test cases: {e(', '.join(concern['cases']))}</p>" if concern["cases"] else "")
-        for concern in data["concerns"]
-    ) or (
+    opened = len(data["tree"]) == 1
+    tree = "".join(shown.row(node, 0, opened) for node in data["tree"])
+    concerns = "".join(shown.concern(concern) for concern in data["concerns"]) or (
         "<p>This adapter tags nothing with a concern yet. An adapter tags an accounting entry, a gap or a test case "
         "with <code>bridge:concern</code>.</p>"
     )
-    not_carried = "".join(
-        f"<details class='reason'><summary>{e(group['reason'] or 'No reason stated.')} "
-        f"{''.join(badge(data, verdict) for verdict in group['verdicts'])}</summary>"
-        + (f"<p>{a_gap({'label': '', 'issues': group['issues']})}</p>" if group["issues"] else "")
-        + f"<p>{place_links(data, group['nodes'])}</p></details>"
-        for group in data["notCarried"]
+    cases = "".join(
+        f'<tr><td class="mono">{shown.case_link(case["name"])}</td><td>{e(case["comment"] or "")}</td></tr>'
+        for case in data["cases"]
     )
-    index = json.dumps(data["search"], ensure_ascii=False).replace("</", "<\\/")
+    views = [
+        f"""<article class="view" id="overview" data-stop="overview"><h2 class="ph">Overview</h2><div class="insp">
+<h1>{name}</h1>
+<p class="sub"><code>{e(adapter["identifier"])}</code> {e(adapter["version"])} at {link(adapter["tree"], f"<code>{e(adapter['commit'][:7])}</code>")}</p>
+<div class="over"><div>
+<p class="gen">It accounts for {e(figures["paths"])} source paths, at {e(figures["places"])} places, and {e(figures["cases"])}
+test cases of a conversion hold it to what it makes.</p>
+<h3>Where the paths go <span>select a verdict to see its paths</span></h3>
+{shown.bar(figures["shares"], "ledger-bar")}
+<table class="et verdicts"><tbody>{shown.verdict_rows()}</tbody></table>
+</div><div>
+<h3>Kinds of record <span>select one to see what it becomes</span></h3>
+{shown.kinds_table()}
+</div></div></div></article>""",
+        f"""<article class="view" id="paths" data-stop="paths"><h2 class="ph">Source paths</h2><div class="insp">
+<h1>Source paths</h1>
+<p>Open a path like a folder. A folded path shows the verdicts of the entries under it. Every path has a verdict:</p>
+<table class="et verdicts"><tbody>{shown.verdict_rows(figures=False)}</tbody></table></div></article>""",
+        f"""<article class="view" id="kinds" data-stop="kinds"><h2 class="ph">Kinds of record</h2><div class="insp">
+<h1>Kinds of record</h1>
+<p>Each kind of record in the source, and the classes it becomes.</p>
+{shown.kinds_table()}</div></article>""",
+        *(shown.kind(number, kind) for number, kind in enumerate(data["kinds"], 1)),
+        f"""<article class="view" id="concerns" data-stop="concerns"><h2 class="ph">By concern</h2><div class="insp">
+<h1>By concern</h1>{concerns}</div></article>""",
+        f"""<article class="view" id="not-carried" data-stop="not-carried"><h2 class="ph">Not carried</h2><div class="insp">
+<h1>Not carried</h1>
+<p>What the adapter leaves out, wholly or in part, and why. Select a reason to see its paths.</p>
+{shown.not_carried()}</div></article>""",
+        f"""<article class="view" id="cases" data-stop="cases"><h2 class="ph">Test cases</h2><div class="insp">
+<h1>Test cases</h1>
+<p>{e(figures["cases"]).capitalize()} test cases of a conversion hold the adapter to what it makes. Select one to read it.</p>
+<table class="et"><tbody>{cases}</tbody></table></div></article>""",
+        *shown.details(data["tree"]),
+    ]
+    stops = "".join(
+        f'<a class="stop" href="#{target}">{label}</a>'
+        for target, label in (
+            ("overview", "Overview"),
+            ("paths", "Source paths"),
+            ("kinds", "Kinds of record"),
+            ("concerns", "By concern"),
+            ("not-carried", "Not carried"),
+            ("cases", "Test cases"),
+        )
+    )
     back = link(way_back[1], e(way_back[0])) if way_back else ""
-    back_bar = f'<span class="back">← {back}</span>\n' if way_back else ""
-    back_end = f"<footer><p>← {back}</p></footer>\n" if way_back else ""
+    steps = [f"← {back}"] if way_back else []
+    steps += [
+        link(adapter["report"], "Its conformance report"),
+        link(adapter["accounting"], "its accounting, in its repository"),
+    ]
+    index = json.dumps(data["search"], ensure_ascii=False).replace("</", "<\\/")
+    linked = "".join(f'<link rel="stylesheet" href="{e(href)}">\n' for href in stylesheets)
     here = Path(__file__).with_suffix("")
     style = here.with_suffix(".css").read_text(encoding="utf-8")
     script = here.with_suffix(".js").read_text(encoding="utf-8")
+    footer = f"<footer><p>← {back}</p></footer>\n" if way_back else ""
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{e(adapter["name"])}: an adapter explorer</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%230b5cad'/%3E%3C/svg%3E">
-<style>{style}</style>
+<title>{name}: an adapter explorer</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%2314202a'/%3E%3C/svg%3E">
+{linked}<style>{style}</style>
 </head>
-<body>
-<header>
-<p class="eyebrow">Cascade Bridge adapter explorer</p>
-<h1>{e(adapter["name"])}</h1>
-<p>The adapter <code>{e(adapter["identifier"])}</code>, version {e(adapter["version"])}, at commit
-{link(adapter["tree"], f"<code>{e(adapter['commit'][:7])}</code>")}.</p>
-<p>It accounts for {e(figures["paths"])} source paths, at {e(figures["places"])} places, and {e(figures["cases"])}
-test cases of a conversion hold it to what it makes.
-{link(adapter["report"], "Its conformance report")} ·
-{link(adapter["accounting"], "its accounting, in its repository")}</p>
+<body class="adapter-explorer">
+<header class="top">
+<span class="brand">Adapter explorer</span>
+<span class="who">{name}</span>
+<span class="addr"><code>{e(adapter["identifier"])}</code> · {e(adapter["version"])} · {link(adapter["tree"], f"<code>{e(adapter['commit'][:7])}</code>")}</span>
+<span class="legend">every path has a verdict: {legend}</span>
 </header>
 <nav>
-{back_bar}<a href="#paths">Source paths</a> <a href="#kinds">Kinds of record</a> <a href="#concerns">By concern</a>
-<a href="#not-carried">Not carried</a>
-<input id="search" type="search" aria-label="Search by path or term" placeholder="Search a path or a term">
-<p id="count" class="quiet" aria-live="polite"></p>
-<section id="results" hidden></section>
+<div class="stops">{stops}</div>
+<p class="stepline">{" · ".join(steps)}</p>
 </nav>
-<main>
-<section id="paths">
-<h2>Source paths</h2>
-<p>Open a path like a folder. A folded path shows the verdicts of the entries under it.</p>
-<ul class="legend">{legend}</ul>
-{"".join(a_node(data, node) for node in data["tree"])}
+<div id="tabs" class="tabs" role="tablist">
+<button type="button" role="tab" aria-controls="paths-pane" aria-selected="false">Paths</button>
+<button type="button" role="tab" aria-controls="views-pane" aria-selected="true" class="on">Overview</button>
+<button type="button" role="tab" aria-controls="case-pane" aria-selected="false">Test case</button>
+</div>
+<main class="panes">
+<section class="pane" id="paths-pane" aria-label="Source paths">
+<h2>Source paths <span>open a path like a folder</span></h2>
+<div class="filter">
+<input id="search" type="search" aria-controls="tree" aria-label="Search by path or term" placeholder="Search a path or a term">
+{chips}<button id="narrowed" class="chip on" type="button" hidden></button>
+<p id="count" class="quiet" aria-live="polite"></p>
+</div>
+<div class="scroll">
+<p class="root-h"><span>{name}</span><small>{e(figures["places"])} places</small></p>
+<ul id="tree" class="tree">{tree}</ul>
+</div>
 </section>
-<section id="kinds"><h2>Kinds of record</h2>{kinds}</section>
-<section id="concerns"><h2>By concern</h2>{concerns}</section>
-<section id="not-carried"><h2>Not carried</h2>
-<p>What the adapter leaves out, wholly or in part, and why.</p>{not_carried}</section>
+<section class="pane on" id="views-pane" aria-label="Selected">
+<div class="scroll" id="views">
+{chr(10).join(views)}
+</div>
+</section>
+<section class="pane" id="case-pane" aria-label="Test case">
+<h2>Test case <span>the adapter's own</span></h2>
+<div class="scroll" id="case"><p class="empty">Select a path to read the test case that holds the adapter to it.</p></div>
+</section>
 </main>
-{back_end}<script type="application/json" id="search-index">{index}</script>
+{footer}<script type="application/json" id="search-index">{index}</script>
 <script>{script}</script>
 </body>
 </html>
