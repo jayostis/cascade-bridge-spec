@@ -227,6 +227,7 @@ function fill(trace) {
         if (!file || !marked.length) continue;
         end.replaceChildren(...around(file.text, new Set(marked), marked[0]));
         end.hidden = false;
+        toMark(end);
       }
     })
     .catch(() => delete trace.dataset.filled);
