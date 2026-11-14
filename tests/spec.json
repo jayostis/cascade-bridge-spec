@@ -32,6 +32,7 @@
     "Accounting for every path of a source · adapter/profile/must/source_accounting.py",
     "The form of an accounting entry · shapes/bridge.shapes.ttl",
     "Terms a carried path is carried as · adapter/profile/must/carried_as.py, shapes/carried-as.shapes.ttl",
+    "Names of a source's kinds of record · adapter/profile/must/record_type_names.py",
     "Looking a value up in a concept map · adapter/profile/must/lookups.py, shapes/concept-map.shapes.ttl",
     "Declaring a JSON source format · bridge:recordPath, bridge:rootMember",
     "Inputs, findings and queries of a JSON source · adapter/profile/must/inputs.py, expected_findings.py, source_accounting.py, queries.py",

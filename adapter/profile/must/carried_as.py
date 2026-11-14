@@ -11,6 +11,7 @@ from rdflib.namespace import OWL, RDF, RDFS, SH
 from rocrate_validator.models import ValidationContext
 from rocrate_validator.requirements.python import PyFunctionCheck, check, requirement
 
+from _accounting import accounting_of
 from _findings import report_findings, shapes_of, unmet
 from _terms import BRIDGE
 
@@ -18,18 +19,6 @@ SHAPES = Path(__file__).resolve().parents[3] / "shapes" / "carried-as.shapes.ttl
 
 PROPERTY_TYPES = (OWL.DatatypeProperty, OWL.ObjectProperty, OWL.AnnotationProperty, RDF.Property)
 CLASS_TYPES = (OWL.Class, RDFS.Class)
-
-
-def accounting_of(crate):
-    """The graph of the one accounting the adapter names, empty where source_accounting.py has a fault to report."""
-    named = list(crate.graph.objects(crate.root, BRIDGE.sourceAccounting))
-    path = crate.file_at(named[0]) if len(named) == 1 else None
-    if path is None:
-        return Graph()
-    try:
-        return Graph().parse(path, format="turtle")
-    except Exception:
-        return Graph()
 
 
 def carried_as(accounting):

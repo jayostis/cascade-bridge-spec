@@ -8,26 +8,13 @@ from rdflib.namespace import RDF, SKOS
 from rocrate_validator.models import ValidationContext
 from rocrate_validator.requirements.python import PyFunctionCheck, check, requirement
 
+from _accounting import accounting_of
 from _codes import scheme_named_by
 from _crate import file_name_of
 from _findings import report_findings, unmet
 from _terms import BRIDGE, shortened
 
 SHAPES = Path(__file__).resolve().parents[3] / "shapes" / "concept-map.shapes.ttl"
-
-
-def accounting_of(crate):
-    """The graph of the one accounting the adapter names, empty where source_accounting.py has a fault to report."""
-    named = list(crate.graph.objects(crate.root, BRIDGE.sourceAccounting))
-    path = crate.file_at(named[0]) if len(named) == 1 else None
-    graph = Graph()
-    if path is None:
-        return graph
-    try:
-        graph.parse(path, format="turtle")
-    except Exception:
-        return Graph()
-    return graph
 
 
 def lookups_of(accounting):

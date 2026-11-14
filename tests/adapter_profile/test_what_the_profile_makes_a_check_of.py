@@ -14,7 +14,7 @@ DISCOVERED = (
 )
 
 CHECKS = {
-    "profile/must/adapter.ttl": 35,
+    "profile/must/adapter.ttl": 36,
     "profile/must/bench_inputs.py": 1,
     "profile/must/carried_as.py": 1,
     "profile/must/declared_terms.py": 1,
@@ -29,6 +29,7 @@ CHECKS = {
     "profile/must/lookups.py": 1,
     "profile/must/media_types.ttl": 2,
     "profile/must/queries.py": 1,
+    "profile/must/record_type_names.py": 1,
     "profile/must/schema_imports.py": 1,
     "profile/must/shapes.py": 1,
     "profile/must/source_accounting.py": 1,
