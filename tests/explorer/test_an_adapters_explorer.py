@@ -57,6 +57,7 @@ PREFIXES = """\
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix mf: <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .
 @prefix oa: <http://www.w3.org/ns/oa#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 """
 
 ACCOUNTING = """
@@ -87,6 +88,7 @@ ACCOUNTING = """
                      bridge:asProperty ex:subject ] .
 [] a bridge:PathEntry ; bridge:sourcePath "/note/display" ; bridge:verdict bridge:redundantWith ;
   bridge:sameFactAs "/contained/subject/reference" .
+[] a bridge:PathEntry ; bridge:sourcePath "/_note/extension" ; bridge:verdict bridge:consumed .
 [] a bridge:PathEntry ; bridge:sourcePath "/unit/value" ; bridge:verdict bridge:carried ;
   bridge:carriedAs [ bridge:inSourceRecordType "Unit" ; bridge:inRecordClass ex:Unit ;
                      bridge:asProperty ex:unitValue ] .
@@ -168,7 +170,9 @@ GRAPHS = {
 }
 
 FINDINGS = {
-    "category-coded-at-length": "<urn:f> oa:hasBody exa:categoryTextNotCarried .",
+    "category-coded-at-length": """<urn:f> oa:hasBody exa:categoryTextNotCarried ;
+  oa:hasTarget [ oa:hasSelector [ a oa:FragmentSelector ; rdf:value "" ;
+    oa:refinedBy [ a oa:FragmentSelector ; rdf:value "/category/text" ] ] ] .""",
     "nothing-to-find": "",
 }
 
@@ -234,12 +238,86 @@ class ShownText(HTMLParser):
             self.parts.append(data)
 
 
+VOID = {"meta", "link", "input", "br", "img", "wbr", "hr", "source"}
+
+
+class Element:
+    def __init__(self, tag, attrs, parent=None):
+        self.tag, self.attrs, self.parent, self.children = tag, dict(attrs), parent, []
+
+    @property
+    def classes(self):
+        return (self.attrs.get("class") or "").split()
+
+    def text(self):
+        if self.tag in ("script", "style"):
+            return ""
+        return " ".join(" ".join(c.split()) if isinstance(c, str) else c.text() for c in self.children).strip()
+
+    def all(self, test=lambda element: True):
+        for child in self.children:
+            if isinstance(child, Element):
+                if test(child):
+                    yield child
+                yield from child.all(test)
+
+    def having(self, name, value=None):
+        return [
+            element
+            for element in self.all()
+            if name in element.attrs and (value is None or element.attrs[name] == value)
+        ]
+
+    def by_class(self, name):
+        return [element for element in self.all() if name in element.classes]
+
+    def rows(self):
+        return [
+            [cell.text() for cell in row.all(lambda c: c.tag in ("td", "th"))]
+            for row in self.all(lambda r: r.tag == "tr")
+        ]
+
+
+class Tree(HTMLParser):
+    def __init__(self, page):
+        super().__init__()
+        self.root = self.at = Element("document", {})
+        self.feed(page)
+
+    def handle_starttag(self, tag, attrs):
+        element = Element(tag, attrs, self.at)
+        self.at.children.append(element)
+        if tag not in VOID:
+            self.at = element
+
+    def handle_startendtag(self, tag, attrs):
+        self.at.children.append(Element(tag, attrs, self.at))
+
+    def handle_endtag(self, tag):
+        at = self.at
+        while at is not self.root and at.tag != tag:
+            at = at.parent
+        if at is not self.root:
+            self.at = at.parent
+
+    def handle_data(self, data):
+        self.at.children.append(data)
+
+
 class Explorer:
     def __init__(self, out, commit):
         self.out = out
         self.commit = commit
         self.data = json.loads((out / "explorer.json").read_text(encoding="utf-8"))
         self.page = (out / "index.html").read_text(encoding="utf-8")
+        self.dom = Tree(self.page).root
+
+    def by_id(self, id_):
+        (element,) = self.dom.having("id", id_)
+        return element
+
+    def style(self):
+        return self.page.split("<style>")[1].split("</style>")[0]
 
     def node(self, place):
         found = [node for node in self.nodes(self.data["tree"]) if node["place"] == place]
@@ -302,6 +380,13 @@ def explorer(tmp_path_factory, checkout):
 @pytest.fixture(scope="module")
 def explorer_with_a_way_back(tmp_path_factory, checkout):
     return explore(tmp_path_factory, checkout, "--way-back", "Adapters", "../index.html")
+
+
+@pytest.fixture(scope="module")
+def explorer_with_stylesheets(tmp_path_factory, checkout):
+    return explore(
+        tmp_path_factory, checkout, "--stylesheet", "https://fonts.example/faces.css", "--stylesheet", "../../site.css"
+    )
 
 
 class TestAnAdaptersExplorer:
@@ -432,15 +517,115 @@ class TestAnAdaptersExplorer:
             nodes = list(explorer.nodes(explorer.data["tree"]))
             entries = [form for node in nodes for m in node["mappings"] for form in m["forms"]]
             counts = (len(entries), len(nodes), len(INPUTS))
-            assert counts[0] == 11 and counts[2] == 4
+            assert counts[0] == 12 and counts[2] == 4
             figures = explorer.page.split("It accounts for ")[1].split("</p>")[0]
             assert figures.startswith(
                 f"{adapter_explorer.rough(counts[0])} source paths, at {adapter_explorer.rough(counts[1])} places, "
                 f"and {adapter_explorer.rough(counts[2])}\ntest cases"
             ), figures
             assert not [count for count in counts if re.search(rf"\b{count}\b", figures)], figures
+            by_verdict = {
+                item["verdict"]: len(
+                    [
+                        f
+                        for node in nodes
+                        for m in node["mappings"]
+                        if m["verdict"] == item["verdict"]
+                        for f in m["forms"]
+                    ]
+                )
+                for item in explorer.data["verdicts"]
+            }
+            assert by_verdict["carried"] == 6 and by_verdict["consumed"] == 3 and by_verdict["carriedInPart"] == 0
+            overview = explorer.by_id("overview")
+            shown = {
+                row[0]: row[-1]
+                for row in overview.rows()
+                if row and row[0] in {v["words"] for v in explorer.data["verdicts"]}
+            }
+            assert shown == {
+                item["words"]: adapter_explorer.rough(by_verdict[item["verdict"]]) for item in explorer.data["verdicts"]
+            }
+            exact = {count for count in (*counts, *by_verdict.values()) if count > 1}
+            assert not [count for count in exact if re.search(rf"\b{count}\b", overview.text())], overview.text()
             assert f'href="{REPORT}"' in explorer.page
             assert f'href="{REPOSITORY}/blob/{explorer.commit}/vocab/accounting.ttl"' in explorer.page
+
+        def test_opens_on_an_overview_of_where_its_entries_go_and_its_kinds_of_record_as_a_table(self, explorer):
+            """opens on an overview of where its entries go and its kinds of record, as a table
+
+            With no place selected the overview is what the middle pane shows: a bar of the verdicts' shares, a row per
+            verdict and a row per kind of record in the source, with the classes it becomes.
+            """
+            overview = explorer.by_id("overview")
+            assert "view" in overview.classes
+            assert re.search(
+                r":not\(:has\(\.view:target\)\)[^{}]*#overview[^{}]*\{[^}]*display: *block", explorer.style()
+            )
+            (bar,) = overview.by_class("ledger-bar")
+            assert [segment.classes for segment in bar.all()] == [
+                ["s-carried"],
+                ["s-redundantWith"],
+                ["s-consumed"],
+                ["s-noHome"],
+                ["s-ignored"],
+            ]
+            kinds = {row[0]: row[1] for row in overview.rows() if row and row[0] in ("Observation", "Unit")}
+            assert kinds == {"Observation": "Observation ex:Observation", "Unit": "Unit ex:Unit"}
+
+        def test_stops_at_its_overview_paths_kinds_concerns_what_it_does_not_carry_and_its_test_cases(self, explorer):
+            """stops at its overview, paths, kinds, concerns, what it does not carry and its test cases"""
+            (bar,) = explorer.dom.all(lambda element: element.tag == "nav")
+            stops = [(stop.attrs["href"], stop.text()) for stop in bar.by_class("stop")]
+            assert stops == [
+                ("#overview", "Overview"),
+                ("#paths", "Source paths"),
+                ("#kinds", "Kinds of record"),
+                ("#concerns", "By concern"),
+                ("#not-carried", "Not carried"),
+                ("#cases", "Test cases"),
+            ]
+            for href, _ in stops:
+                assert "view" in explorer.by_id(href[1:]).classes
+
+        def test_lists_each_place_as_a_row_of_its_tree_with_a_pill_for_one_verdict_and_a_bar_for_several(
+            self, explorer
+        ):
+            """lists each place as a row of its tree, with a pill for one verdict and a bar for several
+
+            Underscore paths, which FHIR uses for what extends a value, come after the rest.
+            """
+            tree = explorer.by_id("tree")
+            rows = {row.attrs["data-node"]: row for row in tree.having("data-node")}
+            assert sorted(rows) == sorted(node["id"] for node in explorer.nodes(explorer.data["tree"]))
+            display = rows[explorer.node("/category/coding/display")["id"]]
+            assert [pill.text() for pill in display.by_class("v")] == ["ignored"]
+            assert "v-ignored" in display.by_class("v")[0].classes
+            (bar,) = rows[explorer.node("/category")["id"]].by_class("mb")
+            assert [segment.classes for segment in bar.all()] == [
+                ["s-carried"],
+                ["s-consumed"],
+                ["s-noHome"],
+                ["s-ignored"],
+            ]
+            assert [node["step"] for node in explorer.data["tree"]] == ["category", "note", "subject", "unit", "_note"]
+
+        def test_shows_each_places_detail_once_by_its_target(self, explorer):
+            """shows each place's detail once, by its target"""
+            for node in explorer.nodes(explorer.data["tree"]):
+                (detail,) = explorer.dom.having("id", node["id"])
+                assert detail.tag == "article" and "view" in detail.classes, node["place"]
+                assert detail.parent.attrs.get("id") == "views"
+            assert re.search(r"\.view:target[^{}]*\{[^}]*display: *block", explorer.style())
+
+        def test_shows_what_a_path_becomes_as_a_table(self, explorer):
+            """shows what a path becomes as a table"""
+            detail = explorer.by_id(explorer.node("/category/coding/code")["id"])
+            (table,) = detail.all(lambda element: element.tag == "table")
+            assert table.rows() == [
+                ["property", "on the class", "in the kind", "written by"],
+                ["Category code ex:categoryCode", "Observation ex:Observation", "Observation", "in/observation.rq"],
+            ]
 
         def test_puts_no_article_before_a_class_or_a_kind_in_what_a_path_becomes(self, explorer):
             """puts no article before a class or a kind in what a path becomes
@@ -449,11 +634,29 @@ class TestAnAdaptersExplorer:
             without one.
             """
             assert not hasattr(adapter_explorer, "an")
-            assert re.search(r"on the class <span class=\"term\"><b>Observation</b>", explorer.page)
-            assert re.search(r"on the class <span class=\"term\"><b>Unit</b>", explorer.page)
-            assert ", in the kind Observation." in explorer.page
-            assert ", in the kind Unit." in explorer.page
-            assert not re.search(r"\b(on|in) an? (<span|[A-Z])", explorer.page)
+            assert not re.search(r"\b(on|in) an? (<span|<code|[A-Z])", explorer.page)
+
+        def test_marks_where_a_finding_points_in_the_input_and_the_term_a_mapping_names_in_the_graph(self, explorer):
+            """marks where a finding points in the input, and the term a mapping names in the graph
+
+            A finding's selector is a JSON Pointer, refined from the record's own; the input's line is where the pointer
+            lands. The graph's lines are each that names the property the path becomes.
+            """
+
+            def marks(place):
+                (link,) = explorer.by_id(explorer.node(place)["id"]).having("data-case")
+                return link.attrs["data-case"], json.loads(link.attrs["data-marks"])
+
+            file, marked = marks("/category/text")
+            case = json.loads((explorer.out / file).read_text(encoding="utf-8"))
+            lines = case["input"]["text"].split("\n")
+            assert [lines[at - 1].strip() for at in marked["input"]] == ['"text": "Vital signs"']
+            findings = case["expectedFindings"]["text"].split("\n")
+            assert [findings[at - 1].split()[-2] for at in marked["expectedFindings"]] == ["exa:categoryTextNotCarried"]
+            file, marked = marks("/category/coding/code")
+            graph = json.loads((explorer.out / file).read_text(encoding="utf-8"))["expectedGraph"]["text"].split("\n")
+            assert [graph[at - 1] for at in marked["expectedGraph"]] == [GRAPHS["category-coded"]]
+            assert "input" not in marked
 
         def test_lists_the_plain_form_of_a_place_before_its_contained_form(self, explorer):
             """lists the plain form of a place before its contained form"""
@@ -487,20 +690,84 @@ class TestAnAdaptersExplorer:
 
             The bar is 9 rem tall at 320 px and 7.4 rem at 400 px, so the room is the bar's own height, which the page sets.
             """
-            style = explorer.page.split("<style>")[1].split("</style>")[0]
-            assert re.search(r"(^|\n)section[^{}]*\{[^}]*scroll-margin-top: *calc\(var\(--bar,", style)
-            assert re.search(r"details\.node[^{}]*\{[^}]*scroll-margin-top: *calc\(var\(--bar,", style)
+            style = explorer.style()
+            assert re.search(r"\.view[^{}]*\{[^}]*scroll-margin-top: *calc\(var\(--bar,", style)
+            assert re.search(r"\.row[^{}]*\{[^}]*scroll-margin-top: *calc\(var\(--bar,", style)
             assert 'setProperty("--bar"' in explorer.page.split("<script>")[-1]
 
         def test_declares_an_icon_so_a_browser_asks_for_no_favicon(self, explorer):
             """declares an icon so a browser asks for no favicon"""
             assert re.search(r'<link rel="icon" href="data:', explorer.page.split("</head>")[0])
 
-        def test_shows_search_results_inside_the_sticky_bar_and_announces_their_count(self, explorer):
-            """shows search results inside the sticky bar and announces their count"""
-            bar = explorer.page.split("<nav>")[1].split("</nav>")[0]
-            assert 'id="results"' in bar
-            assert re.search(r'id="count"[^>]*aria-live="polite"', bar)
+        def test_narrows_its_tree_in_place_and_announces_how_many_places_match(self, explorer):
+            """narrows its tree in place, and announces how many places match"""
+            pane = explorer.by_id("paths-pane")
+            (box,) = [element for element in pane.all() if element.tag == "input"]
+            assert (box.attrs["type"], box.attrs["aria-controls"]) == ("search", "tree")
+            assert pane.having("id", "count")[0].attrs["aria-live"] == "polite"
+            assert not explorer.dom.having("id", "results")
+
+        def test_narrows_its_tree_by_a_concern_a_verdict_or_a_reason_not_carried(self, explorer):
+            """narrows its tree by a concern, a verdict or a reason not carried"""
+            pane = explorer.by_id("paths-pane")
+            assert [chip.attrs["data-concern"] for chip in pane.having("data-concern")] == ["", "concernCodes"]
+            code = explorer.node("/category/coding/code")["id"]
+            (row,) = explorer.by_id("tree").having("data-node", code)
+            assert row.attrs["data-c"] == "concernCodes"
+            verdicts = [element.attrs["data-verdict"] for element in explorer.by_id("overview").having("data-verdict")]
+            assert verdicts == [item["verdict"] for item in explorer.data["verdicts"]]
+            reasons = {
+                element.text(): element.attrs["data-nodes"].split()
+                for element in explorer.by_id("not-carried").having("data-nodes")
+            }
+            assert reasons == {
+                "A category's text has no Cascade predicate.": [explorer.node("/category/text")["id"]],
+                "A display repeats what its code says.": [explorer.node("/category/coding/display")["id"]],
+            }
+
+        def test_folds_its_panes_to_tabs_on_a_narrow_screen_with_rows_a_thumb_can_hit(self, explorer):
+            """folds its panes to tabs on a narrow screen, with rows a thumb can hit"""
+            tabs = [tab.attrs["aria-controls"] for tab in explorer.by_id("tabs").all(lambda e: e.tag == "button")]
+            assert tabs == ["paths-pane", "views-pane", "case-pane"]
+            narrow = explorer.style().split("@media (max-width: 760px)")[1]
+            assert re.search(r"\.tabs[^{}]*\{[^}]*display: *grid", narrow)
+            assert re.search(r"\.row[^{}]*\{[^}]*min-height: *32px", narrow)
+
+        def test_names_the_sites_tokens_each_with_one_fallback(self, explorer):
+            """names the site's tokens, each with one fallback
+
+            The page reads the site's tokens by name, so a stylesheet linked ahead of it restyles it, and falls back to the
+            site's values when none is.
+            """
+            fallbacks = {}
+            for name, value in re.findall(r"var\((--[\w-]+), *([^()]*(?:\([^()]*\))?[^()]*)\)", explorer.style()):
+                fallbacks.setdefault(name, set()).add(value.strip())
+            assert {
+                "--ink",
+                "--paper",
+                "--rule",
+                "--link",
+                "--pencil",
+                "--muted",
+                "--serif",
+                "--sans",
+                "--mono",
+            } <= set(fallbacks)
+            assert {name: values for name, values in fallbacks.items() if len(values) > 1} == {}
+            assert not re.search(r"var\(--(?!bar\b)[\w-]+\)", explorer.style())
+            assert not re.search(r"(^|\n)\s*:root\s*\{", explorer.style())
+
+    class TestGivenAStylesheet:
+        def test_links_each_stylesheet_ahead_of_its_own_in_the_order_given(self, explorer_with_stylesheets):
+            """links each stylesheet ahead of its own, in the order given"""
+            head = explorer_with_stylesheets.page.split("</head>")[0]
+            links = re.findall(r'<link rel="stylesheet" href="([^"]*)">', head)
+            assert links == ["https://fonts.example/faces.css", "../../site.css"]
+            assert head.index("../../site.css") < head.index("<style>")
+
+        def test_links_none_without_one(self, explorer):
+            """links none without one"""
+            assert 'rel="stylesheet"' not in explorer.page
 
     class TestGivenAWayBack:
         def test_links_back_from_the_bar_and_from_the_end_of_the_page(self, explorer_with_a_way_back):
