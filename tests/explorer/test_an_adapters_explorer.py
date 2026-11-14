@@ -873,19 +873,24 @@ class TestAnAdaptersExplorer:
             assert not re.search(r"(^|\n)\s*:root\s*\{", explorer.style())
 
     class TestGivenTwoPlacesThatShareAGap:
-        def test_marks_in_the_input_only_what_a_finding_points_at_on_the_places_own_path(
-            self, explorer_with_two_places_sharing_a_gap
-        ):
-            """marks in the input only what a finding points at on the place's own path
+        def test_marks_only_what_a_finding_points_at_on_the_places_own_path(self, explorer_with_two_places_sharing_a_gap):
+            """marks only what a finding points at on the place's own path
 
-            Two places name one gap and each has one finding. A place is marked at its own finding, never at the other's.
+            Two places name one gap and each has one finding. A place is marked at its own finding, in the input and in
+            the expected findings, never at the other's.
             """
             explorer = explorer_with_two_places_sharing_a_gap
-            for place, line in (("/shared/first", '"first": "a",'), ("/shared/second", '"second": "b"')):
+            case = explorer.case("two-places")
+            for place, line, finding in (
+                ("/shared/first", '"first": "a",', "<urn:f1>"),
+                ("/shared/second", '"second": "b"', "<urn:f2>"),
+            ):
                 (link,) = explorer.by_id(explorer.node(place)["id"]).having("data-case")
-                lines = explorer.case("two-places")["input"]["text"].split("\n")
-                marked = json.loads(link.attrs["data-marks"])["input"]
-                assert [lines[at - 1].strip() for at in marked] == [line], place
+                marks = json.loads(link.attrs["data-marks"])
+                lines = case["input"]["text"].split("\n")
+                assert [lines[at - 1].strip() for at in marks["input"]] == [line], place
+                findings = case["expectedFindings"]["text"].split("\n")
+                assert [findings[at - 1].split()[0] for at in marks["expectedFindings"]] == [finding], place
 
     class TestGivenAStylesheet:
         def test_links_each_stylesheet_ahead_of_its_own_in_the_order_given(self, explorer_with_stylesheets):
