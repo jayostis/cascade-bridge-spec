@@ -95,9 +95,9 @@ PREFIX ex: <https://example.org/vocab#>
 CONSTRUCT {
   ?record a ex:Observation ;
     ex:categoryCode ?code ; # a code of the category
-    ex:subject ?subject .
+    ?subjectProperty ?subject .
 }
-WHERE { ?record ex:read ?code . OPTIONAL { ?record ex:read ?subject } }
+WHERE { ?record ex:read ?code . OPTIONAL { ?record ex:read ?subject BIND (ex:subject AS ?subjectProperty) } }
 """
 
 FINDINGS_QUERY = """\
@@ -113,8 +113,7 @@ MANIFEST = """
 <#category-coded> a bridge:IsomorphicConversionTest ; mf:name "category-coded" ;
   rdfs:comment "An observation's category, coded and in text." ;
   mf:action [ bridge:input <in/category-coded.json> ] ;
-  mf:result [ bridge:expectedGraph <expected/category-coded.ttl> ;
-              bridge:expectedFindings <findings/category-coded.ttl> ] .
+  mf:result [ bridge:expectedGraph <expected/category-coded.ttl> ] .
 
 <#category-coded-at-length> a bridge:IsomorphicConversionTest ; mf:name "category-coded-at-length" ;
   mf:action [ bridge:input <in/category-coded-at-length.json> ] ;
@@ -133,17 +132,19 @@ INPUTS = {
         "subject": {"reference": "Patient/a"},
         "note": "Taken at length, the record a reader should not be shown first.",
     },
-    "subject-only": {"subject": {"reference": "Patient/a"}},
+    "subject-only": {
+        "subject": {"reference": "Patient/a"},
+        "note": "A subject alone, written at length, so that the smallest input whose graph has a subject holds none.",
+    },
 }
 
 GRAPHS = {
-    "category-coded": '<urn:r> a ex:Observation ; ex:categoryCode "vital-signs" .',
+    "category-coded": '<urn:r> a ex:Observation ; ex:categoryCode "vital-signs" ; ex:subject <urn:p> .',
     "category-coded-at-length": '<urn:r> a ex:Observation ; ex:categoryCode "vital-signs" ; ex:subject <urn:p> .',
     "subject-only": "<urn:r> a ex:Observation ; ex:subject <urn:p> .",
 }
 
 FINDINGS = {
-    "category-coded": "<urn:f> oa:hasBody exa:categoryTextNotCarried .",
     "category-coded-at-length": "<urn:f> oa:hasBody exa:categoryTextNotCarried .",
 }
 
@@ -318,22 +319,28 @@ class TestAnAdaptersExplorer:
             ]
             assert mapping["queries"] == ["in/observation.rq"]
             assert mapping["case"] == "category-coded"
+            subject = explorer.mapping("/subject/reference")
+            assert (subject["queries"], subject["case"]) == (["in/observation.rq"], "subject-only")
             case = explorer.case("category-coded")
             assert '"vital-signs"' in case["input"]["text"]
             assert "ex:categoryCode" in case["expectedGraph"]["text"]
-            assert "exa:categoryTextNotCarried" in case["expectedFindings"]["text"]
+            assert "expectedFindings" not in case
 
-        def test_shows_a_path_not_carried_with_its_reason_its_gap_and_the_case_that_reports_it(self, explorer):
-            """shows a path not carried with its reason, its gap and the case that reports it"""
+        def test_shows_a_path_not_carried_with_its_reason_and_a_gap_with_the_case_that_reports_it(self, explorer):
+            """shows a path not carried with its reason, and a gap with the case that reports it
+
+            A path that becomes nothing and opens no gap is held to nothing a case can show.
+            """
             ignored = explorer.mapping("/category/coding/display")
             assert (ignored["verdict"], ignored["because"]) == ("ignored", "A display repeats what its code says.")
-            assert ignored["case"] == "category-coded-at-length"
+            assert ignored["case"] is None
             gap = explorer.mapping("/category/text")
             assert gap["verdict"] == "noHome"
             assert gap["gap"]["label"] == "A category's text has no Cascade predicate."
             assert gap["gap"]["issues"] == ["https://github.com/example/example-adapter/issues/4"]
             assert gap["queries"] == ["in/findings.rq"]
-            assert gap["case"] == "category-coded"
+            assert gap["case"] == "category-coded-at-length"
+            assert "exa:categoryTextNotCarried" in explorer.case(gap["case"])["expectedFindings"]["text"]
 
         def test_lists_its_kinds_of_record_its_concerns_and_what_it_does_not_carry(self, explorer):
             """lists its kinds of record, its concerns and what it does not carry"""
@@ -341,9 +348,8 @@ class TestAnAdaptersExplorer:
             (kind,) = explorer.data["kinds"]
             assert kind["kind"] == "Observation"
             assert {
-                "class": "ex:Observation",
-                "property": "ex:categoryCode",
-                "label": "Category code",
+                "class": {"term": "ex:Observation", "label": "Observation"},
+                "property": {"term": "ex:categoryCode", "label": "Category code"},
                 "nodes": [code],
             } in kind["becomes"]
             (codes,) = explorer.data["concerns"]
