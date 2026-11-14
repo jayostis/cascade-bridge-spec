@@ -52,11 +52,13 @@ def faulty(crate):
                 f"test's input holds is the bridge:sourcePath of an entry of {accounting_file}, or one its test case "
                 "names by bridge:testsUnaccountedSourcePath"
             )
+        where = (
+            "it has no bridge:expectedFindings"
+            if findings is None
+            else "its bridge:expectedFindings hold no cascade:SourcePathNotAccounted at that path"
+        )
         for source_path in sorted(tested - expected):
-            yield (
-                f"{name}: names {source_path} by bridge:testsUnaccountedSourcePath, where its "
-                "bridge:expectedFindings hold no cascade:SourcePathNotAccounted at that path"
-            )
+            yield f"{name}: names {source_path} by bridge:testsUnaccountedSourcePath, where {where}"
 
 
 @requirement(name="Unaccounted paths a test case expects")

@@ -660,7 +660,7 @@ bridge:expectedFindings a owl:ObjectProperty ;
 
 bridge:testsUnaccountedSourcePath a owl:DatatypeProperty ;
   rdfs:label "tests unaccounted source path"@en ;
-  rdfs:comment "A path, as the record writes it, whose cascade:SourcePathNotAccounted the test case expects because it tests that finding."@en ;
+  rdfs:comment "Written as the record writes it, as the finding's sh:value does."@en ;
   rdfs:range xsd:string ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
