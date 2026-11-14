@@ -428,8 +428,8 @@
       "@type": "File",
       "name": "Test manifest",
       "encodingFormat": "text/turtle",
-      "contentSize": "8401",
-      "sha256": "15123888048aba01a702914e5e6c77550c159c5ba9f31704a67a8b2511f15a37",
+      "contentSize": "8614",
+      "sha256": "747a91080f668301d740ef1a46dd16623ba62c4aa457a84280970773be99c743",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       }

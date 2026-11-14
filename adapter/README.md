@@ -75,3 +75,15 @@ form that and its `bridge:pathOfContainedContentBelowContent`. An envelope that 
 adapter with no form reads each path as its own place. No two envelopes of an adapter declare the same prefix, and a prefix
 must not equal a real member name of the source in another form: a `resource` member of a record read in the resource
 envelope would make `/resource/code` read as the Bundle form.
+
+## Testing a path the accounting names nowhere
+
+A test case expects `cascade:SourcePathNotAccounted` only where it tests that finding, and then names each such path on
+the case in the manifest with `bridge:testsUnaccountedSourcePath`, written as the finding's `sh:value` writes it:
+
+    <#a-record-holding-a-path-nothing-names> a bridge:IsomorphicConversionTest ;
+      bridge:testsUnaccountedSourcePath "/ExampleRecord/Novelty" ;
+
+Any other such path wants an entry in the accounting whose `bridge:sourcePath` is that path as the record writes it, in its
+own form; an entry on a path above it, or on the same place in another form, does not account for it
+([`profile/must/unaccounted_paths.py`](profile/must/unaccounted_paths.py)).
