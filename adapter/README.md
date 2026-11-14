@@ -87,3 +87,16 @@ the case in the manifest with `bridge:testsUnaccountedSourcePath`, written as th
 Any other such path wants an entry in the accounting whose `bridge:sourcePath` is that path as the record writes it, in its
 own form; an entry on a path above it, or on the same place in another form, does not account for it
 ([`profile/must/unaccounted_paths.py`](profile/must/unaccounted_paths.py)).
+
+## Showing an adapter to a reader
+
+[`../scripts/adapter_explorer.py`](../scripts/adapter_explorer.py) builds a page from a git checkout of an adapter: its
+source paths as a tree to open like folders, by kind of record, by concern and what it does not carry, and each mapping
+beside the test case that holds the adapter to it. It reads only what the adapter declares, so what the page lacks is
+fixed in the adapter, by the tags above.
+
+    python3 scripts/adapter_explorer.py <adapter> --vocabulary <cascade-vocabulary> \
+        --repository https://github.com/<owner>/<adapter> --report <conformance report URL> --out <empty folder>
+
+The labels of terms come from the files the crate's `bridge:vocabularyFile` names in `<cascade-vocabulary>`. Serve the
+folder over HTTP: the page reads a test case's files when a reader opens it.

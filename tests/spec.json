@@ -60,7 +60,8 @@
     "The merge gate · --check ready-to-merge",
     "Re-running a check when a description is edited · .github/actions/rerun-when-edited",
     "Running the checks from the version a run picked · scripts/compatibility.py",
-    "The run record handed to the version a run picked · compatibility_tool/record.py"
+    "The run record handed to the version a run picked · compatibility_tool/record.py",
+    "An adapter's explorer · scripts/adapter_explorer.py"
   ],
   "build": [
     "Files of the specification that parse · **/*.ttl, **/*.nt, shapes/, bench/result.schema.json",

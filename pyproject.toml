@@ -12,7 +12,7 @@ markers = ["says(text): what a parametrized case shows, as its manifest says it;
 [tool.ruff]
 target-version = "py310"
 line-length = 120
-src = ["tests", "adapter/profile", "adapter/profile/must", "scripts", ".github/actions/rerun-when-edited", "bench/generate", "tests/adapter_profile", "tests/bench", "tests/compatibility", "tests/specification"]
+src = ["tests", "adapter/profile", "adapter/profile/must", "scripts", ".github/actions/rerun-when-edited", "bench/generate", "tests/adapter_profile", "tests/bench", "tests/compatibility", "tests/explorer", "tests/specification"]
 extend-exclude = [".venv"]
 
 [tool.ruff.lint]
