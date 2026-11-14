@@ -110,6 +110,7 @@ function apply() {
     item.hidden = Boolean(active) && !kept.has(item);
     if (opened.has(item)) item.querySelector(":scope > details").open = true;
   }
+  if (active && !narrow.matches) tree.parentElement.scrollTop = 0;
   if (!active) count.textContent = "";
   else if (found === 0) count.textContent = "No path or term matches.";
   else count.textContent = found === 1 ? "1 place matches." : found + " places match.";
