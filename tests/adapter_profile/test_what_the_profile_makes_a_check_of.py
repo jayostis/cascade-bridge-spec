@@ -33,6 +33,7 @@ CHECKS = {
     "profile/must/schema_imports.py": 1,
     "profile/must/shapes.py": 1,
     "profile/must/source_accounting.py": 1,
+    "profile/must/unaccounted_paths.py": 1,
 }
 
 A_CONCEPT_MAPS_SHAPES = """@prefix sh:   <http://www.w3.org/ns/shacl#> .
