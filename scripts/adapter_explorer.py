@@ -113,6 +113,21 @@ def step_label(step):
     return step.replace("~1", "/").replace("~0", "~")
 
 
+def plain_steps(path):
+    """A path's steps as the places of an accounting name them: a position (`[2]`, or an array's index in a JSON
+    Pointer) is dropped, and a namespaced step is its local name."""
+    named = (re.sub(r"\[\d+\]$", "", step) for step in steps_of(path))
+    return tuple(step_label(step) for step in named if step and not step.isdigit())
+
+
+def on_path(selector, place):
+    """Whether a selector's steps lie on the place's: one is the other's beginning, and the selector is not the root."""
+    if not selector:
+        return False
+    shorter = min(len(selector), len(place))
+    return selector[:shorter] == place[:shorter]
+
+
 def shown_path(steps):
     return "/" + "/".join(step_label(step) for step in steps)
 
@@ -538,14 +553,20 @@ def build(folder, vocabulary, repository, report):
         candidates = [case for case in cases if shows(case) and any(case["held"].holds(path) for path in paths)]
         return min(candidates, key=lambda case: (len(case["texts"]["input"]), case["name"]), default=None)
 
-    def marks_in(case, entry):
+    def marks_in(case, entry, paths):
         """The lines of the case's files a reader looks at for the entry: where each finding naming its gap points in
-        the input, those findings, and each line of the expected graph naming a property the entry becomes."""
+        the input, on one of the entry's own paths, those findings, and each line of the expected graph naming a
+        property the entry becomes."""
         marks = {}
         if entry["gap"] is not None and "expectedFindings" in case["texts"]:
             if "lines" not in case:
                 case["lines"] = Lines(case["texts"]["input"])
-            found = {case["lines"].find(selector) for selector in selectors_of(case["findings"], entry["gap"])}
+            own = [plain_steps(path) for path in paths]
+            found = {
+                case["lines"].find(selector)
+                for selector in selectors_of(case["findings"], entry["gap"])
+                if any(on_path(plain_steps(selector), steps) for steps in own)
+            }
             marks["input"] = sorted(line for line in found if line is not None)
             marks["expectedFindings"] = lines_naming(case["texts"]["expectedFindings"], [str(entry["gap"])])
         properties = sorted({str(property_) for _, _, property_ in entry["carried"]})
@@ -631,7 +652,7 @@ def build(folder, vocabulary, repository, report):
             )
             case = case_for(entry, paths)
             if case is not None:
-                mappings[-1]["case"], mappings[-1]["marks"] = case["name"], marks_in(case, entry)
+                mappings[-1]["case"], mappings[-1]["marks"] = case["name"], marks_in(case, entry, paths)
         return sorted(mappings, key=lambda mapping: (VERDICTS.index(mapping["verdict"]), str(mapping["forms"])))
 
     for node in ordered:
@@ -946,7 +967,9 @@ class Page:
             + [link(f"#{ancestor['id']}", e(ancestor["step"])) for ancestor in ancestors]
             + [f"<b>{e(node['step'])}</b>"]
         )
-        parts = [f'<p class="crumbs">{crumbs}</p><h1 class="path">{e(node["place"]).replace("/", "<wbr>/")}</h1>']
+        parts = [
+            f'<p class="crumbs">{crumbs}</p><h1 class="path" tabindex="-1">{e(node["place"]).replace("/", "<wbr>/")}</h1>'
+        ]
         if not node["mappings"]:
             parts.append('<p class="fx">No entry of the accounting names this place itself.</p>')
         parts += [self.mapping(mapping, node["place"]) for mapping in node["mappings"]]
@@ -1006,7 +1029,7 @@ class Page:
         return (
             f'<article class="view" id="kind-{number}" data-stop="kinds"><h2 class="ph">Kinds of record</h2>'
             f'<div class="insp"><p class="crumbs">{link("#kinds", "kinds of record")} / <b>{e(kind_name(kind))}</b></p>'
-            f"<h1>{e(kind_name(kind))}</h1>"
+            f'<h1 tabindex="-1">{e(kind_name(kind))}</h1>'
             '<table class="et stack"><thead><tr><th>property</th><th>on the class</th><th>from</th></tr></thead>'
             f"<tbody>{rows}</tbody></table></div></article>"
         )
@@ -1097,7 +1120,7 @@ def page(data, way_back=None, stylesheets=()):
     )
     views = [
         f"""<article class="view" id="overview" data-stop="overview"><h2 class="ph">Overview</h2><div class="insp">
-<h1>{name}</h1>
+<h1 tabindex="-1">{name}</h1>
 <p class="sub"><code>{e(adapter["identifier"])}</code> {e(adapter["version"])} at {link(adapter["tree"], f"<code>{e(adapter['commit'][:7])}</code>")}</p>
 <div class="over"><div>
 <p class="gen">It accounts for {e(figures["paths"])} source paths, at {e(figures["places"])} places, and {e(figures["cases"])}
@@ -1110,22 +1133,22 @@ test cases of a conversion hold it to what it makes.</p>
 {shown.kinds_table()}
 </div></div></div></article>""",
         f"""<article class="view" id="paths" data-stop="paths"><h2 class="ph">Source paths</h2><div class="insp">
-<h1>Source paths</h1>
+<h1 tabindex="-1">Source paths</h1>
 <p>Open a path like a folder. A folded path shows the verdicts of the entries under it. Every path has a verdict:</p>
 <table class="et verdicts"><tbody>{shown.verdict_rows(figures=False)}</tbody></table></div></article>""",
         f"""<article class="view" id="kinds" data-stop="kinds"><h2 class="ph">Kinds of record</h2><div class="insp">
-<h1>Kinds of record</h1>
+<h1 tabindex="-1">Kinds of record</h1>
 <p>Each kind of record in the source, and the classes it becomes.</p>
 {shown.kinds_table()}</div></article>""",
         *(shown.kind(number, kind) for number, kind in enumerate(data["kinds"], 1)),
         f"""<article class="view" id="concerns" data-stop="concerns"><h2 class="ph">By concern</h2><div class="insp">
-<h1>By concern</h1>{concerns}</div></article>""",
+<h1 tabindex="-1">By concern</h1>{concerns}</div></article>""",
         f"""<article class="view" id="not-carried" data-stop="not-carried"><h2 class="ph">Not carried</h2><div class="insp">
-<h1>Not carried</h1>
+<h1 tabindex="-1">Not carried</h1>
 <p>What the adapter leaves out, wholly or in part, and why. Select a reason to see its paths.</p>
 {shown.not_carried()}</div></article>""",
         f"""<article class="view" id="cases" data-stop="cases"><h2 class="ph">Test cases</h2><div class="insp">
-<h1>Test cases</h1>
+<h1 tabindex="-1">Test cases</h1>
 <p>{e(figures["cases"]).capitalize()} test cases of a conversion hold the adapter to what it makes. Select one to read it.</p>
 <table class="et"><tbody>{cases}</tbody></table></div></article>""",
         *shown.details(data["tree"]),
@@ -1173,10 +1196,10 @@ test cases of a conversion hold it to what it makes.</p>
 <div class="stops">{stops}</div>
 <p class="stepline">{" · ".join(steps)}</p>
 </nav>
-<div id="tabs" class="tabs" role="tablist">
-<button type="button" role="tab" aria-controls="paths-pane" aria-selected="false">Paths</button>
-<button type="button" role="tab" aria-controls="views-pane" aria-selected="true" class="on">Overview</button>
-<button type="button" role="tab" aria-controls="case-pane" aria-selected="false">Test case</button>
+<div id="tabs" class="tabs" role="group" aria-label="Show">
+<button type="button" aria-controls="paths-pane">Paths</button>
+<button type="button" aria-controls="views-pane" aria-current="true" class="on">Overview</button>
+<button type="button" aria-controls="case-pane">Test case</button>
 </div>
 <main class="panes">
 <section class="pane" id="paths-pane" aria-label="Source paths">

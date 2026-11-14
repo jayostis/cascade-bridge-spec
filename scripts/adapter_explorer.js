@@ -1,4 +1,5 @@
 "use strict";
+document.documentElement.classList.add("js");
 const index = JSON.parse(document.getElementById("search-index").textContent);
 const tree = document.getElementById("tree");
 const box = document.getElementById("search");
@@ -25,7 +26,8 @@ function show(pane) {
   for (const tab of tabs.querySelectorAll("button")) {
     const on = tab.getAttribute("aria-controls") === pane;
     tab.classList.toggle("on", on);
-    tab.setAttribute("aria-selected", String(on));
+    if (on) tab.setAttribute("aria-current", "true");
+    else tab.removeAttribute("aria-current");
     document.getElementById(tab.getAttribute("aria-controls")).classList.toggle("on", on);
   }
   if (!narrow.matches) return;
@@ -44,7 +46,7 @@ function shownView() {
   return target && target.classList.contains("view") ? target : document.getElementById("overview");
 }
 
-function select(moved) {
+function select(moved, focus) {
   const view = shownView();
   for (const stop of document.querySelectorAll(".stop")) {
     const on = stop.getAttribute("href") === "#" + view.dataset.stop;
@@ -54,6 +56,7 @@ function select(moved) {
   }
   tabs.querySelector('[aria-controls="views-pane"]').textContent = view.querySelector("h2.ph").textContent;
   for (const row of tree.querySelectorAll(".row.sel")) row.classList.remove("sel");
+  for (const link of tree.querySelectorAll("[aria-current]")) link.removeAttribute("aria-current");
   const detail = view.classList.contains("detail");
   const row = detail && tree.querySelector(`[data-node="${view.id}"]`);
   if (row) {
@@ -61,6 +64,7 @@ function select(moved) {
       if (at.tagName === "DETAILS") at.open = true;
     }
     row.classList.add("sel");
+    (row.matches("a") ? row : row.querySelector("a.nm")).setAttribute("aria-current", "true");
     if (!narrow.matches) row.scrollIntoView({ block: "nearest" });
   }
   if (detail) {
@@ -76,6 +80,8 @@ function select(moved) {
     show(view.id === "paths" ? "paths-pane" : "views-pane");
     if (view.id !== "paths") view.scrollIntoView({ block: "start" });
   }
+  const heading = view.querySelector("h1");
+  if (focus && heading.offsetParent) heading.focus({ preventScroll: narrow.matches });
 }
 
 const narrowing = { text: "", concern: "", verdict: "", nodes: null };
@@ -145,10 +151,10 @@ function byConcern(concern) {
   apply();
 }
 
-addEventListener("hashchange", () => select(true));
+addEventListener("hashchange", () => select(true, true));
 document.addEventListener("click", (event) => {
   const anchor = event.target.closest('a[href^="#"]');
-  if (anchor && anchor.getAttribute("href") === location.hash) select(true);
+  if (anchor && anchor.getAttribute("href") === location.hash) select(true, true);
   const name = event.target.closest("summary a.nm");
   if (name && narrow.matches && !name.closest(".row").hasAttribute("data-own")) {
     event.preventDefault();

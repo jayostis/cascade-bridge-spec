@@ -191,19 +191,41 @@ def write(path, text):
     path.write_text(text, encoding="utf-8")
 
 
-def an_adapter(folder):
+SHARED_ACCOUNTING = """
+[] a bridge:PathEntry ; bridge:sourcePath "/shared/first" ; bridge:verdict bridge:noHome ;
+  bridge:namesGap exa:categoryTextNotCarried .
+[] a bridge:PathEntry ; bridge:sourcePath "/shared/second" ; bridge:verdict bridge:noHome ;
+  bridge:namesGap exa:categoryTextNotCarried .
+"""
+
+SHARED_MANIFEST = """
+<> a mf:Manifest ; mf:entries ( <#two-places> ) .
+
+<#two-places> a bridge:IsomorphicConversionTest ; mf:name "two-places" ;
+  mf:action [ bridge:input <in/two-places.json> ] ;
+  mf:result [ bridge:expectedGraph <expected/two-places.ttl> ;
+              bridge:expectedFindings <findings/two-places.ttl> ] .
+"""
+
+SHARED_FINDINGS = """<urn:f1> oa:hasBody exa:categoryTextNotCarried ;
+  oa:hasTarget [ oa:hasSelector [ a oa:FragmentSelector ; rdf:value "/shared/first" ] ] .
+<urn:f2> oa:hasBody exa:categoryTextNotCarried ;
+  oa:hasTarget [ oa:hasSelector [ a oa:FragmentSelector ; rdf:value "/shared/second" ] ] ."""
+
+
+def an_adapter(folder, accounting=ACCOUNTING, manifest=MANIFEST, inputs=INPUTS, graphs=GRAPHS, findings=FINDINGS):
     write(folder / "ro-crate-metadata.json", json.dumps(CRATE, indent=2))
-    write(folder / "vocab" / "accounting.ttl", PREFIXES + ACCOUNTING)
+    write(folder / "vocab" / "accounting.ttl", PREFIXES + accounting)
     write(folder / "vocab" / "gaps.ttl", PREFIXES + GAPS)
     write(folder / "in" / "observation.rq", OBSERVATION_QUERY)
     write(folder / "in" / "absent.rq", ABSENT_QUERY)
     write(folder / "in" / "findings.rq", FINDINGS_QUERY)
-    write(folder / "fixtures" / "manifest.ttl", PREFIXES + MANIFEST)
-    for name, record in INPUTS.items():
+    write(folder / "fixtures" / "manifest.ttl", PREFIXES + manifest)
+    for name, record in inputs.items():
         write(folder / "fixtures" / "in" / f"{name}.json", json.dumps(record, indent=2))
-        write(folder / "fixtures" / "expected" / f"{name}.ttl", PREFIXES + GRAPHS[name])
-    for name, findings in FINDINGS.items():
-        write(folder / "fixtures" / "findings" / f"{name}.ttl", PREFIXES + findings)
+        write(folder / "fixtures" / "expected" / f"{name}.ttl", PREFIXES + graphs[name])
+    for name, text in findings.items():
+        write(folder / "fixtures" / "findings" / f"{name}.ttl", PREFIXES + text)
     git = [
         "git",
         "-C",
@@ -391,6 +413,22 @@ def explorer_with_stylesheets(tmp_path_factory, checkout):
     )
 
 
+@pytest.fixture(scope="module")
+def explorer_with_two_places_sharing_a_gap(tmp_path_factory):
+    adapter = tmp_path_factory.mktemp("adapter")
+    commit = an_adapter(
+        adapter,
+        accounting=SHARED_ACCOUNTING,
+        manifest=SHARED_MANIFEST,
+        inputs={"two-places": {"shared": {"first": "a", "second": "b"}}},
+        graphs={"two-places": ""},
+        findings={"two-places": SHARED_FINDINGS},
+    )
+    vocabulary = tmp_path_factory.mktemp("vocabulary")
+    write(vocabulary / "ontologies" / "example.ttl", PREFIXES + VOCABULARY)
+    return explore(tmp_path_factory, (adapter, vocabulary, commit))
+
+
 class TestAnAdaptersExplorer:
     """An adapter's explorer · scripts/adapter_explorer.py
 
@@ -575,6 +613,12 @@ class TestAnAdaptersExplorer:
             kinds = {row[0]: row[1] for row in overview.rows() if row and row[0] in ("Observation", "Unit")}
             assert kinds == {"Observation": "Observation ex:Observation", "Unit": "Unit ex:Unit"}
 
+        def test_keeps_a_kinds_name_whole_and_wraps_what_it_becomes_instead(self, explorer):
+            """keeps a kind's name whole, and wraps what it becomes instead"""
+            style = explorer.style()
+            assert re.search(r"table\.et\.kinds td\.mono[^{}]*\{[^}]*overflow-wrap: *normal", style)
+            assert re.search(r"table\.et\.kinds [^{}]*\.term[^{}]*\{[^}]*overflow-wrap: *anywhere", style)
+
         def test_stops_at_its_overview_paths_kinds_concerns_what_it_does_not_carry_and_its_test_cases(self, explorer):
             """stops at its overview, paths, kinds, concerns, what it does not carry and its test cases"""
             (bar,) = explorer.dom.all(lambda element: element.tag == "nav")
@@ -636,6 +680,14 @@ class TestAnAdaptersExplorer:
             without one.
             """
             assert not hasattr(adapter_explorer, "an")
+            rows = {
+                place: explorer.by_id(explorer.node(place)["id"]).all(lambda element: element.tag == "table")
+                for place in ("/unit/value", "/note/text")
+            }
+            assert [row[1:3] for row in next(rows["/unit/value"]).rows()[1:]] == [["Unit ex:Unit", "Unit"]]
+            assert [row[1:3] for row in next(rows["/note/text"]).rows()[1:]] == [
+                ["Observation ex:Observation", "Observation"]
+            ] * 2
             assert not re.search(r"\b(on|in) an? (<span|<code|[A-Z])", explorer.page)
 
         def test_marks_where_a_finding_points_in_the_input_and_the_term_a_mapping_names_in_the_graph(self, explorer):
@@ -727,13 +779,74 @@ class TestAnAdaptersExplorer:
                 "A display repeats what its code says.": [explorer.node("/category/coding/display")["id"]],
             }
 
-        def test_folds_its_panes_to_tabs_on_a_narrow_screen_with_rows_a_thumb_can_hit(self, explorer):
-            """folds its panes to tabs on a narrow screen, with rows a thumb can hit"""
-            tabs = [tab.attrs["aria-controls"] for tab in explorer.by_id("tabs").all(lambda e: e.tag == "button")]
-            assert tabs == ["paths-pane", "views-pane", "case-pane"]
+        def test_folds_its_panes_to_buttons_on_a_narrow_screen_with_rows_a_thumb_can_hit(self, explorer):
+            """folds its panes to buttons on a narrow screen, with rows a thumb can hit
+
+            The buttons are not tabs: they carry no tab roles, and the pane shown is the button with aria-current.
+            """
+            buttons = list(explorer.by_id("tabs").all(lambda e: e.tag == "button"))
+            assert [button.attrs["aria-controls"] for button in buttons] == ["paths-pane", "views-pane", "case-pane"]
+            assert [button.attrs.get("aria-current") for button in buttons] == [None, "true", None]
+            assert not explorer.dom.having("role", "tab") and not explorer.dom.having("role", "tablist")
+            assert not explorer.dom.having("aria-selected")
             narrow = explorer.style().split("@media (max-width: 760px)")[1]
             assert re.search(r"\.tabs[^{}]*\{[^}]*display: *grid", narrow)
             assert re.search(r"\.row[^{}]*\{[^}]*min-height: *32px", narrow)
+
+        def test_moves_focus_to_the_heading_of_the_place_selected_and_marks_its_row_as_current(self, explorer):
+            """moves focus to the heading of the place selected, and marks its row as current"""
+            for view in explorer.dom.by_class("view"):
+                (heading,) = view.all(lambda element: element.tag == "h1")
+                assert heading.attrs.get("tabindex") == "-1", view.attrs["id"]
+            script = explorer.page.split("<script>")[-1]
+            assert re.search(r'setAttribute\("aria-current", "true"\)', script)
+            assert "heading.focus(" in script
+
+        def test_shows_every_pane_stacked_when_the_script_is_off(self, explorer):
+            """shows every pane stacked when the script is off
+
+            Under 760 px the panes are folded to one at a time only where the script has set a class on the page's root
+            to say it can unfold them.
+            """
+            narrow = explorer.style().split("@media (max-width: 760px)")[1]
+            hiding = [
+                selectors
+                for selectors, body in re.findall(r"([^{}]+)\{([^{}]*)\}", narrow)
+                if re.search(r"display: *none", body) and ".pane" in selectors
+            ]
+            assert hiding
+            for selectors in hiding:
+                assert all(selector.strip().startswith(".js ") for selector in selectors.split(",")), selectors
+            assert re.search(r'documentElement\.classList\.add\("js"\)', explorer.page.split("<script>")[-1])
+            assert re.search(r"\.js \.tabs[^{}]*\{[^}]*display: *grid", narrow)
+
+        def test_falls_back_to_the_values_the_sites_stylesheet_gives_its_tokens(self, explorer):
+            """falls back to the values the site's stylesheet gives its tokens
+
+            A change to a fallback here is a pair with cascade-runtime-js: its check of the stylesheet, which fails every
+            docs-site build where a fallback is not the value `site.css` declares, has to change with it.
+            """
+            fallbacks = {
+                name: value.strip()
+                for name, value in re.findall(r"var\((--[\w-]+), *([^()]*(?:\([^()]*\))?[^()]*)\)", explorer.style())
+            }
+            assert fallbacks == {
+                "--amber": "#8a5a0d",
+                "--bar": "0px",
+                "--d": "0",
+                "--ink": "#14202a",
+                "--ink-2": "#3a4853",
+                "--link": "#0b6a8a",
+                "--link-hover": "#084f68",
+                "--mono": "'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace",
+                "--muted": "#5a6873",
+                "--paper": "#f6f7f8",
+                "--pencil": "#b4410c",
+                "--rule": "#c9d1d6",
+                "--rule-soft": "#e3e8eb",
+                "--sans": "'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+                "--serif": "'Newsreader', Georgia, 'Times New Roman', serif",
+            }
 
         def test_names_the_sites_tokens_each_with_one_fallback(self, explorer):
             """names the site's tokens, each with one fallback
@@ -758,6 +871,21 @@ class TestAnAdaptersExplorer:
             assert {name: values for name, values in fallbacks.items() if len(values) > 1} == {}
             assert not re.search(r"var\(--(?!bar\b)[\w-]+\)", explorer.style())
             assert not re.search(r"(^|\n)\s*:root\s*\{", explorer.style())
+
+    class TestGivenTwoPlacesThatShareAGap:
+        def test_marks_in_the_input_only_what_a_finding_points_at_on_the_places_own_path(
+            self, explorer_with_two_places_sharing_a_gap
+        ):
+            """marks in the input only what a finding points at on the place's own path
+
+            Two places name one gap and each has one finding. A place is marked at its own finding, never at the other's.
+            """
+            explorer = explorer_with_two_places_sharing_a_gap
+            for place, line in (("/shared/first", '"first": "a",'), ("/shared/second", '"second": "b"')):
+                (link,) = explorer.by_id(explorer.node(place)["id"]).having("data-case")
+                lines = explorer.case("two-places")["input"]["text"].split("\n")
+                marked = json.loads(link.attrs["data-marks"])["input"]
+                assert [lines[at - 1].strip() for at in marked] == [line], place
 
     class TestGivenAStylesheet:
         def test_links_each_stylesheet_ahead_of_its_own_in_the_order_given(self, explorer_with_stylesheets):
