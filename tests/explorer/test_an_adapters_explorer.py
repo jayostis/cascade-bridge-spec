@@ -231,7 +231,9 @@ CARRIED_TOGETHER_ACCOUNTING = """
                      bridge:asProperty ex:subject ] .
 [] a bridge:PathEntry ; bridge:sourcePath "/shared/second" ; bridge:verdict bridge:carried ;
   bridge:carriedAs [ bridge:inSourceRecordType "Observation" ; bridge:inRecordClass ex:Observation ;
-                     bridge:asProperty ex:noteText ] .
+                     bridge:asProperty ex:noteText ] ,
+                   [ bridge:inSourceRecordType "Unit" ; bridge:inRecordClass ex:Unit ;
+                     bridge:asProperty ex:unitValue ] .
 """
 
 CARRIED_TOGETHER_MANIFEST = """
@@ -342,6 +344,12 @@ XML_INPUT = """\
         <value value="1"/>
       </observation>
     </entry>
+    <entry>
+      <observation>
+        <code code="z"/>
+        <value value="9"/>
+      </observation>
+    </entry>
   </section>
   <section>
     <templateId root="2.2"/>
@@ -363,8 +371,10 @@ XML_GRAPH = """<urn:d> a ex:Document ; ex:title "A document" ; ex:documentId "d1
 """
 
 
-def an_adapter(folder, accounting=ACCOUNTING, manifest=MANIFEST, inputs=INPUTS, graphs=GRAPHS, findings=FINDINGS):
-    write(folder / "ro-crate-metadata.json", json.dumps(CRATE, indent=2))
+def an_adapter(
+    folder, accounting=ACCOUNTING, manifest=MANIFEST, inputs=INPUTS, graphs=GRAPHS, findings=FINDINGS, crate=CRATE
+):
+    write(folder / "ro-crate-metadata.json", json.dumps(crate, indent=2))
     write(folder / "vocab" / "accounting.ttl", PREFIXES + accounting)
     write(folder / "vocab" / "gaps.ttl", PREFIXES + GAPS)
     write(folder / "in" / "observation.rq", OBSERVATION_QUERY)
@@ -823,6 +833,17 @@ class TestAnAdaptersExplorer:
             kinds = {row[0]: row[1] for row in overview.rows() if row and row[0] in ("Observation", "Unit")}
             assert kinds == {"Observation": "Observation ex:Observation", "Unit": "Unit ex:Unit"}
 
+        def test_keeps_a_kinds_name_whole_in_what_a_path_becomes(self, explorer):
+            """keeps a kind's name whole in what a path becomes"""
+            assert re.search(r'td\[data-label="in the kind"\][^{}]*\{[^}]*overflow-wrap: *normal', explorer.style())
+
+        def test_stacks_the_trace_until_its_three_boxes_fit_across(self, explorer):
+            """stacks the trace until its three boxes fit across"""
+            across = re.search(
+                r"@container \(min-width: *(\d+)px\) \{[^@]*\.trace \{[^}]*grid-template-columns", explorer.style()
+            )
+            assert across and int(across[1]) >= 800
+
         def test_keeps_a_kinds_name_whole_and_wraps_what_it_becomes_instead(self, explorer):
             """keeps a kind's name whole, and wraps what it becomes instead"""
             style = explorer.style()
@@ -1212,6 +1233,61 @@ class TestAnAdaptersExplorer:
             assert input_marks(explorer, "/shared/first") == {"ex:subject": ['"first": "a",']}
             assert input_marks(explorer, "/shared/second") == {"ex:noteText": ['"second": "b"']}
 
+        def test_traces_only_the_kind_the_path_landed_in_and_the_class_the_case_shows(
+            self, explorer_with_two_places_carried_from_one_case
+        ):
+            """traces only the kind the path landed in, and the class the case shows
+
+            The mapping of /shared/second names two kinds and two classes; the case's record is an Observation and its
+            graph holds no Unit, so the source and the pod name the Observation alone.
+            """
+            explorer = explorer_with_two_places_carried_from_one_case
+            (trace,) = explorer.by_id(explorer.node("/shared/second")["id"]).by_class("trace")
+            source, _, pod = [part.text() for part in trace.all(lambda element: element.tag == "section")]
+            assert source.startswith("The source Observation fixtures/in/two-places.json")
+            assert pod == "The pod Observation ex:Observation"
+
+    class TestGivenTwoEnvelopesNamingOneMemberOfTheRoot:
+        def test_finds_the_records_of_the_envelope_naming_the_members_value_before_the_one_naming_the_member_alone(
+            self, tmp_path
+        ):
+            """finds the records of the envelope naming the member's value before the one naming the member alone"""
+            by_value, by_member = {"@id": "#envelope-by-value"}, {"@id": "#envelope-by-member"}
+            crate = json.loads(json.dumps(CRATE))
+            crate["@graph"][1]["bridge:envelope"] = [by_value, by_member]
+            crate["@graph"] = [
+                *crate["@graph"][:2],
+                {
+                    **by_value,
+                    "@type": "bridge:Envelope",
+                    "name": "by value",
+                    "bridge:docRootMemberName": "kind",
+                    "bridge:docRootMemberValue": "x",
+                    "bridge:jsonPathOfEachRecord": "$.first[*]",
+                },
+                {
+                    **by_member,
+                    "@type": "bridge:Envelope",
+                    "name": "by member",
+                    "bridge:docRootMemberName": "kind",
+                    "bridge:jsonPathOfEachRecord": "$.second[*]",
+                },
+            ]
+            an_adapter(tmp_path / "adapter", crate=crate)
+            vocabulary = tmp_path / "vocabulary"
+            write(vocabulary / "ontologies" / "example.ttl", PREFIXES + VOCABULARY)
+            adapter = adapter_explorer.Adapter(tmp_path / "adapter", vocabulary)
+
+            def found(document):
+                return {
+                    str(envelope).rsplit("#", 1)[1]: [pointer for pointer, _ in nodes]
+                    for envelope, nodes in adapter.records(document).items()
+                }
+
+            both = {"first": [{"n": 1}], "second": [{"n": 2}]}
+            assert found({"kind": "x", **both}) == {"envelope-by-value": ["/first/0"]}
+            assert found({"kind": "y", **both}) == {"envelope-by-member": ["/second/0"]}
+
     class TestGivenAnXmlSource:
         def test_draws_each_section_flowing_into_the_classes_its_records_become(self, xml_explorer):
             """draws each section flowing into the classes its records become
@@ -1258,6 +1334,20 @@ class TestAnAdaptersExplorer:
             assert input_marks(xml_explorer, "/doc/title", "two-sections") == {
                 "ex:title": ["<title>A document</title>"]
             }
+
+        def test_marks_nothing_in_an_element_with_no_identifier_standing_where_the_records_of_its_kind_stand(
+            self, xml_explorer
+        ):
+            """marks nothing in an element with no identifier that stands where the records of its kind stand
+
+            The first section holds, beside the entry of its Finding Observation, an entry whose observation bears no
+            identifier: no record reads it, so neither its code nor its value is marked, though the section holds a
+            record of the kind.
+            """
+            observation = "/doc/section/entry/observation"
+            for place in (f"{observation}/code/@code", f"{observation}/value/@value"):
+                marked = [line for lines in input_marks(xml_explorer, place, "two-sections").values() for line in lines]
+                assert not [line for line in marked if '"z"' in line or '"9"' in line], place
 
         def test_marks_a_place_above_a_record_only_where_it_holds_a_record_of_its_kind(self, xml_explorer):
             """marks a place above a record only where it holds a record of its kind
