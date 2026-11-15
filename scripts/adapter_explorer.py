@@ -20,6 +20,7 @@ import re
 import subprocess
 import sys
 from collections import Counter
+from itertools import takewhile
 from pathlib import Path
 from urllib.parse import urlparse
 from urllib.request import url2pathname
@@ -247,7 +248,9 @@ def landed(adapter, forms, lines, path, kinds):
 
     In an XML source whose kinds are identifiers, a node is in a record of a kind when it, or an element it sits in,
     bears the kind; or when the nearest element it sits in that bears any identifier of the accounting, other than the
-    document element, holds an element bearing the kind, as a section or a concern holds the records read from it."""
+    document element, holds an element bearing the kind, as a section or a concern holds the records read from it; but
+    not when the node sits in an element that bears no identifier and stands where the kind's records stand, beside
+    one that holds such a record under the same parent with the same name: no record reads it."""
     form, place = path_forms.place_of(forms, path)
     if lines.document is not None:
         if form is not None or (kinds and adapter.value(BRIDGE.sourceRecordTypesAreIdentifiers) != Literal(True)):
@@ -258,10 +261,20 @@ def landed(adapter, forms, lines, path, kinds):
             if any(kinds & bears(holder) for holder in outward):
                 return True
             nearest = next((holder for holder in outward if bears(holder) & adapter.identifiers), None)
-            return (
-                nearest is not None
-                and nearest["parent"].get("name") is not None
-                and any(kinds & bears(below) for below in lines.elements(nearest))
+            if nearest is None or nearest["parent"].get("name") is None:
+                return False
+            records = [below for below in lines.elements(nearest) if kinds & bears(below)]
+            if not records:
+                return False
+            holders = {id(holder) for record in records for holder in lineage(record)}
+            standing = {
+                (id(holder["parent"]), holder["name"])
+                for record in records
+                for holder in takewhile(lambda holder: holder is not nearest, lineage(record))
+            }
+            return not any(
+                id(holder) not in holders and (id(holder["parent"]), holder["name"]) in standing
+                for holder in takewhile(lambda holder: holder is not nearest, outward)
             )
 
         return sorted({line for line, element in lines.xml_reached(steps_of(place)) if not kinds or of_kind(element)})
@@ -696,6 +709,21 @@ def build(folder, vocabulary, repository, report):
     def kinds_of(entry):
         return {kind for kind, _, _ in entry["carried"] if kind}
 
+    def traced_in(case, entry, paths):
+        """The indices of what the entry becomes that the case shows, in a kind its paths land in: of those the case's
+        graph shows, the ones whose kind the paths land in, where any does."""
+        shown = [
+            at
+            for at, (_, record_class, property_) in enumerate(entry["carried"])
+            if record_class in case["classes"] and property_ in case["predicates"]
+        ]
+        landed_in = [
+            at
+            for at in shown
+            if any(landed(adapter, forms, case["lines"], path, {entry["carried"][at][0]} - {""}) for path in paths)
+        ]
+        return landed_in or shown
+
     def marks_in(case, entry, paths):
         """The lines of the case's files a reader looks at for the entry: where each finding naming its gap points in
         the input, on one of the entry's own paths, and those findings; where the entry's paths land in the input,
@@ -801,11 +829,13 @@ def build(folder, vocabulary, repository, report):
                     "queries": [] if entry["gap"] is None else writers(BRIDGE.findingsQuery, entry["gap"]),
                     "case": None,
                     "marks": {},
+                    "traced": [],
                 }
             )
             case = case_for(entry, paths)
             if case is not None:
                 mappings[-1]["case"], mappings[-1]["marks"] = case["name"], marks_in(case, entry, paths)
+                mappings[-1]["traced"] = traced_in(case, entry, paths)
         return sorted(mappings, key=lambda mapping: (VERDICTS.index(mapping["verdict"]), str(mapping["forms"])))
 
     for node in ordered:
@@ -1166,15 +1196,14 @@ class Page:
     def trace(self, mapping, place):
         blob = self.data["adapter"]["blob"]
         case = self.cases[mapping["case"]]
-        kinds = sorted({becomes["kind"] for becomes in mapping["becomes"] if becomes["kind"]}, key=str.lower)
+        traced = [mapping["becomes"][at] for at in mapping["traced"]]
+        kinds = sorted({becomes["kind"] for becomes in traced if becomes["kind"]}, key=str.lower)
         source = (
             "<section><h4>The source</h4>"
             + (f'<p class="t">{e(", ".join(kinds))}</p>' if kinds else "")
             + f'<p class="sub"><code>{e(case["input"])}</code></p><pre data-role="input" hidden></pre></section>'
         )
-        queries = (
-            sorted({query for becomes in mapping["becomes"] for query in becomes["queries"]}) or mapping["queries"]
-        )
+        queries = sorted({query for becomes in traced for query in becomes["queries"]}) or mapping["queries"]
         adapter = (
             f'<section><h4>The adapter</h4><p class="t"><code>{e(place).replace("/", "<wbr>/")}</code></p>'
             f"<p>{self.pill(mapping['verdict'])}</p>"
@@ -1182,7 +1211,7 @@ class Page:
             + "</section>"
         )
         if mapping["becomes"]:
-            classes = {becomes["class"]["term"]: becomes["class"] for becomes in mapping["becomes"]}
+            classes = {becomes["class"]["term"]: becomes["class"] for becomes in traced}
             made = (
                 "<section><h4>The pod</h4>"
                 + "".join(f'<p class="t">{term(classes[key])}</p>' for key in sorted(classes))

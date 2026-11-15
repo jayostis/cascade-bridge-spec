@@ -132,7 +132,7 @@ details.also > summary { cursor: pointer; color: var(--link, #0b6a8a); font-size
 .et.verdicts tr { cursor: pointer; }
 .et.verdicts tr:hover td { background: var(--paper, #f6f7f8); }
 .et .len-h { width: 72px; }
-.adapter-explorer table.et.kinds td.mono { overflow-wrap: normal; }
+.adapter-explorer table.et.kinds td.mono, .adapter-explorer table.et td[data-label="in the kind"] { overflow-wrap: normal; }
 .adapter-explorer table.et.kinds td .term { overflow-wrap: anywhere; }
 .len { display: block; height: 7px; margin-top: 6px; background: #6fa9bd; min-width: 3px; }
 button.v { cursor: pointer; }
@@ -155,7 +155,7 @@ button.v { cursor: pointer; }
   .flow .wide { display: block; }
   .flow .narrow { display: none; }
 }
-@container (min-width: 600px) {
+@container (min-width: 800px) {
   .trace { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr); align-items: start; }
   .trace .arr { align-self: center; transform: none; }
 }
