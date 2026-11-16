@@ -223,8 +223,11 @@ class PullRequests:
         self.runs_read = []
         self.authorizations = []
 
-    def refuse(self, repository, number, status, headers=None):
-        self.refusals[(repository, number)] = (status, dict(headers or {}))
+    def refuse(self, repository, number, status, headers=None, message="refused"):
+        self.refusals[(repository, number)] = (status, dict(headers or {}), message)
+
+    def readable(self, repository):
+        return any(name.lower() == repository.lower() for name in self.by_repository)
 
     def open(self, repository, number, body="", base="main", head=None, state="open", merged=False, fork=False):
         pull = {
@@ -319,10 +322,13 @@ class Handler(BaseHTTPRequestHandler):
         if len(parts) == 5 and parts[0] == "repos" and parts[3] == "pulls":
             refusal = self.server.pull_requests.refusals.get((parts[2], int(parts[4])))
             if refusal:
-                status, headers = refusal
-                return self.answer(status, {"message": "refused"}, headers)
+                status, headers, message = refusal
+                return self.answer(status, {"message": message}, headers)
             pull = self.server.pull_requests.get(parts[2], int(parts[4]))
             return self.answer(200 if pull else 404, pull or {"message": "Not Found"})
+        if len(parts) == 3 and parts[0] == "repos":
+            readable = self.server.pull_requests.readable(parts[2])
+            return self.answer(200 if readable else 404, {"name": parts[2]} if readable else {"message": "Not Found"})
         return self.answer(404, {"message": "Not Found"})
 
 

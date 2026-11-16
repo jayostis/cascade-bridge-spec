@@ -60,7 +60,7 @@ def failed(run):
 def warn_when_out_of_sight(api, entry):
     said = api.out_of_sight(entry)
     if said:
-        note(f"{entry.label} could not be read ({said}), so it is not checked; it is not waited for either")
+        note(f"{entry.label} could not be read ({said}), so it is not checked, and the merge does not wait on it")
     return bool(said)
 
 

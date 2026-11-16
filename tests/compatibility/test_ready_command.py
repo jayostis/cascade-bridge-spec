@@ -76,6 +76,39 @@ class TestTheMergeGate:
             assert "not checked" in said
             assert "FAIL" not in said
 
+        def test_fails_an_unknown_pull_request_number_in_a_repository_it_can_read(self, world):
+            world.pull_request("adapter", 8)
+            engine, event = world.engine_under_test(body=depends_on("adapter", 99))
+
+            said = world.tool(engine, 1, check="ready-to-merge", **world.ci(event=event))
+
+            assert "adapter/pull/99 could not be read: 404" in said
+
+        @pytest.mark.parametrize(
+            ("headers", "message"),
+            [
+                ({"retry-after": "60", "x-ratelimit-remaining": "4999"}, "You have exceeded a secondary rate limit"),
+                ({}, "You have triggered an abuse detection mechanism"),
+                ({"x-ratelimit-remaining": "4999"}, "API rate limit exceeded"),
+            ],
+            ids=["retry-after", "abuse", "rate limit message"],
+        )
+        def test_fails_a_forbidden_read_that_is_a_limit_not_a_missing_access(self, world, headers, message):
+            world.pull_requests.refuse("private", 123, 403, headers, message)
+            engine, event = world.engine_under_test(body=depends_on("private", 123))
+
+            said = world.tool(engine, 1, check="ready-to-merge", **world.ci(event=event))
+
+            assert "private/pull/123 could not be read: 403" in said
+
+        def test_says_the_merge_does_not_wait_on_a_pull_request_it_cannot_see(self, world):
+            world.pull_requests.refuse("private", 123, 404)
+            engine, event = world.engine_under_test(body=depends_on("private", 123))
+
+            said = world.tool(engine, check="ready-to-merge", **world.ci(event=event))
+
+            assert "the merge does not wait on it" in said
+
         def test_still_fails_a_pull_request_it_cannot_see_when_another_named_one_has_not_merged(self, world):
             world.pull_requests.refuse("private", 123, 404)
             world.pull_request("adapter", 8)
