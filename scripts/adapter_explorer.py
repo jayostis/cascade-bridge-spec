@@ -8,8 +8,8 @@ bridge:vocabularyFile paths are read in, for the labels of terms; --repository i
 where the page links each file at the checkout's commit; --report is the adapter's conformance report; --way-back
 names the page the explorer was reached from, which the page links in its bar and at its end; each --stylesheet is
 linked ahead of the page's own, which reads the site's tokens by name and falls back to the site's values. Writes
-index.html, explorer.json (what the page shows, as data), nodes/<n>.html (a place's mappings, read when a reader opens
-the place) and cases/<n>.json (a test case, read when a reader opens it) into <folder>.
+index.html, explorer.json (what the page shows, as data) and cases/<n>.json (a test case, read when a reader opens it)
+into <folder>.
 """
 
 import argparse
@@ -1066,12 +1066,9 @@ def write(out, data, cases, way_back=None, stylesheets=()):
     if out.exists() and any(out.iterdir()):
         sys.exit(f"{out} is not empty; the explorer is written into an empty folder")
     (out / "cases").mkdir(parents=True, exist_ok=True)
-    (out / "nodes").mkdir(exist_ok=True)
     (out / "explorer.json").write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
     for file, case in cases.items():
         (out / file).write_text(json.dumps(case, ensure_ascii=False), encoding="utf-8")
-    for file, fragment in Page(data).fragments().items():
-        (out / file).write_text(fragment, encoding="utf-8")
     (out / "index.html").write_text(page(data, way_back, stylesheets), encoding="utf-8")
 
 
@@ -1099,22 +1096,6 @@ class Page:
         self.verdicts = {item["verdict"]: item for item in data["verdicts"]}
         self.concerns = {concern["concern"]: concern["label"] for concern in data["concerns"]}
         self.cases = {case["name"]: case for case in data["cases"]}
-        self.files = {}
-        for node in self.walk(data["tree"]):
-            if node["mappings"]:
-                self.files[node["id"]] = f"nodes/{len(self.files) + 1}.html"
-
-    def walk(self, nodes):
-        for node in nodes:
-            yield node
-            yield from self.walk(node["children"])
-
-    def fragments(self):
-        return {
-            self.files[node["id"]]: "".join(self.mapping(mapping, node["place"]) for mapping in node["mappings"])
-            for node in self.walk(self.data["tree"])
-            if node["mappings"]
-        }
 
     def pill(self, verdict, tag="span"):
         item = self.verdicts[verdict]
@@ -1291,10 +1272,7 @@ class Page:
         ]
         if not node["mappings"]:
             parts.append('<p class="fx">No entry of the accounting names this place itself.</p>')
-        if node["mappings"]:
-            parts.append(
-                f'<div class="mappings"><p>{link(self.files[node["id"]], "Open the mappings of this place")}</p></div>'
-            )
+        parts += [self.mapping(mapping, node["place"]) for mapping in node["mappings"]]
         if node["children"]:
             rows = "".join(
                 f"<tr><td>{link('#' + child['id'], '<code>' + e(child['step']) + folder + '</code>')}"
@@ -1303,7 +1281,7 @@ class Page:
                 for folder in ["/" if child["children"] else ""]
             )
             parts.append(f'<h4>Under it</h4><table class="et under"><tbody>{rows}</tbody></table>')
-        own = f' data-own data-file="{self.files[node["id"]]}"' if node["mappings"] else ""
+        own = " data-own" if node["mappings"] else ""
         return (
             f'<article class="view detail" id="{e(node["id"])}" data-stop="paths"{own}><h2 class="ph">Selected</h2>'
             f'<div class="insp">{"".join(parts)}</div></article>'
