@@ -1111,10 +1111,18 @@ class Page:
 
     def fragments(self):
         return {
-            self.files[node["id"]]: "".join(self.mapping(mapping, node["place"]) for mapping in node["mappings"])
-            for node in self.walk(self.data["tree"])
-            if node["mappings"]
+            self.files[node["id"]]: self.fragment(node) for node in self.walk(self.data["tree"]) if node["mappings"]
         }
+
+    def fragment(self, node):
+        body = "".join(self.mapping(mapping, node["place"]) for mapping in node["mappings"])
+        body = body.replace('href="#', 'href="index.html#')
+        back = link(f"index.html#{node['id']}", f"Back to <code>{e(node['place'])}</code> in the explorer")
+        return (
+            f'<!doctype html>\n<html lang="en"><head><meta charset="utf-8"><base href="../">'
+            f"<title>{e(node['place'])}</title></head><body>"
+            f'<p class="back">{back}</p>{body}</body></html>\n'
+        )
 
     def pill(self, verdict, tag="span"):
         item = self.verdicts[verdict]

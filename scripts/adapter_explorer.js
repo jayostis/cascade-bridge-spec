@@ -120,7 +120,10 @@ function openPlace(view) {
   panes.classList.remove("with-case");
   readPlace(view)
     .then((fragment) => {
-      slot.innerHTML = fragment;
+      const read = new DOMParser().parseFromString(fragment, "text/html");
+      read.querySelector(".back")?.remove();
+      for (const link of read.querySelectorAll('a[href^="index.html#"]')) link.setAttribute("href", link.getAttribute("href").slice("index.html".length));
+      slot.innerHTML = read.body.innerHTML;
       slot.dataset.read = "1";
       if (shownView() === view) showCaseOf(view);
     })

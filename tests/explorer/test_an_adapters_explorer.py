@@ -4,6 +4,7 @@ import json
 import re
 import subprocess
 from html.parser import HTMLParser
+from urllib.parse import urljoin, urlparse
 
 import pytest
 
@@ -930,6 +931,44 @@ class TestAnAdaptersExplorer:
             assert len(explorer.fragments()) == len(own)
             assert len({explorer.by_id(node["id"]).attrs["data-file"] for node in own}) == len(own)
 
+        def test_resolves_every_link_of_a_fragment_opened_alone_to_the_explorer_root(self, explorer):
+            """resolves every link of a fragment opened alone to the explorer root
+
+            A reader with the script off opens nodes/<n>.html itself, where a link written for index.html would
+            point into nodes/. The fragment's head sets the base to the root, and only its body is read into the page.
+            """
+            ids = {element.attrs["id"] for element in explorer.dom.having("id")}
+            for file in explorer.fragments():
+                document = Tree(file.read_text(encoding="utf-8")).root
+                (base,) = [element for element in document.all() if element.tag == "base"]
+                assert base.attrs["href"] == "../", file.name
+                root = urljoin(f"https://x.test/explorer/nodes/{file.name}", base.attrs["href"])
+                links = [element.attrs["href"] for element in document.all() if element.tag == "a"]
+                assert links
+                for href in [href for href in links if not urlparse(href).netloc]:
+                    target = urlparse(urljoin(root, href))
+                    assert target.path.startswith("/explorer/") and "/nodes/" not in target.path, (file.name, href)
+                    if target.fragment:
+                        assert target.path == "/explorer/index.html" and target.fragment in ids, (file.name, href)
+                    else:
+                        assert (explorer.out / target.path.removeprefix("/explorer/")).is_file(), (file.name, href)
+
+        def test_links_each_fragment_back_to_its_place_in_the_page(self, explorer):
+            """links each fragment back to its place in the page"""
+            for node in explorer.nodes(explorer.data["tree"]):
+                if node["mappings"]:
+                    file = explorer.by_id(node["id"]).attrs["data-file"]
+                    document = Tree((explorer.out / file).read_text(encoding="utf-8")).root
+                    (back,) = document.by_class("back")
+                    (link,) = back.all(lambda element: element.tag == "a")
+                    assert link.attrs["href"] == f"index.html#{node['id']}"
+
+        def test_reads_only_the_body_of_a_fragment_into_the_page(self, explorer):
+            """reads only the body of a fragment into the page"""
+            script = explorer.page.split("<script>")[-1]
+            assert "new DOMParser()" in script and ".body.innerHTML" in script
+            assert 'querySelector(".back")' in script
+
         def test_links_each_places_fragment_inside_its_slot_for_a_reader_with_the_script_off(self, explorer):
             """links each place's fragment inside its slot for a reader with the script off"""
             own = [node for node in explorer.nodes(explorer.data["tree"]) if node["mappings"]]
@@ -1109,7 +1148,9 @@ class TestAnAdaptersExplorer:
             fragment = (
                 explorer.out / explorer.by_id(explorer.node("/note/display")["id"]).attrs["data-file"]
             ).read_text(encoding="utf-8")
-            assert f'The same fact as <a href="#{same["node"]}"><code>/subject/reference</code></a>.' in fragment
+            assert (
+                f'The same fact as <a href="index.html#{same["node"]}"><code>/subject/reference</code></a>.' in fragment
+            )
 
         def test_says_in_words_that_a_case_with_an_empty_findings_file_expects_no_findings(self, explorer):
             """says in words that a case with an empty findings file expects no findings"""
