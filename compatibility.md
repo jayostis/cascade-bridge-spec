@@ -89,7 +89,12 @@ commit with no build stops the run, saying how it was picked. A runtime refuses
 two Bridge pull requests named, one from a fork (only the Bridge's own get a
 build) and one closed without merging; it stops on a `Depends-On:` line naming no
 pull request and on a named Bridge pull request it cannot read, and passes over
-one elsewhere it cannot read, as the run does.
+one elsewhere it cannot read, as the run does. A run in CI picks that build by the
+same rule before the conformance command starts, reads its release with the
+run's token, and unpacks the package in `build/cache/cascade-bridge-rs/build-<commit>`
+of the runtime's checkout, keeping the pick beside it as the runtime keeps its own;
+the command, which holds no token, then asks GitHub's API for nothing. Where the
+run cannot place it, the runtime picks and reads its own.
 
 ## Which version of each repository a run uses
 

@@ -103,9 +103,11 @@ class TestGivingARuntimeTheBridgeBuild:
             a_bridge(world, tmp_path)
             head = world.branch(BRIDGE, "feature", lambda path: (path / "change").write_text("feature\n"))
             released(world, tmp_path, world.origin(BRIDGE), head)
-            runtime, ci = world.runtime_under_test()
+            world.pull_request("runtime", 1, base="feature")
+            runtime = world.runtime()
+            ci = world.ci(repository="runtime", event=world.event(1, repository="runtime"))
 
-            said = world.tool(runtime, **{**ci, "GITHUB_REF_NAME": "feature"})
+            said = world.tool(runtime, **ci)
 
             assert built_for(said) == [head]
 

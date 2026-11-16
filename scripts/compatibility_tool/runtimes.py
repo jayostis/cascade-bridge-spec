@@ -5,7 +5,7 @@ import json
 import shutil
 from dataclasses import replace
 
-from compatibility_tool import engines, picking, placing
+from compatibility_tool import bridge_build, engines, picking, placing
 from compatibility_tool.console import Stop, report
 from compatibility_tool.document import (
     FILE,
@@ -107,7 +107,7 @@ def pull_requests(api, into):
     return into
 
 
-def run(directory, record, options, set_up, api):
+def run(directory, record, options, set_up, api, event):
     """Each host of each runtime the run checks, its conformance command run: a row of its own per host."""
     print("The runtime's conformance command on each host")
     handed = {PULL_REQUESTS: str(pull_requests(api, options.results / "pull-requests.json"))}
@@ -131,6 +131,8 @@ def run(directory, record, options, set_up, api):
         if problem:
             report(False, f"{runtime.path} {problem}, so its conformance command was not run")
             continue
+        if options.mode == "ci":
+            bridge_build.place(runtime.path, api, event)
         for row, host in zip(record.on_each_host(runtime, [host["name"] for host in listed]), listed, strict=True):
             index += 1
             run_on_host(row, host, folders_handed, set_up, reports / f"conformance-on-host-{index}.ttl", handed)
