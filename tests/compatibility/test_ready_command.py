@@ -65,6 +65,76 @@ class TestTheMergeGate:
             assert "adapter/pull/7 is closed without merging: cut the Depends-On: line naming it" in said
             assert "adapter/pull/8 has not merged" in said
 
+        @pytest.mark.parametrize("status", [404, 403], ids=["not found", "forbidden"])
+        def test_passes_with_a_warning_for_a_named_pull_request_it_cannot_see(self, world, status):
+            world.pull_requests.refuse("private", 123, status)
+            engine, event = world.engine_under_test(body=depends_on("private", 123))
+
+            said = world.tool(engine, check="ready-to-merge", **world.ci(event=event))
+
+            assert "private/pull/123 could not be read" in said
+            assert "not checked" in said
+            assert "FAIL" not in said
+
+        def test_fails_an_unknown_pull_request_number_in_a_repository_it_can_read(self, world):
+            world.pull_request("adapter", 8)
+            engine, event = world.engine_under_test(body=depends_on("adapter", 99))
+
+            said = world.tool(engine, 1, check="ready-to-merge", **world.ci(event=event))
+
+            assert "adapter/pull/99 could not be read: 404" in said
+
+        @pytest.mark.parametrize(
+            ("headers", "message"),
+            [
+                ({"retry-after": "60", "x-ratelimit-remaining": "4999"}, "You have exceeded a secondary rate limit"),
+                ({}, "You have triggered an abuse detection mechanism"),
+                ({"x-ratelimit-remaining": "4999"}, "API rate limit exceeded"),
+            ],
+            ids=["retry-after", "abuse", "rate limit message"],
+        )
+        def test_fails_a_forbidden_read_that_is_a_limit_not_a_missing_access(self, world, headers, message):
+            world.pull_requests.refuse("private", 123, 403, headers, message)
+            engine, event = world.engine_under_test(body=depends_on("private", 123))
+
+            said = world.tool(engine, 1, check="ready-to-merge", **world.ci(event=event))
+
+            assert "private/pull/123 could not be read: 403" in said
+
+        def test_says_the_merge_does_not_wait_on_a_pull_request_it_cannot_see(self, world):
+            world.pull_requests.refuse("private", 123, 404)
+            engine, event = world.engine_under_test(body=depends_on("private", 123))
+
+            said = world.tool(engine, check="ready-to-merge", **world.ci(event=event))
+
+            assert "the merge does not wait on it" in said
+
+        def test_still_fails_a_pull_request_it_cannot_see_when_another_named_one_has_not_merged(self, world):
+            world.pull_requests.refuse("private", 123, 404)
+            world.pull_request("adapter", 8)
+            engine, event = world.engine_under_test(body=depends_on("private", 123) + depends_on("adapter", 8))
+
+            said = world.tool(engine, 1, check="ready-to-merge", **world.ci(event=event))
+
+            assert "private/pull/123 could not be read" in said
+            assert "adapter/pull/8 has not merged" in said
+
+        def test_fails_a_named_pull_request_whose_read_failed_for_any_other_reason(self, world):
+            world.pull_requests.refuse("private", 123, 500)
+            engine, event = world.engine_under_test(body=depends_on("private", 123))
+
+            said = world.tool(engine, 1, check="ready-to-merge", **world.ci(event=event))
+
+            assert "private/pull/123 could not be read: 500" in said
+
+        def test_fails_a_named_pull_request_refused_for_the_rate_limit(self, world):
+            world.pull_requests.refuse("private", 123, 403, {"x-ratelimit-remaining": "0"})
+            engine, event = world.engine_under_test(body=depends_on("private", 123))
+
+            said = world.tool(engine, 1, check="ready-to-merge", **world.ci(event=event))
+
+            assert "private/pull/123 could not be read: 403" in said
+
         def test_passes_a_pull_request_naming_nothing(self, world):
             engine, event = world.engine_under_test()
 
@@ -224,6 +294,27 @@ class TestTheMergeGate:
             said = world.tool(engine, check="ready-to-merge", **world.ci(event=event, gate=GATE))
 
             assert "adapter/pull/7" in said
+
+        def test_passes_with_a_warning_for_a_pull_request_outside_a_cycle_that_it_cannot_see(self, world):
+            world.pull_requests.refuse("private", 123, 404)
+            head = world.pull_request("adapter", 7, body=depends_on("engine", 1) + depends_on("private", 123))
+            world.pull_requests.check_run("adapter", head, "compatibility")
+            engine, event = world.engine_under_test(body=depends_on("adapter", 7))
+
+            said = world.tool(engine, check="ready-to-merge", **world.ci(event=event, gate=GATE))
+
+            assert "private/pull/123 could not be read" in said
+            assert "FAIL" not in said
+
+        def test_fails_a_cycle_whose_outside_pull_request_failed_to_read_for_any_other_reason(self, world):
+            world.pull_requests.refuse("private", 123, 502)
+            head = world.pull_request("adapter", 7, body=depends_on("engine", 1) + depends_on("private", 123))
+            world.pull_requests.check_run("adapter", head, "compatibility")
+            engine, event = world.engine_under_test(body=depends_on("adapter", 7))
+
+            said = world.tool(engine, 1, check="ready-to-merge", **world.ci(event=event, gate=GATE))
+
+            assert "private/pull/123 could not be read: 502" in said
 
         def test_finds_no_cycle_through_a_merged_pull_request(self, world):
             world.pull_request("adapter", 7, body=depends_on("cascade-bridge-spec", 3))

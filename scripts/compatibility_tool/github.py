@@ -74,6 +74,7 @@ def named_in(description):
 @dataclass(frozen=True)
 class Unreadable:
     said: str
+    out_of_sight: bool = False
 
 
 RATE_LIMITED = (403, 429)
@@ -86,15 +87,34 @@ def take_token():
     token = os.environ.pop(TOKEN, "") or os.environ.get("GITHUB_TOKEN", "")
 
 
-def unreadable(error):
+def message_of(error):
+    try:
+        return str(json.loads(error.read().decode("utf-8")).get("message") or "")
+    except (OSError, ValueError, AttributeError):
+        return ""
+
+
+def refused_for_a_limit(error, message):
+    """A 403 or 429 that is GitHub slowing the run down: the primary limit spent, or a secondary or abuse limit."""
+    headers = error.headers or {}
+    return error.code in RATE_LIMITED and (
+        headers.get("x-ratelimit-remaining") == "0"
+        or headers.get("retry-after") is not None
+        or re.search(r"rate limit|abuse", message, re.IGNORECASE) is not None
+    )
+
+
+def unreadable(error, message=""):
     said = f"{error.code} {error.reason}"
-    if error.code in RATE_LIMITED and (error.headers or {}).get("x-ratelimit-remaining") == "0":
+    if refused_for_a_limit(error, message):
+        if (error.headers or {}).get("x-ratelimit-remaining") != "0":
+            return Unreadable(f"{said}: GitHub's secondary or abuse limit refused the read; try again shortly")
         if token:
             return Unreadable(f"{said}: the token the run reads with has spent its rate limit")
         return Unreadable(f"{said}: this address has spent GitHub's rate limit for reads without credentials")
     if error.code >= 500:
         return Unreadable(f"{said}: GitHub answered with an error of its own")
-    return Unreadable(said)
+    return Unreadable(said, out_of_sight=error.code in (403, 404))
 
 
 class Api:
@@ -125,13 +145,33 @@ class Api:
             try:
                 self.pulls[named] = self.get(f"repos/{named.path}/pulls/{named.number}")
             except urllib.error.HTTPError as error:
-                self.pulls[named] = unreadable(error)
+                self.pulls[named] = self.classified(named, error)
         found = self.pulls[named]
         if isinstance(found, Unreadable):
             if refuse:  # a later reader may want what an earlier one could do without
                 raise Stop(f"{named.label} could not be read: {found.said}")
             return None
         return found
+
+    def classified(self, named, error):
+        """Out of sight only where the token cannot read the repository either: a 404 in one it can read is a wrong number."""
+        found = unreadable(error, message_of(error))
+        if not found.out_of_sight or error.code != 404:
+            return found
+        try:
+            self.get(f"repos/{named.path}")
+        except urllib.error.HTTPError as probe:
+            if unreadable(probe, message_of(probe)).out_of_sight:
+                return found
+        except Stop:
+            pass
+        return Unreadable(found.said)
+
+    def out_of_sight(self, named):
+        """Why the token cannot see a pull request in a repository it has no access to, else None."""
+        self.pull_request(named, refuse=False)
+        found = self.pulls[named]
+        return found.said if isinstance(found, Unreadable) and found.out_of_sight else None
 
     def check_runs(self, path, commit):
         runs = []
