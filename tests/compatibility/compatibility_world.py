@@ -161,8 +161,11 @@ def name_another_vocabulary(world, name):
     return world.commits[VOCABULARY]
 
 
+NOTHING_BREAKS = "## Breaking\n\nNone\n"
+
+
 def depends_on(repository, number, owner=OWNER):
-    return f"Some description.\n\nDepends-On: https://github.com/{owner}/{repository}/pull/{number}\n"
+    return f"Some description.\n\n{NOTHING_BREAKS}\nDepends-On: https://github.com/{owner}/{repository}/pull/{number}\n"
 
 
 def write_compatibility(directory, document):
