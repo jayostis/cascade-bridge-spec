@@ -67,22 +67,67 @@ function select(moved, focus) {
     (row.matches("a") ? row : row.querySelector("a.nm")).setAttribute("aria-current", "true");
     if (!narrow.matches) row.scrollIntoView({ block: "nearest" });
   }
-  if (detail) {
-    for (const trace of view.querySelectorAll(".trace[data-trace]")) fill(trace);
-    const first = view.querySelector("[data-case]");
-    if (first) load(first);
-    else {
-      loaded = null;
-      casePane.replaceChildren(element("p", "No test case of the adapter shows this place.", "empty"));
-    }
-    panes.classList.toggle("with-case", Boolean(first));
-  } else if (view.id !== "cases") panes.classList.remove("with-case");
+  if (detail) openPlace(view);
+  else if (view.id !== "cases") panes.classList.remove("with-case");
   if (moved && narrow.matches) {
     show(view.id === "paths" ? "paths-pane" : "views-pane");
     if (view.id !== "paths") view.scrollIntoView({ block: "start" });
   }
   const heading = view.querySelector("h1");
   if (focus && heading.offsetParent) heading.focus({ preventScroll: narrow.matches });
+}
+
+const places = new Map();
+
+function readPlace(view) {
+  if (!places.has(view)) {
+    places.set(
+      view,
+      fetch(view.dataset.file).then((response) => {
+        if (!response.ok) throw new Error(response.statusText);
+        return response.text();
+      }),
+    );
+    places.get(view).catch(() => places.delete(view));
+  }
+  return places.get(view);
+}
+
+function showCaseOf(view) {
+  for (const trace of view.querySelectorAll(".trace[data-trace]")) fill(trace);
+  const first = view.querySelector("[data-case]");
+  if (first) load(first);
+  else {
+    loaded = null;
+    casePane.replaceChildren(element("p", "No test case of the adapter shows this place.", "empty"));
+  }
+  panes.classList.toggle("with-case", Boolean(first));
+}
+
+function openPlace(view) {
+  if (!view.dataset.file) {
+    showCaseOf(view);
+    return;
+  }
+  const slot = view.querySelector(".mappings");
+  if (slot.dataset.read) {
+    showCaseOf(view);
+    return;
+  }
+  loaded = null;
+  slot.replaceChildren(element("p", "Reading the mappings…", "empty"));
+  casePane.replaceChildren(element("p", "Reading the mappings…", "empty"));
+  panes.classList.remove("with-case");
+  readPlace(view)
+    .then((fragment) => {
+      slot.innerHTML = fragment;
+      slot.dataset.read = "1";
+      if (shownView() === view) showCaseOf(view);
+    })
+    .catch(() => {
+      slot.replaceChildren(element("p", "The mappings could not be read.", "empty"));
+      if (shownView() === view) casePane.replaceChildren(element("p", "The mappings could not be read.", "empty"));
+    });
 }
 
 const narrowing = { text: "", concern: "", verdict: "", nodes: null };

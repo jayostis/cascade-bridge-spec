@@ -99,4 +99,4 @@ fixed in the adapter, by the tags above.
         --repository https://github.com/<owner>/<adapter> --report <conformance report URL> --out <empty folder>
 
 The labels of terms come from the files the crate's `bridge:vocabularyFile` names in `<cascade-vocabulary>`. Serve the
-folder over HTTP: the page reads a test case's files when a reader opens it.
+folder over HTTP: the page reads a place's mappings and a test case's files when a reader opens them.
