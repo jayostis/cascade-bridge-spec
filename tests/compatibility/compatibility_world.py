@@ -409,7 +409,7 @@ class World:
         write_compatibility(engine, engine_document(must_pass_with, canned, **overrides))
         return engine
 
-    def engine_under_test(self, body="", base="main", **overrides):
+    def engine_under_test(self, body=NOTHING_BREAKS, base="main", **overrides):
         self.pull_request("engine", 1, body=body, base=base)
         return self.engine([self.url("adapter")], **overrides), self.event(1)
 

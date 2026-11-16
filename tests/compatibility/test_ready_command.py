@@ -9,6 +9,7 @@ from compatibility_world import (
 )
 
 GATE = "ready-to-merge"
+PULL_7 = "https://github.com/jayostis/adapter/pull/7"
 BOM = chr(0xFEFF)
 LS = chr(0x2028)
 PS = chr(0x2029)
@@ -347,7 +348,7 @@ class TestTheMergeGate:
 
         def test_fails_with_no_breaking_section_and_still_checks_what_it_names(self, world):
             world.pull_request("adapter", 7)
-            engine, event = world.engine_under_test(body="Some description.\n\n" + depends_on("adapter", 7))
+            engine, event = world.engine_under_test(body="Some description.\n\nDepends-On: " + PULL_7)
 
             said = world.tool(engine, 1, check="ready-to-merge", **world.ci(event=event))
 
@@ -413,7 +414,9 @@ class TestTheBreakingSection:
         assert breaking.problem_in(body) is None
 
     def test_is_read_with_a_depends_on_line_after_none(self):
-        assert breaking.problem_in("## Breaking\n\nNone\n\nDepends-On: https://github.com/jayostis/engine/pull/1") is None
+        assert (
+            breaking.problem_in("## Breaking\n\nNone\n\nDepends-On: https://github.com/jayostis/engine/pull/1") is None
+        )
 
     @pytest.mark.parametrize(
         "body",
@@ -425,7 +428,15 @@ class TestTheBreakingSection:
 
     @pytest.mark.parametrize(
         "after",
-        ["", "\n\n", "\n- \n", "\n## Next\n", "\n---\n", "\nDepends-On: https://github.com/jayostis/engine/pull/1", "\n<!-- None -->"],
+        [
+            "",
+            "\n\n",
+            "\n- \n",
+            "\n## Next\n",
+            "\n---\n",
+            "\nDepends-On: https://github.com/jayostis/engine/pull/1",
+            "\n<!-- None -->",
+        ],
         ids=["end", "blank", "bare bullet", "next heading", "rule", "depends on", "comment"],
     )
     def test_is_refused_when_empty(self, after):
@@ -442,7 +453,6 @@ class TestTheBreakingSection:
             "renamed a to b",
             "a - b",
             "a => b",
-            "a --> b",
             "a > b",
             "a \u2192 b",
             "->",

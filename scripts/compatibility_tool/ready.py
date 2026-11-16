@@ -1,6 +1,7 @@
 import os
 from time import monotonic, sleep
 
+from compatibility_tool import breaking
 from compatibility_tool.console import Status, Stop, note, report
 from compatibility_tool.github import named_in
 
@@ -70,7 +71,15 @@ def check(directory, options, event, api):
     if under_test is None:
         report(True, "no pull request is under test")
         return Status.OK
-    named = named_in(api.pull_request(under_test).get("body"))
+    body = api.pull_request(under_test).get("body")
+    problem = breaking.problem_in(body)
+    if problem:
+        report(False, f"{under_test.label}: {problem}")
+    gate = merge_gate(api, event, under_test, named_in(body))
+    return Status.FAIL if problem else gate
+
+
+def merge_gate(api, event, under_test, named):
     if not named:
         report(True, f"{under_test.label} names no pull request")
         return Status.OK
