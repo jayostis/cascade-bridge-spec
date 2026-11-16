@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import json
 import os
 from pathlib import Path
 
@@ -35,6 +36,8 @@ def main():
             print(f"fake runtime: {folder}, handed in for {repository}, is no folder")
             return 2
         print(f"fake runtime: folder {repository} {folder}")
+    for manifest in sorted(Path("build/cache/cascade-bridge-rs").glob("build-*/package.json")):
+        print(f"fake runtime: bridge build {json.loads(manifest.read_text(encoding='utf-8'))['cascadeBridge']['commit']}")
     if os.environ.get("CASCADE_PULL_REQUESTS"):
         print(f"fake runtime: pull requests {os.environ['CASCADE_PULL_REQUESTS']}")
     body = EARL + "".join(ASSERTION.format(test=test, outcome=outcome) for test, outcome in CANNED[args.canned].items())

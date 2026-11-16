@@ -53,6 +53,7 @@
     "Library cases run on every host of an engine · fixtures/library/, compatibility_tool/library.py",
     "Judging an EARL report · engine/faults-of-a-report.rq",
     "Running a runtime on the repositories it names · cascade-runtime.json, --folder, --checkout-only",
+    "Giving a runtime the Bridge's build before it starts · build-<commit>, CASCADE_GITHUB_TOKEN",
     "Running on a developer's machine · python3 scripts/compatibility.py <dir>",
     "The table a run writes · table.md",
     "A report of every case an engine ran · report.ctrf.json, report.md",
