@@ -936,8 +936,9 @@ class TestAnAdaptersExplorer:
             Selecting runs on a hash on arrival too, so a link to a place opens with its mappings.
             """
             script = explorer.page.split("<script>")[-1]
-            assert "dataset.file" in script
-            assert re.search(r"function select\([^)]*\)[^\x00]*?dataset\.file", script)
+            assert "fetch(view.dataset.file)" in script
+            select = script.split("function select(")[1].split("\nfunction ")[0]
+            assert "openPlace(view)" in select
 
         def test_shows_what_a_path_becomes_as_a_table(self, explorer):
             """shows what a path becomes as a table"""
@@ -1095,9 +1096,9 @@ class TestAnAdaptersExplorer:
             same = explorer.mapping("/note/display")["sameFactAs"]
             assert same["path"] == "/subject/reference"
             assert same["node"] == explorer.node("/subject/reference")["id"]
-            fragment = (explorer.out / explorer.by_id(explorer.node("/note/display")["id"]).attrs["data-file"]).read_text(
-                encoding="utf-8"
-            )
+            fragment = (
+                explorer.out / explorer.by_id(explorer.node("/note/display")["id"]).attrs["data-file"]
+            ).read_text(encoding="utf-8")
             assert f'The same fact as <a href="#{same["node"]}"><code>/subject/reference</code></a>.' in fragment
 
         def test_says_in_words_that_a_case_with_an_empty_findings_file_expects_no_findings(self, explorer):
