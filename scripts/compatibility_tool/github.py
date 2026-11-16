@@ -74,6 +74,7 @@ def named_in(description):
 @dataclass(frozen=True)
 class Unreadable:
     said: str
+    out_of_sight: bool = False
 
 
 RATE_LIMITED = (403, 429)
@@ -94,7 +95,7 @@ def unreadable(error):
         return Unreadable(f"{said}: this address has spent GitHub's rate limit for reads without credentials")
     if error.code >= 500:
         return Unreadable(f"{said}: GitHub answered with an error of its own")
-    return Unreadable(said)
+    return Unreadable(said, out_of_sight=error.code in (403, 404))
 
 
 class Api:
@@ -132,6 +133,12 @@ class Api:
                 raise Stop(f"{named.label} could not be read: {found.said}")
             return None
         return found
+
+    def out_of_sight(self, named):
+        """Why the token cannot see a pull request in a repository it has no access to, else None."""
+        self.pull_request(named, refuse=False)
+        found = self.pulls[named]
+        return found.said if isinstance(found, Unreadable) and found.out_of_sight else None
 
     def check_runs(self, path, commit):
         runs = []

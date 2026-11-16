@@ -1,7 +1,7 @@
 import os
 from time import monotonic, sleep
 
-from compatibility_tool.console import Status, Stop, report
+from compatibility_tool.console import Status, Stop, note, report
 from compatibility_tool.github import named_in
 
 PASSING = ("success", "skipped", "neutral")
@@ -57,6 +57,13 @@ def failed(run):
     return run.get("status") == "completed" and run.get("conclusion") not in PASSING
 
 
+def warn_when_out_of_sight(api, entry):
+    said = api.out_of_sight(entry)
+    if said:
+        note(f"{entry.label} could not be read ({said}), so it is not checked; it is not waited for either")
+    return bool(said)
+
+
 def check(directory, options, event, api):
     print("Every pull request this one names, at merge time")
     under_test = event.under_test
@@ -71,6 +78,8 @@ def check(directory, options, event, api):
     members = cycle(naming, under_test)
     failures = 0
     for entry in named:
+        if warn_when_out_of_sight(api, entry):
+            continue
         pull = api.pull_request(entry)
         if pull.get("merged"):
             report(True, f"{entry.label} has merged")
@@ -83,7 +92,9 @@ def check(directory, options, event, api):
     gate = own_gate(api, event) if members else None
     for member in members:
         for outside in naming[member]:
-            if outside == under_test or outside in members or api.pull_request(outside).get("merged"):
+            if outside == under_test or outside in members or warn_when_out_of_sight(api, outside):
+                continue
+            if api.pull_request(outside).get("merged"):
                 continue
             failures += 1
             report(
