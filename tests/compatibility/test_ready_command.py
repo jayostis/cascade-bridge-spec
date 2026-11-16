@@ -66,7 +66,7 @@ class TestTheMergeGate:
             assert "adapter/pull/8 has not merged" in said
 
         @pytest.mark.parametrize("status", [404, 403], ids=["not found", "forbidden"])
-        def test_warns_of_a_named_pull_request_it_cannot_see_and_passes(self, world, status):
+        def test_passes_with_a_warning_for_a_named_pull_request_it_cannot_see(self, world, status):
             world.pull_requests.refuse("private", 123, status)
             engine, event = world.engine_under_test(body=depends_on("private", 123))
 
@@ -295,7 +295,7 @@ class TestTheMergeGate:
 
             assert "adapter/pull/7" in said
 
-        def test_warns_of_a_pull_request_outside_a_cycle_that_it_cannot_see_and_passes(self, world):
+        def test_passes_with_a_warning_for_a_pull_request_outside_a_cycle_that_it_cannot_see(self, world):
             world.pull_requests.refuse("private", 123, 404)
             head = world.pull_request("adapter", 7, body=depends_on("engine", 1) + depends_on("private", 123))
             world.pull_requests.check_run("adapter", head, "compatibility")
