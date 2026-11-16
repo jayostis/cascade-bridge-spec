@@ -532,6 +532,17 @@ class Explorer:
         (mapping,) = self.node(place)["mappings"]
         return mapping
 
+    def fragment(self, place):
+        """What a reader's script fetches when it opens the place: the sections of its mappings."""
+        file = self.by_id(self.node(place)["id"]).attrs["data-file"]
+        return Tree((self.out / file).read_text(encoding="utf-8")).root
+
+    def fragments(self):
+        return sorted((self.out / "nodes").glob("*.html"))
+
+    def everything(self):
+        return self.page + "".join(file.read_text(encoding="utf-8") for file in self.fragments())
+
     def case(self, name):
         (case,) = [case for case in self.data["cases"] if case["name"] == name]
         return json.loads((self.out / case["file"]).read_text(encoding="utf-8"))
@@ -641,7 +652,7 @@ def input_marks(explorer, place, case="two-places"):
     """Each mapping's marked lines of the case's input at a place, stripped, by what the mapping becomes."""
     lines = explorer.case(case)["input"]["text"].split("\n")
     out = {}
-    sections = explorer.by_id(explorer.node(place)["id"]).by_class("mapping")
+    sections = explorer.fragment(place).by_class("mapping")
     for mapping, section in zip(explorer.node(place)["mappings"], sections, strict=True):
         (link,) = section.having("data-case")
         marks = json.loads(link.attrs["data-marks"])
@@ -895,9 +906,53 @@ class TestAnAdaptersExplorer:
                 assert detail.parent.attrs.get("id") == "views"
             assert re.search(r"\.view:target[^{}]*\{[^}]*display: *block", explorer.style())
 
+        def test_holds_no_mapping_in_the_page_itself(self, explorer):
+            """holds no mapping in the page itself
+
+            A page that held every place's mappings was 2.4 MB for a real adapter; a place's mappings are read when a
+            reader opens the place.
+            """
+            assert not explorer.dom.by_class("mapping")
+            assert 'class="mapping"' not in explorer.page
+
+        def test_writes_for_every_place_with_mappings_a_fragment_holding_exactly_its_mappings(self, explorer):
+            """writes for every place with mappings a fragment holding exactly its mappings"""
+            nodes = list(explorer.nodes(explorer.data["tree"]))
+            own = [node for node in nodes if node["mappings"]]
+            assert len(own) > 1
+            for node in own:
+                file = explorer.by_id(node["id"]).attrs["data-file"]
+                sections = Tree((explorer.out / file).read_text(encoding="utf-8")).root.by_class("mapping")
+                assert len(sections) == len(node["mappings"]), node["place"]
+            for node in nodes:
+                if not node["mappings"]:
+                    assert "data-file" not in explorer.by_id(node["id"]).attrs, node["place"]
+            assert len(explorer.fragments()) == len(own)
+            assert len({explorer.by_id(node["id"]).attrs["data-file"] for node in own}) == len(own)
+
+        def test_links_each_places_fragment_inside_its_slot_for_a_reader_with_the_script_off(self, explorer):
+            """links each place's fragment inside its slot for a reader with the script off"""
+            own = [node for node in explorer.nodes(explorer.data["tree"]) if node["mappings"]]
+            assert own
+            for node in own:
+                view = explorer.by_id(node["id"])
+                (slot,) = view.by_class("mappings")
+                links = slot.all(lambda element: element.tag == "a")
+                assert [link.attrs.get("href") for link in links] == [view.attrs["data-file"]], node["place"]
+
+        def test_fetches_a_places_fragment_when_the_place_is_selected(self, explorer):
+            """fetches a place's fragment when the place is selected
+
+            Selecting runs on a hash on arrival too, so a link to a place opens with its mappings.
+            """
+            script = explorer.page.split("<script>")[-1]
+            assert "fetch(view.dataset.file)" in script
+            select = script.split("function select(")[1].split("\nfunction ")[0]
+            assert "openPlace(view)" in select
+
         def test_shows_what_a_path_becomes_as_a_table(self, explorer):
             """shows what a path becomes as a table"""
-            detail = explorer.by_id(explorer.node("/category/coding/code")["id"])
+            detail = explorer.fragment("/category/coding/code")
             (table,) = detail.all(lambda element: element.tag == "table")
             assert table.rows() == [
                 ["property", "on the class", "in the kind", "written by"],
@@ -912,14 +967,14 @@ class TestAnAdaptersExplorer:
             """
             assert not hasattr(adapter_explorer, "an")
             rows = {
-                place: explorer.by_id(explorer.node(place)["id"]).all(lambda element: element.tag == "table")
+                place: explorer.fragment(place).all(lambda element: element.tag == "table")
                 for place in ("/unit/value", "/note/text")
             }
             assert [row[1:3] for row in next(rows["/unit/value"]).rows()[1:]] == [["Unit ex:Unit", "Unit"]]
             assert [row[1:3] for row in next(rows["/note/text"]).rows()[1:]] == [
                 ["Observation ex:Observation", "Observation"]
             ] * 2
-            assert not re.search(r"\b(on|in) an? (<span|<code|[A-Z])", explorer.page)
+            assert not re.search(r"\b(on|in) an? (<span|<code|[A-Z])", explorer.everything())
 
         def test_marks_where_a_finding_points_in_the_input_and_the_term_a_mapping_names_in_the_graph(self, explorer):
             """marks where a finding points in the input, and the term a mapping names in the graph
@@ -929,7 +984,7 @@ class TestAnAdaptersExplorer:
             """
 
             def marks(place):
-                (link,) = explorer.by_id(explorer.node(place)["id"]).having("data-case")
+                (link,) = explorer.fragment(place).having("data-case")
                 return link.attrs["data-case"], json.loads(link.attrs["data-marks"])
 
             file, marked = marks("/category/text")
@@ -951,9 +1006,9 @@ class TestAnAdaptersExplorer:
             assert input_marks(explorer, "/category/coding/code", "category-coded") == {
                 "ex:categoryCode": ['"code": "vital-signs"']
             }
-            (link,) = explorer.by_id(explorer.node("/category/coding/code")["id"]).having("data-case")
+            (link,) = explorer.fragment("/category/coding/code").having("data-case")
             assert json.loads(link.attrs["data-marks"])["inputFrom"] == "path"
-            (link,) = explorer.by_id(explorer.node("/category/text")["id"]).having("data-case")
+            (link,) = explorer.fragment("/category/text").having("data-case")
             assert "inputFrom" not in json.loads(link.attrs["data-marks"])
             script = explorer.page.split("<script>")[-1]
             assert "where this path lands in the input" in script
@@ -1013,7 +1068,7 @@ class TestAnAdaptersExplorer:
             The source names the kind and the case's input, the adapter the path and its verdict, the pod the class;
             the script fills each end with the case's lines around its mark.
             """
-            detail = explorer.by_id(explorer.node("/category/coding/code")["id"])
+            detail = explorer.fragment("/category/coding/code")
             (trace,) = detail.by_class("trace")
             assert trace.attrs["data-trace"] == explorer.data["cases"][0]["file"]
             source, adapter, pod = [part.text() for part in trace.all(lambda element: element.tag == "section")]
@@ -1028,7 +1083,7 @@ class TestAnAdaptersExplorer:
 
         def test_traces_a_path_not_carried_to_the_finding_it_raises(self, explorer):
             """traces a path not carried to the finding it raises"""
-            (trace,) = explorer.by_id(explorer.node("/category/text")["id"]).by_class("trace")
+            (trace,) = explorer.fragment("/category/text").by_class("trace")
             *_, findings = [part.text() for part in trace.all(lambda element: element.tag == "section")]
             assert findings.startswith("The findings A category's text has no Cascade predicate.")
             assert "exa:categoryTextNotCarried" in findings
@@ -1036,7 +1091,7 @@ class TestAnAdaptersExplorer:
                 "input",
                 "expectedFindings",
             ]
-            assert not explorer.by_id(explorer.node("/category/coding/display")["id"]).by_class("trace")
+            assert not explorer.fragment("/category/coding/display").by_class("trace")
 
         def test_lists_the_plain_form_of_a_place_before_its_contained_form(self, explorer):
             """lists the plain form of a place before its contained form"""
@@ -1051,7 +1106,10 @@ class TestAnAdaptersExplorer:
             same = explorer.mapping("/note/display")["sameFactAs"]
             assert same["path"] == "/subject/reference"
             assert same["node"] == explorer.node("/subject/reference")["id"]
-            assert f'The same fact as <a href="#{same["node"]}"><code>/subject/reference</code></a>.' in explorer.page
+            fragment = (
+                explorer.out / explorer.by_id(explorer.node("/note/display")["id"]).attrs["data-file"]
+            ).read_text(encoding="utf-8")
+            assert f'The same fact as <a href="#{same["node"]}"><code>/subject/reference</code></a>.' in fragment
 
         def test_says_in_words_that_a_case_with_an_empty_findings_file_expects_no_findings(self, explorer):
             """says in words that a case with an empty findings file expects no findings"""
@@ -1213,7 +1271,7 @@ class TestAnAdaptersExplorer:
                 ("/shared/first", '"first": "a",', "<urn:f1>"),
                 ("/shared/second", '"second": "b"', "<urn:f2>"),
             ):
-                (link,) = explorer.by_id(explorer.node(place)["id"]).having("data-case")
+                (link,) = explorer.fragment(place).having("data-case")
                 marks = json.loads(link.attrs["data-marks"])
                 lines = case["input"]["text"].split("\n")
                 assert [lines[at - 1].strip() for at in marks["input"]] == [line], place
@@ -1242,7 +1300,7 @@ class TestAnAdaptersExplorer:
             graph holds no Unit, so the source and the pod name the Observation alone.
             """
             explorer = explorer_with_two_places_carried_from_one_case
-            (trace,) = explorer.by_id(explorer.node("/shared/second")["id"]).by_class("trace")
+            (trace,) = explorer.fragment("/shared/second").by_class("trace")
             source, _, pod = [part.text() for part in trace.all(lambda element: element.tag == "section")]
             assert source.startswith("The source Observation fixtures/in/two-places.json")
             assert pod == "The pod Observation ex:Observation"
