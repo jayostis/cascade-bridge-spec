@@ -1292,7 +1292,9 @@ class Page:
         if not node["mappings"]:
             parts.append('<p class="fx">No entry of the accounting names this place itself.</p>')
         if node["mappings"]:
-            parts.append('<div class="mappings"></div>')
+            parts.append(
+                f'<div class="mappings"><p>{link(self.files[node["id"]], "Open the mappings of this place")}</p></div>'
+            )
         if node["children"]:
             rows = "".join(
                 f"<tr><td>{link('#' + child['id'], '<code>' + e(child['step']) + folder + '</code>')}"

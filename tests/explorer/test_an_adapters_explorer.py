@@ -930,6 +930,16 @@ class TestAnAdaptersExplorer:
             assert len(explorer.fragments()) == len(own)
             assert len({explorer.by_id(node["id"]).attrs["data-file"] for node in own}) == len(own)
 
+        def test_links_each_places_fragment_inside_its_slot_for_a_reader_with_the_script_off(self, explorer):
+            """links each place's fragment inside its slot for a reader with the script off"""
+            own = [node for node in explorer.nodes(explorer.data["tree"]) if node["mappings"]]
+            assert own
+            for node in own:
+                view = explorer.by_id(node["id"])
+                (slot,) = view.by_class("mappings")
+                links = slot.all(lambda element: element.tag == "a")
+                assert [link.attrs.get("href") for link in links] == [view.attrs["data-file"]], node["place"]
+
         def test_fetches_a_places_fragment_when_the_place_is_selected(self, explorer):
             """fetches a place's fragment when the place is selected
 
