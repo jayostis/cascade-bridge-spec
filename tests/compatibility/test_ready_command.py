@@ -2,12 +2,19 @@
 
 import pytest
 
-from compatibility_tool import ready
+from compatibility_tool import breaking, ready
 from compatibility_world import (
+    NOTHING_BREAKS,
     depends_on,
 )
 
 GATE = "ready-to-merge"
+PULL_7 = "https://github.com/jayostis/adapter/pull/7"
+BOM = chr(0xFEFF)
+LS = chr(0x2028)
+PS = chr(0x2029)
+NEL = chr(0x85)
+NBSP = chr(0xA0)
 
 
 @pytest.fixture(autouse=True)
@@ -335,3 +342,131 @@ class TestTheMergeGate:
             said = world.tool(engine, check="ready-to-merge", **world.ci(event=event, gate=GATE))
 
             assert "engine/pull/2 names this pull request back, and its checks have succeeded" in said
+
+    class TestGivenThePullRequestUnderTest:
+        """given the pull request under test"""
+
+        def test_fails_with_no_breaking_section_and_still_checks_what_it_names(self, world):
+            world.pull_request("adapter", 7)
+            engine, event = world.engine_under_test(body="Some description.\n\nDepends-On: " + PULL_7)
+
+            said = world.tool(engine, 1, check="ready-to-merge", **world.ci(event=event))
+
+            assert "the body has no `## Breaking` section" in said
+            assert "adapter/pull/7 has not merged" in said
+
+        def test_fails_with_no_breaking_section_and_nothing_named(self, world):
+            engine, event = world.engine_under_test(body="Some description.\n")
+
+            said = world.tool(engine, 1, check="ready-to-merge", **world.ci(event=event))
+
+            assert "the body has no `## Breaking` section" in said
+
+        def test_passes_with_a_breaking_section_saying_none_and_nothing_named(self, world):
+            engine, event = world.engine_under_test(body=NOTHING_BREAKS)
+
+            said = world.tool(engine, check="ready-to-merge", **world.ci(event=event))
+
+            assert "FAIL" not in said
+
+
+class TestTheBreakingSection:
+    """The `## Breaking` section of a pull request's description · compatibility_tool/breaking.py
+
+    A section lists each `old -> new` or `old -> removed` a caller sees, or says None.
+    """
+
+    @pytest.mark.parametrize(
+        "section",
+        [
+            "None",
+            "none.",
+            "- None",
+            "* NONE",
+            "- `a.b` -> `c.d`",
+            "1. a -> b\n2. c -> removed",
+            "- a -> b\n\n- c -> d",
+            "-\nNone",
+            "None\n\n---\nanything after the rule",
+            "None\nDepends-On: https://github.com/jayostis/engine/pull/1",
+            "None\n\n## Verification\n\nnot an arrow",
+            "None <!-- a -> b -->",
+            "<!-- - old -> new -->\nNone",
+            "None\r\n",
+            "None\r",
+            "- a -> b\r- c -> d",
+            "- a -> b" + LS + "- c -> d" + PS,
+            "- a -> b" + NBSP,
+            "- " + NBSP + "a -> b",
+            "- a ->->b",
+            "a ->" + NEL,
+            NEL + "-> b",
+            "１. a -> b",
+        ],
+        ids=lambda section: repr(section)[:40],
+    )
+    def test_is_read(self, section):
+        assert breaking.problem_in("## Breaking\n\n" + section) is None
+
+    def test_is_read_after_a_byte_order_mark_and_other_sections(self):
+        body = BOM + "## Summary\n\nwords\n\n## Breaking\t\n\n- a -> b\n\n## Tests\n"
+
+        assert breaking.problem_in(body) is None
+
+    def test_is_read_with_a_depends_on_line_after_none(self):
+        assert (
+            breaking.problem_in("## Breaking\n\nNone\n\nDepends-On: https://github.com/jayostis/engine/pull/1") is None
+        )
+
+    @pytest.mark.parametrize(
+        "body",
+        [None, "", "Some description.", "## Breaking changes\n\nNone", "### Breaking\n\nNone", "#Breaking\nNone"],
+        ids=["null", "empty", "no heading", "another heading", "a deeper heading", "no space"],
+    )
+    def test_is_refused_when_missing(self, body):
+        assert breaking.problem_in(body) == "the body has no `## Breaking` section"
+
+    @pytest.mark.parametrize(
+        "after",
+        [
+            "",
+            "\n\n",
+            "\n- \n",
+            "\n## Next\n",
+            "\n---\n",
+            "\nDepends-On: https://github.com/jayostis/engine/pull/1",
+            "\n<!-- None -->",
+        ],
+        ids=["end", "blank", "bare bullet", "next heading", "rule", "depends on", "comment"],
+    )
+    def test_is_refused_when_empty(self, after):
+        said = breaking.problem_in("## Breaking" + after)
+
+        assert said == "the `## Breaking` section is empty: list each `old -> new` or `old -> removed`, or write None"
+
+    def test_is_refused_with_none_beside_lines(self):
+        assert breaking.problem_in("## Breaking\n\nNone\n- a -> b") == "the `## Breaking` section has None beside lines"
+
+    @pytest.mark.parametrize(
+        "line",
+        [
+            "renamed a to b",
+            "a - b",
+            "a => b",
+            "a > b",
+            "a \u2192 b",
+            "->",
+            "- ->",
+            "a ->",
+            "-> b",
+            "a ->" + NBSP,
+            NBSP + "-> b",
+            "None" + NEL,
+            "\uff11. None",
+        ],
+        ids=lambda line: repr(line)[:30],
+    )
+    def test_is_refused_with_a_line_that_is_not_old_to_new(self, line):
+        said = breaking.problem_in("## Breaking\n\n" + line + "\n")
+
+        assert said.endswith("is not `old -> new` or `old -> removed`"), said

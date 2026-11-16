@@ -161,8 +161,11 @@ def name_another_vocabulary(world, name):
     return world.commits[VOCABULARY]
 
 
+NOTHING_BREAKS = "## Breaking\n\nNone\n"
+
+
 def depends_on(repository, number, owner=OWNER):
-    return f"Some description.\n\nDepends-On: https://github.com/{owner}/{repository}/pull/{number}\n"
+    return f"Some description.\n\n{NOTHING_BREAKS}\nDepends-On: https://github.com/{owner}/{repository}/pull/{number}\n"
 
 
 def write_compatibility(directory, document):
@@ -406,7 +409,7 @@ class World:
         write_compatibility(engine, engine_document(must_pass_with, canned, **overrides))
         return engine
 
-    def engine_under_test(self, body="", base="main", **overrides):
+    def engine_under_test(self, body=NOTHING_BREAKS, base="main", **overrides):
         self.pull_request("engine", 1, body=body, base=base)
         return self.engine([self.url("adapter")], **overrides), self.event(1)
 

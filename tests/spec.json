@@ -58,6 +58,7 @@
     "A report of every case an engine ran · report.ctrf.json, report.md",
     "The report a run names for its caller · .github/actions/start",
     "The merge gate · --check ready-to-merge",
+    "The `## Breaking` section of a pull request's description · compatibility_tool/breaking.py",
     "Re-running a check when a description is edited · .github/actions/rerun-when-edited",
     "Running the checks from the version a run picked · scripts/compatibility.py",
     "The run record handed to the version a run picked · compatibility_tool/record.py",

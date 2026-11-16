@@ -54,7 +54,7 @@ request.
 - **`Published GitHub Actions, run on a synthetic adapter (not pytest)`**: the published GitHub Actions run on the
   synthetic adapters.
 - **`ready-to-merge`**: holds a pull request until every pull request it depends on can merge (see "A change that
-  spans two repositories").
+  spans two repositories"), and refuses one whose description has no readable `## Breaking` section.
 
 ## What a change here means
 
