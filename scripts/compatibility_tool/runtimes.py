@@ -156,6 +156,11 @@ def run(directory, record, options, set_up, api):
                 if (role is Role.VOCABULARY if is_vocabulary(directory) else repository_name(url) == directory.name)
             }
         )
+        if not under_test and not is_runtime(directory):
+            raise Stop(
+                f"{runtime.path.name} does not name {directory.name} in {RUNTIME}, so its conformance command would run "
+                f"without what is under test"
+            )
         folders_handed = folders(runtime.path, {**paths, **under_test})
         listed = hosts(read_file(runtime.path))
         problem = engines.unrunnable(listed)
