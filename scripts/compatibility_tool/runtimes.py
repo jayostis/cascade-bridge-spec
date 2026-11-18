@@ -91,7 +91,12 @@ def beside_adapter(directory, found, options, event, api):
         else []
     )
     rows = [place(directory, url, role, options, event, reached) for url, role in wanted.items()]
-    kept = [replace(row, role=Role.CONFORMANCE, adapter=None, vocabularies=None) if any(row is each for each in runtimes) else row for row in found]
+    kept = [
+        replace(row, role=Role.CONFORMANCE, adapter=None, vocabularies=None)
+        if any(row is each for each in runtimes)
+        else row
+        for row in found
+    ]
     return [*kept, *rows, *placing.not_used(reached)]
 
 
