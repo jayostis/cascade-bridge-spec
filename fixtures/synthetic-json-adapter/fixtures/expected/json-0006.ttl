@@ -49,7 +49,6 @@
 
 [] bridge:arrivedAs <ni:///sha-256;NNtBZqYjfy1txWjOfxMvD27wL95MlgJvs5tBtWexbek> ;
   pav:version "3" ;
-  pav:lastUpdateOn "2026-07-15"^^xsd:date ;
   oa:hasSelector [ a oa:FragmentSelector ; dcterms:conformsTo <https://www.rfc-editor.org/rfc/rfc6901> ; rdf:value "/records/1" ] ;
   oa:hasSource <ni:///sha-256;2i3xQ2zcpY3XmzKOzQq8r6N9MknOmeiT7BNcufxdo0U> ;
   prov:wasDerivedFrom <ni:///sha-256;2i3xQ2zcpY3XmzKOzQq8r6N9MknOmeiT7BNcufxdo0U> ;

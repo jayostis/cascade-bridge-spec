@@ -50,5 +50,6 @@
 
 [] a bridge:PathEntry ;
   bridge:sourcePath "/lastUpdated" ;
-  bridge:verdict bridge:carried ;
+  bridge:verdict bridge:carriedInPart ;
+  bridge:namesGap ex:a-last-update-with-no-time-zone ;
   bridge:carriedAs [ bridge:asProperty pav:lastUpdateOn ; bridge:inRecordClass ex:Record ] .
