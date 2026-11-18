@@ -78,6 +78,17 @@ def a_failing_convert_expecting_findings(graph):
     graph.add((call, BRIDGE.expectedFindings, URIRef("https://example.org/findings.ttl")))
 
 
+def a_convert_expecting_findings_it_does_not_ask_for(graph):
+    call = calls_of(graph, "load-with-no-test-file-then-convert")[1]
+    graph.remove((call, BRIDGE.asksForFindings, None))
+    graph.remove((call, BRIDGE.asksForCensus, None))
+
+
+def a_convert_asking_for_findings_by_a_string(graph):
+    call = calls_of(graph, "load-with-no-test-file-then-convert")[1]
+    graph.set((call, BRIDGE.asksForFindings, Literal("true")))
+
+
 def an_ask_expecting_an_answer_and_a_failure(graph):
     call = calls_of(graph, "ask-answers-the-detect-query")[1]
     graph.add((call, BRIDGE.failure, BRIDGE.documentFailure))
@@ -110,6 +121,11 @@ REFUSED = {
     "a map whose IRI is no directory": (a_map_whose_iri_is_no_directory, "ending in /, that each key resolves"),
     "a call of no type": (a_call_of_no_type, "typed with exactly one of bridge:DescribeCall"),
     "a failing convert expecting findings": (a_failing_convert_expecting_findings, "names no bridge:expectedFindings"),
+    "a convert expecting findings it does not ask for": (
+        a_convert_expecting_findings_it_does_not_ask_for,
+        "asks for the findings, the census or both",
+    ),
+    "a convert asking for findings by a string": (a_convert_asking_for_findings_by_a_string, "an xsd:boolean"),
     "an ask expecting an answer and a failure": (
         an_ask_expecting_an_answer_and_a_failure,
         "exactly one of bridge:expectedAnswer and bridge:failure",
