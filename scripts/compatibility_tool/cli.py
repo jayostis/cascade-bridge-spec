@@ -1,5 +1,6 @@
 import argparse
 import os
+import shutil
 import sys
 import tempfile
 import time
@@ -119,6 +120,7 @@ def compatibility(directory, options, event, api, spec, partners):
         found, placed = runtimes.named_by(directory, counterparts(document), options, event, api), []
     else:
         found, placed = counterparts_placed(directory, counterparts(document), options, event, api)
+        found = runtimes.beside_adapter(directory, found, options, event, api)
     used += found
     record = Record(directory, options.mode, used)
     record.save(options.results)
@@ -134,13 +136,14 @@ def compatibility(directory, options, event, api, spec, partners):
             status = vocabularies.check(directory, vocabulary, reading)
     if status is not Status.FAIL:
         set_up = {}
-        if runs_runtimes:
-            runtimes.run(directory, record, options, set_up, api)
-        else:
+        shutil.rmtree(options.results / "earl", ignore_errors=True)
+        if not runs_runtimes:
             record.started = int(time.time() * 1000)
             engines.run(directory, record, options, set_up)
             library.run(directory, record, options, set_up)
             record.stopped = int(time.time() * 1000)
+        if runs_runtimes or record.conformance:
+            runtimes.run(directory, record, options, set_up, api)
         status = judge.judge(record, options)
         record.save(options.results)
         if not runs_runtimes:

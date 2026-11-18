@@ -53,8 +53,7 @@ def unrunnable(listed):
 
 def run(directory, record, options, set_up):
     reports = options.results / "earl"
-    shutil.rmtree(reports, ignore_errors=True)
-    reports.mkdir(parents=True)
+    reports.mkdir(parents=True, exist_ok=True)
     print("Each adapter on each host of each engine")
     adapter_side = is_adapter(directory)
     for pairing in record.counterparts:

@@ -1,8 +1,7 @@
 """A runtime: the repositories its cascade-runtime.json names, each picked as a counterpart is, and its conformance
-command run on each host with a folder for each. A vocabulary under test is handed in for the one it names."""
+command run on each host with a folder for each. A vocabulary or an adapter under test is handed in for the one it names."""
 
 import json
-import shutil
 from dataclasses import replace
 
 from compatibility_tool import engines, picking, placing
@@ -12,6 +11,7 @@ from compatibility_tool.document import (
     RUNTIME,
     hosts,
     is_runtime,
+    is_vocabulary,
     name_clashes,
     named_repositories,
     read_file,
@@ -72,6 +72,29 @@ def named_by(directory, listed, options, event, api):
     return [*rows, *placing.not_used(reached)]
 
 
+def beside_adapter(directory, found, options, event, api):
+    """Each counterpart of an adapter under test that is a runtime, made a runtime to run, with the repositories it
+    names that the run has not placed picked as a counterpart is; the adapter under test is the one it is handed."""
+    runtimes = [row for row in found if row.role is Role.COUNTERPART and row.path is not None and is_runtime(row.path)]
+    if not runtimes:
+        return found
+    placed = [row for row in found if row.path is not None]
+    taken = {directory.name, *(row.name for row in placed)}
+    wanted = {}
+    for row in runtimes:
+        for _, url, role in counterparts(row.path):
+            if repository_name(url) not in taken:
+                wanted.setdefault(url, role)
+    reached = (
+        picking.follow(api, event, [*(row.repository for row in placed), *wanted], options.spec_repository)
+        if options.mode == "ci"
+        else []
+    )
+    rows = [place(directory, url, role, options, event, reached) for url, role in wanted.items()]
+    kept = [replace(row, role=Role.CONFORMANCE, adapter=None, vocabularies=None) if any(row is each for each in runtimes) else row for row in found]
+    return [*kept, *rows, *placing.not_used(reached)]
+
+
 def folders(runtime, paths):
     """--folder <repository>=<folder> for each repository, keyed as cascade-runtime.json writes it."""
     return [
@@ -112,20 +135,23 @@ def run(directory, record, options, set_up, api):
     print("The runtime's conformance command on each host")
     handed = {PULL_REQUESTS: str(pull_requests(api, options.results / "pull-requests.json"))}
     reports = options.results / "earl"
-    shutil.rmtree(reports, ignore_errors=True)
-    reports.mkdir(parents=True)
+    reports.mkdir(parents=True, exist_ok=True)
     paths = {entry.repository: entry.path for entry in record.used if entry.role in (Role.VOCABULARY, Role.ADAPTER)}
     if is_runtime(directory):
         under_test = next(entry for entry in record.used if entry.role is Role.UNDER_TEST)
         record.used.append(replace(under_test, how="its conformance command", role=Role.CONFORMANCE, path=directory))
     index = 0
     for runtime in record.conformance:
-        vocabulary = (
+        under_test = (
             {}
             if is_runtime(directory)
-            else {url: directory for _, url, role in counterparts(runtime.path) if role is Role.VOCABULARY}
+            else {
+                url: directory
+                for _, url, role in counterparts(runtime.path)
+                if (role is Role.VOCABULARY if is_vocabulary(directory) else repository_name(url) == directory.name)
+            }
         )
-        folders_handed = folders(runtime.path, {**paths, **vocabulary})
+        folders_handed = folders(runtime.path, {**paths, **under_test})
         listed = hosts(read_file(runtime.path))
         problem = engines.unrunnable(listed)
         if problem:
