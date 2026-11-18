@@ -43,8 +43,9 @@ declares as `#envelope-set`. `--facts` is a Turtle file of the facts.
 `--format` is the format, Turtle when it is not given.
 
 The graph goes to `--out`, or to standard output, which carries the graph and
-nothing else. The findings go to `--findings` and never to standard output;
-where the library returns none, a run given `--findings` produces nothing.
+nothing else. `--findings` asks the library for the findings and the census, and
+is where they go, never to standard output; without it, neither is asked for.
+Where the library returns none, a run given `--findings` produces nothing.
 
 **The exit code is the whole of what a caller learns**, because `convert` writes
 no report: zero when the graph was produced, non-zero when it was not, and
@@ -73,7 +74,7 @@ an object of one member, named for the operation:
 | `describe` | `adapter`, the adapter IRI; `metadata`, the path of its `ro-crate-metadata.json`; `format` |
 | `load` | `adapter`, a map, and `vocabulary`, a map, where the call gives one |
 | `ask` | `document` |
-| `convert` | `document` and `format` |
+| `convert` | `document` and `format`, and `findings` and `census`, each `true` where the call asks for it |
 | `test` | `adapter` and `vocabulary`, as `load` takes them |
 
 - A map is `iri`, its IRI, and `files`, an object from each key to the path of

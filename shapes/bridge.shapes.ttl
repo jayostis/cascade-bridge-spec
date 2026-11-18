@@ -1185,6 +1185,18 @@
     sh:message "A convert call names at most one bridge:expectedFindings, the findings it must return, by IRI: naming none, it must return none."
   ] ;
   sh:property <#ExpectedFailure> ;
+  sh:property [
+    sh:path bridge:asksForFindings ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:boolean ;
+    sh:message "A convert call asks for the findings at most once, by an xsd:boolean."
+  ] ;
+  sh:property [
+    sh:path bridge:asksForCensus ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:boolean ;
+    sh:message "A convert call asks for the census at most once, by an xsd:boolean."
+  ] ;
   sh:xone (
     [ sh:path bridge:expectedGraph ; sh:minCount 1 ]
     [ sh:path bridge:failure ; sh:minCount 1 ]
@@ -1195,6 +1207,17 @@
     sh:message "A convert call naming a bridge:failure names no bridge:expectedFindings." ;
     sh:select """
       SELECT $this ?value WHERE { $this bridge:failure ?kind ; bridge:expectedFindings ?value . }
+    """
+  ] ;
+  sh:sparql [
+    sh:prefixes <> ;
+    sh:message "A convert call naming a bridge:expectedFindings asks for the findings, the census or both: asked for neither, it returns none." ;
+    sh:select """
+      SELECT $this ?value WHERE {
+        $this bridge:expectedFindings ?value .
+        FILTER NOT EXISTS { $this bridge:asksForFindings true }
+        FILTER NOT EXISTS { $this bridge:asksForCensus true }
+      }
     """
   ] .
 

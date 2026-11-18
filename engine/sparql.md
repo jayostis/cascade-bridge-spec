@@ -200,7 +200,8 @@ For each source record of a document, in document order, a Bridge:
    constructs over that record's dataset as the steps before this one leave it;
 5. runs every `bridge:mapping`, a CONSTRUCT, over that dataset. The record's
    graph is the union of their results;
-6. runs every `bridge:findingsQuery`, a CONSTRUCT, over the same dataset. The
+6. runs, where the caller asks for the findings, every `bridge:findingsQuery`,
+   a CONSTRUCT, over the same dataset. The
    record's findings are the union of their graphs, with `bridge:thisRecord`
    replaced by the document IRI ([`library.md`](library.md)) — under `test`,
    the entry's `bridge:input` as [`executing.md`](executing.md) resolves it —
@@ -209,13 +210,16 @@ For each source record of a document, in document order, a Bridge:
    of its own, and an annotation whose query constructed none is about the
    record itself: its target carries the record's selector and no
    `oa:refinedBy`.
-7. adds, where the adapter names a `bridge:sourceAccounting`, one finding for
-   each distinct path of the record that no `bridge:PathEntry` of that file
-   carries as its `bridge:sourcePath`;
-8. adds, where the adapter names a `bridge:sourceAccounting`, one finding for
+7. adds, where the caller asks for the census and the adapter names a
+   `bridge:sourceAccounting`, one finding for each distinct path of the record
+   that no `bridge:PathEntry` of that file carries as its `bridge:sourcePath`:
+   the census;
+8. adds, where the caller asks for the findings and the adapter names a
+   `bridge:sourceAccounting`, one finding for
    each distinct path of the record whose `bridge:PathEntry` carries a verdict a
    Bridge reports from and names a gap of a kind that reports;
-9. adds, for each `bridge:PathEntry` declaring a `bridge:lookupIn`, one finding
+9. adds, where the caller asks for the findings, for each `bridge:PathEntry`
+   declaring a `bridge:lookupIn`, one finding
    for each distinct value the record holds at that entry's path whose key no
    concept of that file's scheme carries as its `skos:notation`.
 

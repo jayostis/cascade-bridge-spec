@@ -1,0 +1,54 @@
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+@prefix oa:      <http://www.w3.org/ns/oa#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix bridge:  <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+@prefix ex:      <https://example.org/synthetic-adapter/v1#> .
+@prefix cascade: <https://ns.cascadeprotocol.org/cascade#> .
+
+[] a oa:Annotation ;
+  oa:hasTarget [
+    oa:hasSource <https://example.org/adapters/synthetic-json-adapter/fixtures/in/json-0004.json> ;
+    oa:hasSelector [
+      a oa:FragmentSelector ;
+      dcterms:conformsTo <https://www.rfc-editor.org/rfc/rfc6901> ;
+      rdf:value "/records/0" ;
+      oa:refinedBy [ a oa:FragmentSelector ; dcterms:conformsTo <https://www.rfc-editor.org/rfc/rfc6901> ; rdf:value "/novelty" ]
+    ]
+  ] ;
+  oa:hasBody cascade:SourcePathNotAccounted ;
+  oa:motivatedBy oa:classifying ;
+  sh:value "/novelty" ;
+  sh:resultSeverity sh:Info .
+
+[] a oa:Annotation ;
+  oa:hasTarget [
+    oa:hasSource <https://example.org/adapters/synthetic-json-adapter/fixtures/in/json-0004.json> ;
+    oa:hasSelector [
+      a oa:FragmentSelector ;
+      dcterms:conformsTo <https://www.rfc-editor.org/rfc/rfc6901> ;
+      rdf:value "/records/0" ;
+      oa:refinedBy [ a oa:FragmentSelector ; dcterms:conformsTo <https://www.rfc-editor.org/rfc/rfc6901> ; rdf:value "/extension/0" ]
+    ]
+  ] ;
+  oa:hasBody cascade:SourcePathNotAccounted ;
+  oa:motivatedBy oa:classifying ;
+  sh:value "/extension" ;
+  cascade:occurrenceCount 2 ;
+  sh:resultSeverity sh:Info .
+
+[] a oa:Annotation ;
+  oa:hasTarget [
+    oa:hasSource <https://example.org/adapters/synthetic-json-adapter/fixtures/in/json-0004.json> ;
+    oa:hasSelector [
+      a oa:FragmentSelector ;
+      dcterms:conformsTo <https://www.rfc-editor.org/rfc/rfc6901> ;
+      rdf:value "/records/0" ;
+      oa:refinedBy [ a oa:FragmentSelector ; dcterms:conformsTo <https://www.rfc-editor.org/rfc/rfc6901> ; rdf:value "/extension/0/url" ]
+    ]
+  ] ;
+  oa:hasBody cascade:SourcePathNotAccounted ;
+  oa:motivatedBy oa:classifying ;
+  sh:value "/extension/url" ;
+  cascade:occurrenceCount 2 ;
+  sh:resultSeverity sh:Info .

@@ -122,7 +122,8 @@ BRIDGE = "https://ns.cascadeprotocol.org/bridge/v1-draft#"
 SCHEMA = "http://schema.org/"
 CASCADE = "https://ns.cascadeprotocol.org/cascade#"
 RDF_TYPE = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-OA_HAS_SOURCE = "http://www.w3.org/ns/oa#hasSource"
+OA = "http://www.w3.org/ns/oa#"
+OA_HAS_SOURCE = OA + "hasSource"
 FORMATS = {"turtle": "turtle", "ntriples": "nt"}
 MF = "http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#"
 ASSERTION_OF = """
@@ -322,13 +323,31 @@ def convert_document(given, loaded, mode):
             if urlsplit(str(base)).username is not None:
                 raise Failure("factsFailure")
     written = {"graph": turtle(*committed(document, "expected"))}
-    if loaded["vocabulary"]:
-        findings = turtle(*committed(document, "findings"))
+    if loaded["vocabulary"] and (given.get("findings") or given.get("census")):
+        findings = asked_for(turtle(*committed(document, "findings")), given)
         if mode == "file-iri-in-findings":
             for target in list(findings.subjects(rdflib.URIRef(OA_HAS_SOURCE), None)):
                 findings.set((target, rdflib.URIRef(OA_HAS_SOURCE), rdflib.URIRef(Path(document["path"]).as_uri())))
         written["findings"] = findings
     return {name: graph.serialize(format=FORMATS[given["format"]]) for name, graph in written.items()}
+
+
+def asked_for(findings, given):
+    """The committed findings, less the census or every other finding where the call does not ask for it."""
+    import rdflib
+
+    census = rdflib.URIRef(CASCADE + "SourcePathNotAccounted")
+    for annotation in list(findings.subjects(rdflib.RDF.type, rdflib.URIRef(OA + "Annotation"))):
+        if given.get("census" if (annotation, rdflib.URIRef(OA + "hasBody"), census) in findings else "findings"):
+            continue
+        nodes = [annotation]
+        while nodes:
+            node = nodes.pop()
+            for _, _, held in list(findings.triples((node, None, None))):
+                if isinstance(held, rdflib.BNode):
+                    nodes.append(held)
+            findings.remove((node, None, None))
+    return findings
 
 
 def test_adapter(given):

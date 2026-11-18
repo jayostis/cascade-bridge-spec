@@ -74,7 +74,9 @@
               "additionalProperties": false,
               "properties": {
                 "document": { "$ref": "#/$defs/document" },
-                "format": { "$ref": "#/$defs/format" }
+                "format": { "$ref": "#/$defs/format" },
+                "findings": { "const": true },
+                "census": { "const": true }
               }
             }
           }
