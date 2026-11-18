@@ -187,3 +187,23 @@ class TestRunningARuntimeOnTheRepositoriesItNames:
             assert git("rev-parse", "HEAD", cwd=folders[VOCABULARY_URL]) == world.commits[VOCABULARY]
             assert world.record()["repositories"]["runtime"]["how"] == "pull request #2 merged into main"
             assert "the runtime on 1 host: 1 hold, 0 do not" in said
+
+    class TestGivenAnAdapterUnderTestThatItsRuntimeDoesNotName:
+        """given an adapter under test that the runtime it names in `mustPassWith` does not name"""
+
+        def test_fails_rather_than_run_the_runtime_without_the_adapter(self, world):
+            """fails rather than run the runtime without the adapter under test"""
+            adapter = world.clone("adapter")
+            write_compatibility(adapter, {"mustPassWith": [world.url("runtime")]})
+            world.clone(VOCABULARY)
+            world.offline()
+            runtime = world.runtime()
+            (runtime / "cascade-runtime.json").write_text(
+                json.dumps({"vocabulary": {"repository": VOCABULARY_URL}, "adapters": []}) + "\n", encoding="utf-8"
+            )
+            git("commit", "-q", "-am", "runtime: names no adapter", cwd=runtime)
+
+            said = world.tool(adapter, 1)
+
+            assert "does not name" in said
+            assert HANDED not in said
