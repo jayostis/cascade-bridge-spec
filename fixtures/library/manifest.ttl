@@ -24,6 +24,7 @@
     <#convert-with-no-vocabulary>
     <#test-with-no-vocabulary>
     <#a-version-not-kept-is-a-finding>
+    <#the-findings-and-the-census-are-each-returned-only-where-asked-for>
     <#an-element-s-text-content-is-read-in-document-order>
     <#a-base64-attachment-s-text-is-read-decoded>
     <#an-element-s-text-with-element-breaks-is-read-a-line-for-each-cell-and-paragraph>
@@ -66,6 +67,8 @@ _:convert-example-0001 a bridge:ConvertCall ;
   bridge:envelope <https://example.org/adapters/synthetic-adapter/ro-crate-metadata.json#envelope-set> ;
   bridge:graphFormat "turtle" ;
   bridge:expectedGraph <../synthetic-adapter/fixtures/expected/example-0001.ttl> ;
+  bridge:asksForFindings true ;
+  bridge:asksForCensus true ;
   bridge:expectedFindings <../synthetic-adapter/fixtures/findings/example-0001.ttl> .
 
 _:load-the-synthetic-adapter a bridge:LoadCall ;
@@ -113,6 +116,8 @@ _:load-the-synthetic-adapter a bridge:LoadCall ;
       bridge:envelope <https://example.org/adapters/synthetic-json-adapter/ro-crate-metadata.json#envelope-set> ;
       bridge:graphFormat "ntriples" ;
       bridge:expectedGraph <../synthetic-json-adapter/fixtures/expected/json-0001.ttl> ;
+      bridge:asksForFindings true ;
+      bridge:asksForCensus true ;
       bridge:expectedFindings <../synthetic-json-adapter/fixtures/findings/json-0001.ttl> ]
     [ a bridge:ConvertCall ;
       bridge:document [
@@ -126,6 +131,8 @@ _:load-the-synthetic-adapter a bridge:LoadCall ;
       bridge:envelope <https://example.org/adapters/synthetic-json-adapter/ro-crate-metadata.json#envelope-record> ;
       bridge:graphFormat "turtle" ;
       bridge:expectedGraph <../synthetic-json-adapter/fixtures/expected/json-0002.ttl> ;
+      bridge:asksForFindings true ;
+      bridge:asksForCensus true ;
       bridge:expectedFindings <../synthetic-json-adapter/fixtures/findings/json-0002.ttl> ]
   ) .
 
@@ -338,6 +345,8 @@ _:load-the-synthetic-adapter a bridge:LoadCall ;
       bridge:envelope <https://example.org/adapters/synthetic-adapter/ro-crate-metadata.json#envelope-set> ;
       bridge:graphFormat "turtle" ;
       bridge:expectedGraph <../version-not-kept/expected/example-0001.ttl> ;
+      bridge:asksForFindings true ;
+      bridge:asksForCensus true ;
       bridge:expectedFindings <../version-not-kept/findings/example-0001.ttl> ]
   ) .
 
@@ -461,4 +470,52 @@ _:load-the-synthetic-adapter-reading-each-label-s-text-with-element-breaks a bri
       ] ;
       bridge:graphFormat "ntriples" ;
       bridge:failure bridge:documentFailure ]
+  ) .
+
+_:json-0004
+  bridge:iri <https://example.org/adapters/synthetic-json-adapter/fixtures/in/json-0004.json> ;
+  bridge:file <../synthetic-json-adapter/fixtures/in/json-0004.json> .
+
+_:json-example-registry
+  bridge:iri <https://example.org/adapters/synthetic-json-adapter/fixtures/facts/example-registry.ttl> ;
+  bridge:file <../synthetic-json-adapter/fixtures/facts/example-registry.ttl> .
+
+<#the-findings-and-the-census-are-each-returned-only-where-asked-for> a bridge:LibraryTest ;
+  mf:name "the-findings-and-the-census-are-each-returned-only-where-asked-for" ;
+  rdfs:comment "A record holding paths the accounting names nowhere and a status the concept map lacks, converted four times by one load: asked for neither, the graph alone; asked for the findings, the lookup finding and no census; asked for the census, the census alone; asked for both, both. The graph is the same each time." ;
+  mf:action (
+    [ a bridge:LoadCall ;
+      bridge:adapterFiles _:synthetic-json-adapter-to-load ;
+      bridge:vocabularyFiles _:synthetic-vocabularies ]
+    [ a bridge:ConvertCall ;
+      bridge:document _:json-0004 ;
+      bridge:suppliedFacts _:json-example-registry ;
+      bridge:envelope <https://example.org/adapters/synthetic-json-adapter/ro-crate-metadata.json#envelope-set> ;
+      bridge:graphFormat "turtle" ;
+      bridge:expectedGraph <../synthetic-json-adapter/fixtures/expected/json-0004.ttl> ]
+    [ a bridge:ConvertCall ;
+      bridge:document _:json-0004 ;
+      bridge:suppliedFacts _:json-example-registry ;
+      bridge:envelope <https://example.org/adapters/synthetic-json-adapter/ro-crate-metadata.json#envelope-set> ;
+      bridge:graphFormat "turtle" ;
+      bridge:expectedGraph <../synthetic-json-adapter/fixtures/expected/json-0004.ttl> ;
+      bridge:asksForFindings true ;
+      bridge:expectedFindings <json-0004-without-the-census.ttl> ]
+    [ a bridge:ConvertCall ;
+      bridge:document _:json-0004 ;
+      bridge:suppliedFacts _:json-example-registry ;
+      bridge:envelope <https://example.org/adapters/synthetic-json-adapter/ro-crate-metadata.json#envelope-set> ;
+      bridge:graphFormat "turtle" ;
+      bridge:expectedGraph <../synthetic-json-adapter/fixtures/expected/json-0004.ttl> ;
+      bridge:asksForCensus true ;
+      bridge:expectedFindings <json-0004-the-census-alone.ttl> ]
+    [ a bridge:ConvertCall ;
+      bridge:document _:json-0004 ;
+      bridge:suppliedFacts _:json-example-registry ;
+      bridge:envelope <https://example.org/adapters/synthetic-json-adapter/ro-crate-metadata.json#envelope-set> ;
+      bridge:graphFormat "turtle" ;
+      bridge:expectedGraph <../synthetic-json-adapter/fixtures/expected/json-0004.ttl> ;
+      bridge:asksForFindings true ;
+      bridge:asksForCensus true ;
+      bridge:expectedFindings <../synthetic-json-adapter/fixtures/findings/json-0004.ttl> ]
   ) .

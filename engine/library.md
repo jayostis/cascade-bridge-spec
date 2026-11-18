@@ -57,13 +57,21 @@ an optional envelope IRI, without converting it: `true` or `false`, the
 ## convert
 
 From a loaded adapter, one whole document as its bytes and its IRI, the facts
-supplied with it as Turtle and their IRI where the caller gives them, and an
-optional envelope IRI, the graph and the findings, each as bytes in the format
-the caller asks, Turtle or N-Triples.
+supplied with it as Turtle and their IRI where the caller gives them, an
+optional envelope IRI, and whether the caller asks for the findings and for the
+census, the graph and the findings asked for, each as bytes in the format the
+caller asks, Turtle or N-Triples.
 
 The graph is every record of the document, emitted as one. The findings are
 the union of every record's, the ones a `bridge:expectedFindings` file is
 compared against, and never change the graph.
+
+**The caller asks for the findings, the census, both or neither, and neither is
+the default.** The census is the findings of each path no accounting entry
+carries ([`sparql.md`](sparql.md#running-an-adapter)); the findings are every
+other finding, those of the schemas and of the vocabulary's files among them.
+A convert asked for neither returns no findings, and does none of the work only
+they need.
 
 The document is read in the envelope the caller names, whether or not it
 admits the document ([`sparql.md`](sparql.md)), as `test` reads an entry's
@@ -76,12 +84,13 @@ specified. Without facts, the document is converted with none
 
 On an adapter naming a `bridge:vocabularyFile`, loaded with no vocabulary,
 convert returns the graph without validating it against those files, no
-findings, and says so.
+findings whatever it was asked for, and says so.
 
 ## test
 
 From the same maps as load, the EARL report in Turtle that
-[`executing.md`](executing.md) describes. It is for conformance only. Its
+[`executing.md`](executing.md) describes, each entry converted asking for the
+findings and the census. It is for conformance only. Its
 `bridge:DatasetCompletionTest` entries are `earl:untested`. On an adapter
 naming a `bridge:vocabularyFile`, given no vocabulary, it fails with
 `bridge:vocabularyFailure`.

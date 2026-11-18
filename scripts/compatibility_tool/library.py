@@ -100,6 +100,11 @@ def a_call(graph, node, latest):
         if facts is not None:
             document["facts"] = named_file(graph, facts)
         call.given = {"document": document}
+    if operation == "convert":
+        for asked, key in (("asksForFindings", "findings"), ("asksForCensus", "census")):
+            value = graph.value(node, term(asked))
+            if value is not None and value.toPython() is True:
+                call.given[key] = True
     graph_format = graph.value(node, term("graphFormat"))
     if graph_format is not None:
         call.given["format"] = str(graph_format)

@@ -798,6 +798,16 @@ bridge:graphFormat a owl:DatatypeProperty ;
   rdfs:range xsd:string ;
   rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
 
+bridge:asksForFindings a owl:DatatypeProperty ;
+  rdfs:label "asks for findings"@en ;
+  rdfs:range xsd:boolean ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
+bridge:asksForCensus a owl:DatatypeProperty ;
+  rdfs:label "asks for census"@en ;
+  rdfs:range xsd:boolean ;
+  rdfs:isDefinedBy <https://ns.cascadeprotocol.org/bridge/v1-draft#> .
+
 bridge:expectedAnswer a owl:DatatypeProperty ;
   rdfs:label "expected answer"@en ;
   rdfs:range xsd:boolean ;
