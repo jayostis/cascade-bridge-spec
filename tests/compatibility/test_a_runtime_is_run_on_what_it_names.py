@@ -142,3 +142,68 @@ class TestRunningARuntimeOnTheRepositoriesItNames:
             assert git("rev-parse", "HEAD", cwd=folders[ADAPTER_URL]) == world.commits["adapter"]
             assert world.record()["repositories"]["runtime"]["how"] == "pull request #2 merged into main"
             assert "the runtime on 1 host: 1 hold, 0 do not" in said
+
+    class TestGivenAnAdapterUnderTestThatNamesARuntime:
+        """given an adapter under test that names a runtime in `mustPassWith`"""
+
+        def test_is_handed_in_to_the_runtime_with_the_vocabulary_it_names(self, world):
+            """is handed in to the runtime in the place of the adapter it names, with the vocabulary it names"""
+            adapter = world.clone("adapter")
+            write_compatibility(adapter, {"mustPassWith": [world.url("runtime")]})
+            world.clone(VOCABULARY)
+            world.offline()
+            world.runtime()
+
+            said = world.tool(adapter)
+
+            folders = handed(said)
+            assert folders[ADAPTER_URL] == adapter
+            assert folders[VOCABULARY_URL] == adapter.parent / VOCABULARY
+            assert "the runtime on 1 host: 1 hold, 0 do not" in said
+
+        def test_does_not_hold_where_the_runtimes_report_has_a_failure(self, world):
+            adapter = world.clone("adapter")
+            write_compatibility(adapter, {"mustPassWith": [world.url("runtime")]})
+            world.clone(VOCABULARY)
+            world.offline()
+            world.runtime(canned="failed")
+
+            said = world.tool(adapter, 1)
+
+            assert "the runtime on 1 host: 0 hold, 1 do not" in said
+
+        def test_runs_the_runtime_a_depends_on_line_picks_on_the_pull_request_that_names_it(self, world):
+            """runs the runtime a `Depends-On:` line picks, beside the vocabulary at its default branch"""
+            world.runtime_origin()
+            world.pull_request("runtime", 2)
+            world.pull_request("adapter", 1, body=depends_on("runtime", 2, owner=OWNER))
+            adapter = world.clone("adapter")
+            write_compatibility(adapter, {"mustPassWith": [world.url("runtime")]})
+
+            said = world.tool(adapter, **world.ci(repository="adapter", event=world.event(1, repository="adapter")))
+
+            folders = handed(said)
+            assert folders[ADAPTER_URL] == adapter
+            assert git("rev-parse", "HEAD", cwd=folders[VOCABULARY_URL]) == world.commits[VOCABULARY]
+            assert world.record()["repositories"]["runtime"]["how"] == "pull request #2 merged into main"
+            assert "the runtime on 1 host: 1 hold, 0 do not" in said
+
+    class TestGivenAnAdapterUnderTestThatItsRuntimeDoesNotName:
+        """given an adapter under test that the runtime it names in `mustPassWith` does not name"""
+
+        def test_fails_rather_than_run_the_runtime_without_the_adapter(self, world):
+            """fails rather than run the runtime without the adapter under test"""
+            adapter = world.clone("adapter")
+            write_compatibility(adapter, {"mustPassWith": [world.url("runtime")]})
+            world.clone(VOCABULARY)
+            world.offline()
+            runtime = world.runtime()
+            (runtime / "cascade-runtime.json").write_text(
+                json.dumps({"vocabulary": {"repository": VOCABULARY_URL}, "adapters": []}) + "\n", encoding="utf-8"
+            )
+            git("commit", "-q", "-am", "runtime: names no adapter", cwd=runtime)
+
+            said = world.tool(adapter, 1)
+
+            assert "does not name" in said
+            assert HANDED not in said

@@ -42,7 +42,13 @@ SHA-256 in hex). A missing release is waited for, up to 6 minutes, while a run
 of the engine that a push or a pull request started at that commit is unfinished, unless the commit is the head of a
 fork's pull request. Otherwise the setup runs.
 
-An adapter's file has only `mustPassWith`.
+An adapter's file has only `mustPassWith`, naming engines and runtimes. A runtime it
+names is picked as a counterpart is, run as a vocabulary under test's runtimes are, with the adapter under test
+handed in for the one its `cascade-runtime.json` names and the rest picked as a counterpart is: **a runtime whose
+report does not hold blocks the merge.** That is how a change to what an adapter writes meets the output a
+vocabulary's kits save: the runtime's conformance command compares them, and a change to the adapter that changes
+the output lands as a pair, the adapter's pull request and the vocabulary's that saves it again, each naming the
+other on a `Depends-On:` line.
 
 A runtime is a repository holding `cascade-runtime.json`, which names the
 vocabulary and each adapter it loads by repository: those are its counterparts.
