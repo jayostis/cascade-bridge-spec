@@ -4,13 +4,16 @@ description: >-
   result file of bench/result.schema.json, and either keep it on the
   repository's perf-data branch (a push to the default branch, a nightly or a
   manual run) or comment its comparison with the newest main run on the pull
-  request. Nothing is thresholded, and a slow run is no failure.
+  request. Nothing is thresholded, and a slow run is no failure. The caller
+  checks the repository out, runs the specification's start action with
+  checkout-only, and calls this action by its local path, so that the
+  specification it runs is the one a Depends-On: line picks.
 
 inputs:
   path:
     description: >-
       The repository under test, relative to the workspace: a directory named as
-      its repository, so that its counterparts are checked out beside it.
+      its repository, with its counterparts checked out beside it.
     required: false
     default: ${{ github.event.repository.name }}
   inputs:
@@ -30,10 +33,19 @@ inputs:
     default: 'false'
   reference:
     description: >-
-      'true': also run each input under the reference executor, and report
-      whether its output digests are the default executor's.
+      'true': in place of the timing, convert each input once under the default
+      executor and once under the reference executor, and report whether their
+      output digests are the same. With publish 'true' the file and the verdict
+      are kept under bridge-reference/ on the perf-data branch. Run it as a job
+      of its own: the reference executor is far slower than the default.
     required: false
-    default: 'true'
+    default: 'false'
+  reference-max-bytes:
+    description: >-
+      With reference 'true': an input of more bytes than this is left out of
+      both runs, and the verdict lists them.
+    required: false
+    default: '5000000'
   token:
     description: The token every call of gh and every push is made with.
     required: false
@@ -42,12 +54,6 @@ inputs:
 runs:
   using: composite
   steps:
-    - uses: jayostis/cascade-bridge-spec/.github/actions/start@main
-      with:
-        path: ${{ inputs.path }}
-        checkout-only: 'true'
-        token: ${{ inputs.token }}
-
     - uses: actions/setup-node@v5
       with:
         node-version: 22
@@ -62,6 +68,16 @@ runs:
         GH_TOKEN: ${{ inputs.token }}
       run: bash "${GITHUB_ACTION_PATH}/perf.sh" package
 
+    - name: the packages of the Bridge's node host
+      shell: bash
+      env:
+        REPOSITORY_PATH: ${{ inputs.path }}
+        OUT: ${{ runner.temp }}/perf
+        SPECIFICATION: ${{ github.action_path }}/../../..
+        GH_TOKEN: ''
+        GITHUB_TOKEN: ''
+      run: bash "${GITHUB_ACTION_PATH}/perf.sh" packages
+
     - name: time the inputs
       shell: bash
       env:
@@ -71,8 +87,10 @@ runs:
         WHICH: ${{ inputs.inputs }}
         SAMPLES: ${{ inputs.samples }}
         REFERENCE: ${{ inputs.reference }}
-        GH_TOKEN: ${{ inputs.token }}
+        REFERENCE_MAX_BYTES: ${{ inputs.reference-max-bytes }}
         RUNNER_ENVIRONMENT: ${{ runner.environment }}
+        GH_TOKEN: ''
+        GITHUB_TOKEN: ''
       run: bash "${GITHUB_ACTION_PATH}/perf.sh" run
 
     - name: the job summary
@@ -82,9 +100,11 @@ runs:
         REPOSITORY_PATH: ${{ inputs.path }}
         OUT: ${{ runner.temp }}/perf
         SPECIFICATION: ${{ github.action_path }}/../../..
-        GH_TOKEN: ${{ inputs.token }}
+        WHICH: ${{ inputs.inputs }}
+        REFERENCE: ${{ inputs.reference }}
+        REFERENCE_MAX_BYTES: ${{ inputs.reference-max-bytes }}
       run: |
-        [ -f "${OUT}/default/run.json" ] || exit 0
+        [ -f "${OUT}/package.md" ] || exit 0
         bash "${GITHUB_ACTION_PATH}/perf.sh" summary
 
     - name: keep the file on the perf-data branch
@@ -94,13 +114,13 @@ runs:
         REPOSITORY_PATH: ${{ inputs.path }}
         OUT: ${{ runner.temp }}/perf
         SPECIFICATION: ${{ github.action_path }}/../../..
+        REFERENCE: ${{ inputs.reference }}
+        REFERENCE_MAX_BYTES: ${{ inputs.reference-max-bytes }}
         GH_TOKEN: ${{ inputs.token }}
       run: bash "${GITHUB_ACTION_PATH}/perf.sh" publish
 
-    # The history page: one chart for each measurement over the runs, from the same file, kept in history/ on the
-    # perf-data branch, which GitHub Pages serves from. Alerts, comments and failures are all off.
     - name: the history page's data
-      if: inputs.publish == 'true'
+      if: inputs.publish == 'true' && inputs.reference != 'true'
       shell: bash
       env:
         REPOSITORY_PATH: ${{ inputs.path }}
@@ -109,8 +129,8 @@ runs:
       run: bash "${GITHUB_ACTION_PATH}/perf.sh" export
 
     - name: the history page
-      if: inputs.publish == 'true'
-      uses: benchmark-action/github-action-benchmark@v1
+      if: inputs.publish == 'true' && inputs.reference != 'true'
+      uses: benchmark-action/github-action-benchmark@4322e5726e6334590d251fc4f92bec0efafc45dc # v1.22.2
       with:
         name: Bridge performance
         tool: customSmallerIsBetter
@@ -128,7 +148,7 @@ runs:
         fail-on-alert: false
 
     - name: comment the comparison with main
-      if: inputs.publish != 'true' && github.event.pull_request.number
+      if: inputs.publish != 'true' && inputs.reference != 'true' && github.event.pull_request.number
       shell: bash
       env:
         REPOSITORY_PATH: ${{ inputs.path }}

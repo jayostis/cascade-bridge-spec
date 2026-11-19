@@ -46,6 +46,11 @@ def unit_ms(document):
     return ("results", 0, "unit"), "enum"
 
 
+def unit_of_a_rate(document):
+    document["results"][0]["unit"] = "{count}/s"
+    return ("results", 0, "unit"), "enum"
+
+
 def negative_value(document):
     document["results"][0]["value"] = -1
     return ("results", 0, "value"), "minimum"
@@ -170,6 +175,7 @@ REFUSED = {
     "a `clock` without samples": a_clock_without("samples"),
     "a `clock` without a range": a_clock_without("range"),
     "a unit of ms": unit_ms,
+    "a unit of a rate": unit_of_a_rate,
     "a one-segment name": renamed("convert"),
     "a four-segment name": renamed("entries-x10/convert/first/again"),
     "an upper-case segment": renamed("entries-x10/Convert/first"),
@@ -245,7 +251,7 @@ class TestResultsABenchmarkHarnessWrites:
         """given the example changed in one way
 
         A result's kind is `clock` (a time, which carries its samples and their range), `cost` or `output`; its unit is
-        `s`, `By`, `{count}` or `{count}/s`. An input that timed out is an output in seconds named `<input>/timeout/<what>`, and an
+        `s`, `By` or `{count}`. An input that timed out is an output in seconds named `<input>/timeout/<what>`, and an
         input the engine refused is an output counted once, named `<input>/refused/<failure kind>`. A keyword is the
         word of JSON Schema that states a rule, such as `enum`, `required` or `pattern`.
         """

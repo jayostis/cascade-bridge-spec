@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // Compares and lists result files of result.schema.json, whichever harness wrote them. No dependencies.
 //
-//   node compare.mjs compare <before.json> <after.json> [--name <glob>]
-//   node compare.mjs history <directory | branch> --name <glob> [--since 7d] [--repository <git checkout>]
+//   node compare.mjs compare <before.json> <after.json> [--name <glob>[,<glob>...]]
+//   node compare.mjs history <directory | branch> --name <glob>[,<glob>...] [--since 7d] [--repository <git checkout>]
 //   node compare.mjs merge <file.json>... > merged.json
 //   node compare.mjs export <file.json> > benchmarks.json
 //
@@ -14,19 +14,21 @@ import { execFileSync } from "node:child_process";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
-const USAGE = `usage: node compare.mjs compare <before.json> <after.json> [--name <glob>]
-       node compare.mjs history <directory | branch> --name <glob> [--since <n>h|<n>d|<n>w|<date>] [--repository <git checkout>]
+const USAGE = `usage: node compare.mjs compare <before.json> <after.json> [--name <glob>[,<glob>...]]
+       node compare.mjs history <directory | branch> --name <glob>[,<glob>...] [--since <n>h|<n>d|<n>w|<date>] [--repository <git checkout>]
        node compare.mjs merge <file.json>...
        node compare.mjs export <file.json>`;
 
 class Refusal extends Error {}
 
-function globbed(glob) {
-  const pattern = glob
-    .replace(/[.+^${}()|[\]\\]/g, "\\$&")
-    .replaceAll("*", ".*")
-    .replaceAll("?", ".");
-  return new RegExp(`^${pattern}$`);
+function globbed(globs) {
+  const patterns = globs.split(",").map((glob) =>
+    glob
+      .replace(/[.+^${}()|[\]\\]/g, "\\$&")
+      .replaceAll("*", ".*")
+      .replaceAll("?", "."),
+  );
+  return new RegExp(`^(?:${patterns.join("|")})$`);
 }
 
 function flags(argv, known) {
@@ -59,7 +61,6 @@ function shown(entry) {
   if (entry === undefined) return "—";
   if (entry.unit === "s") return seconds(entry.value);
   if (entry.unit === "By") return `${entry.value.toLocaleString("en")} B`;
-  if (entry.unit === "{count}/s") return `${entry.value.toLocaleString("en", { maximumFractionDigits: 3 })}/s`;
   return entry.value.toLocaleString("en");
 }
 
@@ -211,7 +212,7 @@ function branchFiles(repository, branch) {
   if (ref === undefined) throw new Refusal(`${branch}: neither a directory nor a branch of ${repository}`);
   return git(repository, "ls-tree", "-r", "--name-only", ref)
     .split("\n")
-    .filter((path) => path.endsWith(".json"))
+    .filter((path) => path.startsWith("bridge/") && path.endsWith(".json"))
     .map((path) => ({ path, read: () => JSON.parse(git(repository, "show", `${ref}:${path}`)) }));
 }
 

@@ -56,7 +56,7 @@
             { "pattern": "^[a-z0-9][a-z0-9._-]*/refused/[A-Za-z]+$" }
           ]
         },
-        "unit": { "enum": ["s", "By", "{count}", "{count}/s"] },
+        "unit": { "enum": ["s", "By", "{count}"] },
         "value": { "type": "number", "minimum": 0 },
         "kind": { "enum": ["cost", "output", "clock"] },
         "samples": { "type": "integer", "minimum": 1 },

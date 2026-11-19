@@ -109,6 +109,11 @@ class TestComparingAndListingResultFiles:
             said = run("compare", before, after, "--name", "*/triples").stdout
             assert "x10/triples" in said and "x10/convert/first |" not in said
 
+        def test_keeps_the_rows_any_of_a_comma_separated_list_of_globs_matches(self, tmp_path):
+            before, after = written(tmp_path, "a.json", result(10.0)), written(tmp_path, "b.json", result(4.0))
+            said = run("compare", before, after, "--name", "*/triples,*/convert/*").stdout
+            assert "x10/triples" in said and "x10/convert/first |" in said and "x10/output/graph" not in said
+
         def test_exits_2_on_a_file_that_is_not_a_result_file(self, tmp_path):
             junk = written(tmp_path, "junk.json", {"hello": 1})
             assert run("compare", junk, junk).returncode == 2
@@ -140,6 +145,19 @@ class TestComparingAndListingResultFiles:
             git("-c", "user.name=t", "-c", "user.email=t@example.org", "commit", "-q", "-m", "a result")
             said = run("history", "perf-data", "--name", "x10/convert/first", "--repository", tmp_path).stdout
             assert "2026-11-18 #3 aaaaaaa" in said
+
+        def test_leaves_out_the_files_of_a_branch_that_are_not_under_bridge(self, tmp_path):
+
+            def git(*arguments):
+                subprocess.run(["git", "-C", str(tmp_path), *arguments], check=True, capture_output=True)
+
+            git("init", "-q", "-b", "perf-data")
+            written(tmp_path, "bridge/2026/11/18/3-aaaaaaa.json", result(10.0))
+            written(tmp_path, "bridge-reference/2026/11/19/4-bbbbbbb.json", result(4.0))
+            git("add", ".")
+            git("-c", "user.name=t", "-c", "user.email=t@example.org", "commit", "-q", "-m", "two results")
+            said = run("history", "perf-data", "--name", "x10/convert/first", "--repository", tmp_path).stdout
+            assert "2026-11-18 #3 aaaaaaa" in said and "bbbbbbb" not in said
 
     class TestMerge:
         """`merge`"""
