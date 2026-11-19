@@ -274,23 +274,15 @@ class TestResultsABenchmarkHarnessWrites:
     class TestGivenTheGlossary:
         """given the glossary
 
-        `bench/glossary.json` says in a sentence what each stage, each kind of row and each benchmark input is, and a
-        harness writes the sentence as the row's `extra`.
+        `bench/glossary.json` says in a sentence what each kind of row is, and a harness writes the sentence as the
+        row's `extra`. A stage's sentence is its engine's, and an input's is its adapter's.
         """
 
         def test_gives_every_entry_a_sentence(self):
             glossary = json.loads((ROOT / "bench" / "glossary.json").read_text(encoding="utf-8"))
-            assert set(glossary) == {"stages", "rows", "inputs"}
-            for section in glossary.values():
-                for name, sentence in section.items():
-                    assert sentence.rstrip(")").endswith("."), name
-
-        def test_names_each_stage_as_a_segment_of_a_result_name(self):
-            glossary = json.loads((ROOT / "bench" / "glossary.json").read_text(encoding="utf-8"))
-            for stage in glossary["stages"]:
-                document = copy.deepcopy(EXAMPLE)
-                document["results"] = [{**document["results"][0], "name": f"an-input/stage/{stage}"}]
-                assert not list(VALIDATOR.iter_errors(document)), stage
+            assert set(glossary) == {"rows"}
+            for name, sentence in glossary["rows"].items():
+                assert sentence.rstrip(")").endswith("."), name
 
 
 class TestFilesOfTheSpecificationThatParse:
