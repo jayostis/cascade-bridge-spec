@@ -143,6 +143,22 @@ def commit_keyed_by_a_record_key(document):
     return ("commit",), "pattern"
 
 
+def a_digest_that_is_not_64_hex(document):
+    index = at(document, "entries-x10/output/graph")
+    document["results"][index]["sha256"] = "0123456789ABCDEF"
+    return ("results", index, "sha256"), "pattern"
+
+
+def a_digest_on_a_time(document):
+    document["results"][0]["sha256"] = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+    return ("results", 0, "kind"), "const"
+
+
+def an_empty_cpu(document):
+    document["env"]["cpu"] = ""
+    return ("env", "cpu"), "minLength"
+
+
 def unknown_entry_member(document):
     document["results"][0]["note"] = "x"
     return ("results", 0), "additionalProperties"
@@ -175,6 +191,9 @@ REFUSED = {
     "a refusal that is a cost": refusal_as_a_cost,
     "a timeout in a count": timeout_in_a_count,
     "a commit keyed by a record key": commit_keyed_by_a_record_key,
+    "a digest that is not 64 lower-case hex digits": a_digest_that_is_not_64_hex,
+    "a digest on a time": a_digest_on_a_time,
+    "an empty CPU model": an_empty_cpu,
     "an unknown entry member": unknown_entry_member,
 }
 
@@ -183,7 +202,8 @@ class TestResultsABenchmarkHarnessWrites:
     """Results a benchmark harness writes · bench/result.schema.json, fixtures/bench/result.json
 
     A benchmark harness times an engine on the benchmark inputs and writes one JSON file: each result with its name,
-    kind, unit and value, the commit of each repository measured, and the machine. The schema refuses a file a reader
+    kind, unit and value, the commit of each repository measured, and the machine, its CPU model included. An output may carry the SHA-256
+    of its canonical form, which is how two engines are shown to have written the same thing. The schema refuses a file a reader
     could misread, and the example beside it is a file that passes.
     """
 
@@ -225,7 +245,7 @@ class TestResultsABenchmarkHarnessWrites:
         """given the example changed in one way
 
         A result's kind is `clock` (a time, which carries its samples and their range), `cost` or `output`; its unit is
-        `s`, `By` or `{count}`. An input that timed out is an output in seconds named `<input>/timeout/<what>`, and an
+        `s`, `By`, `{count}` or `{count}/s`. An input that timed out is an output in seconds named `<input>/timeout/<what>`, and an
         input the engine refused is an output counted once, named `<input>/refused/<failure kind>`. A keyword is the
         word of JSON Schema that states a rule, such as `enum`, `required` or `pattern`.
         """
