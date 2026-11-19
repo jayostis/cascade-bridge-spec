@@ -101,9 +101,9 @@ bench() {
 
 run() {
   bench "" "$SAMPLES" "$OUT/default"
-  # The reference: the general evaluator alone, one sample, for the digests it writes.
+  # The reference: the general evaluator alone, one convert, for the digests it writes.
   if [ "${REFERENCE:-true}" = true ]; then
-    bench spareval 1 "$OUT/reference" --timeout 3600 || echo "::warning::the reference executor's run failed; nothing was checked for equivalence"
+    bench spareval 1 "$OUT/reference" --timeout 3600 --digest-only || echo "::warning::the reference executor's run failed; nothing was checked for equivalence"
   fi
 }
 
