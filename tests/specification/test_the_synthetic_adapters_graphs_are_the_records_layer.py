@@ -62,7 +62,9 @@ class JsonAdapter:
         return dict(node)
 
 
-ZONED = re.compile(r"T[0-9:.]+(Z|[+-][0-9]{2}:[0-9]{2})$")
+ZONED = re.compile(
+    r"^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]((0[0-9]|1[0-3]):[0-5][0-9]|14:00))$"
+)
 ADAPTERS = {"synthetic-adapter": XmlAdapter, "synthetic-json-adapter": JsonAdapter}
 
 
@@ -334,7 +336,9 @@ class TestTheGraphABridgeWritesForADocument:
                     assert expected.value(arrival, PAV.version) is None
 
         @pytest.mark.parametrize(("adapter", "test"), CONVERSIONS)
-        def test_states_when_the_source_last_updated_a_record_only_as_a_date_time_with_its_time_zone(self, adapter, test):
+        def test_states_when_the_source_last_updated_a_record_only_as_a_date_time_with_its_time_zone(
+            self, adapter, test
+        ):
             """states when the source last updated a record in the source's own characters, as a date-time with its time zone, and nothing where the source states less"""
             expected = expected_of(adapter, test)
             written = expected_file_of(adapter, test).read_text(encoding="utf-8")
@@ -355,6 +359,8 @@ class TestTheGraphABridgeWritesForADocument:
             [
                 pytest.param("2026-08-01", False, id="a date"),
                 pytest.param("2026-08-01T09:30:00", False, id="a date-time with no time zone"),
+                pytest.param("2026-08-01T9Z", False, id="a time not written as hh:mm:ss"),
+                pytest.param("2026-08-01T09:30:00+14:30", False, id="an offset past fourteen hours"),
                 pytest.param("2026-08-01T09:30:00.000+01:00", True, id="a date-time with an offset"),
                 pytest.param("2026-08-01T08:30:00Z", True, id="a date-time in UTC"),
             ],
@@ -374,13 +380,17 @@ class TestTheGraphABridgeWritesForADocument:
     class TestGivenTheSyntheticJsonAdaptersExpectedGraphs:
         """given the synthetic JSON adapter's expected graphs"""
 
-        def test_hold_a_record_stating_a_last_update_with_its_time_zone_and_one_stating_a_date_alone(self):
+        def test_holds_a_record_stating_a_last_update_with_its_time_zone_and_one_stating_a_date_alone(self):
+            """holds a record stating a last update with its time zone and one stating a date alone"""
             stated = [
-                adapter.selected(input_of(adapter, test), selector_of(expected_of(adapter, test), record))["lastUpdated"]
+                adapter.selected(input_of(adapter, test), selector_of(expected_of(adapter, test), record))[
+                    "lastUpdated"
+                ]
                 for adapter, test in (param.values for param in CONVERSIONS)
                 if adapter is JsonAdapter
                 for record in expected_of(adapter, test).subjects(RDF.type, EX.Record)
-                if "lastUpdated" in adapter.selected(input_of(adapter, test), selector_of(expected_of(adapter, test), record))
+                if "lastUpdated"
+                in adapter.selected(input_of(adapter, test), selector_of(expected_of(adapter, test), record))
             ]
             assert {bool(ZONED.search(updated)) for updated in stated} == {True, False}
 

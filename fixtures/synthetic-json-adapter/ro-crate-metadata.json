@@ -326,8 +326,8 @@
       "@type": "File",
       "name": "Mapping",
       "encodingFormat": "application/sparql-query",
-      "contentSize": "2820",
-      "sha256": "f61f8b643cb0c727451b0308f9bf8d137d8c21d3878212979b78c3ee39762d9e",
+      "contentSize": "2931",
+      "sha256": "637c321c433b72439e8c3eb2187f6f65dba4a6c8124d889b2c1ec9fbe9909e07",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       }
@@ -337,8 +337,8 @@
       "@type": "File",
       "name": "Findings query",
       "encodingFormat": "application/sparql-query",
-      "contentSize": "1228",
-      "sha256": "2fcce71ed266a0f2990fccf4d587845ea821d7370991d9339bccb56bcd9f8b00",
+      "contentSize": "1339",
+      "sha256": "59bae38876d4453cae5d221e37d639813926acd534a97f28a9bdd5f8285026eb",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       }
