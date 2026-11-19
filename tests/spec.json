@@ -10,7 +10,7 @@
     "Commands an engine offers · engine/command.md, fixtures/fake-engine/engine.py",
     "Manifests that list the vectors · fixtures/*/manifest.ttl, shapes/bridge.shapes.ttl",
     "Terms of the Bridge vocabulary · vocab/bridge.ttl",
-    "Results a benchmark harness writes · bench/result.schema.json, fixtures/bench/result.json",
+    "Results a benchmark harness writes · bench/result.schema.json, bench/glossary.json, fixtures/bench/result.json",
     "Checking an adapter package against the profile · rocrate-validator, adapter/profile/must/",
     "What an adapter's crate names · adapter/profile/must/adapter.ttl",
     "Envelopes a source document arrives in · adapter/profile/must/envelope.ttl",
