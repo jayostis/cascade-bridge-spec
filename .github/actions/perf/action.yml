@@ -97,6 +97,36 @@ runs:
         GH_TOKEN: ${{ inputs.token }}
       run: bash "${GITHUB_ACTION_PATH}/perf.sh" publish
 
+    # The history page: one chart for each measurement over the runs, from the same file, kept in history/ on the
+    # perf-data branch, which GitHub Pages serves from. Alerts, comments and failures are all off.
+    - name: the history page's data
+      if: inputs.publish == 'true'
+      shell: bash
+      env:
+        REPOSITORY_PATH: ${{ inputs.path }}
+        OUT: ${{ runner.temp }}/perf
+        SPECIFICATION: ${{ github.action_path }}/../../..
+      run: bash "${GITHUB_ACTION_PATH}/perf.sh" export
+
+    - name: the history page
+      if: inputs.publish == 'true'
+      uses: benchmark-action/github-action-benchmark@v1
+      with:
+        name: Bridge performance
+        tool: customSmallerIsBetter
+        output-file-path: ${{ runner.temp }}/perf/history.json
+        gh-pages-branch: perf-data
+        gh-repository: github.com/${{ github.repository }}
+        benchmark-data-dir-path: history
+        github-token: ${{ inputs.token }}
+        auto-push: true
+        ref: ${{ github.sha }}
+        max-items-in-chart: 400
+        comment-always: false
+        comment-on-alert: false
+        summary-always: false
+        fail-on-alert: false
+
     - name: comment the comparison with main
       if: inputs.publish != 'true' && github.event.pull_request.number
       shell: bash

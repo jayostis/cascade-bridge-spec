@@ -4,6 +4,7 @@
 //   node compare.mjs compare <before.json> <after.json> [--name <glob>]
 //   node compare.mjs history <directory | branch> --name <glob> [--since 7d] [--repository <git checkout>]
 //   node compare.mjs merge <file.json>... > merged.json
+//   node compare.mjs export <file.json> > benchmarks.json
 //
 // `compare` first reads each input's `<input>/output/*` digests. Where they differ the input is
 // NOT EQUIVALENT: its rows show no change, and the exit status is 1. Where one side has no digest
@@ -15,7 +16,8 @@ import { join } from "node:path";
 
 const USAGE = `usage: node compare.mjs compare <before.json> <after.json> [--name <glob>]
        node compare.mjs history <directory | branch> --name <glob> [--since <n>h|<n>d|<n>w|<date>] [--repository <git checkout>]
-       node compare.mjs merge <file.json>...`;
+       node compare.mjs merge <file.json>...
+       node compare.mjs export <file.json>`;
 
 class Refusal extends Error {}
 
@@ -272,11 +274,34 @@ function merge(argv) {
   return 0;
 }
 
+// What github-action-benchmark's customSmallerIsBetter reads: one entry for each row worth a chart over time.
+// The rows left out are exact counts that say little over time, and the failures, whose value is no measure.
+const NOT_CHARTED = /\/(query-rows|output-bytes|memory\.grow|timeout|refused)\/|\/(index-built|load\/files-read|load\/missing-files)$/;
+
+function exported(argv) {
+  if (argv.length !== 1) throw new Refusal(USAGE);
+  const charted = readFile(argv[0])
+    .results.filter(({ name }) => !NOT_CHARTED.test(name))
+    .map(({ name, unit, value, range, extra, sha256 }) => ({
+      name,
+      unit,
+      value,
+      ...(range === undefined ? {} : { range }),
+      ...(extra === undefined && sha256 === undefined
+        ? {}
+        : { extra: [extra, sha256 === undefined ? undefined : `sha256 ${sha256}`].filter(Boolean).join(" ") }),
+    }));
+  process.stdout.write(`${JSON.stringify(charted, null, 2)}
+`);
+  return 0;
+}
+
 try {
   const [command, ...rest] = process.argv.slice(2);
   if (command === "compare") process.exitCode = compare(rest);
   else if (command === "history") process.exitCode = history(rest);
   else if (command === "merge") process.exitCode = merge(rest);
+  else if (command === "export") process.exitCode = exported(rest);
   else throw new Refusal(USAGE);
 } catch (error) {
   process.stderr.write(`compare: ${error instanceof Error ? error.message : String(error)}\n`);

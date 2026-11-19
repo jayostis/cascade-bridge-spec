@@ -1,6 +1,6 @@
 #!/bin/bash
 # The Bridge's performance file for one run, and what is done with it. Called by action.yml, one
-# command at a time: package, run, summary, publish, comment. Reads only the environment it is given.
+# command at a time: package, run, summary, publish, export, comment. Reads only the environment it is given.
 #
 #   REPOSITORY_PATH   the repository under test, a directory named as its repository; its counterparts are beside it
 #   WHICH             pull-requests | all: the inputs of each adapter's bench/manifest.json to measure
@@ -86,6 +86,8 @@ bench() {
   shift 3
   [ "$WHICH" = pull-requests ] && flags+=(--pull-requests)
   [ -n "$executor" ] && flags+=(--executor "$executor")
+  # The glossary's sentences are the rows' `extra`; an engine from before the option has none.
+  grep -q -- '--glossary' "$engine/hosts/node/bench.mjs" && flags+=(--glossary "$SPECIFICATION/bench/glossary.json")
   mkdir -p "$directory"
   for adapter in $(adapters); do
     name=$(basename "$adapter")
@@ -239,6 +241,7 @@ case "${1:-}" in
   run) run ;;
   summary) equivalence; summary ;;
   publish) publish ;;
+  export) $compare export "$OUT/default/run.json" > "$OUT/history.json" ;;
   comment) equivalence; comment ;;
-  *) echo "usage: perf.sh package|run|summary|publish|comment" >&2; exit 2 ;;
+  *) echo "usage: perf.sh package|run|summary|publish|export|comment" >&2; exit 2 ;;
 esac

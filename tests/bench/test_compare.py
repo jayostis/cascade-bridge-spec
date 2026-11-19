@@ -156,3 +156,18 @@ class TestComparingAndListingResultFiles:
         def test_refuses_two_files_that_both_hold_a_name(self, tmp_path):
             path = written(tmp_path, "a.json", result(10.0))
             assert run("merge", path, path).returncode == 2
+
+    class TestExport:
+        """`export`"""
+
+        def test_writes_the_rows_worth_a_chart_as_entries_of_custom_smaller_is_better(self, tmp_path):
+            document = result(10.0)
+            document["results"].append({"name": "x10/query-rows/a.rq", "unit": "{count}", "value": 3, "kind": "output"})
+            run_ = run("export", written(tmp_path, "a.json", document))
+            names = [entry["name"] for entry in json.loads(run_.stdout)]
+            assert names == ["x10/convert/first", "x10/triples", "x10/output/graph"]
+
+        def test_carries_the_range_and_puts_the_digest_in_the_extra(self, tmp_path):
+            entries = json.loads(run("export", written(tmp_path, "a.json", result(10.0))).stdout)
+            assert entries[0]["range"] == "10.0-10.0"
+            assert entries[2]["extra"] == f"sha256 {SHA}"
