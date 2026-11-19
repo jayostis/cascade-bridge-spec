@@ -14,14 +14,28 @@ CONSTRUCT {
       oa:hasSelector [
         a oa:FragmentSelector ;
         dcterms:conformsTo <https://www.rfc-editor.org/rfc/rfc6901> ;
-        rdf:value "/note"
+        rdf:value ?pointer
       ]
     ] ;
-    oa:hasBody ex:no-term-for-a-free-text-note ;
+    oa:hasBody ?gap ;
     oa:motivatedBy oa:classifying ;
-    sh:resultSeverity sh:Info .
+    sh:value ?written ;
+    sh:resultSeverity ?severity .
 }
 WHERE {
-  ?record a fx:root ;
-    xyz:note ?note .
+  ?record a fx:root .
+  {
+    ?record xyz:note ?note .
+    BIND("/note" AS ?pointer)
+    BIND(ex:no-term-for-a-free-text-note AS ?gap)
+    BIND(sh:Info AS ?severity)
+  }
+  UNION
+  {
+    ?record xyz:lastUpdated ?written .
+    FILTER(!REGEX(?written, "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]((0[0-9]|1[0-3]):[0-5][0-9]|14:00))$"))
+    BIND("/lastUpdated" AS ?pointer)
+    BIND(ex:a-last-update-with-no-time-zone AS ?gap)
+    BIND(sh:Warning AS ?severity)
+  }
 }

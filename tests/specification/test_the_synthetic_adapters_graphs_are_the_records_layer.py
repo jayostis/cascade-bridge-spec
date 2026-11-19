@@ -1,5 +1,6 @@
 import functools
 import json
+import re
 import xml.etree.ElementTree as ElementTree
 from pathlib import Path
 from urllib.parse import unquote
@@ -61,6 +62,9 @@ class JsonAdapter:
         return dict(node)
 
 
+ZONED = re.compile(
+    r"^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]((0[0-9]|1[0-3]):[0-5][0-9]|14:00))$"
+)
 ADAPTERS = {"synthetic-adapter": XmlAdapter, "synthetic-json-adapter": JsonAdapter}
 
 
@@ -332,48 +336,63 @@ class TestTheGraphABridgeWritesForADocument:
                     assert expected.value(arrival, PAV.version) is None
 
         @pytest.mark.parametrize(("adapter", "test"), CONVERSIONS)
-        def test_states_when_the_source_last_updated_a_record_in_the_sources_own_characters(self, adapter, test):
-            """states when the source last updated a record in the source's own characters, as a date or a date-time"""
+        def test_states_when_the_source_last_updated_a_record_only_as_a_date_time_with_its_time_zone(
+            self, adapter, test
+        ):
+            """states when the source last updated a record in the source's own characters, as a date-time with its time zone, and nothing where the source states less"""
             expected = expected_of(adapter, test)
             written = expected_file_of(adapter, test).read_text(encoding="utf-8")
             for record in expected.subjects(RDF.type, EX.Record):
                 updated = adapter.selected(input_of(adapter, test), selector_of(expected, record)).get("lastUpdated")
-                if updated is not None:
-                    stated = "dateTime" if "T" in updated else "date"
-                    assert expected.value(arrival_of(expected, record), PAV.lastUpdateOn).datatype == XSD[stated]
-                    assert f'pav:lastUpdateOn "{updated}"^^xsd:{stated}' in written
+                stated = expected.value(arrival_of(expected, record), PAV.lastUpdateOn)
+                if updated is not None and ZONED.search(updated):
+                    assert stated.datatype == XSD.dateTime
+                    assert f'pav:lastUpdateOn "{updated}"^^xsd:dateTime' in written
+                else:
+                    assert stated is None
 
     class TestWhenTheSyntheticJsonAdaptersMappingRunsOnARecord:
         """when the synthetic JSON adapter's mapping runs on a record"""
 
         @pytest.mark.parametrize(
-            ("updated", "datatype"),
+            ("updated", "carried"),
             [
-                pytest.param("2026-08-01", XSD.date, id="a date"),
-                pytest.param("2026-08-01T09:30:00.000+01:00", XSD.dateTime, id="a date-time"),
+                pytest.param("2026-08-01", False, id="a date"),
+                pytest.param("2026-08-01T09:30:00", False, id="a date-time with no time zone"),
+                pytest.param("2026-08-01T9Z", False, id="a time not written as hh:mm:ss"),
+                pytest.param("2026-08-01T09:30:00+14:30", False, id="an offset past fourteen hours"),
+                pytest.param("2026-08-01T09:30:00.000+01:00", True, id="a date-time with an offset"),
+                pytest.param("2026-08-01T08:30:00Z", True, id="a date-time in UTC"),
             ],
         )
-        def test_types_a_last_update_as_the_date_or_the_date_time_the_record_states(self, updated, datatype):
-            """types a last update as the date or the date-time the record states
+        def test_writes_a_last_update_only_as_a_date_time_with_its_time_zone(self, updated, carried):
+            """writes a last update as the xsd:dateTime the record states only where it states its time zone
 
             The adapter's `example-table.rq` and `example-record.rq`, run by rdflib over the reference lift of one
             record.
             """
             record = {"accession": "EX000199", "version": 1, "lastUpdated": updated}
             mapped = mapped_by_the_synthetic_json_adapter(record)
-            assert set(mapped.objects(None, PAV.lastUpdateOn)) == {Literal(updated, datatype=datatype)}
+            assert set(mapped.objects(None, PAV.lastUpdateOn)) == (
+                {Literal(updated, datatype=XSD.dateTime)} if carried else set()
+            )
 
     class TestGivenTheSyntheticJsonAdaptersExpectedGraphs:
         """given the synthetic JSON adapter's expected graphs"""
 
-        def test_states_a_last_update_as_a_date_in_one_arrival_and_as_a_date_time_in_another(self):
-            stated = {
-                value.datatype
+        def test_holds_a_record_stating_a_last_update_with_its_time_zone_and_one_stating_a_date_alone(self):
+            """holds a record stating a last update with its time zone and one stating a date alone"""
+            stated = [
+                adapter.selected(input_of(adapter, test), selector_of(expected_of(adapter, test), record))[
+                    "lastUpdated"
+                ]
                 for adapter, test in (param.values for param in CONVERSIONS)
                 if adapter is JsonAdapter
-                for value in expected_of(JsonAdapter, test).objects(None, PAV.lastUpdateOn)
-            }
-            assert stated == {XSD.date, XSD.dateTime}
+                for record in expected_of(adapter, test).subjects(RDF.type, EX.Record)
+                if "lastUpdated"
+                in adapter.selected(input_of(adapter, test), selector_of(expected_of(adapter, test), record))
+            ]
+            assert {bool(ZONED.search(updated)) for updated in stated} == {True, False}
 
         def test_holds_a_record_inside_another_and_a_record_that_is_its_documents_value(self):
             """holds a record inside another and a record that is its document's value"""

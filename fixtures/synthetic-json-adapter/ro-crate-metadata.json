@@ -326,8 +326,8 @@
       "@type": "File",
       "name": "Mapping",
       "encodingFormat": "application/sparql-query",
-      "contentSize": "2794",
-      "sha256": "d0ecfa8f532d6f235e9fd425f08ff7083361e1113aefd46822c36de32dd4e598",
+      "contentSize": "2931",
+      "sha256": "637c321c433b72439e8c3eb2187f6f65dba4a6c8124d889b2c1ec9fbe9909e07",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       }
@@ -337,8 +337,8 @@
       "@type": "File",
       "name": "Findings query",
       "encodingFormat": "application/sparql-query",
-      "contentSize": "854",
-      "sha256": "96029f3b935115645fc02676fd51ef0faaed521db0f515d644f7f6799bb61a49",
+      "contentSize": "1339",
+      "sha256": "59bae38876d4453cae5d221e37d639813926acd534a97f28a9bdd5f8285026eb",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       }
@@ -392,8 +392,8 @@
       "@type": "File",
       "name": "Gap scheme",
       "encodingFormat": "text/turtle",
-      "contentSize": "767",
-      "sha256": "76185e4373b4d58d8d08ade075a8b6a295b6abc0b06d4e567bd05783d105e629",
+      "contentSize": "1038",
+      "sha256": "df80316fc7e25aa1140aca4bb5fc4a6b2aa80543e5d8f198fc66d65d000aa0ef",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       }
@@ -403,8 +403,8 @@
       "@type": "File",
       "name": "Source accounting",
       "encodingFormat": "text/turtle",
-      "contentSize": "1957",
-      "sha256": "8675e04bb95bc1bb28b8f2a54289b34332246451e19eafc620fdf65f626a3ee3",
+      "contentSize": "2018",
+      "sha256": "2350065eacbf54d66818deaac800a827bfbfae9ab1108e1412f57548d081666a",
       "license": {
         "@id": "https://spdx.org/licenses/Apache-2.0"
       }
@@ -689,8 +689,8 @@
       "@type": "File",
       "name": "Expected graph for json-0006",
       "encodingFormat": "text/turtle",
-      "contentSize": "3848",
-      "sha256": "78c721ded903cd280ffbd548ee463bd26982f47b0834674fa37647df3e9cab20",
+      "contentSize": "3804",
+      "sha256": "85cad23ce2c8c688357d3e71ab03a83fb161e02da5ea173e7484570c0987ebce",
       "isBasedOn": {
         "@id": "fixtures/in/json-0006.json"
       },
@@ -703,8 +703,8 @@
       "@type": "File",
       "name": "Expected findings for json-0006",
       "encodingFormat": "text/turtle",
-      "contentSize": "1322",
-      "sha256": "e051950cb3ac7e90d5c6ba3262dbf61dc7d6905dcde176a51bf56989413ebadf",
+      "contentSize": "1842",
+      "sha256": "955462f86f07b5409a352c872e344951ce68263458dd895cbfcf11233f30c9a3",
       "isBasedOn": {
         "@id": "fixtures/in/json-0006.json"
       },

@@ -33,3 +33,18 @@
   oa:motivatedBy oa:classifying ;
   sh:value "/note" ;
   sh:resultSeverity sh:Info .
+
+[] a oa:Annotation ;
+  oa:hasTarget [
+    oa:hasSource <../in/json-0006.json> ;
+    oa:hasSelector [
+      a oa:FragmentSelector ;
+      dcterms:conformsTo <https://www.rfc-editor.org/rfc/rfc6901> ;
+      rdf:value "/records/1" ;
+      oa:refinedBy [ a oa:FragmentSelector ; dcterms:conformsTo <https://www.rfc-editor.org/rfc/rfc6901> ; rdf:value "/lastUpdated" ]
+    ]
+  ] ;
+  oa:hasBody ex:a-last-update-with-no-time-zone ;
+  oa:motivatedBy oa:classifying ;
+  sh:value "2026-07-15" ;
+  sh:resultSeverity sh:Warning .
