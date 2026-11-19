@@ -73,6 +73,7 @@
     "Checks of the fake engine's own output · fixtures/fake-engine/engine.py",
     "Repeating a document's entries for a benchmark input · bench/generate/repeat_entries.py",
     "Making a Synthea person's record safe to commit · bench/generate/synthea_person.py",
+    "Comparing and listing result files · bench/compare.mjs",
     "Tripwire: no sentence written on a finding · shapes/, vocab/, adapter/, fixtures/",
     "Checks of the suite's own checks · tests/compatibility/",
     "Tripwire: the synthetic adapter names an ontology and a shapes file of the Cascade vocabulary · fixtures/synthetic-adapter/ro-crate-metadata.json"
