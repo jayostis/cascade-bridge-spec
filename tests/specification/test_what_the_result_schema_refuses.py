@@ -46,6 +46,11 @@ def unit_ms(document):
     return ("results", 0, "unit"), "enum"
 
 
+def unit_of_a_rate(document):
+    document["results"][0]["unit"] = "{count}/s"
+    return ("results", 0, "unit"), "enum"
+
+
 def negative_value(document):
     document["results"][0]["value"] = -1
     return ("results", 0, "value"), "minimum"
@@ -143,6 +148,22 @@ def commit_keyed_by_a_record_key(document):
     return ("commit",), "pattern"
 
 
+def a_digest_that_is_not_64_hex(document):
+    index = at(document, "entries-x10/output/graph")
+    document["results"][index]["sha256"] = "0123456789ABCDEF"
+    return ("results", index, "sha256"), "pattern"
+
+
+def a_digest_on_a_time(document):
+    document["results"][0]["sha256"] = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+    return ("results", 0, "kind"), "const"
+
+
+def an_empty_cpu(document):
+    document["env"]["cpu"] = ""
+    return ("env", "cpu"), "minLength"
+
+
 def unknown_entry_member(document):
     document["results"][0]["note"] = "x"
     return ("results", 0), "additionalProperties"
@@ -154,6 +175,7 @@ REFUSED = {
     "a `clock` without samples": a_clock_without("samples"),
     "a `clock` without a range": a_clock_without("range"),
     "a unit of ms": unit_ms,
+    "a unit of a rate": unit_of_a_rate,
     "a one-segment name": renamed("convert"),
     "a four-segment name": renamed("entries-x10/convert/first/again"),
     "an upper-case segment": renamed("entries-x10/Convert/first"),
@@ -175,15 +197,19 @@ REFUSED = {
     "a refusal that is a cost": refusal_as_a_cost,
     "a timeout in a count": timeout_in_a_count,
     "a commit keyed by a record key": commit_keyed_by_a_record_key,
+    "a digest that is not 64 lower-case hex digits": a_digest_that_is_not_64_hex,
+    "a digest on a time": a_digest_on_a_time,
+    "an empty CPU model": an_empty_cpu,
     "an unknown entry member": unknown_entry_member,
 }
 
 
 class TestResultsABenchmarkHarnessWrites:
-    """Results a benchmark harness writes · bench/result.schema.json, fixtures/bench/result.json
+    """Results a benchmark harness writes · bench/result.schema.json, bench/glossary.json, fixtures/bench/result.json
 
     A benchmark harness times an engine on the benchmark inputs and writes one JSON file: each result with its name,
-    kind, unit and value, the commit of each repository measured, and the machine. The schema refuses a file a reader
+    kind, unit and value, the commit of each repository measured, and the machine, its CPU model included. An output may carry the SHA-256
+    of its canonical form, which is how two engines are shown to have written the same thing. The schema refuses a file a reader
     could misread, and the example beside it is a file that passes.
     """
 
@@ -244,6 +270,19 @@ class TestResultsABenchmarkHarnessWrites:
                 where == path and validator == keyword and (not member or f"'{member}'" in message)
                 for where, validator, message in refusals
             ), refusals
+
+    class TestGivenTheGlossary:
+        """given the glossary
+
+        `bench/glossary.json` says in a sentence what each kind of row is, and a harness writes the sentence as the
+        row's `extra`. A stage's sentence is its engine's, and an input's is its adapter's.
+        """
+
+        def test_gives_every_entry_a_sentence(self):
+            glossary = json.loads((ROOT / "bench" / "glossary.json").read_text(encoding="utf-8"))
+            assert set(glossary) == {"rows"}
+            for name, sentence in glossary["rows"].items():
+                assert sentence.rstrip(")").endswith("."), name
 
 
 class TestFilesOfTheSpecificationThatParse:

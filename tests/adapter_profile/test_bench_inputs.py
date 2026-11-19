@@ -57,6 +57,10 @@ REFUSED = {
         "names no bridge:Envelope of the crate; wanted one of ro-crate-metadata.json#envelope-record, "
         "ro-crate-metadata.json#envelope-set",
     ),
+    "an empty description": (
+        with_member("description", ""),
+        "inputs[0].description: '' should be non-empty; wanted a sentence saying what the input is",
+    ),
     "onPullRequests yes": (
         with_member("onPullRequests", "yes"),
         "inputs[0].onPullRequests: 'yes' is not of type 'boolean'; wanted true or false",

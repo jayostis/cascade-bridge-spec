@@ -30,6 +30,7 @@ WANTED = {
     "sha256": "64 lower-case hexadecimal digits",
     "bytes": "a whole number of bytes, 0 or more",
     "envelope": "a non-empty reference resolved against ro-crate-metadata.json, as ro-crate-metadata.json#envelope-name",
+    "description": "a sentence saying what the input is, for a reader who has not seen it",
     "measures": "at least one distinct lower-case segment, none of them timeout or refused",
     "onPullRequests": "true or false",
     "timeoutSeconds": "a whole number of seconds, 1 or more",

@@ -3,6 +3,8 @@
     "os": "Ubuntu 24.04",
     "runner": "local",
     "cpus": 8,
+    "cpu": "AMD EPYC 7763 64-Core Processor",
+    "otherLoad": "none known",
     "node": "24.16.0",
     "host": "node",
     "profile": "wasm"
@@ -18,6 +20,9 @@
     { "name": "entries-x10/query-time/result-findings.rq", "unit": "s", "value": 1.2, "kind": "clock", "samples": 5, "range": "1.1-1.4" },
     { "name": "entries-x10/output-bytes", "unit": "By", "value": 1204332, "kind": "output" },
     { "name": "entries-x10/findings", "unit": "{count}", "value": 4097, "kind": "output", "extra": "up to blank-node names" },
+    { "name": "entries-x10/stage/output-validation", "unit": "s", "value": 2.5, "kind": "clock", "samples": 1, "range": "2.5-2.5" },
+    { "name": "fresh-first-screen-synthea-10y/stage/pod.match", "unit": "s", "value": 0.4, "kind": "clock", "samples": 3, "range": "0.3-0.5" },
+    { "name": "entries-x10/output/graph", "unit": "{count}", "value": 48211, "kind": "output", "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", "extra": "canonical N-Quads, RDFC-1.0" },
     { "name": "package/wasm-bytes/gzip", "unit": "By", "value": 1655640, "kind": "cost" },
     { "name": "entries-x50/timeout/convert", "unit": "s", "value": 1800, "kind": "output" },
     { "name": "hostile-deep/refused/documentFailure", "unit": "{count}", "value": 1, "kind": "output", "extra": "nesting deeper than 5000" }

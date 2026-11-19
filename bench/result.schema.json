@@ -14,6 +14,8 @@
         "os": { "type": "string", "minLength": 1 },
         "runner": { "type": "string", "minLength": 1 },
         "cpus": { "type": "integer", "minimum": 1 },
+        "cpu": { "type": "string", "minLength": 1 },
+        "otherLoad": { "type": "string", "minLength": 1 },
         "node": { "type": ["string", "null"], "pattern": "^\\d+\\.\\d+\\.\\d+$" },
         "host": { "enum": ["node", "browser", "native"] },
         "profile": { "type": ["string", "null"], "minLength": 1 }
@@ -59,9 +61,14 @@
         "kind": { "enum": ["cost", "output", "clock"] },
         "samples": { "type": "integer", "minimum": 1 },
         "range": { "type": "string", "pattern": "^\\d+(\\.\\d+)?-\\d+(\\.\\d+)?$" },
-        "extra": { "type": "string" }
+        "extra": { "type": "string" },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
       },
       "allOf": [
+        {
+          "if": { "required": ["sha256"] },
+          "then": { "properties": { "kind": { "const": "output" } } }
+        },
         {
           "if": { "properties": { "kind": { "const": "clock" } }, "required": ["kind"] },
           "then": { "required": ["samples", "range"] }

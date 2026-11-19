@@ -10,7 +10,7 @@
     "Commands an engine offers · engine/command.md, fixtures/fake-engine/engine.py",
     "Manifests that list the vectors · fixtures/*/manifest.ttl, shapes/bridge.shapes.ttl",
     "Terms of the Bridge vocabulary · vocab/bridge.ttl",
-    "Results a benchmark harness writes · bench/result.schema.json, fixtures/bench/result.json",
+    "Results a benchmark harness writes · bench/result.schema.json, bench/glossary.json, fixtures/bench/result.json",
     "Checking an adapter package against the profile · rocrate-validator, adapter/profile/must/",
     "What an adapter's crate names · adapter/profile/must/adapter.ttl",
     "Envelopes a source document arrives in · adapter/profile/must/envelope.ttl",
@@ -73,6 +73,7 @@
     "Checks of the fake engine's own output · fixtures/fake-engine/engine.py",
     "Repeating a document's entries for a benchmark input · bench/generate/repeat_entries.py",
     "Making a Synthea person's record safe to commit · bench/generate/synthea_person.py",
+    "Comparing and listing result files · bench/compare.mjs",
     "Tripwire: no sentence written on a finding · shapes/, vocab/, adapter/, fixtures/",
     "Checks of the suite's own checks · tests/compatibility/",
     "Tripwire: the synthetic adapter names an ontology and a shapes file of the Cascade vocabulary · fixtures/synthetic-adapter/ro-crate-metadata.json"
