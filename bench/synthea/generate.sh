@@ -11,6 +11,9 @@ jar_sha256=ed43c20ad40ba5c3bc724503a5af032715fe3c491620b766148e7c2361e6ecc1
 jar_url=https://github.com/synthetichealth/synthea/releases/download/v4.0.0/synthea-with-dependencies.jar
 blanche_hermiston=18a08f42-e19d-3072-8737-90a26ea0cb6d
 xochitl_corkery=a8b18ea4-466a-da66-fd0e-20dbd1de56c5
+justa_moore=ab74ec30-d9c2-144f-0a0d-fd3dd6c0760a
+dona_okuneva=3541f47c-010b-2ead-6d13-bc2c69ada25c
+cole_gaylord=4f159b52-15d2-04bd-8ba7-69bfa3dfa6b5
 
 mkdir -p "$out"
 started=$(date +%s)
@@ -31,3 +34,7 @@ echo "synthea seconds $(($(date +%s) - started))"
 
 $python "$here/../generate/synthea_person.py" "$out/ten-years" "$blanche_hermiston" "$out/synthea-10y-18a08f42.xml.gz"
 $python "$here/../generate/synthea_person.py" "$out/lifetime" "$xochitl_corkery" "$out/synthea-lifetime-a8b18ea4.json.gz"
+$python "$here/../generate/synthea_person.py" "$out/lifetime" "$justa_moore" "$out/synthea-lifetime-ab74ec30.json.gz"
+$python "$here/../generate/synthea_person.py" "$out/lifetime" "$dona_okuneva" "$out/synthea-lifetime-3541f47c.json.gz"
+$python "$here/../generate/synthea_person.py" "$out/lifetime" "$cole_gaylord" "$out/synthea-lifetime-4f159b52.json.gz"
+$python "$here/../generate/synthea_entries.py" "$out/lifetime"
