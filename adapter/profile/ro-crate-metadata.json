@@ -29,50 +29,50 @@
       "description": "The RO-Crate 1.2 profile a Cascade Bridge Adapter's crate names in conformsTo. DRAFT.",
       "hasResource": [
         {
-          "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/shapes/bridge.shapes.ttl"
+          "@id": "https://github.com/the-cascade-protocol/cascade-bridge-spec/blob/main/shapes/bridge.shapes.ttl"
         },
         {
-          "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/shapes/concept-map.shapes.ttl"
+          "@id": "https://github.com/the-cascade-protocol/cascade-bridge-spec/blob/main/shapes/concept-map.shapes.ttl"
         },
         {
-          "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/shapes/gap-scheme.shapes.ttl"
+          "@id": "https://github.com/the-cascade-protocol/cascade-bridge-spec/blob/main/shapes/gap-scheme.shapes.ttl"
         },
         {
-          "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/bench/manifest.schema.json"
+          "@id": "https://github.com/the-cascade-protocol/cascade-bridge-spec/blob/main/bench/manifest.schema.json"
         },
         {
-          "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/vocab/bridge.ttl"
+          "@id": "https://github.com/the-cascade-protocol/cascade-bridge-spec/blob/main/vocab/bridge.ttl"
         }
       ],
       "hasPart": [
         {
-          "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/shapes/bridge.shapes.ttl"
+          "@id": "https://github.com/the-cascade-protocol/cascade-bridge-spec/blob/main/shapes/bridge.shapes.ttl"
         },
         {
-          "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/shapes/concept-map.shapes.ttl"
+          "@id": "https://github.com/the-cascade-protocol/cascade-bridge-spec/blob/main/shapes/concept-map.shapes.ttl"
         },
         {
-          "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/shapes/gap-scheme.shapes.ttl"
+          "@id": "https://github.com/the-cascade-protocol/cascade-bridge-spec/blob/main/shapes/gap-scheme.shapes.ttl"
         },
         {
-          "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/bench/manifest.schema.json"
+          "@id": "https://github.com/the-cascade-protocol/cascade-bridge-spec/blob/main/bench/manifest.schema.json"
         },
         {
-          "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/vocab/bridge.ttl"
+          "@id": "https://github.com/the-cascade-protocol/cascade-bridge-spec/blob/main/vocab/bridge.ttl"
         },
         {
-          "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/adapter/profile/w3c/xml.xsd"
+          "@id": "https://github.com/the-cascade-protocol/cascade-bridge-spec/blob/main/adapter/profile/w3c/xml.xsd"
         },
         {
-          "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/adapter/profile/w3c/xlink.xsd"
+          "@id": "https://github.com/the-cascade-protocol/cascade-bridge-spec/blob/main/adapter/profile/w3c/xlink.xsd"
         },
         {
-          "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/adapter/profile/w3c/NOTICE"
+          "@id": "https://github.com/the-cascade-protocol/cascade-bridge-spec/blob/main/adapter/profile/w3c/NOTICE"
         }
       ]
     },
     {
-      "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/shapes/bridge.shapes.ttl",
+      "@id": "https://github.com/the-cascade-protocol/cascade-bridge-spec/blob/main/shapes/bridge.shapes.ttl",
       "@type": "File",
       "name": "Cascade Bridge shapes",
       "encodingFormat": "text/turtle",
@@ -85,7 +85,7 @@
       "description": "The SHACL shapes an adapter's crate and test manifest are validated against as one graph."
     },
     {
-      "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/shapes/concept-map.shapes.ttl",
+      "@id": "https://github.com/the-cascade-protocol/cascade-bridge-spec/blob/main/shapes/concept-map.shapes.ttl",
       "@type": "File",
       "name": "Cascade Bridge concept map shapes",
       "encodingFormat": "text/turtle",
@@ -98,7 +98,7 @@
       "description": "The SHACL shapes a file a bridge:lookupIn names is validated against on its own."
     },
     {
-      "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/shapes/gap-scheme.shapes.ttl",
+      "@id": "https://github.com/the-cascade-protocol/cascade-bridge-spec/blob/main/shapes/gap-scheme.shapes.ttl",
       "@type": "File",
       "name": "Cascade Bridge gap scheme shapes",
       "encodingFormat": "text/turtle",
@@ -111,7 +111,7 @@
       "description": "The SHACL shapes the file a bridge:gapScheme names is validated against on its own."
     },
     {
-      "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/bench/manifest.schema.json",
+      "@id": "https://github.com/the-cascade-protocol/cascade-bridge-spec/blob/main/bench/manifest.schema.json",
       "@type": "File",
       "name": "Cascade Bridge benchmark manifest schema",
       "encodingFormat": "application/schema+json",
@@ -124,7 +124,7 @@
       "description": "The JSON Schema an adapter's bench/manifest.json is validated against."
     },
     {
-      "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/vocab/bridge.ttl",
+      "@id": "https://github.com/the-cascade-protocol/cascade-bridge-spec/blob/main/vocab/bridge.ttl",
       "@type": "File",
       "name": "Cascade Bridge vocabulary",
       "encodingFormat": "text/turtle",
@@ -134,7 +134,7 @@
       "description": "The bridge: vocabulary."
     },
     {
-      "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/adapter/profile/w3c/xml.xsd",
+      "@id": "https://github.com/the-cascade-protocol/cascade-bridge-spec/blob/main/adapter/profile/w3c/xml.xsd",
       "@type": "File",
       "name": "W3C XML namespace schema",
       "encodingFormat": "application/xml",
@@ -146,7 +146,7 @@
       }
     },
     {
-      "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/adapter/profile/w3c/xlink.xsd",
+      "@id": "https://github.com/the-cascade-protocol/cascade-bridge-spec/blob/main/adapter/profile/w3c/xlink.xsd",
       "@type": "File",
       "name": "W3C XLink 1.1 schema",
       "encodingFormat": "application/xml",
@@ -158,7 +158,7 @@
       }
     },
     {
-      "@id": "https://github.com/jayostis/cascade-bridge-spec/blob/main/adapter/profile/w3c/NOTICE",
+      "@id": "https://github.com/the-cascade-protocol/cascade-bridge-spec/blob/main/adapter/profile/w3c/NOTICE",
       "@type": "File",
       "name": "W3C Software and Document Notice",
       "encodingFormat": "text/plain",

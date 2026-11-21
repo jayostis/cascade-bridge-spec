@@ -99,13 +99,13 @@ class TestAnAdaptersGapScheme:
         @pytest.mark.parametrize(
             "see_also",
             [
-                '"https://github.com/jayostis/cascade-bridge-spec/issues/188"',
-                "<https://gitlab.com/jayostis/cascade-bridge-spec/issues/188>",
-                "<https://github.com/jayostis/cascade-bridge-spec/issues>",
-                "<https://github.com/jayostis/cascade-bridge-spec/issues/188/>",
-                "<https://github.com/jayostis/cascade-bridge-spec/issues/188#issuecomment-1>",
-                "<https://github.com/jayostis/cascade-bridge-spec/pulls/188>",
-                "<https://github.com/jayostis/cascade-bridge-spec/issues/188>, <https://example.org/a-note>",
+                '"https://github.com/the-cascade-protocol/cascade-bridge-spec/issues/188"',
+                "<https://gitlab.com/the-cascade-protocol/cascade-bridge-spec/issues/188>",
+                "<https://github.com/the-cascade-protocol/cascade-bridge-spec/issues>",
+                "<https://github.com/the-cascade-protocol/cascade-bridge-spec/issues/188/>",
+                "<https://github.com/the-cascade-protocol/cascade-bridge-spec/issues/188#issuecomment-1>",
+                "<https://github.com/the-cascade-protocol/cascade-bridge-spec/pulls/188>",
+                "<https://github.com/the-cascade-protocol/cascade-bridge-spec/issues/188>, <https://example.org/a-note>",
                 "[]",
             ],
             ids=[
@@ -236,10 +236,10 @@ class TestAnAdaptersGapScheme:
         @pytest.mark.parametrize(
             "see_also",
             [
-                "<https://github.com/jayostis/cascade-bridge-spec/issues/188>",
-                "<https://github.com/jayostis/cascade-bridge-spec/pull/191>",
-                "<https://github.com/jayostis/cascade-bridge-spec/issues/188>, "
-                "<https://github.com/jayostis/cascade-bridge-spec/pull/191>",
+                "<https://github.com/the-cascade-protocol/cascade-bridge-spec/issues/188>",
+                "<https://github.com/the-cascade-protocol/cascade-bridge-spec/pull/191>",
+                "<https://github.com/the-cascade-protocol/cascade-bridge-spec/issues/188>, "
+                "<https://github.com/the-cascade-protocol/cascade-bridge-spec/pull/191>",
             ],
             ids=["an issue", "a pull request", "an issue and a pull request"],
         )
@@ -252,7 +252,7 @@ class TestAnAdaptersGapScheme:
             assert not said_about(
                 package,
                 closed_by="<https://ns.cascadeprotocol.org/cascade#onsetDate>",
-                see_also="<https://github.com/jayostis/cascade-bridge-spec/issues/188>",
+                see_also="<https://github.com/the-cascade-protocol/cascade-bridge-spec/issues/188>",
             )
 
         def test_reports_nothing_for_a_gap_carrying_a_label_its_scheme_one_kind_and_a_closing_term(self, package):

@@ -167,7 +167,7 @@ lift writes as that value.
 
 A record, a version and a document are named by the Cascade vocabulary's naming
 rules, and a Bridge and an adapter must reproduce the vocabulary repository's
-naming vectors, [`tests/vectors/naming/`](https://github.com/jayostis/cascade-vocabulary/tree/main/tests/vectors/naming), as
+naming vectors, [`tests/vectors/naming/`](https://github.com/the-cascade-protocol/cascade-vocabulary/tree/main/tests/vectors/naming), as
 [`executing.md`](executing.md) says. A Bridge normalises a supplied
 `cascade:serverBaseUrl` as those vectors do, and refuses facts supplying one they
 refuse as `bridge:factsFailure`. A document's SHA-256 is written `ni:///sha-256;`

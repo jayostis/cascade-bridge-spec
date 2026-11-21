@@ -163,7 +163,7 @@ class TestPickingTheVersionOfEachRepositoryARunUses:
     class TestGivenASliceThatReadsTheVocabularyBesideTheRepositoryUnderTest:
         @staticmethod
         def the_vocabulary_picked(body, head=None):
-            event = Event("jayostis/cascade-bridge-spec", 5, "main")
+            event = Event("the-cascade-protocol/cascade-bridge-spec", 5, "main")
             head = head or {"repo": {"clone_url": "https://github.com/someone/fork.git"}, "sha": "abc"}
 
             class Api:
@@ -183,7 +183,7 @@ class TestPickingTheVersionOfEachRepositoryARunUses:
             assert self.the_vocabulary_picked(depends_on("cascade-runtime-js", 3)) is None
 
         def test_is_the_default_branch_on_a_push(self):
-            assert named_head(None, Event("jayostis/cascade-bridge-spec", None, "main")) is None
+            assert named_head(None, Event("the-cascade-protocol/cascade-bridge-spec", None, "main")) is None
 
         def test_stops_when_the_vocabulary_pull_request_has_no_head_repository(self):
             with pytest.raises(Stop, match="has no head repository"):

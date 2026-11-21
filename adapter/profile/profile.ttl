@@ -6,6 +6,6 @@
     a prof:Profile ;
     rdfs:label "Cascade Bridge Adapter" ;
     prof:hasToken "cascade-bridge-adapter" ;
-    dct:publisher <https://github.com/jayostis/cascade-bridge-spec> ;
+    dct:publisher <https://github.com/the-cascade-protocol/cascade-bridge-spec> ;
     prof:isProfileOf <https://w3id.org/ro/crate/1.2> ;
     prof:isTransitiveProfileOf <https://w3id.org/ro/crate/1.2> .

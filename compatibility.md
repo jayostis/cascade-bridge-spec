@@ -69,7 +69,7 @@ alone: no manifest says which entries it must hold. **A host on which it does no
 hold blocks the merge.**
 
 A vocabulary is a repository holding a crate whose root is no `bridge:Adapter`,
-as [`jayostis/cascade-vocabulary`](https://github.com/jayostis/cascade-vocabulary)
+as [`the-cascade-protocol/cascade-vocabulary`](https://github.com/the-cascade-protocol/cascade-vocabulary)
 does. Its `compatibility.json` has only `mustPassWith`, naming runtimes. Each is
 picked as a counterpart is, and its conformance command run as a runtime under
 test's is, with the vocabulary under test handed in for the one it names and each
@@ -289,7 +289,7 @@ jobs:
   compatibility:
     runs-on: ubuntu-latest
     steps:
-      - uses: jayostis/cascade-bridge-spec/.github/actions/start@main
+      - uses: the-cascade-protocol/cascade-bridge-spec/.github/actions/start@main
 ```
 
 `ready.yml`, the merge gate:
@@ -312,7 +312,7 @@ jobs:
       group: ready-${{ github.ref }}
       cancel-in-progress: true
     steps:
-      - uses: jayostis/cascade-bridge-spec/.github/actions/start@main
+      - uses: the-cascade-protocol/cascade-bridge-spec/.github/actions/start@main
         with:
           check: ready-to-merge
 
@@ -324,7 +324,7 @@ jobs:
       actions: write
       pull-requests: read
     steps:
-      - uses: jayostis/cascade-bridge-spec/.github/actions/rerun-when-edited@main
+      - uses: the-cascade-protocol/cascade-bridge-spec/.github/actions/rerun-when-edited@main
         with:
           workflows: check.yml
 ```

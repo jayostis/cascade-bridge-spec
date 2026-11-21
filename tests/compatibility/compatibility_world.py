@@ -25,7 +25,7 @@ FAKE_RUNTIME = ROOT / "fixtures" / "fake-runtime"
 BRIDGE = "example-bridge"
 BRIDGE_OWNER = "example-org"
 CONTEXT_IRI = "https://ns.cascadeprotocol.org/bridge/v1-draft/compatibility.jsonld"
-OWNER = "jayostis"
+OWNER = "the-cascade-protocol"
 TOKEN = "the job's token"
 ADAPTER_URL = f"https://github.com/{OWNER}/adapter"
 CRATE = "ro-crate-metadata.json"
@@ -152,7 +152,7 @@ def describe_the_repository(specification, url):
 
 
 def name_another_vocabulary(world, name):
-    """The adapter's origin, naming a copy of this world's the-cascade-protocol/spec published as jayostis/<name>."""
+    """The adapter's origin, naming a copy of this world's the-cascade-protocol/spec published as the-cascade-protocol/<name>."""
     shutil.copytree(world.origin(VOCABULARY), world.origins / OWNER / name)
     origin = world.origin("adapter")
     name_vocabulary(origin / CRATE, f"https://github.com/{OWNER}/{name}")
