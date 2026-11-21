@@ -9,7 +9,7 @@ from compatibility_world import (
 )
 
 GATE = "ready-to-merge"
-PULL_7 = "https://github.com/jayostis/adapter/pull/7"
+PULL_7 = "https://github.com/the-cascade-protocol/adapter/pull/7"
 BOM = chr(0xFEFF)
 LS = chr(0x2028)
 PS = chr(0x2029)
@@ -388,7 +388,7 @@ class TestTheBreakingSection:
             "- a -> b\n\n- c -> d",
             "-\nNone",
             "None\n\n---\nanything after the rule",
-            "None\nDepends-On: https://github.com/jayostis/engine/pull/1",
+            "None\nDepends-On: https://github.com/the-cascade-protocol/engine/pull/1",
             "None\n\n## Verification\n\nnot an arrow",
             "None <!-- a -> b -->",
             "<!-- - old -> new -->\nNone",
@@ -415,7 +415,10 @@ class TestTheBreakingSection:
 
     def test_is_read_with_a_depends_on_line_after_none(self):
         assert (
-            breaking.problem_in("## Breaking\n\nNone\n\nDepends-On: https://github.com/jayostis/engine/pull/1") is None
+            breaking.problem_in(
+                "## Breaking\n\nNone\n\nDepends-On: https://github.com/the-cascade-protocol/engine/pull/1"
+            )
+            is None
         )
 
     @pytest.mark.parametrize(
@@ -434,7 +437,7 @@ class TestTheBreakingSection:
             "\n- \n",
             "\n## Next\n",
             "\n---\n",
-            "\nDepends-On: https://github.com/jayostis/engine/pull/1",
+            "\nDepends-On: https://github.com/the-cascade-protocol/engine/pull/1",
             "\n<!-- None -->",
         ],
         ids=["end", "blank", "bare bullet", "next heading", "rule", "depends on", "comment"],

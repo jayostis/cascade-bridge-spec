@@ -19,7 +19,7 @@ and [`compatibility.md`](compatibility.md).
 
 ## Docs
 
-- [The Cascade hub](https://jayostis.github.io/cascade-runtime-js/): where to go for each thing, and every repository.
-- [Adapters](https://jayostis.github.io/cascade-runtime-js/adapters/): each adapter's crosswalk, built from the source accounting this spec defines.
+- [The Cascade hub](https://the-cascade-protocol.github.io/cascade-runtime-js/): where to go for each thing, and every repository.
+- [Adapters](https://the-cascade-protocol.github.io/cascade-runtime-js/adapters/): each adapter's crosswalk, built from the source accounting this spec defines.
 
 Apache-2.0.

@@ -31,8 +31,8 @@ class TestPickingTheVersionOfEachRepositoryARunUses:
 
             GitHub reads owner and repository names whatever their case, so a line naming one so is the same line.
             """
-            world.pull_request("engine", 2, body=depends_on("ENGINE", 1, owner="JAYOSTIS"), fill=writing("TWO"))
-            engine, event = engine_checked_out_as_ci_does(world, depends_on("Engine", 2, owner="JayOstis"))
+            world.pull_request("engine", 2, body=depends_on("ENGINE", 1, owner="THE-CASCADE-PROTOCOL"), fill=writing("TWO"))
+            engine, event = engine_checked_out_as_ci_does(world, depends_on("Engine", 2, owner="The-Cascade-Protocol"))
 
             world.tool(engine, **world.ci(event=event))
 
@@ -210,7 +210,7 @@ class TestPullRequestsNamedInTheRepositoryUnderTest:
 
             said = world.tool(engine, 1, **world.ci(event=event))
 
-            assert "jayostis/engine/pull/2 is from a-fork-owner/engine" in said
+            assert "the-cascade-protocol/engine/pull/2 is from a-fork-owner/engine" in said
             assert not (engine / "TWO").exists()
 
     class TestGivenAPullRequestOfTheEngineReachedOnlyThroughAnotherRepository:
@@ -229,7 +229,10 @@ class TestPullRequestsNamedInTheRepositoryUnderTest:
             assert not (engine / "TWO").exists()
             [under_test] = [row for row in world.record()["repositories"].values() if row["role"] == "under test"]
             assert under_test["how"] == "pull request #1 merged into main"
-            assert "jayostis/engine/pull/2, reached only through another repository's pull request" in world.table()
+            assert (
+                "the-cascade-protocol/engine/pull/2, reached only through another repository's pull request"
+                in world.table()
+            )
 
     class TestGivenTwoNamedPullRequestsInTheRepositoryUnderTestThatConflict:
         def test_fails_the_check_naming_them(self, world):
@@ -241,7 +244,7 @@ class TestPullRequestsNamedInTheRepositoryUnderTest:
             said = world.tool(engine, 1, **world.ci(event=event))
 
             assert (
-                "jayostis/engine/pull/3 does not merge cleanly into pull request #1 merged into main, and #2 merged into it"
+                "the-cascade-protocol/engine/pull/3 does not merge cleanly into pull request #1 merged into main, and #2 merged into it"
                 in said
             )
 
@@ -253,7 +256,7 @@ class TestPullRequestsNamedInTheRepositoryUnderTest:
 
             said = world.tool(engine, 1, **world.ci(event=event))
 
-            assert "jayostis/engine/pull/2 targets stable/x, and the pull request under test main" in said
+            assert "the-cascade-protocol/engine/pull/2 targets stable/x, and the pull request under test main" in said
 
     class TestGivenANamedPullRequestInTheRepositoryUnderTestClosedWithoutMerging:
         def test_fails_the_check_naming_the_line_to_cut(self, world):
@@ -265,7 +268,7 @@ class TestPullRequestsNamedInTheRepositoryUnderTest:
             said = world.tool(engine, 1, **world.ci(event=event))
 
             assert (
-                "jayostis/engine/pull/2 is closed without merging: cut the Depends-On: line naming it in jayostis/engine/pull/3"
+                "the-cascade-protocol/engine/pull/2 is closed without merging: cut the Depends-On: line naming it in the-cascade-protocol/engine/pull/3"
                 in said
             )
 

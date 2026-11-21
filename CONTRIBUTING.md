@@ -20,7 +20,7 @@ python3 -m pip install --group dev
 `--group` needs pip 25.1 or newer, which is what the first line makes sure of.
 
 The `dev` group in [`pyproject.toml`](pyproject.toml) pins pytest, ruff and the validators. Some specification tests
-read [cascade-vocabulary](https://github.com/jayostis/cascade-vocabulary) as a sibling folder: clone it beside this
+read [cascade-vocabulary](https://github.com/the-cascade-protocol/cascade-vocabulary) as a sibling folder: clone it beside this
 repository, or run `python3 scripts/place_vocabulary.py ../cascade-vocabulary`, which is what CI does.
 
 ## Run the checks
@@ -74,7 +74,7 @@ tested against the others' branch of the same name as the one it targets, and fa
 each other. Each names the ones it needs in its description, on a line of its own, with the full URL:
 
 ```
-Depends-On: https://github.com/jayostis/cascade-bridge-rs/pull/123
+Depends-On: https://github.com/the-cascade-protocol/cascade-bridge-rs/pull/123
 ```
 
 The `compatibility` check of each repository then runs the named pull requests together, and `ready-to-merge` holds each

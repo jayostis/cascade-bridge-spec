@@ -9,7 +9,7 @@ from compatibility_tool.document import named_repositories, problems
 from compatibility_world import CONTEXT_IRI, CRATE, VOCABULARY, engine_document
 
 PICKED_WHEN_THE_CHECK_RUNS = "picked when the check runs"
-ADAPTER = "https://github.com/jayostis/adapter"
+ADAPTER = "https://github.com/the-cascade-protocol/adapter"
 
 
 def refused(directory, **document):
@@ -98,7 +98,7 @@ class TestWhatARepositorysCompatibilityJsonMaySay:
         """given a counterpart named `cascade-bridge-spec`"""
 
         def test_is_refused(self, tmp_path):
-            said = refused(tmp_path, mustPassWith=["https://github.com/jayostis/cascade-bridge-spec"])
+            said = refused(tmp_path, mustPassWith=["https://github.com/the-cascade-protocol/cascade-bridge-spec"])
             assert "No repository in mustPassWith is named cascade-bridge-spec" in said
 
     class TestGivenARuntimesFile:
@@ -112,7 +112,7 @@ class TestWhatARepositorysCompatibilityJsonMaySay:
                 ),
                 pytest.param(
                     {"mustPassWith": None},
-                    "https://github.com/jayostis/cascade-bridge-spec",
+                    "https://github.com/the-cascade-protocol/cascade-bridge-spec",
                     "is named cascade-bridge-spec",
                     id="a repository",
                 ),
