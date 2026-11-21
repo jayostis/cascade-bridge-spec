@@ -229,7 +229,10 @@ class TestPullRequestsNamedInTheRepositoryUnderTest:
             assert not (engine / "TWO").exists()
             [under_test] = [row for row in world.record()["repositories"].values() if row["role"] == "under test"]
             assert under_test["how"] == "pull request #1 merged into main"
-            assert "the-cascade-protocol/engine/pull/2, reached only through another repository's pull request" in world.table()
+            assert (
+                "the-cascade-protocol/engine/pull/2, reached only through another repository's pull request"
+                in world.table()
+            )
 
     class TestGivenTwoNamedPullRequestsInTheRepositoryUnderTestThatConflict:
         def test_fails_the_check_naming_them(self, world):

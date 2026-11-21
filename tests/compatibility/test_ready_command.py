@@ -415,7 +415,10 @@ class TestTheBreakingSection:
 
     def test_is_read_with_a_depends_on_line_after_none(self):
         assert (
-            breaking.problem_in("## Breaking\n\nNone\n\nDepends-On: https://github.com/the-cascade-protocol/engine/pull/1") is None
+            breaking.problem_in(
+                "## Breaking\n\nNone\n\nDepends-On: https://github.com/the-cascade-protocol/engine/pull/1"
+            )
+            is None
         )
 
     @pytest.mark.parametrize(
