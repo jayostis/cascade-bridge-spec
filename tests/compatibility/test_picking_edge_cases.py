@@ -31,8 +31,8 @@ class TestPickingTheVersionOfEachRepositoryARunUses:
 
             GitHub reads owner and repository names whatever their case, so a line naming one so is the same line.
             """
-            world.pull_request("engine", 2, body=depends_on("ENGINE", 1, owner="JAYOSTIS"), fill=writing("TWO"))
-            engine, event = engine_checked_out_as_ci_does(world, depends_on("Engine", 2, owner="JayOstis"))
+            world.pull_request("engine", 2, body=depends_on("ENGINE", 1, owner="THE-CASCADE-PROTOCOL"), fill=writing("TWO"))
+            engine, event = engine_checked_out_as_ci_does(world, depends_on("Engine", 2, owner="The-Cascade-Protocol"))
 
             world.tool(engine, **world.ci(event=event))
 
